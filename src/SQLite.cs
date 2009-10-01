@@ -69,8 +69,7 @@ namespace SQLite
 			var ty = typeof(T);
 			var query = "create table '"+ty.Name+"'(\n";
 
-			var decls = from p in Orm.GetColumns(ty)
-				select Orm.SqlDecl(p);
+			var decls = Orm.GetColumns(ty).Select(p => Orm.SqlDecl(p));
 			var decl = string.Join(",\n", decls.ToArray());
 			query += decl;
 			
@@ -165,9 +164,18 @@ namespace SQLite
 	public class IndexedAttribute : Attribute
 	{
 	}
+	public class MaxLengthAttribute : Attribute
+	{
+		public int Value { get; private set; }
+		public MaxLengthAttribute(int length) {
+			Value = length;
+		}
+	}
 
 	public static class Orm
 	{
+		public const int DefaultMaxStringLength = 140;
+		
 		public static string SqlDecl (PropertyInfo p)
 		{
 			string decl = "'" + p.Name + "' " + SqlType(p) + " ";
@@ -198,7 +206,8 @@ namespace SQLite
 			} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 				return "float";
 			} else if (clrType == typeof(String)) {
-				return "varchar(250)";
+				int len = MaxStringLength(p);
+				return "varchar(" + len + ")";
 			} else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -225,6 +234,16 @@ namespace SQLite
 		public static bool IsNullable (PropertyInfo p)
 		{
 			return !IsPK (p);
+		}
+		
+		public static int MaxStringLength(PropertyInfo p) {
+			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
+			if (attrs.Length > 0) {
+				return ((MaxLengthAttribute)attrs[0]).Value;
+			}
+			else {
+				return DefaultMaxStringLength;
+			}
 		}
 
 		public static System.Reflection.PropertyInfo GetPK (Type t)
