@@ -57,7 +57,6 @@ namespace SQLite
 				throw SQLiteException.New (r, "Could not open database file: " + Database);
 			}
 			_open = true;
-			Trace = true;
 		}
 
 		public SQLiteCommand CreateCommand (string cmdText, params object[] ps)
@@ -122,13 +121,16 @@ namespace SQLite
 		public int Insert<T> (T obj)
 		{
 			var type = obj.GetType ();
-			var cols = Orm.GetColumns (type);
-			var vals = from c in cols
-				select c.GetValue (obj, null);
+			var cols = Orm.GetColumns (type).Where(c => !Orm.IsAutoInc(c));
 			var q = string.Format ("insert into '{0}'({1}) values ({2})", type.Name, string.Join (",", (from c in cols
 				select "'" + c.Name + "'").ToArray ()), string.Join (",", (from c in cols
 				select "?").ToArray ()));
-			return Execute (q, vals.ToArray ());
+			var vals = from c in cols
+				select c.GetValue (obj, null);
+			var count = Execute (q, vals.ToArray ());
+			var id = SQLite3.LastInsertRowid(_db);
+			Orm.SetAutoIncPK(obj, id);
+			return count;
 		}
 
 		public T Get<T> (object pk) where T : new()
@@ -281,6 +283,13 @@ namespace SQLite
 			return from p in raw
 				where p.CanWrite
 				select p;
+		}
+		
+		public static void SetAutoIncPK(object obj, long id) {
+			var pk = GetPK(obj.GetType());
+			if (pk != null && IsAutoInc(pk)) {
+				pk.SetValue(obj, Convert.ChangeType(id, pk.PropertyType), null);
+			}
 		}
 	}
 
@@ -470,6 +479,9 @@ namespace SQLite
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_finalize")]
 		public static extern Result Finalize (IntPtr stmt);
+		
+		[DllImport("sqlite3", EntryPoint = "sqlite3_last_insert_rowid")]
+		public static extern long LastInsertRowid (IntPtr db);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_errmsg")]
 		public static extern string Errmsg (IntPtr db);
