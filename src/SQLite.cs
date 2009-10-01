@@ -30,8 +30,14 @@ namespace SQLite
 {
 	public class SQLiteException : System.Exception
 	{
-		public SQLiteException (string message) : base(message)
+		public SQLite3.Result Result { get; private set; }
+		protected SQLiteException (SQLite3.Result r, string message) : base(message)
 		{
+			Result = r;
+		}
+		public static SQLiteException New (SQLite3.Result r, string message)
+		{
+			return new SQLiteException (r, message);
 		}
 	}
 
@@ -41,20 +47,23 @@ namespace SQLite
 		private bool _open;
 
 		public string Database { get; set; }
+		public bool Trace { get; set; }
 
 		public SQLiteConnection (string database)
 		{
 			Database = database;
-			if (SQLite3.Open (Database, out _db) != SQLite3.Result.OK) {
-				throw new SQLiteException ("Could not open database file: " + Database);
+			var r = SQLite3.Open (Database, out _db);
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, "Could not open database file: " + Database);
 			}
 			_open = true;
+			Trace = true;
 		}
 
 		public SQLiteCommand CreateCommand (string cmdText, params object[] ps)
 		{
 			if (!_open) {
-				throw new SQLiteException ("Cannot create commands from unopened database");
+				throw SQLiteException.New (SQLite3.Result.Error, "Cannot create commands from unopened database");
 			} else {
 				var cmd = new SQLiteCommand (_db);
 				cmd.CommandText = cmdText;
@@ -64,24 +73,34 @@ namespace SQLite
 				return cmd;
 			}
 		}
-		
-		public int CreateTable<T>() {
-			var ty = typeof(T);
-			var query = "create table '"+ty.Name+"'(\n";
 
-			var decls = Orm.GetColumns(ty).Select(p => Orm.SqlDecl(p));
-			var decl = string.Join(",\n", decls.ToArray());
-			query += decl;
+		public int CreateTable<T> ()
+		{
+			var ty = typeof(T);
+			var query = "create table if not exists '" + ty.Name + "'(\n";
 			
+			var decls = Orm.GetColumns (ty).Select (p => Orm.SqlDecl (p));
+			var decl = string.Join (",\n", decls.ToArray ());
+			query += decl;
 			query += ")";
 			
-			return Execute(query);
+			var count = Execute (query);
+			
+			foreach (var p in Orm.GetColumns (ty).Where (x => Orm.IsIndexed (x))) {
+				var indexName = ty.Name + "_" + p.Name;
+				var q = string.Format ("create index if not exists '{0}' on '{1}'('{2}')", indexName, ty.Name, p.Name);
+				count += Execute (q);
+			}
+			
+			return count;
 		}
 
 		public int Execute (string query, params object[] ps)
 		{
 			var cmd = CreateCommand (query, ps);
-			System.Console.Error.WriteLine ("Executing: " + cmd);
+			if (Trace) {
+				Console.WriteLine ("Executing: " + cmd);
+			}
 			return cmd.ExecuteNonQuery ();
 		}
 
@@ -167,7 +186,8 @@ namespace SQLite
 	public class MaxLengthAttribute : Attribute
 	{
 		public int Value { get; private set; }
-		public MaxLengthAttribute(int length) {
+		public MaxLengthAttribute (int length)
+		{
 			Value = length;
 		}
 	}
@@ -175,24 +195,21 @@ namespace SQLite
 	public static class Orm
 	{
 		public const int DefaultMaxStringLength = 140;
-		
+
 		public static string SqlDecl (PropertyInfo p)
 		{
-			string decl = "'" + p.Name + "' " + SqlType(p) + " ";
+			string decl = "'" + p.Name + "' " + SqlType (p) + " ";
 			
-			if (IsPK(p)) {
+			if (IsPK (p)) {
 				decl += "primary key ";
 			}
-			if (IsAutoInc(p)) {
+			if (IsAutoInc (p)) {
 				decl += "autoincrement ";
 			}
-			if (!IsNullable(p)) {
+			if (!IsNullable (p)) {
 				decl += "not null ";
 			}
-			if (IsIndexed(p)) {
-				decl += "index ";
-			}
-
+			
 			return decl;
 		}
 
@@ -206,8 +223,10 @@ namespace SQLite
 			} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 				return "float";
 			} else if (clrType == typeof(String)) {
-				int len = MaxStringLength(p);
+				int len = MaxStringLength (p);
 				return "varchar(" + len + ")";
+			} else if (clrType == typeof(DateTime)) {
+				return "datetime";
 			} else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -224,7 +243,7 @@ namespace SQLite
 			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
 			return attrs.Length > 0;
 		}
-		
+
 		public static bool IsIndexed (PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(IndexedAttribute), true);
@@ -235,13 +254,13 @@ namespace SQLite
 		{
 			return !IsPK (p);
 		}
-		
-		public static int MaxStringLength(PropertyInfo p) {
+
+		public static int MaxStringLength (PropertyInfo p)
+		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
 			if (attrs.Length > 0) {
 				return ((MaxLengthAttribute)attrs[0]).Value;
-			}
-			else {
+			} else {
 				return DefaultMaxStringLength;
 			}
 		}
@@ -261,7 +280,7 @@ namespace SQLite
 			var raw = t.GetProperties (BindingFlags.Public | BindingFlags.Instance);
 			return from p in raw
 				where p.CanWrite
-					select p;
+				select p;
 		}
 	}
 
@@ -282,32 +301,32 @@ namespace SQLite
 		public int ExecuteNonQuery ()
 		{
 			var stmt = Prepare ();
-
+			
 			var r = SQLite3.Step (stmt);
 			if (r == SQLite3.Result.Error) {
 				string msg = SQLite3.Errmsg (_db);
 				SQLite3.Finalize (stmt);
-				throw new SQLiteException (msg);
+				throw SQLiteException.New (r, msg);
 			} else if (r == SQLite3.Result.Done) {
 				int rowsAffected = SQLite3.Changes (_db);
 				SQLite3.Finalize (stmt);
 				return rowsAffected;
 			} else {
 				SQLite3.Finalize (stmt);
-				throw new SQLiteException ("Unknown error");
+				throw SQLiteException.New (r, "Unknown error");
 			}
 		}
 
 		public IEnumerable<T> ExecuteQuery<T> () where T : new()
 		{
 			var stmt = Prepare ();
-
+			
 			var props = Orm.GetColumns (typeof(T));
 			var cols = new System.Reflection.PropertyInfo[SQLite3.ColumnCount (stmt)];
 			for (int i = 0; i < cols.Length; i++) {
 				cols[i] = MatchColProp (SQLite3.ColumnName (stmt, i), props);
 			}
-
+			
 			while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
 				var obj = new T ();
 				for (int i = 0; i < cols.Length; i++) {
@@ -318,7 +337,7 @@ namespace SQLite
 				}
 				yield return obj;
 			}
-
+			
 			SQLite3.Finalize (stmt);
 		}
 
@@ -368,6 +387,8 @@ namespace SQLite
 						SQLite3.BindDouble (stmt, b.Index, Convert.ToDouble (b.Value));
 					} else if (b.Value is String) {
 						SQLite3.BindText (stmt, b.Index, b.Value.ToString (), -1, new IntPtr (-1));
+					} else if (b.Value is DateTime) {
+						SQLite3.BindText (stmt, b.Index, ((DateTime)b.Value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, new IntPtr (-1));
 					}
 				}
 			}
@@ -393,6 +414,8 @@ namespace SQLite
 				} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 					return Convert.ChangeType (SQLite3.ColumnDouble (stmt, index), clrType);
 				} else if (clrType == typeof(String)) {
+					return Convert.ChangeType (SQLite3.ColumnText (stmt, index), clrType);
+				} else if (clrType == typeof(DateTime)) {
 					return Convert.ChangeType (SQLite3.ColumnText (stmt, index), clrType);
 				} else {
 					throw new NotSupportedException ("Don't know how to read " + clrType);
@@ -435,8 +458,10 @@ namespace SQLite
 		public static IntPtr Prepare (IntPtr db, string query)
 		{
 			IntPtr stmt;
-			if (Prepare (db, query, query.Length, out stmt, IntPtr.Zero) != Result.OK)
-				throw new SQLiteException (Errmsg (db));
+			var r = Prepare (db, query, query.Length, out stmt, IntPtr.Zero);
+			if (r != Result.OK) {
+				throw SQLiteException.New (r, Errmsg (db));
+			}
 			return stmt;
 		}
 
