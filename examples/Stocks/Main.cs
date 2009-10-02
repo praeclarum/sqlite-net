@@ -20,8 +20,6 @@ namespace Stocks.CommandLine
 		{
 			var dbPath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "Stocks.db");
 			_db = new Database (dbPath);
-			_db.CreateTable<Stock> ();
-			_db.CreateTable<Valuation> ();
 		}
 
 		void DisplayStock (string stockSymbol)

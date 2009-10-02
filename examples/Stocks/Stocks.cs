@@ -7,23 +7,7 @@ using SQLite;
 
 namespace Stocks
 {
-	class Valuation
-	{
-		[PrimaryKey, AutoIncrement]
-		public int Id { get; set; }
-		[Indexed]
-		public int StockId { get; set; }
-		public DateTime Time { get; set; }
-		public decimal Price { get; set; }
-		
-		public override string ToString ()
-		{
-			return string.Format("{0:MMM dd yy}    {1:C}", Time, Price);
-		}
-
-	}
-
-	class Stock
+	public class Stock
 	{
 		[PrimaryKey, AutoIncrement]
 		public int Id { get; set; }
@@ -36,10 +20,27 @@ namespace Stocks
 		}
 	}
 
-	class Database : SQLiteConnection
+	public class Valuation
+	{
+		[PrimaryKey, AutoIncrement]
+		public int Id { get; set; }
+		[Indexed]
+		public int StockId { get; set; }
+		public DateTime Time { get; set; }
+		public decimal Price { get; set; }
+		
+		public override string ToString ()
+		{
+			return string.Format("{0:MMM dd yy}    {1:C}", Time, Price);
+		}
+	}
+
+	public class Database : SQLiteConnection
 	{
 		public Database (string path) : base(path)
 		{
+			CreateTable<Stock> ();
+			CreateTable<Valuation> ();
 		}
 		public IEnumerable<Valuation> QueryValuations (Stock stock)
 		{
@@ -59,8 +60,7 @@ namespace Stocks
 		}
 	}
 
-
-	class YahooScraper
+	public class YahooScraper
 	{
 		public IEnumerable<Valuation> GetValuations (Stock stock, DateTime start, DateTime end)
 		{
