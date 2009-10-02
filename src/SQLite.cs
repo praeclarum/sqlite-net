@@ -98,7 +98,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, ps);
 			if (Trace) {
-				Console.WriteLine ("Executing: " + cmd);
+				Console.Error.WriteLine ("Executing: " + cmd);
 			}
 			return cmd.ExecuteNonQuery ();
 		}
@@ -111,14 +111,15 @@ namespace SQLite
 
 		public int InsertAll<T> (IEnumerable<T> rows)
 		{
-			int c = 0;
+			var c = 0;
 			foreach (var r in rows) {
-				c += Insert (r);
+				Insert (r);
+				c++;
 			}
 			return c;
 		}
 
-		public int Insert<T> (T obj)
+		public T Insert<T> (T obj)
 		{
 			var type = obj.GetType ();
 			var cols = Orm.GetColumns (type).Where(c => !Orm.IsAutoInc(c));
@@ -127,10 +128,12 @@ namespace SQLite
 				select "?").ToArray ()));
 			var vals = from c in cols
 				select c.GetValue (obj, null);
-			var count = Execute (q, vals.ToArray ());
+			
+			Execute (q, vals.ToArray ());
+			
 			var id = SQLite3.LastInsertRowid(_db);
 			Orm.SetAutoIncPK(obj, id);
-			return count;
+			return obj;
 		}
 
 		public T Get<T> (object pk) where T : new()
