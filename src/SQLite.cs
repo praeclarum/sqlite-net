@@ -58,7 +58,7 @@ namespace SQLite
 			}
 			_open = true;
 		}
-
+		
 		public SQLiteCommand CreateCommand (string cmdText, params object[] ps)
 		{
 			if (!_open) {
@@ -491,11 +491,19 @@ namespace SQLite
 			Row = 100,
 			Done = 101
 		}
+		
+		public enum ConfigOption : int {
+			SingleThread = 1,
+			MultiThread = 2,
+			Serialized = 3,
+		}		
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open")]
 		public static extern Result Open (string filename, out IntPtr db);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_close")]
 		public static extern Result Close (IntPtr db);
+		[DllImport("sqlite3", EntryPoint = "sqlite3_config")]
+		public static extern Result Config (ConfigOption option);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_changes")]
 		public static extern int Changes (IntPtr db);
@@ -562,4 +570,5 @@ namespace SQLite
 			Null = 5
 		}
 	}
+	
 }
