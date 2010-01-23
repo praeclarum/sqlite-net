@@ -141,9 +141,8 @@ namespace SQLite
 			var type = obj.GetType ();
 			var pk = Orm.GetColumns (type).Where(c => Orm.IsPK(c)).FirstOrDefault();
 			if (pk == null) {
-				throw new ArgumentException("obj does not have a primary key");
-			}
-			
+				throw new NotSupportedException ("Cannot delete " + type.Name + ": it has no PK");
+			}			
 			var q = string.Format("delete from '{0}' where '{1}' = ?",
 			                      type.Name,
 			                      pk.Name);
@@ -177,9 +176,11 @@ namespace SQLite
 			var vals = from c in cols
 				select c.GetValue (obj, null);
 			var ps = new List<object> (vals);
-			ps.Insert (0, pk.GetValue (obj, null));
-			var q = string.Format ("update '{0}'({1}) values ({2}) where '{3}'=?", type.Name, string.Join (",", (from c in cols
-				select "?").ToArray ()), pk.Name);
+			ps.Add(pk.GetValue(obj, null)); 
+			var q = string.Format("update '{0}' set {1} where {2} = ? ",
+			    type.Name,
+			    string.Join(",", (from c in cols select "'" + c.Name + "' = ? ").ToArray()),
+			    pk.Name); 
 			return Execute (q, ps.ToArray ());
 		}
 

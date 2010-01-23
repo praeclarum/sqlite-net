@@ -18,10 +18,12 @@ dist:
 	rm -Rf $(DIST)/examples/.svn
 	rm -Rf $(DIST)/examples/Stocks/.svn
 	rm -Rf $(DIST)/examples/Stocks/bin
+	rm -Rf $(DIST)/examples/Stocks/obj
 	rm -Rf $(DIST)/examples/Stocks/*.pidb
 	rm -Rf $(DIST)/examples/Stocks/*.userprefs
 	rm -Rf $(DIST)/examples/StocksTouch/.svn
 	rm -Rf $(DIST)/examples/StocksTouch/bin
+	rm -Rf $(DIST)/examples/StocksTouch/obj
 	rm -Rf $(DIST)/examples/StocksTouch/*.pidb
 	rm -Rf $(DIST)/examples/StocksTouch/*.userprefs
 	rm -Rf $(DIST)/.DS_Store
