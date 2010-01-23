@@ -44,7 +44,8 @@ namespace SQLite
 	public class SQLiteConnection : IDisposable
 	{
 		private bool _open;
-		Dictionary<Guid, TypeTableMapping> _mappings = null;
+		Dictionary<string, TableMapping> _mappings = null;
+		Dictionary<string, TableMapping> _tables = null;
 
 		public IntPtr Handle { get; private set; }
 		public string DatabasePath { get; private set; }
@@ -75,10 +76,30 @@ namespace SQLite
 				return cmd;
 			}
 		}
-
+		
+		
+		public IEnumerable<TableMapping> Tables {
+			get {
+				if (_tables == null) {
+					return Enumerable.Empty<TableMapping>();
+				}
+				else {
+					return _tables.Values;
+				}
+			}
+		}
 		public int CreateTable<T> ()
 		{
-			var map = GetMapping(typeof(T));
+			var ty = typeof(T);
+			
+			if (_tables == null) {
+				_tables = new Dictionary<string, TableMapping>();
+			}
+			TableMapping map;
+			if (!_tables.TryGetValue(ty.FullName, out map)) {
+				map = GetMapping(ty);
+				_tables.Add(ty.FullName, map);
+			}
 			var query = "create table if not exists '" + map.TableName + "'(\n";
 			
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
@@ -97,14 +118,14 @@ namespace SQLite
 			return count;
 		}
 		
-		public TypeTableMapping GetMapping(Type type) {
+		public TableMapping GetMapping(Type type) {
 			if (_mappings == null) {
-				_mappings = new Dictionary<Guid, TypeTableMapping>();
+				_mappings = new Dictionary<string, TableMapping>();
 			}
-			TypeTableMapping map;
-			if (!_mappings.TryGetValue(type.GUID, out map)) {
-				map = new TypeTableMapping(type);
-				_mappings[type.GUID] = map;
+			TableMapping map;
+			if (!_mappings.TryGetValue(type.FullName, out map)) {
+				map = new TableMapping(type);
+				_mappings[type.FullName] = map;
 			}
 			return map;
 		}
@@ -137,6 +158,11 @@ namespace SQLite
 			var cmd = CreateCommand (query, ps);
 			return cmd.ExecuteQuery<T> ();
 		}
+		public IEnumerable<object> Query (TableMapping map, string query, params object[] ps)
+		{
+			var cmd = CreateCommand (query, ps);
+			return cmd.ExecuteQuery (map);
+		}
 
 		/// <summary>
 		/// Inserts all specified objects.
@@ -161,7 +187,7 @@ namespace SQLite
 		{
 			return Insert (obj, GetMapping(obj.GetType()));
 		}
-		public int Insert<T> (T obj, TypeTableMapping map)
+		public int Insert<T> (T obj, TableMapping map)
 		{
 			var vals =	from c in map.InsertColumns
 						select c.GetValue (obj);
@@ -247,11 +273,11 @@ namespace SQLite
 		}
 	}
 	
-	public class TypeTableMapping {
+	public class TableMapping {
 		public Type MappedType { get; private set; }
 		public Column[] Columns { get; private set; }
 		
-		public TypeTableMapping(Type type) {
+		public TableMapping(Type type) {
 			MappedType = type;
 			TableName = MappedType.Name;
 			var props = MappedType.GetProperties();
@@ -338,7 +364,7 @@ namespace SQLite
 	{
 		public const int DefaultMaxStringLength = 140;
 
-		public static string SqlDecl (TypeTableMapping.Column p)
+		public static string SqlDecl (TableMapping.Column p)
 		{
 			string decl = "'" + p.Name + "' " + SqlType (p) + " ";
 			
@@ -355,7 +381,7 @@ namespace SQLite
 			return decl;
 		}
 
-		public static string SqlType (TypeTableMapping.Column p)
+		public static string SqlType (TableMapping.Column p)
 		{
 			var clrType = p.ColumnType;
 			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
@@ -436,20 +462,28 @@ namespace SQLite
 				throw SQLiteException.New (r, "Unknown error");
 			}
 		}
-
-		public IEnumerable<T> ExecuteQuery<T> () where T : new()
+		
+		public IEnumerable<T> ExecuteQuery<T> () where T : new()		
 		{
+			return ExecuteQuery(_conn.GetMapping(typeof(T))).Cast<T>();
+		}
+
+		public IEnumerable<object> ExecuteQuery (TableMapping map)
+		{
+			if (_conn.Trace) {
+				Console.WriteLine ("Executing Query: " + this);
+			}
+			
 			var stmt = Prepare ();
 			
-			var map = _conn.GetMapping(typeof(T));
-			var cols = new TypeTableMapping.Column[SQLite3.ColumnCount (stmt)];
+			var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 			for (int i = 0; i < cols.Length; i++) {
 				var name = Marshal.PtrToStringAuto(SQLite3.ColumnName (stmt, i));
 				cols[i] = map.FindColumn(name);
 			}
 			
 			while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-				var obj = new T ();
+				var obj = Activator.CreateInstance(map.MappedType);
 				for (int i = 0; i < cols.Length; i++) {
 					if (cols[i] == null)
 						continue;
