@@ -98,7 +98,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, ps);
 			if (Trace) {
-				Console.Error.WriteLine ("Executing: " + cmd);
+				Console.WriteLine ("Executing: " + cmd);
 			}
 			return cmd.ExecuteNonQuery ();
 		}
@@ -113,13 +113,12 @@ namespace SQLite
 		{
 			var c = 0;
 			foreach (var r in rows) {
-				Insert (r);
-				c++;
+				c += Insert (r);
 			}
 			return c;
 		}
 
-		public T Insert<T> (T obj)
+		public int Insert<T> (T obj)
 		{
 			var type = obj.GetType ();
 			var cols = Orm.GetColumns (type).Where(c => !Orm.IsAutoInc(c));
@@ -129,11 +128,12 @@ namespace SQLite
 			var vals = from c in cols
 				select c.GetValue (obj, null);
 			
-			Execute (q, vals.ToArray ());
+			var count = Execute (q, vals.ToArray ());
 			
 			var id = SQLite3.LastInsertRowid(_db);
 			Orm.SetAutoIncPK(obj, id);
-			return obj;
+			
+			return count;
 		}
 		
 		public void Delete<T>(T obj)
@@ -236,7 +236,7 @@ namespace SQLite
 		public static string SqlType (PropertyInfo p)
 		{
 			var clrType = p.PropertyType;
-			if (clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
+			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
 				return "integer";
 			} else if (clrType == typeof(UInt32) || clrType == typeof(Int64)) {
 				return "bigint";
@@ -368,6 +368,19 @@ namespace SQLite
 			
 			SQLite3.Finalize (stmt);
 		}
+		
+		public T ExecuteScalar<T>()
+		{
+			T val = default(T);
+
+			var stmt = Prepare();
+			if (SQLite3.Step(stmt) == SQLite3.Result.Row) {
+				val = (T)ReadCol(stmt, 0, typeof(T));
+			}
+			SQLite3.Finalize(stmt);
+
+			return val;
+		}
 
 		public void Bind (string name, object val)
 		{
@@ -409,6 +422,8 @@ namespace SQLite
 				} else {
 					if (b.Value is Byte || b.Value is UInt16 || b.Value is SByte || b.Value is Int16 || b.Value is Int32) {
 						SQLite3.BindInt (stmt, b.Index, Convert.ToInt32 (b.Value));
+					} else if (b.Value is Boolean) {
+						SQLite3.BindInt(stmt, b.Index, Convert.ToBoolean(b.Value) ? 1 : 0);
 					} else if (b.Value is UInt32 || b.Value is Int64) {
 						SQLite3.BindInt64 (stmt, b.Index, Convert.ToInt64 (b.Value));
 					} else if (b.Value is Single || b.Value is Double || b.Value is Decimal) {
@@ -437,6 +452,8 @@ namespace SQLite
 			} else {
 				if (clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
 					return Convert.ChangeType (SQLite3.ColumnInt (stmt, index), clrType);
+				} else if (clrType == typeof(Boolean)) {
+					return ((Byte)Convert.ChangeType (SQLite3.ColumnInt (stmt, index), typeof(Byte)) == 1);
 				} else if (clrType == typeof(UInt32) || clrType == typeof(Int64)) {
 					return Convert.ChangeType (SQLite3.ColumnInt64 (stmt, index), clrType);
 				} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {

@@ -4,8 +4,16 @@ DIST = sqlite-net-$(VER)
 CP = cp -Rf
 RM = rm -Rf
 
-all:
+all: examples tests	
+
+examples:
 	xbuild examples/Stocks/Stocks.csproj
+
+tests: SQLite.Tests.dll
+	nunit-console2 SQLite.Tests.dll
+
+SQLite.Tests.dll: tests/BooleanTest.cs src/SQLite.cs
+	gmcs tests/BooleanTest.cs src/SQLite.cs -r:NUnit.Framework -target:library -out:SQLite.Tests.dll
 
 dist:
 	rm -Rf $(DIST)
