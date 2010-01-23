@@ -41,21 +41,23 @@ namespace Stocks.Touch
 		{
 			Title = "Stocks";
 		}
-
+		
 		public override void ViewDidLoad ()
 		{
-			//base.ViewDidLoad ();
-			//var nav = ((UINavigationController)ParentViewController);
+			var ds = new TickersSource (Db);
+			
+			NavigationItem.BackBarButtonItem = new UIBarButtonItem ("Stocks", UIBarButtonItemStyle.Plain, (s, e) => { });
+			NavigationItem.RightBarButtonItem = new UIBarButtonItem ("Add", UIBarButtonItemStyle.Plain, (s, e) => { 
+				var c = new AddStockView(Db);
+				c.Finished += delegate() {
+					ds.Refresh(table);
+				};
+				NavigationController.PresentModalViewController(c, true);
+				table.ReloadData();
+			});
 
-			this.NavigationItem.BackBarButtonItem = new UIBarButtonItem ("Stocks", UIBarButtonItemStyle.Plain, (s, e) => { });
-			/*this.NavigationItem.RightBarButtonItem = new UIBarButtonItem ("Edit", UIBarButtonItemStyle.Plain, (s, e) => { 
-				servers.SetEditing (true, true);
-				((UIBarButtonItem)s).Title = "Save";
-			});*/
-
-			//button.TouchDown += (s, e) => { nav.PushViewController (new ServersView (), true); };
-			table.DataSource = new TickersSource (Db);
-
+			table.DataSource = ds;
+			table.SetEditing (true, true);
 		}
 
 		
@@ -69,6 +71,11 @@ namespace Stocks.Touch
 			public TickersSource(Database db) {
 				_db = db;
 				rows = _db.QueryAllStocks().ToList();
+			}
+			
+			public void Refresh(UITableView table) {
+				rows = _db.QueryAllStocks().ToList();
+				table.ReloadData();
 			}
 			
 			public override void MoveRow (UITableView tableView, NSIndexPath sourceIndexPath, NSIndexPath destinationIndexPath)				
@@ -87,6 +94,7 @@ namespace Stocks.Touch
 			{
 				switch (editingStyle) {
 				case UITableViewCellEditingStyle.Delete:
+					_db.Delete(rows[indexPath.Row]);
 					rows.RemoveAt(indexPath.Row);
 					tableView.DeleteRows(new[]{indexPath}, UITableViewRowAnimation.Fade);
 					break;

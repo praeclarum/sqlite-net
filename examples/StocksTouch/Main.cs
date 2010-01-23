@@ -22,7 +22,7 @@ namespace Stocks.Touch
 		UINavigationController _navigationController;
 
 		public override bool FinishedLaunching (UIApplication app, NSDictionary options)
-		{
+		{			
 			_db = new Database (Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "stocks.db"));
 			_db.Trace = true;
 			

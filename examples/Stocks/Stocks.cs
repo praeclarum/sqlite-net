@@ -58,6 +58,37 @@ namespace Stocks
 		{
 			return Query<Stock> ("select * from Stock order by Symbol");
 		}
+		
+		public void UpdateStock (string stockSymbol)
+		{
+			//
+			// Ensure that there is a valid Stock in the DB
+			//
+			var stock = QueryStock (stockSymbol);
+			if (stock == null) {
+				stock = new Stock { Symbol = stockSymbol };
+				Insert (stock);
+			}
+			
+			//
+			// When was it last valued?
+			//
+			var latest = QueryLatestValuation (stock);
+			var latestDate = latest != null ? latest.Time : new DateTime (1950, 1, 1);
+			
+			//
+			// Get the latest valuations
+			//
+			try {
+				var newVals = new YahooScraper ().GetValuations (stock, latestDate + TimeSpan.FromHours (23), DateTime.Now);
+				foreach (var v in newVals) {
+					Insert (v);
+				}
+			}
+			catch (System.Net.WebException ex) {
+				Console.WriteLine (ex);
+			}
+		}
 	}
 
 	public class YahooScraper
@@ -66,6 +97,7 @@ namespace Stocks
 		{
 			var t = "http://ichart.finance.yahoo.com/table.csv?s={0}&d={1}&e={2}&f={3}&g=d&a={4}&b={5}&c={6}&ignore=.csv";
 			var url = string.Format (t, stock.Symbol, end.Month - 1, end.Day, end.Year, start.Month - 1, start.Day, start.Year);
+			Console.WriteLine ("GET {0}", url);
 			var req = System.Net.WebRequest.Create (url);
 			using (var resp = new System.IO.StreamReader (req.GetResponse ().GetResponseStream ())) {
 				var first = true;

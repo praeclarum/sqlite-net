@@ -43,30 +43,7 @@ namespace Stocks.CommandLine
 
 		void UpdateStock (string stockSymbol)
 		{
-			//
-			// Ensure that there is a valid Stock in the DB
-			//
-			var stock = _db.QueryStock (stockSymbol);
-			if (stock == null) {
-				stock = new Stock { Symbol = stockSymbol };
-				_db.Insert (stock);
-			}
-			
-			//
-			// When was it last valued?
-			//
-			var latest = _db.QueryLatestValuation (stock);
-			var latestDate = latest != null ? latest.Time : new DateTime (1950, 1, 1);
-			
-			//
-			// Get the latest valuations
-			//
-			var newVals = new YahooScraper ().GetValuations (stock, latestDate + TimeSpan.FromHours (23), DateTime.Now);
-			foreach (var v in newVals) {
-				Console.Write(".");
-				_db.Insert (v);
-			}
-			Console.WriteLine();
+			_db.UpdateStock(stockSymbol);
 		}
 
 		void ListStocks ()
