@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009 Krueger Systems, Inc.
+// Copyright (c) 2009-2010 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,17 +43,19 @@ namespace SQLite
 
 	public class SQLiteConnection : IDisposable
 	{
-		private IntPtr _db;
 		private bool _open;
 		Dictionary<Guid, TypeTableMapping> _mappings = null;
 
-		public string DatabasePath { get; set; }
+		public IntPtr Handle { get; private set; }
+		public string DatabasePath { get; private set; }
 		public bool Trace { get; set; }
 
 		public SQLiteConnection (string databasePath)
 		{
 			DatabasePath = databasePath;
-			var r = SQLite3.Open (DatabasePath, out _db);
+			IntPtr handle;
+			var r = SQLite3.Open (DatabasePath, out handle);
+			Handle = handle;
 			if (r != SQLite3.Result.OK) {
 				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
 			}
@@ -65,7 +67,7 @@ namespace SQLite
 			if (!_open) {
 				throw SQLiteException.New (SQLite3.Result.Error, "Cannot create commands from unopened database");
 			} else {
-				var cmd = new SQLiteCommand (_db);
+				var cmd = new SQLiteCommand (this);
 				cmd.CommandText = cmdText;
 				foreach (var o in ps) {
 					cmd.Bind (o);
@@ -76,19 +78,19 @@ namespace SQLite
 
 		public int CreateTable<T> ()
 		{
-			var ty = typeof(T);
-			var query = "create table if not exists '" + ty.Name + "'(\n";
+			var map = GetMapping(typeof(T));
+			var query = "create table if not exists '" + map.TableName + "'(\n";
 			
-			var decls = Orm.GetColumns (ty).Select (p => Orm.SqlDecl (p));
+			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
 			query += ")";
 			
 			var count = Execute (query);
 			
-			foreach (var p in Orm.GetColumns (ty).Where (x => Orm.IsIndexed (x))) {
-				var indexName = ty.Name + "_" + p.Name;
-				var q = string.Format ("create index if not exists '{0}' on '{1}'('{2}')", indexName, ty.Name, p.Name);
+			foreach (var p in map.Columns.Where (x => x.IsIndexed)) {
+				var indexName = map.TableName + "_" + p.Name;
+				var q = string.Format ("create index if not exists '{0}' on '{1}'('{2}')", indexName, map.TableName, p.Name);
 				count += Execute (q);
 			}
 			
@@ -147,8 +149,8 @@ namespace SQLite
 		/// </returns>
 		public int InsertAll<T> (IEnumerable<T> objects)
 		{
-			var c = 0;
 			var map = GetMapping(typeof(T));
+			var c = 0;
 			foreach (var r in objects) {
 				c += Insert (r, map);
 			}
@@ -166,7 +168,7 @@ namespace SQLite
 			
 			var count = Execute (map.InsertSql, vals.ToArray ());
 			
-			var id = SQLite3.LastInsertRowid(_db);
+			var id = SQLite3.LastInsertRowid(Handle);
 			map.SetAutoIncPK(obj, id);
 			
 			return count;
@@ -174,15 +176,15 @@ namespace SQLite
 		
 		public void Delete<T>(T obj)
 		{
-			var type = obj.GetType ();
-			var pk = Orm.GetColumns (type).Where(c => Orm.IsPK(c)).FirstOrDefault();
+			var map = GetMapping(obj.GetType ());
+			var pk = map.PK;
 			if (pk == null) {
-				throw new NotSupportedException ("Cannot delete " + type.Name + ": it has no PK");
+				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}			
 			var q = string.Format("delete from '{0}' where '{1}' = ?",
-			                      type.Name,
+			                      map.TableName,
 			                      pk.Name);
-			Execute(q, pk.GetValue(obj, null));
+			Execute(q, pk.GetValue(obj));
 		}
 		
 		public T Get<T> (object pk) where T : new()
@@ -195,15 +197,15 @@ namespace SQLite
 		public int Update (object obj)
 		{
 			if (obj == null) { return 0; }
-
+			
 			var map = GetMapping(obj.GetType ());
-			var props = map.Columns;
+			
 			var pk = map.PK;
-
+			
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
-			var cols = from p in props
+			var cols = from p in map.Columns
 				where p != pk
 				select p;
 			var vals = from c in cols
@@ -220,8 +222,8 @@ namespace SQLite
 		public void Dispose ()
 		{
 			if (_open) {
-				SQLite3.Close (_db);
-				_db = IntPtr.Zero;
+				SQLite3.Close (Handle);
+				Handle = IntPtr.Zero;
 				_open = false;
 			}
 		}
@@ -284,6 +286,10 @@ namespace SQLite
 				return _insertColumns;
 			}
 		}
+		public Column FindColumn(string name) {
+			var exact = Columns.Where(c => c.Name == name).FirstOrDefault();
+			return exact;
+		}
 		public string InsertSql {
 			get {
 				if (_insertSql == null) {
@@ -300,6 +306,9 @@ namespace SQLite
 			public Type ColumnType { get; protected set; }
 			public bool IsAutoInc { get; protected set; }
 			public bool IsPK { get; protected set; }
+			public bool IsIndexed { get; protected set; }
+			public bool IsNullable { get; protected set; }
+			public int MaxStringLength { get; protected set; }
 			public abstract void SetValue(object obj, object val);
 			public abstract object GetValue(object obj);
 		}
@@ -311,6 +320,9 @@ namespace SQLite
 				ColumnType = prop.PropertyType;
 				IsAutoInc = Orm.IsAutoInc(prop);
 				IsPK = Orm.IsPK(prop);
+				IsIndexed = Orm.IsIndexed(prop);
+				IsNullable = !IsPK;
+				MaxStringLength = Orm.MaxStringLength(prop);
 			}
 			public override void SetValue(object obj, object val) {
 				_prop.SetValue(obj, val, null);
@@ -326,26 +338,26 @@ namespace SQLite
 	{
 		public const int DefaultMaxStringLength = 140;
 
-		public static string SqlDecl (PropertyInfo p)
+		public static string SqlDecl (TypeTableMapping.Column p)
 		{
 			string decl = "'" + p.Name + "' " + SqlType (p) + " ";
 			
-			if (IsPK (p)) {
+			if (p.IsPK) {
 				decl += "primary key ";
 			}
-			if (IsAutoInc (p)) {
+			if (p.IsAutoInc) {
 				decl += "autoincrement ";
 			}
-			if (!IsNullable (p)) {
+			if (!p.IsNullable) {
 				decl += "not null ";
 			}
 			
 			return decl;
 		}
 
-		public static string SqlType (PropertyInfo p)
+		public static string SqlType (TypeTableMapping.Column p)
 		{
-			var clrType = p.PropertyType;
+			var clrType = p.ColumnType;
 			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
 				return "integer";
 			} else if (clrType == typeof(UInt32) || clrType == typeof(Int64)) {
@@ -353,7 +365,7 @@ namespace SQLite
 			} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 				return "float";
 			} else if (clrType == typeof(String)) {
-				int len = MaxStringLength (p);
+				int len = p.MaxStringLength;
 				return "varchar(" + len + ")";
 			} else if (clrType == typeof(DateTime)) {
 				return "datetime";
@@ -380,11 +392,6 @@ namespace SQLite
 			return attrs.Length > 0;
 		}
 
-		public static bool IsNullable (PropertyInfo p)
-		{
-			return !IsPK (p);
-		}
-
 		public static int MaxStringLength (PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
@@ -394,37 +401,19 @@ namespace SQLite
 				return DefaultMaxStringLength;
 			}
 		}
-
-		public static System.Reflection.PropertyInfo GetPKo (Type t)
-		{
-			var props = GetColumns (t);
-			foreach (var p in props) {
-				if (IsPK (p))
-					return p;
-			}
-			return null;
-		}
-
-		public static IEnumerable<PropertyInfo> GetColumns (Type t)
-		{
-			var raw = t.GetProperties (BindingFlags.Public | BindingFlags.Instance);
-			return from p in raw
-				where p.CanWrite
-				select p;
-		}
 		
 	}
 
 	public class SQLiteCommand
 	{
-		private IntPtr _db;
+		SQLiteConnection _conn;
 		private List<Binding> _bindings;
 
 		public string CommandText { get; set; }
 
-		internal SQLiteCommand (IntPtr db)
+		internal SQLiteCommand (SQLiteConnection conn)
 		{
-			_db = db;
+			_conn = conn;
 			_bindings = new List<Binding> ();
 			CommandText = "";
 		}
@@ -435,11 +424,11 @@ namespace SQLite
 			
 			var r = SQLite3.Step (stmt);
 			if (r == SQLite3.Result.Error) {
-				string msg = SQLite3.Errmsg (_db);
+				string msg = SQLite3.Errmsg (_conn.Handle);
 				SQLite3.Finalize (stmt);
 				throw SQLiteException.New (r, msg);
 			} else if (r == SQLite3.Result.Done) {
-				int rowsAffected = SQLite3.Changes (_db);
+				int rowsAffected = SQLite3.Changes (_conn.Handle);
 				SQLite3.Finalize (stmt);
 				return rowsAffected;
 			} else {
@@ -452,11 +441,11 @@ namespace SQLite
 		{
 			var stmt = Prepare ();
 			
-			var props = Orm.GetColumns (typeof(T));
-			var cols = new System.Reflection.PropertyInfo[SQLite3.ColumnCount (stmt)];
+			var map = _conn.GetMapping(typeof(T));
+			var cols = new TypeTableMapping.Column[SQLite3.ColumnCount (stmt)];
 			for (int i = 0; i < cols.Length; i++) {
 				var name = Marshal.PtrToStringAuto(SQLite3.ColumnName (stmt, i));
-				cols[i] = MatchColProp (name, props);
+				cols[i] = map.FindColumn(name);
 			}
 			
 			while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
@@ -464,8 +453,8 @@ namespace SQLite
 				for (int i = 0; i < cols.Length; i++) {
 					if (cols[i] == null)
 						continue;
-					var val = ReadCol (stmt, i, cols[i].PropertyType);
-					cols[i].SetValue (obj, val, null);
+					var val = ReadCol (stmt, i, cols[i].ColumnType);
+					cols[i].SetValue (obj, val);
 				}
 				yield return obj;
 			}
@@ -505,7 +494,7 @@ namespace SQLite
 
 		IntPtr Prepare ()
 		{
-			var stmt = SQLite3.Prepare (_db, CommandText);
+			var stmt = SQLite3.Prepare (_conn.Handle, CommandText);
 			BindAll (stmt);
 			return stmt;
 		}
@@ -574,16 +563,6 @@ namespace SQLite
 			}
 		}
 
-
-		static System.Reflection.PropertyInfo MatchColProp (string colName, IEnumerable<PropertyInfo> props)
-		{
-			foreach (var p in props) {
-				if (p.Name == colName) {
-					return p;
-				}
-			}
-			return null;
-		}
 	}
 
 	public static class SQLite3
