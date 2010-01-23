@@ -336,7 +336,8 @@ namespace SQLite
 			var props = Orm.GetColumns (typeof(T));
 			var cols = new System.Reflection.PropertyInfo[SQLite3.ColumnCount (stmt)];
 			for (int i = 0; i < cols.Length; i++) {
-				cols[i] = MatchColProp (SQLite3.ColumnName (stmt, i), props);
+				var name = Marshal.PtrToStringAuto(SQLite3.ColumnName (stmt, i));
+				cols[i] = MatchColProp (name, props);
 			}
 			
 			while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
@@ -426,9 +427,11 @@ namespace SQLite
 				} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 					return Convert.ChangeType (SQLite3.ColumnDouble (stmt, index), clrType);
 				} else if (clrType == typeof(String)) {
-					return Convert.ChangeType (SQLite3.ColumnText (stmt, index), clrType);
+					var text = Marshal.PtrToStringAuto(SQLite3.ColumnText (stmt, index));
+					return text;
 				} else if (clrType == typeof(DateTime)) {
-					return Convert.ChangeType (SQLite3.ColumnText (stmt, index), clrType);
+					var text = Marshal.PtrToStringAuto(SQLite3.ColumnText (stmt, index));
+					return Convert.ChangeType (text, clrType);
 				} else {
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
@@ -506,7 +509,7 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_count")]
 		public static extern int ColumnCount (IntPtr stmt);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_name")]
-		public static extern string ColumnName (IntPtr stmt, int index);
+		public static extern IntPtr ColumnName (IntPtr stmt, int index);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_type")]
 		public static extern ColType ColumnType (IntPtr stmt, int index);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_int")]
@@ -516,7 +519,7 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_double")]
 		public static extern double ColumnDouble (IntPtr stmt, int index);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text")]
-		public static extern string ColumnText (IntPtr stmt, int index);
+		public static extern IntPtr ColumnText (IntPtr stmt, int index);
 
 		public enum ColType : int
 		{
