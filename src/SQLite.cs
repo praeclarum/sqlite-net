@@ -135,6 +135,20 @@ namespace SQLite
 			Orm.SetAutoIncPK(obj, id);
 			return obj;
 		}
+		
+		public void Delete<T>(T obj)
+		{
+			var type = obj.GetType ();
+			var pk = Orm.GetColumns (type).Where(c => Orm.IsPK(c)).FirstOrDefault();
+			if (pk == null) {
+				throw new ArgumentException("obj does not have a primary key");
+			}
+			
+			var q = string.Format("delete from '{0}' where '{1}' = ?",
+			                      type.Name,
+			                      pk.Name);
+			Execute(q, pk.GetValue(obj, null));
+		}
 
 		public T Get<T> (object pk) where T : new()
 		{
