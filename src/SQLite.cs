@@ -45,16 +45,17 @@ namespace SQLite
 	{
 		private IntPtr _db;
 		private bool _open;
+		Dictionary<Guid, TypeTableMapping> _mappings = null;
 
-		public string Database { get; set; }
+		public string DatabasePath { get; set; }
 		public bool Trace { get; set; }
 
-		public SQLiteConnection (string database)
+		public SQLiteConnection (string databasePath)
 		{
-			Database = database;
-			var r = SQLite3.Open (Database, out _db);
+			DatabasePath = databasePath;
+			var r = SQLite3.Open (DatabasePath, out _db);
 			if (r != SQLite3.Result.OK) {
-				throw SQLiteException.New (r, "Could not open database file: " + Database);
+				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
 			}
 			_open = true;
 		}
@@ -93,14 +94,40 @@ namespace SQLite
 			
 			return count;
 		}
+		
+		public TypeTableMapping GetMapping(Type type) {
+			if (_mappings == null) {
+				_mappings = new Dictionary<Guid, TypeTableMapping>();
+			}
+			TypeTableMapping map;
+			if (!_mappings.TryGetValue(type.GUID, out map)) {
+				map = new TypeTableMapping(type);
+				_mappings[type.GUID] = map;
+			}
+			return map;
+		}
+		
+		System.Diagnostics.Stopwatch _sw;
+		long _elapsedMilliseconds = 0;
 
 		public int Execute (string query, params object[] ps)
 		{
 			var cmd = CreateCommand (query, ps);
 			if (Trace) {
 				Console.WriteLine ("Executing: " + cmd);
+				if (_sw == null) {
+					_sw = new System.Diagnostics.Stopwatch();
+				}
+				_sw.Reset();
+				_sw.Start();
 			}
-			return cmd.ExecuteNonQuery ();
+			int r = cmd.ExecuteNonQuery ();
+			if (Trace) {
+				_sw.Stop();
+				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
+				Console.WriteLine ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds/1000.0);
+			}
+			return r;
 		}
 
 		public IEnumerable<T> Query<T> (string query, params object[] ps) where T : new()
@@ -109,29 +136,38 @@ namespace SQLite
 			return cmd.ExecuteQuery<T> ();
 		}
 
-		public int InsertAll<T> (IEnumerable<T> rows)
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// A <see cref="IEnumerable<T>"/> of objects to insert.
+		/// </param>
+		/// <returns>
+		/// A <see cref="System.Int32"/> of the number of rows added to the table.
+		/// </returns>
+		public int InsertAll<T> (IEnumerable<T> objects)
 		{
 			var c = 0;
-			foreach (var r in rows) {
-				c += Insert (r);
+			var map = GetMapping(typeof(T));
+			foreach (var r in objects) {
+				c += Insert (r, map);
 			}
 			return c;
 		}
 
 		public int Insert<T> (T obj)
 		{
-			var type = obj.GetType ();
-			var cols = Orm.GetColumns (type).Where(c => !Orm.IsAutoInc(c));
-			var q = string.Format ("insert into '{0}'({1}) values ({2})", type.Name, string.Join (",", (from c in cols
-				select "'" + c.Name + "'").ToArray ()), string.Join (",", (from c in cols
-				select "?").ToArray ()));
-			var vals = from c in cols
-				select c.GetValue (obj, null);
+			return Insert (obj, GetMapping(obj.GetType()));
+		}
+		public int Insert<T> (T obj, TypeTableMapping map)
+		{
+			var vals =	from c in map.InsertColumns
+						select c.GetValue (obj);
 			
-			var count = Execute (q, vals.ToArray ());
+			var count = Execute (map.InsertSql, vals.ToArray ());
 			
 			var id = SQLite3.LastInsertRowid(_db);
-			Orm.SetAutoIncPK(obj, id);
+			map.SetAutoIncPK(obj, id);
 			
 			return count;
 		}
@@ -148,37 +184,34 @@ namespace SQLite
 			                      pk.Name);
 			Execute(q, pk.GetValue(obj, null));
 		}
-
+		
 		public T Get<T> (object pk) where T : new()
 		{
-			string query = string.Format ("select * from '{0}' where '{1}'=?", typeof(T).Name, Orm.GetPK (typeof(T)).Name);
+			var map = GetMapping(typeof(T));
+			string query = string.Format ("select * from '{0}' where '{1}' = ?", map.TableName, map.PK.Name);
 			return Query<T> (query, pk).First ();
 		}
 
 		public int Update (object obj)
 		{
-			if (obj == null)
-				return 0;
-			return Update (obj.GetType ().Name, obj);
-		}
+			if (obj == null) { return 0; }
 
-		public int Update (string name, object obj)
-		{
-			var type = obj.GetType ();
-			var props = Orm.GetColumns (type);
-			var pk = Orm.GetPK (type);
+			var map = GetMapping(obj.GetType ());
+			var props = map.Columns;
+			var pk = map.PK;
+
 			if (pk == null) {
-				throw new NotSupportedException ("Cannot update " + name + ": it has no PK");
+				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
 			var cols = from p in props
 				where p != pk
 				select p;
 			var vals = from c in cols
-				select c.GetValue (obj, null);
+				select c.GetValue (obj);
 			var ps = new List<object> (vals);
-			ps.Add(pk.GetValue(obj, null)); 
+			ps.Add(pk.GetValue(obj)); 
 			var q = string.Format("update '{0}' set {1} where {2} = ? ",
-			    type.Name,
+			    map.TableName,
 			    string.Join(",", (from c in cols select "'" + c.Name + "' = ? ").ToArray()),
 			    pk.Name); 
 			return Execute (q, ps.ToArray ());
@@ -211,6 +244,83 @@ namespace SQLite
 			Value = length;
 		}
 	}
+	
+	public class TypeTableMapping {
+		public Type MappedType { get; private set; }
+		public Column[] Columns { get; private set; }
+		
+		public TypeTableMapping(Type type) {
+			MappedType = type;
+			TableName = MappedType.Name;
+			var props = MappedType.GetProperties();
+			Columns = new Column[props.Length];
+			for (int i = 0; i < props.Length; i++) {
+				Columns[i] = new PropColumn(props[i]);
+			}
+			foreach (var c in Columns) {
+				if (c.IsAutoInc && c.IsPK) {
+					_autoPk = c;
+				}
+				if (c.IsPK) {
+					PK = c;
+				}
+			}
+		}
+		public string TableName { get; private set; }
+		public Column PK { get; private set; }
+		Column _autoPk = null;
+		public void SetAutoIncPK(object obj, long id) {
+			if (_autoPk != null) {
+				_autoPk.SetValue(obj, Convert.ChangeType(id, _autoPk.ColumnType));
+			}
+		}
+		string _insertSql = null;
+		Column[] _insertColumns = null;
+		public Column[] InsertColumns {
+			get {
+				if (_insertColumns == null) {
+					_insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray();
+				}
+				return _insertColumns;
+			}
+		}
+		public string InsertSql {
+			get {
+				if (_insertSql == null) {
+					var cols = InsertColumns;
+					_insertSql = string.Format ("insert into '{0}'({1}) values ({2})", TableName, string.Join (",", (from c in cols
+						select "'" + c.Name + "'").ToArray ()), string.Join (",", (from c in cols
+						select "?").ToArray ()));
+				}
+				return _insertSql;
+			}
+		}
+		public abstract class Column {
+			public string Name { get; protected set; }
+			public Type ColumnType { get; protected set; }
+			public bool IsAutoInc { get; protected set; }
+			public bool IsPK { get; protected set; }
+			public abstract void SetValue(object obj, object val);
+			public abstract object GetValue(object obj);
+		}
+		public class PropColumn : Column {
+			PropertyInfo _prop;
+			public PropColumn(PropertyInfo prop) {
+				_prop = prop;
+				Name = prop.Name;
+				ColumnType = prop.PropertyType;
+				IsAutoInc = Orm.IsAutoInc(prop);
+				IsPK = Orm.IsPK(prop);
+			}
+			public override void SetValue(object obj, object val) {
+				_prop.SetValue(obj, val, null);
+			}
+			public override object GetValue(object obj) {
+				return _prop.GetValue(obj, null);
+			}
+		}
+	}
+
 
 	public static class Orm
 	{
@@ -252,19 +362,19 @@ namespace SQLite
 			}
 		}
 
-		public static bool IsPK (PropertyInfo p)
+		public static bool IsPK (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
 			return attrs.Length > 0;
 		}
 
-		public static bool IsAutoInc (PropertyInfo p)
+		public static bool IsAutoInc (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
 			return attrs.Length > 0;
 		}
 
-		public static bool IsIndexed (PropertyInfo p)
+		public static bool IsIndexed (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(IndexedAttribute), true);
 			return attrs.Length > 0;
@@ -285,7 +395,7 @@ namespace SQLite
 			}
 		}
 
-		public static System.Reflection.PropertyInfo GetPK (Type t)
+		public static System.Reflection.PropertyInfo GetPKo (Type t)
 		{
 			var props = GetColumns (t);
 			foreach (var p in props) {
@@ -303,12 +413,6 @@ namespace SQLite
 				select p;
 		}
 		
-		public static void SetAutoIncPK(object obj, long id) {
-			var pk = GetPK(obj.GetType());
-			if (pk != null && IsAutoInc(pk)) {
-				pk.SetValue(obj, Convert.ChangeType(id, pk.PropertyType), null);
-			}
-		}
 	}
 
 	public class SQLiteCommand
