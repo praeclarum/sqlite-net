@@ -50,6 +50,8 @@ namespace SQLite
 
 		public IntPtr Handle { get; private set; }
 		public string DatabasePath { get; private set; }
+		
+		public bool TimeExecution { get; set; }
 		public bool Trace { get; set; }
 
 		public SQLiteConnection (string databasePath)
@@ -139,18 +141,23 @@ namespace SQLite
 			var cmd = CreateCommand (query, ps);
 			if (Trace) {
 				Console.WriteLine ("Executing: " + cmd);
+			}
+			if (TimeExecution) {
 				if (_sw == null) {
 					_sw = new System.Diagnostics.Stopwatch ();
 				}
 				_sw.Reset ();
 				_sw.Start ();
 			}
+			
 			int r = cmd.ExecuteNonQuery ();
-			if (Trace) {
+			
+			if (TimeExecution) {
 				_sw.Stop ();
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
 				Console.WriteLine ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0);
 			}
+			
 			return r;
 		}
 
@@ -408,6 +415,8 @@ namespace SQLite
 				return "varchar(" + len + ")";
 			} else if (clrType == typeof(DateTime)) {
 				return "datetime";
+			} else if (clrType.IsEnum) {
+				return "integer";
 			} else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -560,6 +569,7 @@ namespace SQLite
 				if (b.Value == null) {
 					SQLite3.BindNull (stmt, b.Index);
 				} else {
+					var bty = b.Value.GetType();
 					if (b.Value is Byte || b.Value is UInt16 || b.Value is SByte || b.Value is Int16 || b.Value is Int32) {
 						SQLite3.BindInt (stmt, b.Index, Convert.ToInt32 (b.Value));
 					} else if (b.Value is Boolean) {
@@ -572,7 +582,10 @@ namespace SQLite
 						SQLite3.BindText (stmt, b.Index, b.Value.ToString (), -1, new IntPtr (-1));
 					} else if (b.Value is DateTime) {
 						SQLite3.BindText (stmt, b.Index, ((DateTime)b.Value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, new IntPtr (-1));
+					} else if (bty.IsEnum) {
+						SQLite3.BindInt (stmt, b.Index, Convert.ToInt32 (b.Value));
 					}
+					
 				}
 			}
 		}
@@ -604,6 +617,8 @@ namespace SQLite
 				} else if (clrType == typeof(DateTime)) {
 					var text = Marshal.PtrToStringAuto (SQLite3.ColumnText (stmt, index));
 					return Convert.ChangeType (text, clrType);
+				} else if (clrType.IsEnum) {
+					return SQLite3.ColumnInt (stmt, index);
 				} else {
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
@@ -765,11 +780,11 @@ namespace SQLite
 			} else if (expr is UnaryExpression) {
 				var u = (UnaryExpression)expr;
 				if (u.NodeType == ExpressionType.Convert) {
-					var ty = u.Method.ReturnType;
+					var ty = u.Type;
 					var valr = CompileExpr (u.Operand, queryArgs);
 					return new CompileResult {
 						CommandText = valr.CommandText,
-						Value = Convert.ChangeType (valr.Value, ty)
+						Value = valr.Value != null ? Convert.ChangeType (valr.Value, ty) : null
 					};
 				}
 				throw new NotSupportedException ("Unary: " + expr.NodeType.ToString ());
