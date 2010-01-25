@@ -28,10 +28,10 @@ namespace Stocks
 		public int StockId { get; set; }
 		public DateTime Time { get; set; }
 		public decimal Price { get; set; }
-		
+
 		public override string ToString ()
 		{
-			return string.Format("{0:MMM dd yy}    {1:C}", Time, Price);
+			return string.Format ("{0:MMM dd yy}    {1:C}", Time, Price);
 		}
 	}
 
@@ -44,21 +44,21 @@ namespace Stocks
 		}
 		public IEnumerable<Valuation> QueryValuations (Stock stock)
 		{
-			return Query<Valuation> ("select * from Valuation where StockId = ?", stock.Id);
+			return Table<Valuation> ().Where(x => x.StockId == stock.Id);
 		}
 		public Valuation QueryLatestValuation (Stock stock)
 		{
-			return Query<Valuation> ("select * from Valuation where StockId = ? order by Time desc limit 1", stock.Id).FirstOrDefault ();
+			return Table<Valuation> ().Where(x => x.StockId == stock.Id).OrderBy(x => x.Time).Take(1).FirstOrDefault();
 		}
 		public Stock QueryStock (string stockSymbol)
 		{
-			return Query<Stock> ("select * from Stock where Symbol = ?", stockSymbol).FirstOrDefault ();
+			return Table<Stock> ().Where (x => x.Symbol == stockSymbol).FirstOrDefault ();
 		}
 		public IEnumerable<Stock> QueryAllStocks ()
 		{
-			return Query<Stock> ("select * from Stock order by Symbol");
+			return Table<Stock> ().OrderBy (x => x.Symbol);
 		}
-		
+
 		public void UpdateStock (string stockSymbol)
 		{
 			//
@@ -84,8 +84,7 @@ namespace Stocks
 				foreach (var v in newVals) {
 					Insert (v);
 				}
-			}
-			catch (System.Net.WebException ex) {
+			} catch (System.Net.WebException ex) {
 				Console.WriteLine (ex);
 			}
 		}

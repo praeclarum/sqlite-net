@@ -5,6 +5,7 @@ using System.Linq;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using Path = System.IO.Path;
+using SQLite;
 
 namespace Stocks.Touch
 {

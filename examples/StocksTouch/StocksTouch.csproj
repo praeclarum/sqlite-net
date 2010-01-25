@@ -73,13 +73,13 @@
     <Compile Include="StocksView.xib.designer.cs">
       <DependentUpon>StocksView.xib</DependentUpon>
     </Compile>
-    <Compile Include="QueryCompiler.cs" />
     <Compile Include="AddStockView.xib.cs">
       <DependentUpon>AddStockView.xib</DependentUpon>
     </Compile>
     <Compile Include="AddStockView.xib.designer.cs">
       <DependentUpon>AddStockView.xib</DependentUpon>
     </Compile>
+    <Compile Include="..\..\src\SQLite.MonoTouchAdmin.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainWindow.xib" />

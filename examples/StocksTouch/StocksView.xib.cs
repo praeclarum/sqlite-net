@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using SQLite.MonoTouchAdmin;
 
 
 namespace Stocks.Touch
@@ -54,6 +55,10 @@ namespace Stocks.Touch
 				};
 				NavigationController.PresentModalViewController(c, true);
 				table.ReloadData();
+			});
+			NavigationItem.LeftBarButtonItem = new UIBarButtonItem ("Admin", UIBarButtonItemStyle.Plain, (s, e) => { 
+				var c = new SQLiteAdmin(Db);
+				NavigationController.PushViewController(c.NewTablesViewController(), true);
 			});
 
 			table.DataSource = ds;
