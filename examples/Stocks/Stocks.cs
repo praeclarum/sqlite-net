@@ -52,11 +52,15 @@ namespace Stocks
 		}
 		public Stock QueryStock (string stockSymbol)
 		{
-			return Table<Stock> ().Where (x => x.Symbol == stockSymbol).FirstOrDefault ();
+			return	(from s in Table<Stock> ()
+					where s.Symbol == stockSymbol
+					select s).FirstOrDefault ();
 		}
 		public IEnumerable<Stock> QueryAllStocks ()
 		{
-			return Table<Stock> ().OrderBy (x => x.Symbol);
+			return	from s in Table<Stock> ()
+					orderby s.Symbol
+					select s;
 		}
 
 		public void UpdateStock (string stockSymbol)
