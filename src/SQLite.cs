@@ -100,7 +100,7 @@ namespace SQLite
 				map = GetMapping(ty);
 				_tables.Add(ty.FullName, map);
 			}
-			var query = "create table if not exists '" + map.TableName + "'(\n";
+			var query = "create table if not exists \"" + map.TableName + "\"(\n";
 			
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
 			var decl = string.Join (",\n", decls.ToArray ());
@@ -111,7 +111,7 @@ namespace SQLite
 			
 			foreach (var p in map.Columns.Where (x => x.IsIndexed)) {
 				var indexName = map.TableName + "_" + p.Name;
-				var q = string.Format ("create index if not exists '{0}' on '{1}'('{2}')", indexName, map.TableName, p.Name);
+				var q = string.Format ("create index if not exists \"{0}\" on \"{1}\"(\"{2}\")", indexName, map.TableName, p.Name);
 				count += Execute (q);
 			}
 			
@@ -207,7 +207,7 @@ namespace SQLite
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}			
-			var q = string.Format("delete from '{0}' where '{1}' = ?",
+			var q = string.Format("delete from \"{0}\" where \"{1}\" = ?",
 			                      map.TableName,
 			                      pk.Name);
 			Execute(q, pk.GetValue(obj));
@@ -216,7 +216,7 @@ namespace SQLite
 		public T Get<T> (object pk) where T : new()
 		{
 			var map = GetMapping(typeof(T));
-			string query = string.Format ("select * from '{0}' where '{1}' = ?", map.TableName, map.PK.Name);
+			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
 			return Query<T> (query, pk).First ();
 		}
 
@@ -238,9 +238,9 @@ namespace SQLite
 				select c.GetValue (obj);
 			var ps = new List<object> (vals);
 			ps.Add(pk.GetValue(obj)); 
-			var q = string.Format("update '{0}' set {1} where {2} = ? ",
+			var q = string.Format("update \"{0}\" set {1} where {2} = ? ",
 			    map.TableName,
-			    string.Join(",", (from c in cols select "'" + c.Name + "' = ? ").ToArray()),
+			    string.Join(",", (from c in cols select "\"" + c.Name + "\" = ? ").ToArray()),
 			    pk.Name); 
 			return Execute (q, ps.ToArray ());
 		}
@@ -320,8 +320,8 @@ namespace SQLite
 			get {
 				if (_insertSql == null) {
 					var cols = InsertColumns;
-					_insertSql = string.Format ("insert into '{0}'({1}) values ({2})", TableName, string.Join (",", (from c in cols
-						select "'" + c.Name + "'").ToArray ()), string.Join (",", (from c in cols
+					_insertSql = string.Format ("insert into \"{0}\"({1}) values ({2})", TableName, string.Join (",", (from c in cols
+						select "\"" + c.Name + "\"").ToArray ()), string.Join (",", (from c in cols
 						select "?").ToArray ()));
 				}
 				return _insertSql;
@@ -366,7 +366,7 @@ namespace SQLite
 
 		public static string SqlDecl (TableMapping.Column p)
 		{
-			string decl = "'" + p.Name + "' " + SqlType (p) + " ";
+			string decl = "\"" + p.Name + "\" " + SqlType (p) + " ";
 			
 			if (p.IsPK) {
 				decl += "primary key ";
