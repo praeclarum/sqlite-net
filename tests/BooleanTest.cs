@@ -50,7 +50,7 @@ namespace SQLite.Tests
             var db = new DbAcs(tmpFile);         
             db.buildTable();
             for (int i = 0; i < 10; i++)
-                db.Insert<VO>(new VO() { Flag = (i % 3 == 0), Text = String.Format("VO{0}", i) });                
+                db.Insert(new VO() { Flag = (i % 3 == 0), Text = String.Format("VO{0}", i) });                
             
             // count vo which flag is true            
             Assert.AreEqual(4, db.CountWithFlag(true));

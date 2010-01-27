@@ -20,6 +20,7 @@ dist:
 	rm -Rf $(DIST).zip
 	mkdir $(DIST)
 	cp -Rf src/SQLite.cs $(DIST)/
+	cp -Rf src/SQLite.MonoTouchAdmin.cs $(DIST)/
 	cp -Rf readme.txt $(DIST)/
 	rm -Rf $(DIST)/src/.svn
 	cp -Rf examples $(DIST)/
