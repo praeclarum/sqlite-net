@@ -343,6 +343,7 @@ namespace SQLite
 			
 			var id = SQLite3.LastInsertRowid (Handle);
 			map.SetAutoIncPK (obj, id);
+			map.SetConnection (obj, this);
 			
 			return count;
 		}
@@ -371,6 +372,9 @@ namespace SQLite
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
+			
+			map.SetConnection(obj, this);
+			
 			var cols = from p in map.Columns
 				where p != pk
 				select p;
@@ -396,6 +400,7 @@ namespace SQLite
 		{
 			var map = GetMapping (obj.GetType ());
 			var pk = map.PK;
+			map.SetConnection(obj, null);
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
@@ -434,19 +439,34 @@ namespace SQLite
 	public class TableMapping
 	{
 		public Type MappedType { get; private set; }
+		public string TableName { get; private set; }
+		
 		public Column[] Columns { get; private set; }
+		public Column PK { get; private set; }
+		Column _autoPk = null;
+		Column[] _insertColumns = null;
+		
+		string _insertSql = null;
+
+		PropertyInfo _connectionProp = null;
 
 		public TableMapping (Type type)
 		{
 			MappedType = type;
 			TableName = MappedType.Name;
 			var props = MappedType.GetProperties ();
-			Columns = new Column[props.Length];
-			for (int i = 0; i < props.Length; i++) {
-				if (props[i].CanWrite) {
-					Columns[i] = new PropColumn (props[i]);
+			var cols = new List<Column>();
+			foreach (var p in props) {
+				if (p.CanWrite) {					
+					if (p.PropertyType.IsSubclassOf(typeof(SQLiteConnection))) {
+						_connectionProp = p;
+					}
+					else {
+						cols.Add(new PropColumn (p));
+					}
 				}
 			}
+			Columns = cols.ToArray();
 			foreach (var c in Columns) {
 				if (c.IsAutoInc && c.IsPK) {
 					_autoPk = c;
@@ -456,17 +476,20 @@ namespace SQLite
 				}
 			}
 		}
-		public string TableName { get; private set; }
-		public Column PK { get; private set; }
-		Column _autoPk = null;
+		
+		public void SetConnection(object obj, SQLiteConnection conn) {
+			if (_connectionProp != null) {
+				_connectionProp.SetValue(obj, conn, null);
+			}
+		}
+		
 		public void SetAutoIncPK (object obj, long id)
 		{
 			if (_autoPk != null) {
 				_autoPk.SetValue (obj, Convert.ChangeType (id, _autoPk.ColumnType));
 			}
 		}
-		string _insertSql = null;
-		Column[] _insertColumns = null;
+
 		public Column[] InsertColumns {
 			get {
 				if (_insertColumns == null) {
@@ -655,6 +678,7 @@ namespace SQLite
 			
 			while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
 				var obj = Activator.CreateInstance (map.MappedType);
+				map.SetConnection(obj, _conn);
 				for (int i = 0; i < cols.Length; i++) {
 					if (cols[i] == null)
 						continue;

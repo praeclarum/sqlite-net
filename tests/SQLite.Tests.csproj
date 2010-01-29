@@ -40,5 +40,6 @@
     <Compile Include="..\src\SQLite.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
+    <Compile Include="ConnectionTrackingTest.cs" />
   </ItemGroup>
 </Project>
