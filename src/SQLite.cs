@@ -57,6 +57,7 @@ namespace SQLite
 		public IntPtr Handle { get; private set; }
 		public string DatabasePath { get; private set; }
 
+        public int MaxExecuteAttempts { get; set; }
 		public bool TimeExecution { get; set; }
 		public bool Trace { get; set; }
 
@@ -68,6 +69,7 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (string databasePath)
 		{
+            MaxExecuteAttempts = 10;
 			DatabasePath = databasePath;
 			IntPtr handle;
 			var r = SQLite3.Open (DatabasePath, out handle);
@@ -640,21 +642,26 @@ namespace SQLite
 
 		public int ExecuteNonQuery ()
 		{
-			var stmt = Prepare ();
-			
-			var r = SQLite3.Step (stmt);
-			if (r == SQLite3.Result.Error) {
-				string msg = SQLite3.Errmsg (_conn.Handle);
-				SQLite3.Finalize (stmt);
-				throw SQLiteException.New (r, msg);
-			} else if (r == SQLite3.Result.Done) {
-				int rowsAffected = SQLite3.Changes (_conn.Handle);
-				SQLite3.Finalize (stmt);
-				return rowsAffected;
-			} else {
-				SQLite3.Finalize (stmt);
-				throw SQLiteException.New (r, "Unknown error");
+            var r = SQLite3.Result.OK;			
+            for (int i = 0; i < _conn.MaxExecuteAttempts; i++) {
+                var stmt = Prepare();
+			    r = SQLite3.Step (stmt);
+                SQLite3.Finalize(stmt);
+			    if (r == SQLite3.Result.Error) {
+				    string msg = SQLite3.Errmsg (_conn.Handle);
+				    throw SQLiteException.New (r, msg);
+			    } else if (r == SQLite3.Result.Done) {
+				    int rowsAffected = SQLite3.Changes (_conn.Handle);
+				    return rowsAffected;
+                } else if (r == SQLite3.Result.Busy) {
+                    // We will retry
+                    System.Threading.Thread.Sleep(1000);
+                }
+                else {
+                    throw SQLiteException.New(r, r.ToString());
+                }
 			}
+            throw SQLiteException.New(r, r.ToString());
 		}
 
 		public IEnumerable<T> ExecuteQuery<T> () where T : new()
@@ -1046,6 +1053,17 @@ namespace SQLite
 		{
 			OK = 0,
 			Error = 1,
+            Internal = 2,
+            Perm = 3,
+            Abort = 4,
+            Busy = 5,
+            Locked = 6,
+            NoMem = 7,
+            ReadOnly = 8,
+            Interrupt = 9,
+            IOError = 10,
+            Corrupt = 11,
+            NotFound = 12,
 			Row = 100,
 			Done = 101
 		}
