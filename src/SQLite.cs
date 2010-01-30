@@ -679,7 +679,7 @@ namespace SQLite
 			
 			var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 			for (int i = 0; i < cols.Length; i++) {
-				var name = Marshal.PtrToStringAuto (SQLite3.ColumnName (stmt, i));
+				var name = Marshal.PtrToStringUni(SQLite3.ColumnName16 (stmt, i));
 				cols[i] = map.FindColumn (name);
 			}
 			
@@ -792,10 +792,10 @@ namespace SQLite
 				} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 					return Convert.ChangeType (SQLite3.ColumnDouble (stmt, index), clrType);
 				} else if (clrType == typeof(String)) {
-					var text = Marshal.PtrToStringAuto (SQLite3.ColumnText (stmt, index));
+					var text = Marshal.PtrToStringUni (SQLite3.ColumnText16 (stmt, index));
 					return text;
 				} else if (clrType == typeof(DateTime)) {
-					var text = Marshal.PtrToStringAuto (SQLite3.ColumnText (stmt, index));
+					var text = Marshal.PtrToStringUni (SQLite3.ColumnText16 (stmt, index));
 					return Convert.ChangeType (text, clrType);
 				} else if (clrType.IsEnum) {
 					return SQLite3.ColumnInt (stmt, index);
@@ -1064,6 +1064,8 @@ namespace SQLite
             IOError = 10,
             Corrupt = 11,
             NotFound = 12,
+            TooBig = 18,
+            Constraint = 19,
 			Row = 100,
 			Done = 101
 		}
@@ -1127,6 +1129,8 @@ namespace SQLite
 		public static extern int ColumnCount (IntPtr stmt);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_name")]
 		public static extern IntPtr ColumnName (IntPtr stmt, int index);
+        [DllImport("sqlite3", EntryPoint = "sqlite3_column_name16")]
+        public static extern IntPtr ColumnName16(IntPtr stmt, int index);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_type")]
 		public static extern ColType ColumnType (IntPtr stmt, int index);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_int")]
@@ -1137,6 +1141,8 @@ namespace SQLite
 		public static extern double ColumnDouble (IntPtr stmt, int index);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text")]
 		public static extern IntPtr ColumnText (IntPtr stmt, int index);
+        [DllImport("sqlite3", EntryPoint = "sqlite3_column_text16")]
+        public static extern IntPtr ColumnText16(IntPtr stmt, int index);
 
 		public enum ColType : int
 		{
