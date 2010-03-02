@@ -648,7 +648,7 @@ namespace SQLite
 			    r = SQLite3.Step (stmt);
                 SQLite3.Finalize(stmt);
 			    if (r == SQLite3.Result.Error) {
-				    string msg = SQLite3.Errmsg (_conn.Handle);
+				    string msg = SQLite3.GetErrmsg (_conn.Handle);
 				    throw SQLiteException.New (r, msg);
 			    } else if (r == SQLite3.Result.Done) {
 				    int rowsAffected = SQLite3.Changes (_conn.Handle);
@@ -1094,7 +1094,7 @@ namespace SQLite
 			IntPtr stmt;
 			var r = Prepare (db, query, query.Length, out stmt, IntPtr.Zero);
 			if (r != Result.OK) {
-				throw SQLiteException.New (r, Errmsg (db));
+				throw SQLiteException.New (r, GetErrmsg (db));
 			}
 			return stmt;
 		}
@@ -1108,8 +1108,11 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_last_insert_rowid")]
 		public static extern long LastInsertRowid (IntPtr db);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_errmsg")]
-		public static extern string Errmsg (IntPtr db);
+		[DllImport("sqlite3", EntryPoint = "sqlite3_errmsg16")]
+		public static extern IntPtr Errmsg (IntPtr db);
+		public static string GetErrmsg (IntPtr db) {
+			return Marshal.PtrToStringUni (Errmsg(db));
+		}
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_parameter_index")]
 		public static extern int BindParameterIndex (IntPtr stmt, string name);
