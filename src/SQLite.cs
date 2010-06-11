@@ -451,7 +451,12 @@ namespace SQLite
 
 		public void Dispose ()
 		{
-			if (_open) {
+			Close ();
+		}
+
+		public void Close ()
+		{
+			if (_open && Handle != IntPtr.Zero) {
 				SQLite3.Close (Handle);
 				Handle = IntPtr.Zero;
 				_open = false;
@@ -825,7 +830,7 @@ namespace SQLite
 				return null;
 			} else {
 				if (clrType == typeof(String)) {
-					return SQLite3.ColumnString(stmt, index);
+					return SQLite3.ColumnString (stmt, index);
 				} else if (clrType == typeof(Int32)) {
 					return (int)SQLite3.ColumnInt (stmt, index);
 				} else if (clrType == typeof(Boolean)) {
@@ -835,7 +840,7 @@ namespace SQLite
 				} else if (clrType == typeof(float)) {
 					return (float)SQLite3.ColumnDouble (stmt, index);
 				} else if (clrType == typeof(DateTime)) {
-					var text = SQLite3.ColumnString(stmt, index);
+					var text = SQLite3.ColumnString (stmt, index);
 					return DateTime.Parse (text);
 				} else if (clrType.IsEnum) {
 					return SQLite3.ColumnInt (stmt, index);
@@ -998,7 +1003,9 @@ namespace SQLite
 
 		private CompileResult CompileExpr (Expression expr, List<object> queryArgs)
 		{
-			if (expr is BinaryExpression) {
+			if (expr == null) {
+				throw new NotSupportedException ("Expression is NULL");
+			} else if (expr is BinaryExpression) {
 				var bin = (BinaryExpression)expr;
 				
 				var leftr = CompileExpr (bin.Left, queryArgs);
@@ -1006,17 +1013,29 @@ namespace SQLite
 				
 				var text = "(" + leftr.CommandText + " " + GetSqlName (bin) + " " + rightr.CommandText + ")";
 				return new CompileResult { CommandText = text };
+			} else if (expr.NodeType == ExpressionType.Call) {
+				
+				var call = (MethodCallExpression)expr;
+				var args = new CompileResult[call.Arguments.Count];
+				
+				for (var i = 0; i < args.Length; i++) {
+					args[i] = CompileExpr (call.Arguments[i], queryArgs);
+				}
+				
+				var sqlCall = "";
+				
+				if (call.Method.Name == "Like" && args.Length == 2) {
+					sqlCall = "(" + args[0].CommandText + " like " + args[1].CommandText + ")";
+				} else {
+					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
+				}
+				return new CompileResult { CommandText = sqlCall };
+				
 			} else if (expr.NodeType == ExpressionType.Constant) {
 				var c = (ConstantExpression)expr;
-				var val = c.Value;
-				string t;
-				if (val is string) {
-					t = "'" + val.ToString ().Replace ("'", "''") + "'";
-				} else {
-					t = val.ToString ();
-				}
+				queryArgs.Add (c.Value);
 				return new CompileResult {
-					CommandText = t,
+					CommandText = "?",
 					Value = c.Value
 				};
 			} else if (expr.NodeType == ExpressionType.Convert) {
@@ -1036,11 +1055,17 @@ namespace SQLite
 					//
 					return new CompileResult { CommandText = "\"" + mem.Member.Name + "\"" };
 				} else {
-					var r = CompileExpr (mem.Expression, queryArgs);
-					if (r.Value == null) {
-						throw new NotSupportedException ("Member access failed to compile expression");
+					object obj = null;
+					if (mem.Expression != null) {
+						var r = CompileExpr (mem.Expression, queryArgs);
+						if (r.Value == null) {
+							throw new NotSupportedException ("Member access failed to compile expression");
+						}
+						if (r.CommandText == "?") {
+							queryArgs.RemoveAt (queryArgs.Count - 1);
+						}
+						obj = r.Value;
 					}
-					var obj = r.Value;
 					
 					if (mem.Member.MemberType == MemberTypes.Property) {
 						var m = (PropertyInfo)mem.Member;
@@ -1205,7 +1230,8 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text16")]
 		public static extern IntPtr ColumnText16 (IntPtr stmt, int index);
 
-		public static string ColumnString(IntPtr stmt, int index) {
+		public static string ColumnString (IntPtr stmt, int index)
+		{
 			return Marshal.PtrToStringUni (SQLite3.ColumnText16 (stmt, index));
 		}
 
