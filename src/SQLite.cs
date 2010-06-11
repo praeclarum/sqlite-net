@@ -308,19 +308,65 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
+		/// </summary>
+		public bool IsInTransaction { get; private set; }
+
+		/// <summary>
 		/// Begins a new transaction. Call <see cref="Commit"/> to end the transaction.
 		/// </summary>
 		public void BeginTransaction ()
 		{
-			Execute ("begin transaction");
+			if (!IsInTransaction) {
+				Execute ("begin transaction");
+				IsInTransaction = true;
+			}
 		}
 
 		/// <summary>
-		/// Commits the current transaction that was begun by <see cref="BeginTransaction"/>.
+		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/>.
+		/// </summary>
+		public void Rollback ()
+		{
+			if (IsInTransaction) {
+				Execute ("rollback");
+				IsInTransaction = false;
+			}
+		}
+
+		/// <summary>
+		/// Commits the transaction that was begun by <see cref="BeginTransaction"/>.
 		/// </summary>
 		public void Commit ()
 		{
-			Execute ("commit");
+			if (IsInTransaction) {
+				Execute ("commit");
+				IsInTransaction = false;
+			}
+		}
+
+		/// <summary>
+		/// Executes <param name="action"> within a transaction and automatically rollsback the transaction
+		/// if an exception occurs. The exception is rethrown.
+		/// </summary>
+		/// <param name="action">
+		/// The <see cref="Action"/> to perform within a transaction. <param name="action"> can contain any number
+		/// of operations on the connection but should never call <see cref="BeginTransaction"/>,
+		/// <see cref="Rollback"/>, or <see cref="Commit"/>.
+		/// </param>
+		public void RunInTransaction(Action action) {
+			if (IsInTransaction) {
+				throw new InvalidOperationException("The connection must not already be in a transaction when RunInTransaction is called");
+			}
+			try {
+				BeginTransaction();
+				action();
+				Commit();
+			}
+			catch (Exception) {
+				Rollback();
+				throw;
+			}
 		}
 
 		/// <summary>
@@ -376,19 +422,19 @@ namespace SQLite
 			if (obj == null) {
 				return 0;
 			}
-			
+
 			var map = GetMapping (obj.GetType ());
-			
+
 			var cols = map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
 				vals[i] = cols[i].GetValue (obj);
 			}
-			
+
 			var count = Execute (map.InsertSql (extra), vals);
 			var id = SQLite3.LastInsertRowid (Handle);
 			map.SetAutoIncPK (obj, id);
-			
+
 			return count;
 		}
 
@@ -657,7 +703,6 @@ namespace SQLite
 				return DefaultMaxStringLength;
 			}
 		}
-		
 	}
 
 	public class SQLiteCommand
@@ -677,7 +722,11 @@ namespace SQLite
 		public int ExecuteNonQuery ()
 		{
 			var r = SQLite3.Result.OK;
-			for (int i = 0; i < _conn.MaxExecuteAttempts; i++) {
+			var numAttempts = _conn.MaxExecuteAttempts;
+			if (_conn.IsInTransaction) {
+				numAttempts = 1;
+			}
+			for (int i = 0; i < numAttempts; i++) {
 				var stmt = Prepare ();
 				r = SQLite3.Step (stmt);
 				SQLite3.Finalize (stmt);
@@ -776,7 +825,7 @@ namespace SQLite
 
 		IntPtr Prepare ()
 		{
-			var stmt = SQLite3.Prepare (_conn.Handle, CommandText);
+			var stmt = SQLite3.Prepare2 (_conn.Handle, CommandText);
 			BindAll (stmt);
 			return stmt;
 		}
@@ -1170,11 +1219,11 @@ namespace SQLite
 		public static extern int Changes (IntPtr db);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2")]
-		public static extern Result Prepare (IntPtr db, string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
-		public static IntPtr Prepare (IntPtr db, string query)
+		public static extern Result Prepare2 (IntPtr db, string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
+		public static IntPtr Prepare2 (IntPtr db, string query)
 		{
 			IntPtr stmt;
-			var r = Prepare (db, query, query.Length, out stmt, IntPtr.Zero);
+			var r = Prepare2 (db, query, query.Length, out stmt, IntPtr.Zero);
 			if (r != Result.OK) {
 				throw SQLiteException.New (r, GetErrmsg (db));
 			}
