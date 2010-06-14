@@ -340,7 +340,29 @@ namespace SQLite
 		public void Commit ()
 		{
 			if (IsInTransaction) {
-				Execute ("commit");
+
+				var done = false;
+
+				for (var i = 0; i < MaxExecuteAttempts && !done; i++) {
+
+					try {
+						Execute ("commit");
+						done = true;
+					}
+					catch (SQLiteException ex) {
+						if (ex.Result == SQLite3.Result.Busy) {
+							System.Threading.Thread.Sleep(RetryDelay);
+						}
+						else {
+							throw;
+						}
+					}
+				}
+
+				if (!done) {
+					throw SQLiteException.New(SQLite3.Result.Busy, "Busy when trying to commit");
+				}
+
 				IsInTransaction = false;
 			}
 		}
