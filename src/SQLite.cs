@@ -48,6 +48,7 @@ namespace SQLite
 	public class SQLiteConnection : IDisposable
 	{
 		private bool _open;
+		private TimeSpan _busyTimeout;
 		private Dictionary<string, TableMapping> _mappings = null;
 		private Dictionary<string, TableMapping> _tables = null;
 
@@ -56,9 +57,6 @@ namespace SQLite
 
 		public IntPtr Handle { get; private set; }
 		public string DatabasePath { get; private set; }
-
-		public int MaxExecuteAttempts { get; set; }
-		public TimeSpan RetryDelay { get; set; }
 
 		public bool TimeExecution { get; set; }
 		public bool Trace { get; set; }
@@ -71,9 +69,6 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (string databasePath)
 		{
-			MaxExecuteAttempts = 10;
-			RetryDelay = TimeSpan.FromSeconds (1);
-			
 			DatabasePath = databasePath;
 			IntPtr handle;
 			var r = SQLite3.Open (DatabasePath, out handle);
@@ -82,6 +77,22 @@ namespace SQLite
 				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
 			}
 			_open = true;
+
+			BusyTimeout = TimeSpan.FromSeconds (0.1);
+		}
+
+		/// <summary>
+		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
+		/// The handler will sleep multiple times until a total time of <see cref="BusyTimeout"/> has accumulated.
+		/// </summary>
+		public TimeSpan BusyTimeout {
+			get { return _busyTimeout; }
+			set {
+				_busyTimeout = value;
+				if (Handle != IntPtr.Zero) {
+					SQLite3.BusyTimeout (Handle, (int)_busyTimeout.TotalMilliseconds);
+				}
+			}
 		}
 
 		/// <summary>
@@ -207,9 +218,7 @@ namespace SQLite
 		public int Execute (string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			if (Trace) {
-				Console.WriteLine ("Executing: " + cmd);
-			}
+			
 			if (TimeExecution) {
 				if (_sw == null) {
 					_sw = new System.Diagnostics.Stopwatch ();
@@ -244,7 +253,7 @@ namespace SQLite
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
 		/// </returns>
-		public IEnumerable<T> Query<T> (string query, params object[] args) where T : new()
+		public List<T> Query<T> (string query, params object[] args) where T : new()
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<T> ();
@@ -270,10 +279,10 @@ namespace SQLite
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
 		/// </returns>
-		public IEnumerable<object> Query (TableMapping map, string query, params object[] args)
+		public List<object> Query (TableMapping map, string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			return cmd.ExecuteQuery (map);
+			return cmd.ExecuteQuery<object> (map);
 		}
 
 		/// <summary>
@@ -340,29 +349,7 @@ namespace SQLite
 		public void Commit ()
 		{
 			if (IsInTransaction) {
-
-				var done = false;
-
-				for (var i = 0; i < MaxExecuteAttempts && !done; i++) {
-
-					try {
-						Execute ("commit");
-						done = true;
-					}
-					catch (SQLiteException ex) {
-						if (ex.Result == SQLite3.Result.Busy) {
-							System.Threading.Thread.Sleep(RetryDelay);
-						}
-						else {
-							throw;
-						}
-					}
-				}
-
-				if (!done) {
-					throw SQLiteException.New(SQLite3.Result.Busy, "Busy when trying to commit");
-				}
-
+				Execute ("commit");
 				IsInTransaction = false;
 			}
 		}
@@ -376,17 +363,17 @@ namespace SQLite
 		/// of operations on the connection but should never call <see cref="BeginTransaction"/>,
 		/// <see cref="Rollback"/>, or <see cref="Commit"/>.
 		/// </param>
-		public void RunInTransaction(Action action) {
+		public void RunInTransaction (Action action)
+		{
 			if (IsInTransaction) {
-				throw new InvalidOperationException("The connection must not already be in a transaction when RunInTransaction is called");
+				throw new InvalidOperationException ("The connection must not already be in a transaction when RunInTransaction is called");
 			}
 			try {
-				BeginTransaction();
-				action();
-				Commit();
-			}
-			catch (Exception) {
-				Rollback();
+				BeginTransaction ();
+				action ();
+				Commit ();
+			} catch (Exception) {
+				Rollback ();
 				throw;
 			}
 		}
@@ -444,19 +431,19 @@ namespace SQLite
 			if (obj == null) {
 				return 0;
 			}
-
+			
 			var map = GetMapping (obj.GetType ());
-
+			
 			var cols = map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
 				vals[i] = cols[i].GetValue (obj);
 			}
-
+			
 			var count = Execute (map.InsertSql (extra), vals);
 			var id = SQLite3.LastInsertRowid (Handle);
 			map.SetAutoIncPK (obj, id);
-
+			
 			return count;
 		}
 
@@ -525,7 +512,7 @@ namespace SQLite
 		public void Close ()
 		{
 			if (_open && Handle != IntPtr.Zero) {
-				SQLite3.Close (Handle);
+				var r = SQLite3.Close (Handle);
 				Handle = IntPtr.Zero;
 				_open = false;
 			}
@@ -743,34 +730,28 @@ namespace SQLite
 
 		public int ExecuteNonQuery ()
 		{
+			if (_conn.Trace) {
+				Console.WriteLine ("Executing: " + this);
+			}
+			
 			var r = SQLite3.Result.OK;
-			var numAttempts = _conn.MaxExecuteAttempts;
-			if (_conn.IsInTransaction) {
-				numAttempts = 1;
+			var stmt = Prepare ();
+			r = SQLite3.Step (stmt);
+			Finalize (stmt);
+			if (r == SQLite3.Result.Done) {
+				int rowsAffected = SQLite3.Changes (_conn.Handle);
+				return rowsAffected;
+			} else if (r == SQLite3.Result.Error) {
+				string msg = SQLite3.GetErrmsg (_conn.Handle);
+				throw SQLiteException.New (r, msg);
+			} else {
+				throw SQLiteException.New (r, r.ToString ());
 			}
-			for (int i = 0; i < numAttempts; i++) {
-				var stmt = Prepare ();
-				r = SQLite3.Step (stmt);
-				SQLite3.Finalize (stmt);
-				if (r == SQLite3.Result.Error) {
-					string msg = SQLite3.GetErrmsg (_conn.Handle);
-					throw SQLiteException.New (r, msg);
-				} else if (r == SQLite3.Result.Done) {
-					int rowsAffected = SQLite3.Changes (_conn.Handle);
-					return rowsAffected;
-				} else if (r == SQLite3.Result.Busy) {
-					// We will retry
-					System.Threading.Thread.Sleep (_conn.RetryDelay);
-				} else {
-					throw SQLiteException.New (r, r.ToString ());
-				}
-			}
-			throw SQLiteException.New (r, r.ToString ());
 		}
 
-		public IEnumerable<T> ExecuteQuery<T> () where T : new()
+		public List<T> ExecuteQuery<T> () where T : new()
 		{
-			return ExecuteQuery (_conn.GetMapping (typeof(T))).Cast<T> ();
+			return ExecuteQuery<T> (_conn.GetMapping (typeof(T)));
 		}
 
 		class ColRef
@@ -778,11 +759,14 @@ namespace SQLite
 			public SQLite3.ColType ColType;
 			public TableMapping.Column MappingColumn;
 		}
-		public IEnumerable<object> ExecuteQuery (TableMapping map)
+
+		public List<T> ExecuteQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
 				Console.WriteLine ("Executing Query: " + this);
 			}
+			
+			var r = new List<T> ();
 			
 			var stmt = Prepare ();
 			
@@ -808,10 +792,11 @@ namespace SQLite
 					cols[i].MappingColumn.SetValue (obj, val);
 				}
 				first = false;
-				yield return obj;
+				r.Add ((T)obj);
 			}
 			
-			SQLite3.Finalize (stmt);
+			Finalize (stmt);
+			return r;
 		}
 
 		public T ExecuteScalar<T> ()
@@ -823,7 +808,7 @@ namespace SQLite
 				var colType = SQLite3.ColumnType (stmt, 0);
 				val = (T)ReadCol (stmt, 0, colType, typeof(T));
 			}
-			SQLite3.Finalize (stmt);
+			Finalize (stmt);
 			
 			return val;
 		}
@@ -842,7 +827,14 @@ namespace SQLite
 
 		public override string ToString ()
 		{
-			return CommandText;
+			var parts = new string[1 + _bindings.Count];
+			parts[0] = CommandText;
+			var i = 1;
+			foreach (var b in _bindings) {
+				parts[i] = string.Format ("  {0}: {1}", i - 1, b.Value);
+				i++;
+			}
+			return string.Join (Environment.NewLine, parts);
 		}
 
 		IntPtr Prepare ()
@@ -850,6 +842,11 @@ namespace SQLite
 			var stmt = SQLite3.Prepare2 (_conn.Handle, CommandText);
 			BindAll (stmt);
 			return stmt;
+		}
+
+		void Finalize (IntPtr stmt)
+		{
+			SQLite3.Finalize (stmt);
 		}
 
 		void BindAll (IntPtr stmt)
@@ -1236,6 +1233,8 @@ namespace SQLite
 		public static extern Result Close (IntPtr db);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config")]
 		public static extern Result Config (ConfigOption option);
+		[DllImport("sqlite3", EntryPoint = "sqlite3_busy_timeout")]
+		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_changes")]
 		public static extern int Changes (IntPtr db);
