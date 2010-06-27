@@ -77,7 +77,7 @@ namespace SQLite
 				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
 			}
 			_open = true;
-
+			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 
@@ -410,7 +410,21 @@ namespace SQLite
 		/// </returns>
 		public int Insert (object obj)
 		{
-			return Insert (obj, "");
+			if (obj == null) {
+				return 0;
+			}
+			return Insert (obj, "", obj.GetType ());
+		}
+		public int Insert (object obj, Type objType)
+		{
+			return Insert (obj, "", objType);
+		}
+		public int Insert (object obj, string extra)
+		{
+			if (obj == null) {
+				return 0;
+			}
+			return Insert (obj, extra, obj.GetType ());
 		}
 
 		/// <summary>
@@ -426,24 +440,24 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int Insert (object obj, string extra)
+		public int Insert (object obj, string extra, Type objType)
 		{
-			if (obj == null) {
+			if (obj == null || objType == null) {
 				return 0;
 			}
-			
-			var map = GetMapping (obj.GetType ());
-			
+
+			var map = GetMapping (objType);
+
 			var cols = map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
 				vals[i] = cols[i].GetValue (obj);
 			}
-			
+
 			var count = Execute (map.InsertSql (extra), vals);
 			var id = SQLite3.LastInsertRowid (Handle);
 			map.SetAutoIncPK (obj, id);
-			
+
 			return count;
 		}
 
@@ -463,15 +477,22 @@ namespace SQLite
 			if (obj == null) {
 				return 0;
 			}
-			
-			var map = GetMapping (obj.GetType ());
-			
+			return Update (obj, obj.GetType ());
+		}
+		public int Update (object obj, Type objType)
+		{
+			if (obj == null || objType == null) {
+				return 0;
+			}
+
+			var map = GetMapping (objType);
+
 			var pk = map.PK;
-			
+
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
-			
+
 			var cols = from p in map.Columns
 				where p != pk
 				select p;
@@ -512,7 +533,7 @@ namespace SQLite
 		public void Close ()
 		{
 			if (_open && Handle != IntPtr.Zero) {
-				var r = SQLite3.Close (Handle);
+				SQLite3.Close (Handle);
 				Handle = IntPtr.Zero;
 				_open = false;
 			}
