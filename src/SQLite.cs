@@ -162,6 +162,11 @@ namespace SQLite
 			
 			var count = Execute (query);
 			
+			if (count == 0) {
+				// Table already exists, migrate it
+				MigrateTable (map);
+			}
+			
 			foreach (var p in map.Columns.Where (x => x.IsIndexed)) {
 				var indexName = map.TableName + "_" + p.Name;
 				var q = string.Format ("create index if not exists \"{0}\" on \"{1}\"(\"{2}\")", indexName, map.TableName, p.Name);
@@ -169,6 +174,42 @@ namespace SQLite
 			}
 			
 			return count;
+		}
+
+		class TableInfo
+		{
+			public int cid { get; set; }
+			public string name { get; set; }
+			public string type { get; set; }
+			public int notnull { get; set; }
+			public string dflt_value { get; set; }
+			public int pk { get; set; }
+		}
+
+		void MigrateTable (TableMapping map)
+		{
+			var query = "pragma table_info(\"" + map.TableName + "\")";
+			
+			var existingCols = Query<TableInfo> (query);
+			
+			var toBeAdded = new List<TableMapping.Column> ();
+			
+			foreach (var p in map.Columns) {
+				var found = false;
+				foreach (var c in existingCols) {
+					found = p.Name == c.name;
+					if (found)
+						break;
+				}
+				if (!found) {
+					toBeAdded.Add (p);
+				}
+			}
+			
+			foreach (var p in toBeAdded) {
+				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p);
+				Execute (addCol);
+			}
 		}
 
 		/// <summary>
