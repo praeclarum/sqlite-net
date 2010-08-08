@@ -445,19 +445,19 @@ namespace SQLite
 			if (obj == null || objType == null) {
 				return 0;
 			}
-
+			
 			var map = GetMapping (objType);
-
+			
 			var cols = map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
 				vals[i] = cols[i].GetValue (obj);
 			}
-
+			
 			var count = Execute (map.InsertSql (extra), vals);
 			var id = SQLite3.LastInsertRowid (Handle);
 			map.SetAutoIncPK (obj, id);
-
+			
 			return count;
 		}
 
@@ -484,15 +484,15 @@ namespace SQLite
 			if (obj == null || objType == null) {
 				return 0;
 			}
-
+			
 			var map = GetMapping (objType);
-
+			
 			var pk = map.PK;
-
+			
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
-
+			
 			var cols = from p in map.Columns
 				where p != pk
 				select p;
@@ -775,12 +775,6 @@ namespace SQLite
 			return ExecuteQuery<T> (_conn.GetMapping (typeof(T)));
 		}
 
-		class ColRef
-		{
-			public SQLite3.ColType ColType;
-			public TableMapping.Column MappingColumn;
-		}
-
 		public List<T> ExecuteQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
@@ -791,28 +785,22 @@ namespace SQLite
 			
 			var stmt = Prepare ();
 			
-			var cols = new ColRef[SQLite3.ColumnCount (stmt)];
+			var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 			
 			for (int i = 0; i < cols.Length; i++) {
 				var name = Marshal.PtrToStringUni (SQLite3.ColumnName16 (stmt, i));
-				cols[i] = new ColRef ();
-				cols[i].MappingColumn = map.FindColumn (name);
+				cols[i] = map.FindColumn (name);
 			}
-			
-			var first = true;
 			
 			while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
 				var obj = Activator.CreateInstance (map.MappedType);
 				for (int i = 0; i < cols.Length; i++) {
-					if (cols[i].MappingColumn == null)
+					if (cols[i] == null)
 						continue;
-					if (first) {
-						cols[i].ColType = SQLite3.ColumnType (stmt, i);
-					}
-					var val = ReadCol (stmt, i, cols[i].ColType, cols[i].MappingColumn.ColumnType);
-					cols[i].MappingColumn.SetValue (obj, val);
+					var colType = SQLite3.ColumnType (stmt, i);
+					var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
+					cols[i].SetValue (obj, val);
 				}
-				first = false;
 				r.Add ((T)obj);
 			}
 			
