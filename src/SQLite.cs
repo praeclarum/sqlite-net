@@ -162,7 +162,7 @@ namespace SQLite
 			
 			var count = Execute (query);
 			
-			if (count == 0) {
+			if (count == 0) { //Possible bug: This always seems to return 0?
 				// Table already exists, migrate it
 				MigrateTable (map);
 			}
@@ -742,6 +742,8 @@ namespace SQLite
 				return "datetime";
 			} else if (clrType.IsEnum) {
 				return "integer";
+			} else if (clrType == typeof(byte[])) {
+				return "blob";
 			} else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -930,6 +932,10 @@ namespace SQLite
 						SQLite3.BindText (stmt, b.Index, ((DateTime)b.Value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, new IntPtr (-1));
 					} else if (bty.IsEnum) {
 						SQLite3.BindInt (stmt, b.Index, Convert.ToInt32 (b.Value));
+					} else if (b.Value is byte[]) {
+						SQLite3.BindBlob(stmt, b.Index, (byte[])b.Value, ((byte[])b.Value).Length, new IntPtr(-1));
+					} else {
+						throw new NotSupportedException("Cannot store type: " + bty);
 					}
 				}
 			}
@@ -976,8 +982,10 @@ namespace SQLite
 					return (short)SQLite3.ColumnInt (stmt, index);
 				} else if (clrType == typeof(sbyte)) {
 					return (sbyte)SQLite3.ColumnInt (stmt, index);
+				} else if (clrType == typeof(byte[])) {
+					return SQLite3.ColumnByteArray(stmt, index);
 				} else {
-					throw new NotSupportedException ("Don't know how to read " + clrType);
+					throw new NotSupportedException("Don't know how to read " + clrType);
 				}
 			}
 		}
@@ -1330,6 +1338,8 @@ namespace SQLite
 		public static extern int BindDouble (IntPtr stmt, int index, double val);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_text")]
 		public static extern int BindText (IntPtr stmt, int index, string val, int n, IntPtr free);
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_blob")]
+		public static extern int BindBlob (IntPtr stmt, int index, byte[] val, int n, IntPtr free);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_count")]
 		public static extern int ColumnCount (IntPtr stmt);
@@ -1349,10 +1359,25 @@ namespace SQLite
 		public static extern IntPtr ColumnText (IntPtr stmt, int index);
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text16")]
 		public static extern IntPtr ColumnText16 (IntPtr stmt, int index);
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_blob")]
+		public static extern IntPtr ColumnBlob(IntPtr stmt, int index);
+
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_bytes")]
+		public static extern int ColumnBytes(IntPtr stmt, int index);
+
 
 		public static string ColumnString (IntPtr stmt, int index)
 		{
 			return Marshal.PtrToStringUni (SQLite3.ColumnText16 (stmt, index));
+		}
+
+		public static byte[] ColumnByteArray(IntPtr stmt, int index)
+		{
+			int length = ColumnBytes(stmt, index);
+			byte[] result = new byte[length];
+			if (length > 0)
+				Marshal.Copy(ColumnBlob(stmt, index), result, 0, length);
+			return result;
 		}
 
 		public enum ColType : int
