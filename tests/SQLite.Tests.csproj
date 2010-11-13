@@ -41,5 +41,6 @@
     <Compile Include="ByteArrayTest.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
+    <Compile Include="SkipTest.cs" />
   </ItemGroup>
 </Project>

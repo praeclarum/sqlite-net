@@ -1263,7 +1263,10 @@ namespace SQLite
 				cmdText += " limit " + _limit.Value;
 			}
 			if (_offset.HasValue) {
-				cmdText += " offset " + _limit.Value;
+				if (!_limit.HasValue) {
+					cmdText += " limit -1 ";
+				}
+				cmdText += " offset " + _offset.Value;
 			}
 			return Connection.CreateCommand (cmdText, args.ToArray ());
 		}
