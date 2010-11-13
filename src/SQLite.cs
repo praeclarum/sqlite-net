@@ -621,6 +621,16 @@ namespace SQLite
 		}
 	}
 
+	public class CollationAttribute: Attribute
+	{
+		public string Value { get; private set; }
+
+		public CollationAttribute (string collation)
+		{
+			Value = collation;
+		}
+	}
+
 	public class TableMapping
 	{
 		public Type MappedType { get; private set; }
@@ -659,7 +669,7 @@ namespace SQLite
 			
 			HasAutoIncPK = _autoPk != null;
 		}
-		
+
 		public bool HasAutoIncPK { get; private set; }
 
 		public void SetAutoIncPK (object obj, long id)
@@ -715,6 +725,8 @@ namespace SQLite
 
 			public Type ColumnType { get; protected set; }
 
+			public string Collation { get; protected set; }
+
 			public bool IsAutoInc { get; protected set; }
 
 			public bool IsPK { get; protected set; }
@@ -739,6 +751,7 @@ namespace SQLite
 				_prop = prop;
 				Name = prop.Name;
 				ColumnType = prop.PropertyType;
+				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
 				IsPK = Orm.IsPK (prop);
 				IsIndexed = Orm.IsIndexed (prop);
@@ -775,6 +788,9 @@ namespace SQLite
 			if (!p.IsNullable) {
 				decl += "not null ";
 			}
+			if (!string.IsNullOrEmpty (p.Collation)) {
+				decl += "collate " + p.Collation + " ";
+			}
 			
 			return decl;
 		}
@@ -806,6 +822,16 @@ namespace SQLite
 		{
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
 			return attrs.Length > 0;
+		}
+
+		public static string Collation (MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof(CollationAttribute), true);
+			if (attrs.Length > 0) {
+				return ((CollationAttribute)attrs [0]).Value;
+			} else {
+				return string.Empty;
+			}
 		}
 
 		public static bool IsAutoInc (MemberInfo p)
@@ -969,9 +995,9 @@ namespace SQLite
 				BindParameter (stmt, b.Index, b.Value);
 			}
 		}
-		
+
 		internal static IntPtr NegativePointer = new IntPtr (-1);
-		
+
 		internal static void BindParameter (IntPtr stmt, int index, object value)
 		{
 			if (value == null) {
@@ -1466,7 +1492,7 @@ namespace SQLite
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_step")]
 		public static extern Result Step (IntPtr stmt);
-		
+
 		[DllImport("sqlite3", EntryPoint = "sqlite3_reset")]
 		public static extern Result Reset (IntPtr stmt);
 
