@@ -7,6 +7,7 @@ using System.Text;
 using SQLite;
 
 using NUnit.Framework;
+using System.Diagnostics;
 
 namespace SQLite.Tests
 {    
@@ -38,16 +39,21 @@ namespace SQLite.Tests
         [Test]
         public void InsertALot()
         {
-			int n = 500;
+			int n = 100000;
 			var q =	from i in Enumerable.Range(1, n)
 					select new TestObj() {
 				Text = "I am"
 			};
 			var objs = q.ToArray();
 			var db = new TestDb(Path.GetTempFileName());
-			db.Trace = true;
+			db.Trace = false;
+			
+			var sw = new Stopwatch();
+			sw.Start();
 			
 			var numIn = db.InsertAll(objs);
+			
+			sw.Stop();
 			
 			Assert.AreEqual(numIn, n, "Num inserted must = num objects");
 			

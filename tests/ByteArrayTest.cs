@@ -10,7 +10,7 @@ using NUnit.Framework;
 namespace SQLite.Tests
 {
 	[TestFixture]
-	class ByteArrayTest
+	public class ByteArrayTest
 	{
 		public class ByteArrayClass
 		{
