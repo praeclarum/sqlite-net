@@ -932,6 +932,10 @@ namespace SQLite
 
 		public T ExecuteScalar<T> ()
 		{
+			if (_conn.Trace) {
+				Console.WriteLine ("Executing Query: " + this);
+			}
+			
 			T val = default(T);
 			
 			var stmt = Prepare ();
@@ -1100,7 +1104,7 @@ namespace SQLite
 		public int ExecuteNonQuery (object[] source)
 		{
 			if (Connection.Trace) {
-				Console.WriteLine ("Executing: " + this);
+				Console.WriteLine ("Executing: " + CommandText);
 			}
 
 			var r = SQLite3.Result.OK;
@@ -1273,9 +1277,9 @@ namespace SQLite
 			}
 		}
 
-		private SQLiteCommand GenerateCommand ()
+		private SQLiteCommand GenerateCommand (string selectionList)
 		{
-			var cmdText = "select * from \"" + Table.TableName + "\"";
+			var cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
 			var args = new List<object> ();
 			if (_where != null) {
 				var w = CompileExpr (_where, args);
@@ -1420,10 +1424,15 @@ namespace SQLite
 				throw new System.NotSupportedException ("Cannot get SQL for: " + n.ToString ());
 			}
 		}
+		
+		public int Count ()
+		{
+			return GenerateCommand("count(*)").ExecuteScalar<int> ();			
+		}
 
 		public IEnumerator<T> GetEnumerator ()
 		{
-			return GenerateCommand ().ExecuteQuery<T> ().GetEnumerator ();
+			return GenerateCommand ("*").ExecuteQuery<T> ().GetEnumerator ();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
