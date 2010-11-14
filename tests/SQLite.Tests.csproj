@@ -43,5 +43,6 @@
     <Compile Include="CreateTableTest.cs" />
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />
+    <Compile Include="ContainsTest.cs" />
   </ItemGroup>
 </Project>

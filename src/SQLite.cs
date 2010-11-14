@@ -1333,6 +1333,8 @@ namespace SQLite
 				
 				if (call.Method.Name == "Like" && args.Length == 2) {
 					sqlCall = "(" + args [0].CommandText + " like " + args [1].CommandText + ")";
+				} else if (call.Method.Name == "Contains" && args.Length == 2) {
+					sqlCall = "(" + args [1].CommandText + " in " + args [0].CommandText + ")";
 				} else {
 					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
 				}
@@ -1374,24 +1376,46 @@ namespace SQLite
 						obj = r.Value;
 					}
 					
+					//
+					// Get the member value
+					//
+					object val = null;
+					
 					if (mem.Member.MemberType == MemberTypes.Property) {
 						var m = (PropertyInfo)mem.Member;
-						var val = m.GetValue (obj, null);
-						queryArgs.Add (val);
-						return new CompileResult {
-							CommandText = "?",
-							Value = val
-						};
+						val = m.GetValue (obj, null);						
 					} else if (mem.Member.MemberType == MemberTypes.Field) {
 						var m = (FieldInfo)mem.Member;
-						var val = m.GetValue (obj);
+						val = m.GetValue (obj);						
+					} else {
+						throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType.ToString ());
+					}
+					
+					//
+					// Work special magic for enumerables
+					//
+					if (val != null && val is System.Collections.IEnumerable && !(val is string)) {
+						var sb = new System.Text.StringBuilder();
+						sb.Append("(");
+						var head = "";
+						foreach (var a in (System.Collections.IEnumerable)val) {
+							queryArgs.Add(a);
+							sb.Append(head);
+							sb.Append("?");
+							head = ",";
+						}
+						sb.Append(")");
+						return new CompileResult {
+							CommandText = sb.ToString(),
+							Value = val
+						};
+					}
+					else {
 						queryArgs.Add (val);
 						return new CompileResult {
 							CommandText = "?",
 							Value = val
 						};
-					} else {
-						throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType.ToString ());
 					}
 				}
 			}
