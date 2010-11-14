@@ -44,5 +44,6 @@
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />
+    <Compile Include="NullableTest.cs" />
   </ItemGroup>
 </Project>
