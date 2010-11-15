@@ -151,7 +151,7 @@ namespace SQLite.Tests
 			db.Insert(with1);
 			db.Insert(withMinus1);
 
-			NullableIntClass[] results = db.Table<NullableIntClass>().Where(x => x.NullableInt == null).OrderBy(x => x.ID).ToArray();
+			NullableIntClass[] results = db.Table<NullableIntClass>().Where(x => x.NullableInt != null).OrderBy(x => x.ID).ToArray();
 
 			Assert.AreEqual(3, results.Length);
 
@@ -180,6 +180,45 @@ namespace SQLite.Tests
 
 			Assert.AreEqual(1, results.Length);
 			Assert.AreEqual(withNull, results[0]);
+		}
+
+		[Test]
+		public void StringWhereNull()
+		{
+			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			db.CreateTable<StringClass>();
+
+			StringClass withNull = new StringClass() { StringData = null };
+			StringClass withEmpty = new StringClass() { StringData = "" };
+			StringClass withData = new StringClass() { StringData = "data" };
+
+			db.Insert(withNull);
+			db.Insert(withEmpty);
+			db.Insert(withData);
+
+			StringClass[] results = db.Table<StringClass>().Where(x => x.StringData == null).OrderBy(x => x.ID).ToArray();
+			Assert.AreEqual(1, results.Length);
+			Assert.AreEqual(withNull, results[0]);
+		}
+
+		[Test]
+		public void StringWhereNotNull()
+		{
+			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			db.CreateTable<StringClass>();
+
+			StringClass withNull = new StringClass() { StringData = null };
+			StringClass withEmpty = new StringClass() { StringData = "" };
+			StringClass withData = new StringClass() { StringData = "data" };
+
+			db.Insert(withNull);
+			db.Insert(withEmpty);
+			db.Insert(withData);
+
+			StringClass[] results = db.Table<StringClass>().Where(x => x.StringData != null).OrderBy(x => x.ID).ToArray();
+			Assert.AreEqual(2, results.Length);
+			Assert.AreEqual(withEmpty, results[0]);
+			Assert.AreEqual(withData, results[1]);
 		}
 	}
 }

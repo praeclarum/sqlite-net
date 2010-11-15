@@ -1318,8 +1318,15 @@ namespace SQLite
 				
 				var leftr = CompileExpr (bin.Left, queryArgs);
 				var rightr = CompileExpr (bin.Right, queryArgs);
-				
-				var text = "(" + leftr.CommandText + " " + GetSqlName (bin) + " " + rightr.CommandText + ")";
+
+				//If either side is a parameter and is null, then handle the other side specially (for "is null"/"is not null")
+				string text;
+				if (leftr.CommandText == "?" && leftr.Value == null)
+					text = CompileNullBinaryExpression(bin, rightr);
+				else if (rightr.CommandText == "?" && rightr.Value == null)
+					text = CompileNullBinaryExpression(bin, leftr);
+				else
+					text = "(" + leftr.CommandText + " " + GetSqlName(bin) + " " + rightr.CommandText + ")";
 				return new CompileResult { CommandText = text };
 			} else if (expr.NodeType == ExpressionType.Call) {
 				
@@ -1421,6 +1428,20 @@ namespace SQLite
 				}
 			}
 			throw new NotSupportedException ("Cannot compile: " + expr.NodeType.ToString ());
+		}
+
+		/// <summary>
+		/// Compiles a BinaryExpression where one of the parameters is null.
+		/// </summary>
+		/// <param name="parameter">The non-null parameter</param>
+		private string CompileNullBinaryExpression(BinaryExpression expression, CompileResult parameter)
+		{
+			if (expression.NodeType == ExpressionType.Equal)
+				return "(" + parameter.CommandText + " is ?)";
+			else if (expression.NodeType == ExpressionType.NotEqual)
+				return "(" + parameter.CommandText + " is not ?)";
+			else
+				throw new NotSupportedException("Cannot compile Null-BinaryExpression with type " + expression.NodeType.ToString());
 		}
 
 		string GetSqlName (Expression expr)
