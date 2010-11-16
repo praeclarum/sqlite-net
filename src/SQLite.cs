@@ -912,42 +912,65 @@ namespace SQLite
 			}
 		}
 
-		public List<T> ExecuteQuery<T> () where T : new()
+		public IEnumerable<T> ExecuteDeferredQuery<T>() where T : new()
 		{
-			return ExecuteQuery<T> (_conn.GetMapping (typeof(T)));
+			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T)));
 		}
 
-		public List<T> ExecuteQuery<T> (TableMapping map)
+		public List<T> ExecuteQuery<T>() where T : new()
+		{
+			return new List<T>(ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))));
+		}
+
+		public List<T> ExecuteQuery<T>(TableMapping map)
+		{
+			return new List<T>(ExecuteDeferredQuery<T>(map));
+		}
+
+		class AutoFinalizer : IDisposable
+		{
+			public AutoFinalizer(Sqlite3Statement statement)
+			{
+				mStatement = statement;
+			}
+
+			Sqlite3Statement mStatement;
+
+			public void Dispose()
+			{
+				SQLite3.Finalize(mStatement);
+			}
+		}
+
+		public IEnumerable<T> ExecuteDeferredQuery<T>(TableMapping map)
 		{
 			if (_conn.Trace) {
 				Console.WriteLine ("Executing Query: " + this);
 			}
 			
-			var r = new List<T> ();
-			
 			var stmt = Prepare ();
+			using (new AutoFinalizer(stmt))
+			{
 			
-			var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 			
-			for (int i = 0; i < cols.Length; i++) {
-				var name = SQLite3.ColumnName16 (stmt, i);
-				cols [i] = map.FindColumn (name);
-			}
-			
-			while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-				var obj = Activator.CreateInstance (map.MappedType);
 				for (int i = 0; i < cols.Length; i++) {
-					if (cols [i] == null)
-						continue;
-					var colType = SQLite3.ColumnType (stmt, i);
-					var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
-					cols [i].SetValue (obj, val);
+					var name = SQLite3.ColumnName16 (stmt, i);
+					cols [i] = map.FindColumn (name);
 				}
-				r.Add ((T)obj);
-			}
 			
-			Finalize (stmt);
-			return r;
+				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					var obj = Activator.CreateInstance (map.MappedType);
+					for (int i = 0; i < cols.Length; i++) {
+						if (cols [i] == null)
+							continue;
+						var colType = SQLite3.ColumnType (stmt, i);
+						var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
+						cols [i].SetValue (obj, val);
+					}
+					yield return (T)obj;
+				}
+			}
 		}
 
 		public T ExecuteScalar<T> ()
@@ -1000,7 +1023,7 @@ namespace SQLite
 			return stmt;
 		}
 
-		void Finalize (Sqlite3Statement stmt)
+		static void Finalize (Sqlite3Statement stmt)
 		{
 			SQLite3.Finalize (stmt);
 		}
@@ -1502,7 +1525,7 @@ namespace SQLite
 
 		public IEnumerator<T> GetEnumerator ()
 		{
-			return GenerateCommand ("*").ExecuteQuery<T> ().GetEnumerator ();
+			return GenerateCommand ("*").ExecuteDeferredQuery<T> ().GetEnumerator ();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
