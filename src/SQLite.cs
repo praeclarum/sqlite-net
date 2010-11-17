@@ -1759,7 +1759,7 @@ namespace SQLite
 		private static extern IntPtr ColumnName16Internal (IntPtr stmt, int index);
 		public static string ColumnName16(IntPtr stmt, int index)
 		{
-			return Marshal.PtrToStringUni(ColumnNameInternal(stmt, index));
+			return Marshal.PtrToStringUni(ColumnName16Internal(stmt, index));
 		}
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_type")]
