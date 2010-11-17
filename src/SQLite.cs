@@ -919,27 +919,12 @@ namespace SQLite
 
 		public List<T> ExecuteQuery<T>() where T : new()
 		{
-			return new List<T>(ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))));
+			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))).ToList();
 		}
 
 		public List<T> ExecuteQuery<T>(TableMapping map)
 		{
-			return new List<T>(ExecuteDeferredQuery<T>(map));
-		}
-
-		class AutoFinalizer : IDisposable
-		{
-			public AutoFinalizer(Sqlite3Statement statement)
-			{
-				mStatement = statement;
-			}
-
-			Sqlite3Statement mStatement;
-
-			public void Dispose()
-			{
-				SQLite3.Finalize(mStatement);
-			}
+			return ExecuteDeferredQuery<T>(map).ToList();
 		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T>(TableMapping map)
@@ -947,30 +932,44 @@ namespace SQLite
 			if (_conn.Trace) {
 				Console.WriteLine ("Executing Query: " + this);
 			}
-			
+
+			System.Diagnostics.Debug.Assert(typeof(T) == map.MappedType);
+
 			var stmt = Prepare ();
 			using (new AutoFinalizer(stmt))
 			{
-			
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
-			
-				for (int i = 0; i < cols.Length; i++) {
-					var name = SQLite3.ColumnName16 (stmt, i);
-					cols [i] = map.FindColumn (name);
-				}
+				var cols = GetColumnMappingForStatement(stmt, map);
 			
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var obj = Activator.CreateInstance (map.MappedType);
-					for (int i = 0; i < cols.Length; i++) {
-						if (cols [i] == null)
-							continue;
-						var colType = SQLite3.ColumnType (stmt, i);
-						var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
-						cols [i].SetValue (obj, val);
-					}
-					yield return (T)obj;
+					yield return PopulateObject<T>(cols, stmt);
 				}
 			}
+		}
+
+		internal static TableMapping.Column[] GetColumnMappingForStatement(Sqlite3Statement stmt, TableMapping map)
+		{
+			var cols = new TableMapping.Column[SQLite3.ColumnCount(stmt)];
+
+			for (int i = 0; i < cols.Length; i++)
+			{
+				var name = SQLite3.ColumnName16(stmt, i);
+				cols[i] = map.FindColumn(name);
+			}
+			return cols;
+		}
+
+		internal static T PopulateObject<T>(TableMapping.Column[] cols, Sqlite3Statement stmt)
+		{
+			var obj = Activator.CreateInstance(typeof(T));
+			for (int i = 0; i < cols.Length; i++)
+			{
+				if (cols[i] == null)
+					continue;
+				var colType = SQLite3.ColumnType(stmt, i);
+				var val = ReadCol(stmt, i, colType, cols[i].ColumnType);
+				cols[i].SetValue(obj, val);
+			}
+			return (T)obj;
 		}
 
 		public T ExecuteScalar<T> ()
@@ -1083,7 +1082,7 @@ namespace SQLite
 			public int Index { get; set; }
 		}
 
-		object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
+		static object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
 		{
 			if (type == SQLite3.ColType.Null) {
 				return null;
@@ -1248,6 +1247,7 @@ namespace SQLite
 		{
 			var q = new TableQuery<T> (Connection, Table);
 			q._where = _where;
+			q._deferred = _deferred;
 			if (_orderBys != null) {
 				q._orderBys = new List<Ordering> (_orderBys);
 			}
@@ -1280,6 +1280,14 @@ namespace SQLite
 		{
 			var q = Clone ();
 			q._offset = n;
+			return q;
+		}
+
+		bool _deferred = false;
+		public TableQuery<T> Deferred ()
+		{
+			var q = Clone();
+			q._deferred = true;
 			return q;
 		}
 
@@ -1523,14 +1531,121 @@ namespace SQLite
 			return GenerateCommand("count(*)").ExecuteScalar<int> ();			
 		}
 
+		public class RowIdContainer
+		{
+			public long RowId
+			{
+				get;
+				set;
+			}
+		}
+
 		public IEnumerator<T> GetEnumerator ()
 		{
-			return GenerateCommand ("*").ExecuteDeferredQuery<T> ().GetEnumerator ();
+			if (!_deferred)
+				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
+
+			IEnumerator<RowIdContainer> enumerator = GenerateCommand("rowid as RowId").ExecuteDeferredQuery<RowIdContainer>().GetEnumerator();
+			return new QueryEnumeratorWrapper(enumerator, Table, Connection);
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
 		{
 			return GetEnumerator ();
+		}
+
+		class QueryEnumeratorWrapper : IEnumerator<T>
+		{
+			public QueryEnumeratorWrapper(IEnumerator<RowIdContainer> wrapped, TableMapping table, SQLiteConnection connection)
+			{
+				_wrapped = wrapped;
+				_table = table;
+				var stmt = SQLite3.Prepare2(connection.Handle, string.Format("SELECT * FROM [{0}] WHERE rowid=?", table.TableName));
+				_stmtfinalizer = new AutoFinalizer(stmt);
+				_cols = SQLiteCommand.GetColumnMappingForStatement(stmt, table);
+			}
+
+			IEnumerator<RowIdContainer> _wrapped;
+			TableMapping _table;
+			AutoFinalizer _stmtfinalizer;
+			TableMapping.Column[] _cols;
+			public T Current
+			{
+				get
+				{
+					var stmt = _stmtfinalizer.Statement;
+					SQLite3.Result r = SQLite3.Reset(stmt);
+					if (r != SQLite3.Result.OK)
+					{
+						throw SQLiteException.New(r, "Could not reset sqlite3 statement.");
+					}
+					r = SQLite3.ClearBindings(stmt);
+					if (r != SQLite3.Result.OK)
+					{
+						throw SQLiteException.New(r, "Could not clear sqlite3 statement bindings.");
+					}
+					int ret = SQLite3.BindInt64(stmt, 1, _wrapped.Current.RowId);
+					r = SQLite3.Step(stmt);
+					// since this is deferred querying, the row may not exist due to db manipulation.
+					if (r != SQLite3.Result.Row)
+						return default(T);
+					return SQLiteCommand.PopulateObject<T>(_cols, stmt); ;
+				}
+			}
+
+			public void Dispose()
+			{
+				_wrapped.Dispose();
+			}
+
+			object System.Collections.IEnumerator.Current
+			{
+				get { return Current; }
+			}
+
+			public bool MoveNext()
+			{
+				return _wrapped.MoveNext();
+			}
+
+			public void Reset()
+			{
+				_wrapped.Reset();
+			}
+		}
+	}
+
+	class AutoFinalizer : IDisposable
+	{
+		public AutoFinalizer(Sqlite3Statement statement)
+		{
+			Statement = statement;
+		}
+
+		public Sqlite3Statement Statement
+		{
+			get;
+			private set;
+		}
+
+		private bool _disposed = false;
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		private void Dispose(bool disposing)
+		{
+			if (_disposed)
+				return;
+			_disposed = true;
+			SQLite3.Finalize(Statement);
+		}
+		
+		~AutoFinalizer()
+		{
+			Dispose(false);
 		}
 	}
 
@@ -1840,6 +1955,11 @@ namespace SQLite
 		public static byte[] ColumnByteArray(Sqlite3.Vdbe stmt, int index)
 		{
 			return ColumnBlob(stmt, index);
+		}
+
+		public static Result ClearBindings(Sqlite3.Vdbe stmt)
+		{
+			return (Result)Sqlite3.sqlite3_clear_bindings(stmt);
 		}
 #endif
 
