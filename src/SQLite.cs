@@ -1592,40 +1592,6 @@ namespace SQLite
 		}
 	}
 
-	class AutoFinalizer : IDisposable
-	{
-		public AutoFinalizer(Sqlite3Statement statement)
-		{
-			Statement = statement;
-		}
-
-		public Sqlite3Statement Statement
-		{
-			get;
-			private set;
-		}
-
-		private bool _disposed = false;
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		private void Dispose(bool disposing)
-		{
-			if (_disposed)
-				return;
-			_disposed = true;
-			SQLite3.Finalize(Statement);
-		}
-		
-		~AutoFinalizer()
-		{
-			Dispose(false);
-		}
-	}
-
 	public static class SQLite3
 	{
 		public enum Result : int
