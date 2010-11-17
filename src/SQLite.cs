@@ -936,13 +936,17 @@ namespace SQLite
 			System.Diagnostics.Debug.Assert(typeof(T) == map.MappedType);
 
 			var stmt = Prepare ();
-			using (new AutoFinalizer(stmt))
+			try
 			{
 				var cols = GetColumnMappingForStatement(stmt, map);
 			
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
 					yield return PopulateObject<T>(cols, stmt);
 				}
+			}
+			finally
+			{
+				SQLite3.Finalize(stmt);
 			}
 		}
 
@@ -1531,6 +1535,15 @@ namespace SQLite
 			return GenerateCommand("count(*)").ExecuteScalar<int> ();			
 		}
 
+		public IEnumerator<T> GetEnumerator ()
+		{
+			if (!_deferred)
+				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
+
+			return GetDeferredEnumerator();
+		}
+
+
 		public class RowIdContainer
 		{
 			public long RowId
@@ -1539,41 +1552,16 @@ namespace SQLite
 				set;
 			}
 		}
-
-		public IEnumerator<T> GetEnumerator ()
+		
+		private IEnumerator<T> GetDeferredEnumerator()
 		{
-			if (!_deferred)
-				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
-
-			IEnumerator<RowIdContainer> enumerator = GenerateCommand("rowid as RowId").ExecuteDeferredQuery<RowIdContainer>().GetEnumerator();
-			return new QueryEnumeratorWrapper(enumerator, Table, Connection);
-		}
-
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
-		{
-			return GetEnumerator ();
-		}
-
-		class QueryEnumeratorWrapper : IEnumerator<T>
-		{
-			public QueryEnumeratorWrapper(IEnumerator<RowIdContainer> wrapped, TableMapping table, SQLiteConnection connection)
+			var rowIds = GenerateCommand("rowid as RowId").ExecuteDeferredQuery<RowIdContainer>();
+			var stmt = SQLite3.Prepare2(Connection.Handle, string.Format("SELECT * FROM [{0}] WHERE rowid=?", Table.TableName));
+			var cols = SQLiteCommand.GetColumnMappingForStatement(stmt, Table);
+			try
 			{
-				_wrapped = wrapped;
-				_table = table;
-				var stmt = SQLite3.Prepare2(connection.Handle, string.Format("SELECT * FROM [{0}] WHERE rowid=?", table.TableName));
-				_stmtfinalizer = new AutoFinalizer(stmt);
-				_cols = SQLiteCommand.GetColumnMappingForStatement(stmt, table);
-			}
-
-			IEnumerator<RowIdContainer> _wrapped;
-			TableMapping _table;
-			AutoFinalizer _stmtfinalizer;
-			TableMapping.Column[] _cols;
-			public T Current
-			{
-				get
+				foreach (var rowId in rowIds)
 				{
-					var stmt = _stmtfinalizer.Statement;
 					SQLite3.Result r = SQLite3.Reset(stmt);
 					if (r != SQLite3.Result.OK)
 					{
@@ -1584,34 +1572,23 @@ namespace SQLite
 					{
 						throw SQLiteException.New(r, "Could not clear sqlite3 statement bindings.");
 					}
-					int ret = SQLite3.BindInt64(stmt, 1, _wrapped.Current.RowId);
+					int ret = SQLite3.BindInt64(stmt, 1, rowId.RowId);
 					r = SQLite3.Step(stmt);
 					// since this is deferred querying, the row may not exist due to db manipulation.
 					if (r != SQLite3.Result.Row)
-						return default(T);
-					return SQLiteCommand.PopulateObject<T>(_cols, stmt); ;
+						yield return default(T);
+					yield return SQLiteCommand.PopulateObject<T>(cols, stmt); ;
 				}
 			}
-
-			public void Dispose()
+			finally
 			{
-				_wrapped.Dispose();
+				SQLite3.Finalize(stmt);
 			}
+		}
 
-			object System.Collections.IEnumerator.Current
-			{
-				get { return Current; }
-			}
-
-			public bool MoveNext()
-			{
-				return _wrapped.MoveNext();
-			}
-
-			public void Reset()
-			{
-				_wrapped.Reset();
-			}
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
+		{
+			return GetEnumerator ();
 		}
 	}
 
