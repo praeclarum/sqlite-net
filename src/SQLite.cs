@@ -1552,7 +1552,7 @@ namespace SQLite
 				set;
 			}
 		}
-		
+
 		private IEnumerator<T> GetDeferredEnumerator()
 		{
 			var rowIds = GenerateCommand("rowid as RowId").ExecuteDeferredQuery<RowIdContainer>();
