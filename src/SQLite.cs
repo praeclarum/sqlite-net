@@ -329,6 +329,29 @@ namespace SQLite
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public IEnumerable<T> DeferredQuery<T>(string query, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand(query, args);
+			return cmd.ExecuteDeferredQuery<T>();
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
 		/// It returns each row of the result using the specified mapping. This function is
 		/// only used by libraries in order to query the database via introspection. It is
 		/// normally not used.
@@ -350,6 +373,34 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<object> (map);
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public IEnumerable<object> DeferredQuery(TableMapping map, string query, params object[] args)
+		{
+			var cmd = CreateCommand(query, args);
+			return cmd.ExecuteDeferredQuery<object>(map);
 		}
 
 		/// <summary>
