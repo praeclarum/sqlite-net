@@ -963,68 +963,53 @@ namespace SQLite
 			}
 		}
 
-		public IEnumerable<T> ExecuteDeferredQuery<T>() where T : new()
+		public IEnumerable<T> ExecuteDeferredQuery<T> () where T : new()
 		{
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T)));
 		}
 
-		public List<T> ExecuteQuery<T>() where T : new()
+		public List<T> ExecuteQuery<T> () where T : new()
 		{
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))).ToList();
 		}
 
-		public List<T> ExecuteQuery<T>(TableMapping map)
+		public List<T> ExecuteQuery<T> (TableMapping map)
 		{
 			return ExecuteDeferredQuery<T>(map).ToList();
 		}
 
-		public IEnumerable<T> ExecuteDeferredQuery<T>(TableMapping map)
+		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
 				Console.WriteLine ("Executing Query: " + this);
 			}
 
-			System.Diagnostics.Debug.Assert(typeof(T) == map.MappedType);
-
 			var stmt = Prepare ();
 			try
 			{
-				var cols = GetColumnMappingForStatement(stmt, map);
+				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+
+				for (int i = 0; i < cols.Length; i++) {
+					var name = SQLite3.ColumnName16 (stmt, i);
+					cols [i] = map.FindColumn (name);
+				}
 			
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					yield return PopulateObject<T>(cols, stmt);
+					var obj = Activator.CreateInstance(map.MappedType);
+					for (int i = 0; i < cols.Length; i++) {
+						if (cols [i] == null)
+							continue;
+						var colType = SQLite3.ColumnType (stmt, i);
+						var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
+						cols [i].SetValue (obj, val);
+ 					}
+					yield return (T)obj;
 				}
 			}
 			finally
 			{
 				SQLite3.Finalize(stmt);
 			}
-		}
-
-		internal static TableMapping.Column[] GetColumnMappingForStatement(Sqlite3Statement stmt, TableMapping map)
-		{
-			var cols = new TableMapping.Column[SQLite3.ColumnCount(stmt)];
-
-			for (int i = 0; i < cols.Length; i++)
-			{
-				var name = SQLite3.ColumnName16(stmt, i);
-				cols[i] = map.FindColumn(name);
-			}
-			return cols;
-		}
-
-		internal static T PopulateObject<T>(TableMapping.Column[] cols, Sqlite3Statement stmt)
-		{
-			var obj = Activator.CreateInstance(typeof(T));
-			for (int i = 0; i < cols.Length; i++)
-			{
-				if (cols[i] == null)
-					continue;
-				var colType = SQLite3.ColumnType(stmt, i);
-				var val = ReadCol(stmt, i, colType, cols[i].ColumnType);
-				cols[i].SetValue(obj, val);
-			}
-			return (T)obj;
 		}
 
 		public T ExecuteScalar<T> ()
@@ -1077,7 +1062,7 @@ namespace SQLite
 			return stmt;
 		}
 
-		static void Finalize (Sqlite3Statement stmt)
+		void Finalize (Sqlite3Statement stmt)
 		{
 			SQLite3.Finalize (stmt);
 		}
@@ -1137,7 +1122,7 @@ namespace SQLite
 			public int Index { get; set; }
 		}
 
-		static object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
+		object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
 		{
 			if (type == SQLite3.ColType.Null) {
 				return null;
@@ -1591,50 +1576,7 @@ namespace SQLite
 			if (!_deferred)
 				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
 
-			return GetDeferredEnumerator();
-		}
-
-
-		public class RowIdContainer
-		{
-			public long RowId
-			{
-				get;
-				set;
-			}
-		}
-
-		private IEnumerator<T> GetDeferredEnumerator()
-		{
-			var rowIds = GenerateCommand("rowid as RowId").ExecuteDeferredQuery<RowIdContainer>();
-			var stmt = SQLite3.Prepare2(Connection.Handle, string.Format("SELECT * FROM [{0}] WHERE rowid=?", Table.TableName));
-			var cols = SQLiteCommand.GetColumnMappingForStatement(stmt, Table);
-			try
-			{
-				foreach (var rowId in rowIds)
-				{
-					SQLite3.Result r = SQLite3.Reset(stmt);
-					if (r != SQLite3.Result.OK)
-					{
-						throw SQLiteException.New(r, "Could not reset sqlite3 statement.");
-					}
-					r = SQLite3.ClearBindings(stmt);
-					if (r != SQLite3.Result.OK)
-					{
-						throw SQLiteException.New(r, "Could not clear sqlite3 statement bindings.");
-					}
-					int ret = SQLite3.BindInt64(stmt, 1, rowId.RowId);
-					r = SQLite3.Step(stmt);
-					// since this is deferred querying, the row may not exist due to db manipulation.
-					if (r != SQLite3.Result.Row)
-						yield return default(T);
-					yield return SQLiteCommand.PopulateObject<T>(cols, stmt); ;
-				}
-			}
-			finally
-			{
-				SQLite3.Finalize(stmt);
-			}
+			return GenerateCommand("*").ExecuteDeferredQuery<T>().GetEnumerator();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
@@ -1949,11 +1891,6 @@ namespace SQLite
 		public static byte[] ColumnByteArray(Sqlite3.Vdbe stmt, int index)
 		{
 			return ColumnBlob(stmt, index);
-		}
-
-		public static Result ClearBindings(Sqlite3.Vdbe stmt)
-		{
-			return (Result)Sqlite3.sqlite3_clear_bindings(stmt);
 		}
 #endif
 
