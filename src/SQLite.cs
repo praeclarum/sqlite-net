@@ -57,6 +57,17 @@ namespace SQLite
 		}
 	}
 
+	[Flags]
+	public enum SQLiteOpenFlags {
+		ReadOnly = 1, ReadWrite = 2, Create = 4,
+		NoMutex = 0x8000, FullMutex = 0x10000,
+		SharedCache = 0x20000, PrivateCache = 0x40000,
+		ProtectionComplete = 0x00100000,
+		ProtectionCompleteUnlessOpen = 0x00200000,
+		ProtectionCompleteUntilFirstUserAuthentication = 0x00300000,
+		ProtectionNone = 0x00400000
+	}
+
 	/// <summary>
 	/// Represents an open connection to a SQLite database.
 	/// </summary>
@@ -93,6 +104,26 @@ namespace SQLite
 			DatabasePath = databasePath;
 			Sqlite3DatabaseHandle handle;
 			var r = SQLite3.Open (DatabasePath, out handle);
+			Handle = handle;
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
+			}
+			_open = true;
+			
+			BusyTimeout = TimeSpan.FromSeconds (0.1);
+		}
+
+		/// <summary>
+		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags)
+		{
+			DatabasePath = databasePath;
+			Sqlite3DatabaseHandle handle;
+			var r = SQLite3.Open (DatabasePath, out handle, (int) openFlags, IntPtr.Zero);
 			Handle = handle;
 			if (r != SQLite3.Result.OK) {
 				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
@@ -1658,6 +1689,9 @@ namespace SQLite
 #if !USE_CSHARP_SQLITE
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open")]
 		public static extern Result Open (string filename, out IntPtr db);
+
+		[DllImport("sqlite3", EntryPoint = "sqlite3_open_v2")]
+		public static extern Result Open (string filename, out IntPtr db, int flags, IntPtr zvfs);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_close")]
 		public static extern Result Close (IntPtr db);
