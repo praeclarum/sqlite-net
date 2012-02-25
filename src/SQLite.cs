@@ -198,6 +198,14 @@ namespace SQLite
 			return map;
 		}
 
+        private struct IndexInfo
+        {
+            public string IndexName;
+            public int Order;
+            public string ColumnName;
+            public string TableName;
+        }
+
 		/// <summary>
 		/// Executes a "create table if not exists" on the database. It also
 		/// creates any specified indexes on the columns of the table. It uses
@@ -207,8 +215,7 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable<T> ()
-		{
+		public int CreateTable<T> () {
 			var ty = typeof(T);
 			
 			if (_tables == null) {
@@ -232,14 +239,38 @@ namespace SQLite
 				// Table already exists, migrate it
 				MigrateTable (map);
 			}
-			
-			foreach (var p in map.Columns.Where (x => x.IsIndexed)) {
-				var indexName = map.TableName + "_" + p.Name;
-				var q = string.Format ("create index if not exists \"{0}\" on \"{1}\"(\"{2}\")", indexName, map.TableName, p.Name);
-				count += Execute (q);
-			}
-			
-			return count;
+
+		    var allIndexedColumns =
+		        map.Columns.SelectMany(
+		            c => c.Indices,
+		            (c, i) => new IndexInfo
+		                          {
+		                              IndexName = i.Name ?? c.Name,
+		                              Order = i.Order,
+		                              ColumnName = c.Name,
+		                              TableName = map.TableName
+		                          });
+		    var aggregatedIndexes =
+		        allIndexedColumns.Aggregate(
+		            new Dictionary<string, List<IndexInfo>>(),
+		            (dict, info) =>
+		                {
+		                    if (!dict.ContainsKey(info.IndexName))
+		                        dict.Add(info.IndexName, new List<IndexInfo>());
+		                    dict[info.IndexName].Add(info);
+		                    return dict;
+		                });
+
+            foreach (var indexName in aggregatedIndexes.Keys)
+            {
+                var indexGroup = aggregatedIndexes[indexName];
+                const string sqlFormat = "create index if not exists \"{0}\" on \"{1}\"(\"{2}\")";
+                var columns = String.Join("\",\"", indexGroup.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
+                var sql = String.Format(sqlFormat, "IX_" + indexName, indexGroup.First().TableName, columns);
+                count += Execute(sql);
+            }
+            
+            return count;
 		}
 
 		public class TableInfo
@@ -731,7 +762,17 @@ namespace SQLite
 
 	public class IndexedAttribute : Attribute
 	{
-	}
+        public string Name { get; set; }
+        public int Order { get; set; }
+        public IndexedAttribute()
+        {
+        }
+        public IndexedAttribute(string name, int order)
+        {
+            Name = name;
+            Order = order;
+        }
+    }
 
 	public class IgnoreAttribute : Attribute
 	{
@@ -872,7 +913,7 @@ namespace SQLite
 
 			public bool IsPK { get; protected set; }
 
-			public bool IsIndexed { get; protected set; }
+            public IEnumerable<IndexedAttribute> Indices { get; set; }
 
 			public bool IsNullable { get; protected set; }
 
@@ -896,7 +937,7 @@ namespace SQLite
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
 				IsPK = Orm.IsPK (prop);
-				IsIndexed = Orm.IsIndexed (prop);
+                Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
 				MaxStringLength = Orm.MaxStringLength (prop);
 			}
@@ -982,13 +1023,13 @@ namespace SQLite
 			return attrs.Length > 0;
 		}
 
-		public static bool IsIndexed (MemberInfo p)
-		{
-			var attrs = p.GetCustomAttributes (typeof(IndexedAttribute), true);
-			return attrs.Length > 0;
-		}
+        public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
+        {
+            var attrs = p.GetCustomAttributes(typeof(IndexedAttribute), true);
+            return attrs.Cast<IndexedAttribute>();
+        }
 
-		public static int MaxStringLength (PropertyInfo p)
+        public static int MaxStringLength(PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
 			if (attrs.Length > 0) {
