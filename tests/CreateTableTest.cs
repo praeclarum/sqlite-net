@@ -67,8 +67,8 @@ namespace SQLite.Tests
 			db.CreateTable<Order> ();
 			db.CreateTable<OrderLine> ();
 			db.CreateTable<OrderHistory> ();
-			
-			var orderLine = db.GetMapping(typeof(OrderLine));
+
+			var orderLine = db.GetMapping<OrderLine>();
 			Assert.AreEqual(6, orderLine.Columns.Length, "Order history has 3 columns");
 			
 			var l = new OrderLine() {
