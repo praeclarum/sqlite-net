@@ -1,29 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SQLite;
-
-using NUnit.Framework;
+﻿using System.Linq;
 using System.IO;
+using NUnit.Framework;
 
 namespace SQLite.Tests
 {
 	[TestFixture]
 	class NullableTest
 	{
-		public class NullableIntClass
+		private class NullableIntClass
+		{
+			[PrimaryKey, AutoIncrement]
+			public int ID           { get; set; }
+			public int? NullableInt { get; set; }
+			public override bool Equals(object obj) { NullableIntClass other = (NullableIntClass)obj; return ID == other.ID && NullableInt == other.NullableInt; }
+			public override int GetHashCode()       { return ID.GetHashCode() ^ NullableInt.GetHashCode(); }
+		}
+		private class NullableFloatClass
 		{
 			[PrimaryKey, AutoIncrement]
 			public int ID { get; set; }
-
-			public Nullable<int> NullableInt { get; set; }
-
-			public override bool Equals(object obj)
-			{
-				NullableIntClass other = (NullableIntClass)obj;
-				return this.ID == other.ID && this.NullableInt == other.NullableInt;
-			}
+			public float? NullableFloat { get; set; }
+			public override bool Equals(object obj) { NullableFloatClass other = (NullableFloatClass)obj; return ID == other.ID && NullableFloat == other.NullableFloat; }
+			public override int GetHashCode()       { return ID.GetHashCode() ^ NullableFloat.GetHashCode(); }
+		}
+		private class StringClass
+		{
+			[PrimaryKey, AutoIncrement]
+			public int ID { get; set; }
+			public string StringData { get; set; } //Strings are allowed to be null by default
+			public override bool Equals(object obj) { StringClass other = (StringClass)obj; return ID == other.ID && StringData == other.StringData; }
+			public override int GetHashCode()       { return ID.GetHashCode() ^ StringData.GetHashCode(); }
 		}
 
 		[Test]
@@ -52,22 +58,7 @@ namespace SQLite.Tests
 			Assert.AreEqual(with1, results[2]);
 			Assert.AreEqual(withMinus1, results[3]);
 		}
-
-
-		public class NullableFloatClass
-		{
-			[PrimaryKey, AutoIncrement]
-			public int ID { get; set; }
-
-			public Nullable<float> NullableFloat { get; set; }
-
-			public override bool Equals(object obj)
-			{
-				NullableFloatClass other = (NullableFloatClass)obj;
-				return this.ID == other.ID && this.NullableFloat == other.NullableFloat;
-			}
-		}
-
+		
 		[Test]
 		[Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableFloat()
@@ -94,24 +85,7 @@ namespace SQLite.Tests
 			Assert.AreEqual(with1, results[2]);
 			Assert.AreEqual(withMinus1, results[3]);
 		}
-
-
-
-		public class StringClass
-		{
-			[PrimaryKey, AutoIncrement]
-			public int ID { get; set; }
-
-			//Strings are allowed to be null by default
-			public string StringData { get; set; }
-
-			public override bool Equals(object obj)
-			{
-				StringClass other = (StringClass)obj;
-				return this.ID == other.ID && this.StringData == other.StringData;
-			}
-		}
-
+		
 		[Test]
 		public void NullableString()
 		{
