@@ -275,7 +275,20 @@ namespace SQLite
             
             return count;
 		}
-
+		
+		/// <summary>Executes "drop table" on the database.</summary>
+		public int DropTable<T>()
+		{
+			var ty = typeof(T);
+	
+			TableMapping map;
+			if (_tables == null || !_tables.TryGetValue(ty.FullName, out map)) {
+				map = GetMapping<T>();
+			}
+			var query = "drop table if exists \"" + map.TableName + "\"";
+			return Execute(query);
+		}
+		
 		public class TableInfo
 		{
 			public int cid { get; set; }
