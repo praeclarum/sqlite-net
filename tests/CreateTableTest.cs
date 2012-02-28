@@ -77,6 +77,9 @@ namespace SQLite.Tests
 			db.Insert(l);
 			var lo = db.Table<OrderLine>().Where(x => x.Status == CreateTableTest.OrderLineStatus.Shipped).FirstOrDefault();
 			Assert.AreEqual(lo.Id, l.Id);
+			
+			db.DropTable<Order> ();
+			Assert.Throws(typeof(SQLiteException), ()=> db.Insert(new Order()));
 		}
 	}
 }
