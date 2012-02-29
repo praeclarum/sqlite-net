@@ -174,7 +174,5 @@ namespace SQLite.Tests
 
             db.Close();
         }
-
-        
     }
 }

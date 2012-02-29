@@ -98,6 +98,22 @@ namespace SQLite.Tests
 			Assert.AreEqual(numCount, objs.Length - 10);
 			foreach (var o in (from o in db.Table<TestObj>() select o))
 				Assert.AreNotEqual(2, o.SubId);
+			
+			// Get methods
+			obj = db.Get<TestObj>(2,3);
+			var pks = db.GetPrimaryKeys(obj);
+			Assert.AreEqual(obj.Id, (int)pks[0]);
+			Assert.AreEqual(obj.SubId, (int)pks[1]);
+			
+			obj = db.GetOrDefault<TestObj>(11,-1);
+			Assert.IsNull(obj);
+
+			try {
+				db.GetOrDefault<TestObj>(1,2,3);
+			}
+			catch (SQLiteException ex) {
+				Assert.AreEqual(SQLite3.Result.Error, ex.Result);
+			}
 		}
 	}
 }

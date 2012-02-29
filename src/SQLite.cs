@@ -507,6 +507,14 @@ namespace SQLite
 			return new TableQuery<T> (this);
 		}
 
+		/// <summary>Convert the variable arguments of the 'Get' methods into an arguments array</summary>
+		private static object[] ArgsArray(object pk, params object[] pks)
+		{
+			var args = new List<object>{pk};
+			args.AddRange(pks);
+			return args.ToArray();
+		}
+
 		/// <summary>
 		/// Retrieves the objects matching the given primary key(s) from the table
 		/// associated with the specified type. Use of this method requires that
@@ -516,18 +524,29 @@ namespace SQLite
 		/// <param name="pk">The primary key for 'T'.</param>
 		/// <param name="pks">Any addition primary keys for multiple pk tables</param>
 		/// <returns>The list of objects with the given primary key(s).</returns>
-		public List<T> GetList<T>(object pk, params object[] pks) where T :new()
+		private List<T> GetList<T>(object[] pks) where T :new()
 		{
 			var map = GetMapping<T>();
+			if (map.PK.Length != pks.Length)
+				throw SQLiteException.New(SQLite3.Result.Error, "Incorrect number of primary key values provided");
 			
 			string query = string.Format("select * from \"{0}\" where {1}"
 				,map.TableName
 				,string.Join(" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray()));
 			
-			var args = new List<object>{pk};
-			args.AddRange(pks);
+			return Query<T>(query, pks);
+		}
 			
-			return Query<T>(query, args.ToArray());
+		/// <summary>
+		/// Returns an array containing the values of the primary keys attributed in 'obj'
+		/// </summary>
+		public object[] GetPrimaryKeys<T>(T obj)
+		{
+			var map = GetMapping<T>();
+			var args = new object[map.PK.Length];
+			for (int i = 0; i != map.PK.Length; ++i)
+				args[i] = map.PK[i].GetValue(obj);
+			return args;
 		}
 		
 		/// <summary>
@@ -540,7 +559,11 @@ namespace SQLite
 		/// <returns>The object with the given primary key. Throws a not found exception if the object is not found.</returns>
 		public T Get<T>(object pk, params object[] pks)  where T : new()
 		{
-			return GetList<T>(pk, pks).First();
+			return Get<T>(ArgsArray(pk, pks));
+		}
+		public T Get<T>(object[] pks) where T:new()
+		{
+			return GetList<T>(pks).First();
 		}
 		
 		/// <summary>
@@ -553,7 +576,11 @@ namespace SQLite
 		/// <returns>The first object in the list matching the given primary key(s). Returns null if no matching objects are found</returns>
 		public T GetOrDefault<T>(object pk, params object[] pks) where T : new()
 		{
-			return GetList<T>(pk, pks).FirstOrDefault();
+			return GetOrDefault<T>(ArgsArray(pk, pks));
+		}
+		public T GetOrDefault<T>(object[] pks) where T : new()
+		{
+			return GetList<T>(pks).FirstOrDefault();
 		}
 		
 		/// <summary>
