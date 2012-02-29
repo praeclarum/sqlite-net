@@ -673,7 +673,7 @@ namespace SQLite
 			var cols = map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
-				vals [i] = cols [i].GetValue (obj);
+				vals[i] = cols[i].GetValue(obj);
 			}
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
@@ -1003,19 +1003,27 @@ namespace SQLite
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
 				IsPK = Orm.IsPK (prop);
-                Indices = Orm.GetIndices(prop);
+				Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
 				MaxStringLength = Orm.MaxStringLength (prop);
 			}
 
 			public override void SetValue (object obj, object val)
 			{
-				_prop.SetValue (obj, val, null);
+				if (ColumnType == typeof(Guid)) {
+					_prop.SetValue(obj, new Guid((string)val), null);
+				} else {
+					_prop.SetValue (obj, val, null);
+				}
 			}
 
 			public override object GetValue (object obj)
 			{
-				return _prop.GetValue (obj, null);
+				if (ColumnType == typeof(Guid)) {
+					return ((Guid)_prop.GetValue(obj, null)).ToString();
+				} else {
+					return _prop.GetValue (obj, null);
+				}
 			}
 		}
 	}
@@ -1080,6 +1088,8 @@ namespace SQLite
 			} else if (clrType == typeof(String)) {
 				int len = p.MaxStringLength;
 				return "varchar(" + len + ")";
+			} else if (clrType == typeof(Guid)) {
+				return "varchar(" + Guid.Empty.ToString().Length + ")";
 			} else if (clrType == typeof(DateTime)) {
 				return "datetime";
 			} else if (clrType.IsEnum) {
@@ -1346,6 +1356,8 @@ namespace SQLite
 				return null;
 			} else {
 				if (clrType == typeof(String)) {
+					return SQLite3.ColumnString (stmt, index);
+				} else if (clrType == typeof(Guid)) {
 					return SQLite3.ColumnString (stmt, index);
 				} else if (clrType == typeof(Int32)) {
 					return (int)SQLite3.ColumnInt (stmt, index);
