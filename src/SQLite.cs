@@ -185,15 +185,18 @@ namespace SQLite
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public TableMapping GetMapping (Type type)
+		public TableMapping GetMapping<T>()
 		{
+			var type = typeof (T);
+			var typeFullName = type.FullName ?? string.Empty;
+
 			if (_mappings == null) {
 				_mappings = new Dictionary<string, TableMapping> ();
 			}
 			TableMapping map;
-			if (!_mappings.TryGetValue (type.FullName, out map)) {
+			if (!_mappings.TryGetValue (typeFullName, out map)) {
 				map = new TableMapping (type);
-				_mappings [type.FullName] = map;
+				_mappings [typeFullName] = map;
 			}
 			return map;
 		}
@@ -223,13 +226,13 @@ namespace SQLite
 			}
 			TableMapping map;
 			if (!_tables.TryGetValue (ty.FullName, out map)) {
-				map = GetMapping (ty);
+				map = GetMapping<T>();
 				_tables.Add (ty.FullName, map);
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
-			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
-			var decl = string.Join (",\n", decls.ToArray ());
+			var decl = (map.PK.Length > 1)
+				? string.Join (",\n", (from c in map.Columns select Orm.SqlDeclNoPk (c)).ToArray ()) + ",\n" + Orm.SqlTblConstaintPk (map.Columns)
+				: string.Join (",\n", (from c in map.Columns select Orm.SqlDecl (c)).ToArray ());
 			query += decl;
 			query += ")";
 			
@@ -272,7 +275,20 @@ namespace SQLite
             
             return count;
 		}
-
+		
+		/// <summary>Executes "drop table" on the database.</summary>
+		public int DropTable<T>()
+		{
+			var ty = typeof(T);
+	
+			TableMapping map;
+			if (_tables == null || !_tables.TryGetValue(ty.FullName, out map)) {
+				map = GetMapping<T>();
+			}
+			var query = "drop table if exists \"" + map.TableName + "\"";
+			return Execute(query);
+		}
+		
 		public class TableInfo
 		{
 			public int cid { get; set; }
@@ -445,10 +461,10 @@ namespace SQLite
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
 		/// </returns>
-		public List<object> Query (TableMapping map, string query, params object[] args)
+		public List<T> Query<T>(TableMapping map, string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			return cmd.ExecuteQuery<object> (map);
+			return cmd.ExecuteQuery<T> (map);
 		}
 
 		/// <summary>
@@ -473,10 +489,10 @@ namespace SQLite
 		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
 		/// connection must remain open for the lifetime of the enumerator.
 		/// </returns>
-		public IEnumerable<object> DeferredQuery(TableMapping map, string query, params object[] args)
+		public IEnumerable<T> DeferredQuery<T>(TableMapping map, string query, params object[] args)
 		{
 			var cmd = CreateCommand(query, args);
-			return cmd.ExecuteDeferredQuery<object>(map);
+			return cmd.ExecuteDeferredQuery<T>(map);
 		}
 
 		/// <summary>
@@ -491,25 +507,82 @@ namespace SQLite
 			return new TableQuery<T> (this);
 		}
 
+		/// <summary>Convert the variable arguments of the 'Get' methods into an arguments array</summary>
+		private static object[] ArgsArray(object pk, params object[] pks)
+		{
+			var args = new List<object>{pk};
+			args.AddRange(pks);
+			return args.ToArray();
+		}
+
+		/// <summary>
+		/// Retrieves the objects matching the given primary key(s) from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type has one or more designated PrimaryKey(s) (using the
+		/// PrimaryKeyAttribute or PrimaryKeyNamesAttribute).
+		/// </summary>
+		/// <param name="pk">The primary key for 'T'.</param>
+		/// <param name="pks">Any addition primary keys for multiple pk tables</param>
+		/// <returns>The list of objects with the given primary key(s).</returns>
+		private List<T> GetList<T>(object[] pks) where T :new()
+		{
+			var map = GetMapping<T>();
+			if (map.PK.Length != pks.Length)
+				throw SQLiteException.New(SQLite3.Result.Error, "Incorrect number of primary key values provided");
+			
+			string query = string.Format("select * from \"{0}\" where {1}"
+				,map.TableName
+				,string.Join(" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray()));
+			
+			return Query<T>(query, pks);
+		}
+		
+		/// <summary>
+		/// Returns an array containing the values of the primary keys in 'obj'
+		/// </summary>
+		public object[] GetPrimaryKeys<T>(T obj)
+		{
+			var map = GetMapping<T>();
+			var args = new object[map.PK.Length];
+			for (int i = 0; i != map.PK.Length; ++i)
+				args[i] = map.PK[i].GetValue(obj);
+			return args;
+		}
+		
 		/// <summary>
 		/// Attempts to retrieve an object with the given primary key from the table
 		/// associated with the specified type. Use of this method requires that
 		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
 		/// </summary>
-		/// <param name="pk">
-		/// The primary key.
-		/// </param>
-		/// <returns>
-		/// The object with the given primary key. Throws a not found exception
-		/// if the object is not found.
-		/// </returns>
-		public T Get<T> (object pk) where T : new()
+		/// <param name="pk">The primary key for 'T'.</param>
+		/// <param name="pks">Any addition primary keys for multiple pk tables</param>
+		/// <returns>The object with the given primary key. Throws a not found exception if the object is not found.</returns>
+		public T Get<T>(object pk, params object[] pks)  where T : new()
 		{
-			var map = GetMapping (typeof(T));
-			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
-			return Query<T> (query, pk).First ();
+			return Get<T>(ArgsArray(pk, pks));
 		}
-
+		public T Get<T>(object[] pks) where T:new()
+		{
+			return GetList<T>(pks).First();
+		}
+		
+		/// <summary>
+		/// Retrieves the first object that matches the given primary key(s) from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type has one or more designated PrimaryKey(s) (using the PrimaryKeyAttribute).
+		/// </summary>
+		/// <param name="pk">The primary key for 'T'.</param>
+		/// <param name="pks">Any addition primary keys for multiple pk tables</param>
+		/// <returns>The first object in the list matching the given primary key(s). Returns null if no matching objects are found</returns>
+		public T GetOrDefault<T>(object pk, params object[] pks) where T : new()
+		{
+			return GetOrDefault<T>(ArgsArray(pk, pks));
+		}
+		public T GetOrDefault<T>(object[] pks) where T : new()
+		{
+			return GetList<T>(pks).FirstOrDefault();
+		}
+		
 		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
@@ -581,7 +654,7 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects)
+		public int InsertAll<T>(IEnumerable<T> objects)
 		{
 			BeginTransaction ();
 			var c = 0;
@@ -602,25 +675,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int Insert (object obj)
+		public int Insert<T>(T obj)
 		{
-			if (obj == null) {
-				return 0;
-			}
-			return Insert (obj, "", obj.GetType ());
-		}
-
-		public int Insert (object obj, Type objType)
-		{
-			return Insert (obj, "", objType);
-		}
-
-		public int Insert (object obj, string extra)
-		{
-			if (obj == null) {
-				return 0;
-			}
-			return Insert (obj, extra, obj.GetType ());
+			return Insert(obj, "");
 		}
 
 		/// <summary>
@@ -636,18 +693,14 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int Insert (object obj, string extra, Type objType)
+		public int Insert<T>(T obj, string extra)
 		{
-			if (obj == null || objType == null) {
-				return 0;
-			}
-			
-			var map = GetMapping (objType);
+			var map = GetMapping<T>();
 			
 			var cols = map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
-				vals [i] = cols [i].GetValue (obj);
+				vals[i] = cols[i].GetValue(obj);
 			}
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
@@ -663,47 +716,68 @@ namespace SQLite
 
 		/// <summary>
 		/// Updates all of the columns of a table using the specified object
-		/// except for its primary key.
-		/// The object is required to have a primary key.
+		/// except for its primary key(s).
+		/// The object is required to have at least one primary key.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
+		/// The object to update. It must have one or more primary keys designated using the PrimaryKeyAttribute.
 		/// </param>
 		/// <returns>
 		/// The number of rows updated.
 		/// </returns>
-		public int Update (object obj)
+		public int Update<T>(T obj)
 		{
-			if (obj == null) {
-				return 0;
+			var map = GetMapping<T>();
+			if (map.PK == null) {
+				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no primary keys");
 			}
-			return Update (obj, obj.GetType ());
+
+			var cols = from c in map.Columns where map.PK.Contains (c) == false select c;
+			var vals = from c in cols select c.GetValue (obj);
+			var query = string.Format("update \"{0}\" set {1} where {2}"
+				,map.TableName
+				,string.Join(", "   , (from c in cols   select "\""+c.Name+"\" = ?").ToArray())
+				,string.Join(" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray())
+				);
+			
+			var args = new List<object> (vals);
+			args.AddRange(from c in map.PK select c.GetValue (obj));
+			return Execute (query, args.ToArray ());
 		}
 
-		public int Update (object obj, Type objType)
+		/// <summary>
+		/// Updates just the field specified by the propertyName with the values passed in the propertyValue
+		/// The type of object to update is given by T and the primary key(s) by (pk,pks)
+		/// </summary>
+		/// <returns>Number of rows affected</returns>
+		public int Update<T>(string propertyName, object propertyValue, object pk, params object[] pks)
 		{
-			if (obj == null || objType == null) {
-				return 0;
-			}
-			
-			var map = GetMapping (objType);
-			
-			var pk = map.PK;
-			
-			if (pk == null) {
+			var map = GetMapping<T>();
+			if (map.PK == null) {
 				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
+
+			string query = string.Format ("update \"{0}\" set \"{1}\" = ? where {2}"
+				,map.TableName
+				,propertyName
+				,string.Join (" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray())
+				);
 			
-			var cols = from p in map.Columns
-				where p != pk
-				select p;
-			var vals = from c in cols
-				select c.GetValue (obj);
-			var ps = new List<object> (vals);
-			ps.Add (pk.GetValue (obj));
-			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
-				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
-			return Execute (q, ps.ToArray ());
+			var args = new List<object> {propertyValue, pk};
+			args.AddRange (pks);
+			return Execute (query, args.ToArray ());
+	 	}
+
+		/// <summary>
+		/// Updates just the field specified by 'propertyName' with the
+		/// value 'propertyValue' for all objects of type T
+		/// </summary>
+		/// <returns>Number of rows affected</returns>
+		public int UpdateAll<T>(string propertyName, object propertyValue)
+		{
+			var map = GetMapping<T>();
+			string query = string.Format ("update \"{0}\" set \"{1}\" = ?", map.TableName, propertyName);
+			return Execute(query, new object[1]{propertyValue});
 		}
 
 		/// <summary>
@@ -717,13 +791,17 @@ namespace SQLite
 		/// </returns>
 		public int Delete<T> (T obj)
 		{
-			var map = GetMapping (obj.GetType ());
-			var pk = map.PK;
-			if (pk == null) {
+			var map = GetMapping<T>();
+			if (map.PK == null) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
-			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-			return Execute (q, pk.GetValue (obj));
+			var query = string.Format("delete from \"{0}\" where {1}"
+				,map.TableName
+				,string.Join(" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray())
+				);
+			
+			var args = from c in map.PK select c.GetValue(obj);
+			return Execute (query, args.ToArray ());
 		}
 
 		public void Dispose ()
@@ -752,14 +830,38 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class PrimaryKeyAttribute : Attribute
 	{
+		/// <summary>Defines the order of keys for multiple primary key tables</summary>
+		public int MultiKeyOrder { get; set; }
+		public PrimaryKeyAttribute() { MultiKeyOrder = 0; }
 	}
 
+	///<summary>
+	/// Class level attribute for declaring primary keys for partial and inherited classes.
+	/// Notice that for sqlite3 AutoIncrement and multiple primary keys are mutually exclusive
+	/// The order of keys listed in the attribute is the order that they should be provided
+	/// in calls to Get(), Update(), etc
+	///</summary>
+	[AttributeUsage(AttributeTargets.Class|AttributeTargets.Struct, AllowMultiple = false, Inherited = true)]
+	public class PrimaryKeyNamesAttribute : Attribute
+	{
+		public string[] KeyNames      { get; private set; }
+		public bool     AutoIncrement { get; set; }
+		public PrimaryKeyNamesAttribute(params string[] keyNames)
+		{
+			KeyNames = keyNames;
+			AutoIncrement  = false;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class AutoIncrementAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class IndexedAttribute : Attribute
 	{
         public string Name { get; set; }
@@ -774,24 +876,25 @@ namespace SQLite
         }
     }
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class IgnoreAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class MaxLengthAttribute : Attribute
 	{
 		public int Value { get; private set; }
-
 		public MaxLengthAttribute (int length)
 		{
 			Value = length;
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class CollationAttribute: Attribute
 	{
 		public string Value { get; private set; }
-
 		public CollationAttribute (string collation)
 		{
 			Value = collation;
@@ -805,11 +908,10 @@ namespace SQLite
 		public string TableName { get; private set; }
 
 		public Column[] Columns { get; private set; }
+		public Column[] PK { get; private set; }
 
-		public Column PK { get; private set; }
-
-		Column _autoPk = null;
-		Column[] _insertColumns = null;
+		private readonly Column _autoPk = null;
+		private Column[] _insertColumns = null;
 
 		public TableMapping (Type type)
 		{
@@ -817,23 +919,33 @@ namespace SQLite
 			TableName = MappedType.Name;
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 			var cols = new List<Column> ();
-			foreach (var p in props) {
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
-				if (p.CanWrite && !ignore) {
-					cols.Add (new PropColumn (p));
-				}
-			}
-			Columns = cols.ToArray ();
-			foreach (var c in Columns) {
-				if (c.IsAutoInc && c.IsPK) {
-					_autoPk = c;
-				}
-				if (c.IsPK) {
-					PK = c;
+			var pks = new List<Column> ();
+			foreach (var p in props)
+			{
+				var ignore = p.GetCustomAttributes(typeof(IgnoreAttribute), true).Length > 0;
+				if (p.CanWrite && !ignore)
+				{
+					var c = new PropColumn(p);
+					cols.Add(c);
+					if (c.IsPK)
+					{
+						pks.Add(c);
+						if (c.IsAutoInc)
+						{
+							if (_autoPk != null) throw SQLiteException.New(SQLite3.Result.Error, "Only one property can be an auto incrementing primary key");
+							_autoPk = c;
+						}
+					}
 				}
 			}
 			
+			// Ensure the primary key array contains the primary keys in the correct order
+			pks.Sort((lhs,rhs) => lhs.PKOrder - rhs.PKOrder);
+			
+			Columns = cols.ToArray ();
+			PK = pks.ToArray ();
 			HasAutoIncPK = _autoPk != null;
+			ValidateKeys(type);
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -860,11 +972,10 @@ namespace SQLite
 			return exact;
 		}
 
-		
 		PreparedSqlLiteInsertCommand _insertCommand;
 		string _insertCommandExtra = null;
 
-        public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
+		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
         {
 
             if (_insertCommand == null) {
@@ -879,7 +990,7 @@ namespace SQLite
             return _insertCommand;
         }
 
-        private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
+		private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
         {
             var cols = InsertColumns;
             var insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", TableName, 
@@ -893,7 +1004,23 @@ namespace SQLite
             return insertCommand;
         }
 
-        protected internal void Dispose()
+		private void ValidateKeys(Type type)
+		{
+			// Check all keys given by PrimaryKeyNamesAttribute exist
+			var attrs = type.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+			if (attrs.Length != 0)
+			{
+				var attr = (PrimaryKeyNamesAttribute)attrs[0];
+				foreach (string key in attr.KeyNames)
+				{
+					string k = key;
+					if (!Array.Exists(PK, c => c.Name == k))
+						throw new KeyNotFoundException("Primary key " + k + " not found on type " + type.Name);
+				}
+			}
+		}
+
+		protected internal void Dispose()
         {
             if (_insertCommand != null) {
                 _insertCommand.Dispose();
@@ -913,7 +1040,9 @@ namespace SQLite
 
 			public bool IsPK { get; protected set; }
 
-            public IEnumerable<IndexedAttribute> Indices { get; set; }
+			public int PKOrder { get; protected set; }
+
+			public IEnumerable<IndexedAttribute> Indices { get; set; }
 
 			public bool IsNullable { get; protected set; }
 
@@ -926,30 +1055,40 @@ namespace SQLite
 
 		public class PropColumn : Column
 		{
-			PropertyInfo _prop;
+			private readonly PropertyInfo _prop;
 
 			public PropColumn (PropertyInfo prop)
 			{
+				int pkOrder;
 				_prop = prop;
 				Name = prop.Name;
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
-				IsPK = Orm.IsPK (prop);
-                Indices = Orm.GetIndices(prop);
+				IsPK = Orm.IsPK (prop, out pkOrder);
+				PKOrder = pkOrder;
+				Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
 				MaxStringLength = Orm.MaxStringLength (prop);
 			}
 
 			public override void SetValue (object obj, object val)
 			{
-				_prop.SetValue (obj, val, null);
+				if (ColumnType == typeof(Guid)) {
+					_prop.SetValue(obj, new Guid((string)val), null);
+				} else {
+					_prop.SetValue (obj, val, null);
+				}
 			}
 
 			public override object GetValue (object obj)
 			{
-				return _prop.GetValue (obj, null);
+				if (ColumnType == typeof(Guid)) {
+					return ((Guid)_prop.GetValue(obj, null)).ToString();
+				} else {
+					return _prop.GetValue (obj, null);
+				}
 			}
 		}
 	}
@@ -957,6 +1096,30 @@ namespace SQLite
 	public static class Orm
 	{
 		public const int DefaultMaxStringLength = 140;
+
+		/// <summary>Generate a table constraint for the primary key columns</summary>
+		public static string SqlTblConstaintPk(IEnumerable<TableMapping.Column> cols)
+		{
+			return "primary key (" + string.Join(",", (from c in cols where c.IsPK select c.Name).ToArray()) + ")";
+		}
+		
+		/// <summary>Generate a declaration for a column that does not include the primary key constraint</summary>
+		public static string SqlDeclNoPk (TableMapping.Column p)
+		{
+			string decl = "\"" + p.Name + "\" " + SqlType (p) + " ";
+			
+			if (p.IsAutoInc) {
+				decl += "autoincrement ";
+			}
+			if (!p.IsNullable) {
+				decl += "not null ";
+			}
+			if (!string.IsNullOrEmpty (p.Collation)) {
+				decl += "collate " + p.Collation + " ";
+			}
+			
+			return decl;
+		}
 
 		public static string SqlDecl (TableMapping.Column p)
 		{
@@ -990,6 +1153,8 @@ namespace SQLite
 			} else if (clrType == typeof(String)) {
 				int len = p.MaxStringLength;
 				return "varchar(" + len + ")";
+			} else if (clrType == typeof(Guid)) {
+				return "varchar(" + Guid.Empty.ToString().Length + ")";
 			} else if (clrType == typeof(DateTime)) {
 				return "datetime";
 			} else if (clrType.IsEnum) {
@@ -1001,10 +1166,48 @@ namespace SQLite
 			}
 		}
 
-		public static bool IsPK (MemberInfo p)
+		public static bool IsPK (MemberInfo p, out int order)
 		{
-			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-			return attrs.Length > 0;
+			// Check for PrimaryKeyAttribute first
+			var attrs = p.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
+			if (attrs.Length != 0)
+			{
+				order = ((PrimaryKeyAttribute)attrs[0]).MultiKeyOrder;
+				return true;
+			}
+			
+			// Check for PrimaryKeyNamesAttribute on the class
+			attrs = p.ReflectedType.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+			if (attrs.Length != 0)
+			{
+				PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
+				order = Array.IndexOf(att.KeyNames, p.Name);
+				if (order != -1) return true;
+			}
+			
+			// Not a primary key
+			order = 0;
+			return false;
+		}
+
+		public static bool IsAutoInc (MemberInfo p)
+		{
+			// CHeck for AutoIncrementAttribute first
+			var attrs = p.GetCustomAttributes(typeof(AutoIncrementAttribute), true);
+			if (attrs.Length != 0) return true;
+			
+			// Check for PrimaryKeyNamesAttribute on the class
+			attrs = p.ReflectedType.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+			if (attrs.Length != 0)
+			{
+				// SQLite does not support multiple primary keys and auto increment at the same time
+				PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
+				if (att.KeyNames.Length == 1 && att.KeyNames[0] == p.Name && att.AutoIncrement)
+					return true;
+			}
+			
+			// Not auto increment
+			return false;
 		}
 
 		public static string Collation (MemberInfo p)
@@ -1017,13 +1220,7 @@ namespace SQLite
 			}
 		}
 
-		public static bool IsAutoInc (MemberInfo p)
-		{
-			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
-			return attrs.Length > 0;
-		}
-
-        public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
+		public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
         {
             var attrs = p.GetCustomAttributes(typeof(IndexedAttribute), true);
             return attrs.Cast<IndexedAttribute>();
@@ -1042,8 +1239,8 @@ namespace SQLite
 
 	public class SQLiteCommand
 	{
-		SQLiteConnection _conn;
-		private List<Binding> _bindings;
+		private readonly SQLiteConnection _conn;
+		private readonly List<Binding> _bindings;
 
 		public string CommandText { get; set; }
 
@@ -1077,12 +1274,12 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> () where T : new()
 		{
-			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T)));
+			return ExecuteDeferredQuery<T>(_conn.GetMapping<T>());
 		}
 
 		public List<T> ExecuteQuery<T> () where T : new()
 		{
-			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))).ToList();
+			return ExecuteDeferredQuery<T>(_conn.GetMapping<T>()).ToList();
 		}
 
 		public List<T> ExecuteQuery<T> (TableMapping map)
@@ -1234,12 +1431,14 @@ namespace SQLite
 			public int Index { get; set; }
 		}
 
-		object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
+		private static object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
 		{
 			if (type == SQLite3.ColType.Null) {
 				return null;
 			} else {
 				if (clrType == typeof(String)) {
+					return SQLite3.ColumnString (stmt, index);
+				} else if (clrType == typeof(Guid)) {
 					return SQLite3.ColumnString (stmt, index);
 				} else if (clrType == typeof(Int32)) {
 					return (int)SQLite3.ColumnInt (stmt, index);
@@ -1392,7 +1591,7 @@ namespace SQLite
 		public TableQuery (SQLiteConnection conn)
 		{
 			Connection = conn;
-			Table = Connection.GetMapping (typeof(T));
+			Table = Connection.GetMapping<T>();
 		}
 
 		public TableQuery<T> Clone ()
@@ -1728,25 +1927,25 @@ namespace SQLite
 		}
 
 #if !USE_CSHARP_SQLITE
-		[DllImport("sqlite3", EntryPoint = "sqlite3_open")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_open", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open (string filename, out IntPtr db);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_open_v2")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open (string filename, out IntPtr db, int flags, IntPtr zvfs);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_close")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_config")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_busy_timeout")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_busy_timeout", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_changes")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_changes", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int Changes (IntPtr db);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Prepare2 (IntPtr db, string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
 
 		public static IntPtr Prepare2 (IntPtr db, string query)
@@ -1759,19 +1958,19 @@ namespace SQLite
 			return stmt;
 		}
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_step")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_step", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Step (IntPtr stmt);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_reset")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_reset", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Reset (IntPtr stmt);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_finalize")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_finalize", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Finalize (IntPtr stmt);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_last_insert_rowid")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_last_insert_rowid", CallingConvention = CallingConvention.Cdecl)]
 		public static extern long LastInsertRowid (IntPtr db);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_errmsg16")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_errmsg16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr Errmsg (IntPtr db);
 
 		public static string GetErrmsg (IntPtr db)
@@ -1779,62 +1978,62 @@ namespace SQLite
 			return Marshal.PtrToStringUni (Errmsg (db));
 		}
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_parameter_index")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_parameter_index", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindParameterIndex (IntPtr stmt, string name);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_null")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_null", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindNull (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_int")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_int", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindInt (IntPtr stmt, int index, int val);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_int64")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_int64", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindInt64 (IntPtr stmt, int index, long val);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_double")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_double", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindDouble (IntPtr stmt, int index, double val);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_text")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_text", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindText (IntPtr stmt, int index, string val, int n, IntPtr free);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_blob")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_blob", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindBlob (IntPtr stmt, int index, byte[] val, int n, IntPtr free);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_count")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_count", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int ColumnCount (IntPtr stmt);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_name")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_name", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnName (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_name16")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_name16", CallingConvention = CallingConvention.Cdecl)]
 		private static extern IntPtr ColumnName16Internal (IntPtr stmt, int index);
 		public static string ColumnName16(IntPtr stmt, int index)
 		{
 			return Marshal.PtrToStringUni(ColumnName16Internal(stmt, index));
 		}
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_type")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_type", CallingConvention = CallingConvention.Cdecl)]
 		public static extern ColType ColumnType (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_int")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_int", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int ColumnInt (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_int64")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_int64", CallingConvention = CallingConvention.Cdecl)]
 		public static extern long ColumnInt64 (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_double")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_double", CallingConvention = CallingConvention.Cdecl)]
 		public static extern double ColumnDouble (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnText (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text16")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_text16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnText16 (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_blob")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_blob", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnBlob (IntPtr stmt, int index);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_column_bytes")]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_column_bytes", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int ColumnBytes (IntPtr stmt, int index);
 
 		public static string ColumnString (IntPtr stmt, int index)
