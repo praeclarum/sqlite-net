@@ -927,6 +927,7 @@ namespace SQLite
 			Columns = cols.ToArray ();
 			PK = pks.ToArray ();
 			HasAutoIncPK = _autoPk != null;
+			ValidateKeys(type);
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -953,11 +954,10 @@ namespace SQLite
 			return exact;
 		}
 
-		
 		PreparedSqlLiteInsertCommand _insertCommand;
 		string _insertCommandExtra = null;
 
-        public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
+		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
         {
 
             if (_insertCommand == null) {
@@ -972,7 +972,7 @@ namespace SQLite
             return _insertCommand;
         }
 
-        private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
+		private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
         {
             var cols = InsertColumns;
             var insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", TableName, 
@@ -986,7 +986,23 @@ namespace SQLite
             return insertCommand;
         }
 
-        protected internal void Dispose()
+		private void ValidateKeys(Type type)
+		{
+			// Check all keys given by PrimaryKeyNamesAttribute exist
+			var attrs = type.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+			if (attrs.Length != 0)
+			{
+				var attr = (PrimaryKeyNamesAttribute)attrs[0];
+				foreach (string key in attr.KeyNames)
+				{
+					string k = key;
+					if (!Array.Exists(PK, c => c.Name == k))
+						throw new KeyNotFoundException("Primary key " + k + " not found on type " + type.Name);
+				}
+			}
+		}
+
+		protected internal void Dispose()
         {
             if (_insertCommand != null) {
                 _insertCommand.Dispose();

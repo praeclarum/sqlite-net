@@ -3,8 +3,6 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using SQLite;
 
 using NUnit.Framework;
 
@@ -26,7 +24,8 @@ namespace SQLite.Tests
 			public int Id { get; set; }
 			public DateTime PlacedTime { get; set; }
 		}
-		public class OrderHistory {
+		public class OrderHistory
+		{
 			[AutoIncrement, PrimaryKey]
 			public int Id { get; set; }
 			public int OrderId { get; set; }
@@ -44,6 +43,16 @@ namespace SQLite.Tests
 			public int Quantity { get; set; }
 			public decimal UnitPrice { get; set; }
 			public OrderLineStatus Status { get; set; }
+		}
+		[PrimaryKeyNames("Id", AutoIncrement = true)]
+		public class ClassLevelPK
+		{
+			public int Id { get; set; }
+		}
+		[PrimaryKeyNames("ID")]
+		public class ClassLevelPK_MissingKey
+		{
+			public int Id { get; set; }
 		}
 		public enum OrderLineStatus {
 			Placed = 1,
@@ -67,15 +76,15 @@ namespace SQLite.Tests
 			db.CreateTable<Order> ();
 			db.CreateTable<OrderLine> ();
 			db.CreateTable<OrderHistory> ();
-
+			db.CreateTable<ClassLevelPK> ();
+			Assert.Throws(typeof(KeyNotFoundException  ), () => db.CreateTable<ClassLevelPK_MissingKey> ());
+			
 			var orderLine = db.GetMapping<OrderLine>();
 			Assert.AreEqual(6, orderLine.Columns.Length, "Order history has 3 columns");
 			
-			var l = new OrderLine() {
-				Status = OrderLineStatus.Shipped
-			};
+			var l = new OrderLine{Status = OrderLineStatus.Shipped};
 			db.Insert(l);
-			var lo = db.Table<OrderLine>().Where(x => x.Status == CreateTableTest.OrderLineStatus.Shipped).FirstOrDefault();
+			var lo = db.Table<OrderLine>().Where(x => x.Status == OrderLineStatus.Shipped).FirstOrDefault();
 			Assert.AreEqual(lo.Id, l.Id);
 			
 			db.DropTable<Order> ();
