@@ -536,9 +536,9 @@ namespace SQLite
 			
 			return Query<T>(query, pks);
 		}
-			
+		
 		/// <summary>
-		/// Returns an array containing the values of the primary keys attributed in 'obj'
+		/// Returns an array containing the values of the primary keys in 'obj'
 		/// </summary>
 		public object[] GetPrimaryKeys<T>(T obj)
 		{
@@ -830,14 +830,21 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class PrimaryKeyAttribute : Attribute
 	{
+		/// <summary>Defines the order of keys for multiple primary key tables</summary>
+		public int MultiKeyOrder { get; set; }
+		public PrimaryKeyAttribute() { MultiKeyOrder = 0; }
 	}
 
 	///<summary>
 	/// Class level attribute for declaring primary keys for partial and inherited classes.
 	/// Notice that for sqlite3 AutoIncrement and multiple primary keys are mutually exclusive
+	/// The order of keys listed in the attribute is the order that they should be provided
+	/// in calls to Get(), Update(), etc
 	///</summary>
+	[AttributeUsage(AttributeTargets.Class|AttributeTargets.Struct, AllowMultiple = false, Inherited = true)]
 	public class PrimaryKeyNamesAttribute : Attribute
 	{
 		public string[] KeyNames      { get; private set; }
@@ -849,10 +856,12 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class AutoIncrementAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class IndexedAttribute : Attribute
 	{
         public string Name { get; set; }
@@ -867,24 +876,25 @@ namespace SQLite
         }
     }
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class IgnoreAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class MaxLengthAttribute : Attribute
 	{
 		public int Value { get; private set; }
-
 		public MaxLengthAttribute (int length)
 		{
 			Value = length;
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class CollationAttribute: Attribute
 	{
 		public string Value { get; private set; }
-
 		public CollationAttribute (string collation)
 		{
 			Value = collation;
@@ -900,8 +910,8 @@ namespace SQLite
 		public Column[] Columns { get; private set; }
 		public Column[] PK { get; private set; }
 
-		Column _autoPk = null;
-		Column[] _insertColumns = null;
+		private readonly Column _autoPk = null;
+		private Column[] _insertColumns = null;
 
 		public TableMapping (Type type)
 		{
@@ -910,20 +920,28 @@ namespace SQLite
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 			var cols = new List<Column> ();
 			var pks = new List<Column> ();
-			foreach (var p in props) {
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
-				if (p.CanWrite && !ignore) {
-					var c = new PropColumn (p);
-					cols.Add (c);
-					if (c.IsPK) {
+			foreach (var p in props)
+			{
+				var ignore = p.GetCustomAttributes(typeof(IgnoreAttribute), true).Length > 0;
+				if (p.CanWrite && !ignore)
+				{
+					var c = new PropColumn(p);
+					cols.Add(c);
+					if (c.IsPK)
+					{
 						pks.Add(c);
-						if (c.IsAutoInc) {
+						if (c.IsAutoInc)
+						{
 							if (_autoPk != null) throw SQLiteException.New(SQLite3.Result.Error, "Only one property can be an auto incrementing primary key");
 							_autoPk = c;
 						}
 					}
 				}
 			}
+			
+			// Ensure the primary key array contains the primary keys in the correct order
+			pks.Sort((lhs,rhs) => lhs.PKOrder - rhs.PKOrder);
+			
 			Columns = cols.ToArray ();
 			PK = pks.ToArray ();
 			HasAutoIncPK = _autoPk != null;
@@ -1022,7 +1040,9 @@ namespace SQLite
 
 			public bool IsPK { get; protected set; }
 
-            public IEnumerable<IndexedAttribute> Indices { get; set; }
+			public int PKOrder { get; protected set; }
+
+			public IEnumerable<IndexedAttribute> Indices { get; set; }
 
 			public bool IsNullable { get; protected set; }
 
@@ -1035,17 +1055,19 @@ namespace SQLite
 
 		public class PropColumn : Column
 		{
-			PropertyInfo _prop;
+			private readonly PropertyInfo _prop;
 
 			public PropColumn (PropertyInfo prop)
 			{
+				int pkOrder;
 				_prop = prop;
 				Name = prop.Name;
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
-				IsPK = Orm.IsPK (prop);
+				IsPK = Orm.IsPK (prop, out pkOrder);
+				PKOrder = pkOrder;
 				Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
 				MaxStringLength = Orm.MaxStringLength (prop);
@@ -1144,18 +1166,48 @@ namespace SQLite
 			}
 		}
 
-		public static bool IsPK (MemberInfo p)
+		public static bool IsPK (MemberInfo p, out int order)
 		{
-			// If the member is Attributed as a PK
-			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-			if (attrs.Length > 0) return true;
+			// Check for PrimaryKeyAttribute first
+			var attrs = p.GetCustomAttributes(typeof(PrimaryKeyAttribute), true);
+			if (attrs.Length != 0)
+			{
+				order = ((PrimaryKeyAttribute)attrs[0]).MultiKeyOrder;
+				return true;
+			}
 			
-			// If the Class is attributed indicating this member as a PK
+			// Check for PrimaryKeyNamesAttribute on the class
 			attrs = p.ReflectedType.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
-			if (attrs.Length == 0) return false; // Class not attributed with PrimaryKeyNamesAttribute
+			if (attrs.Length != 0)
+			{
+				PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
+				order = Array.IndexOf(att.KeyNames, p.Name);
+				if (order != -1) return true;
+			}
 			
-			PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
-			return (att != null && att.KeyNames.Contains (p.Name));
+			// Not a primary key
+			order = 0;
+			return false;
+		}
+
+		public static bool IsAutoInc (MemberInfo p)
+		{
+			// CHeck for AutoIncrementAttribute first
+			var attrs = p.GetCustomAttributes(typeof(AutoIncrementAttribute), true);
+			if (attrs.Length != 0) return true;
+			
+			// Check for PrimaryKeyNamesAttribute on the class
+			attrs = p.ReflectedType.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+			if (attrs.Length != 0)
+			{
+				// SQLite does not support multiple primary keys and auto increment at the same time
+				PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
+				if (att.KeyNames.Length == 1 && att.KeyNames[0] == p.Name && att.AutoIncrement)
+					return true;
+			}
+			
+			// Not auto increment
+			return false;
 		}
 
 		public static string Collation (MemberInfo p)
@@ -1168,21 +1220,7 @@ namespace SQLite
 			}
 		}
 
-		public static bool IsAutoInc (MemberInfo p)
-		{
-			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
-			if (attrs.Length > 0) return true;
-			
-			// If the Class is attributed indicating this member as a PK
-			attrs = p.ReflectedType.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
-			if (attrs.Length == 0) return false; // Class not attributed with PrimaryKeyNamesAttribute
-			
-			// SQLite does not support multiple primary keys and auto increment at the same time
-			PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
-			return (att != null && att.KeyNames.Length == 1 && att.KeyNames[0] == p.Name && att.AutoIncrement);
-		}
-
-        public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
+		public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
         {
             var attrs = p.GetCustomAttributes(typeof(IndexedAttribute), true);
             return attrs.Cast<IndexedAttribute>();
@@ -1201,8 +1239,8 @@ namespace SQLite
 
 	public class SQLiteCommand
 	{
-		SQLiteConnection _conn;
-		private List<Binding> _bindings;
+		private readonly SQLiteConnection _conn;
+		private readonly List<Binding> _bindings;
 
 		public string CommandText { get; set; }
 
@@ -1393,7 +1431,7 @@ namespace SQLite
 			public int Index { get; set; }
 		}
 
-		object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
+		private static object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
 		{
 			if (type == SQLite3.ColType.Null) {
 				return null;
