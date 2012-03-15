@@ -45,5 +45,6 @@
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />
     <Compile Include="NullableTest.cs" />
+    <Compile Include="DropTableTest.cs" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2011 Krueger Systems, Inc.
+// Copyright (c) 2009-2012 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -210,25 +210,13 @@ namespace SQLite
 		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
-		public int DeleteTable<T>()
+		public int DropTable<T>()
 		{
-			var ty = typeof(T);
+			var map = GetMapping (typeof (T));
 
-			if (_tables == null)
-			{
-				_tables = new Dictionary<string, TableMapping>();
-			}
-			TableMapping map;
-			if (!_tables.TryGetValue(ty.FullName, out map))
-			{
-				map = GetMapping(ty);
-				_tables.Add(ty.FullName, map);
-			}
 			var query = string.Format("drop table \"{0}\"", map.TableName);
 
-			var count = Execute(query);
-
-			return count;
+			return Execute (query);
 		}
 		
 		/// <summary>
