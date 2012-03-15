@@ -208,6 +208,30 @@ namespace SQLite
         }
 
 		/// <summary>
+		/// Executes a "drop table" on the database.  This is non-recoverable.
+		/// </summary>
+		public int DeleteTable<T>()
+		{
+			var ty = typeof(T);
+
+			if (_tables == null)
+			{
+				_tables = new Dictionary<string, TableMapping>();
+			}
+			TableMapping map;
+			if (!_tables.TryGetValue(ty.FullName, out map))
+			{
+				map = GetMapping(ty);
+				_tables.Add(ty.FullName, map);
+			}
+			var query = string.Format("drop table \"{0}\"", map.TableName);
+
+			var count = Execute(query);
+
+			return count;
+		}
+		
+		/// <summary>
 		/// Executes a "create table if not exists" on the database. It also
 		/// creates any specified indexes on the columns of the table. It uses
 		/// a schema automatically generated from the specified type. You can
