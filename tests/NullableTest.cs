@@ -10,7 +10,7 @@ using System.IO;
 namespace SQLite.Tests
 {
 	[TestFixture]
-	class NullableTest
+	public class NullableTest
 	{
 		public class NullableIntClass
 		{
@@ -23,6 +23,11 @@ namespace SQLite.Tests
 			{
 				NullableIntClass other = (NullableIntClass)obj;
 				return this.ID == other.ID && this.NullableInt == other.NullableInt;
+			}
+			
+			public override int GetHashCode ()
+			{
+				return ID.GetHashCode () + NullableInt.GetHashCode ();
 			}
 		}
 
@@ -65,6 +70,11 @@ namespace SQLite.Tests
 			{
 				NullableFloatClass other = (NullableFloatClass)obj;
 				return this.ID == other.ID && this.NullableFloat == other.NullableFloat;
+			}
+			
+			public override int GetHashCode ()
+			{
+				return ID.GetHashCode () + NullableFloat.GetHashCode ();
 			}
 		}
 
@@ -109,6 +119,11 @@ namespace SQLite.Tests
 			{
 				StringClass other = (StringClass)obj;
 				return this.ID == other.ID && this.StringData == other.StringData;
+			}
+			
+			public override int GetHashCode ()
+			{
+				return ID.GetHashCode () + StringData.GetHashCode ();
 			}
 		}
 
