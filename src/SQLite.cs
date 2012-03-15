@@ -25,6 +25,7 @@
 #endif
 
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Reflection;
@@ -38,7 +39,6 @@ using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
-using System.Diagnostics;
 #endif
 
 namespace SQLite
@@ -388,11 +388,7 @@ namespace SQLite
 			if (TimeExecution) {
 				_sw.Stop ();
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-#if !NETFX_CORE
-				Console.WriteLine ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0);
-#else
-				Debug.WriteLine ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0);
-#endif
+				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
 			}
 			
 			return r;
@@ -1104,11 +1100,7 @@ namespace SQLite
 		public int ExecuteNonQuery ()
 		{
 			if (_conn.Trace) {
-#if !NETFX_CORE
-				Console.WriteLine ("Executing: " + this);
-#else
 				Debug.WriteLine ("Executing: " + this);
-#endif
 			}
 			
 			var r = SQLite3.Result.OK;
@@ -1144,11 +1136,7 @@ namespace SQLite
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
-#if !NETFX_CORE
-				Console.WriteLine ("Executing Query: " + this);
-#else
 				Debug.WriteLine ("Executing Query: " + this);
-#endif
 			}
 
 			var stmt = Prepare ();
@@ -1182,11 +1170,7 @@ namespace SQLite
 		public T ExecuteScalar<T> ()
 		{
 			if (_conn.Trace) {
-#if !NETFX_CORE
-				Console.WriteLine ("Executing Query: " + this);
-#else
 				Debug.WriteLine ("Executing Query: " + this);
-#endif
 			}
 			
 			T val = default(T);
@@ -1370,11 +1354,7 @@ namespace SQLite
 		public int ExecuteNonQuery (object[] source)
 		{
 			if (Connection.Trace) {
-#if !NETFX_CORE
-				Console.WriteLine ("Executing: " + CommandText);
-#else
 				Debug.WriteLine ("Executing: " + CommandText);
-#endif
 			}
 
 			var r = SQLite3.Result.OK;
