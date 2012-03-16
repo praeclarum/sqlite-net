@@ -1649,23 +1649,24 @@ namespace SQLite
 					
 #if !NETFX_CORE
 					if (mem.Member.MemberType == MemberTypes.Property) {
-						var m = (PropertyInfo)mem.Member;
-						val = m.GetValue (obj, null);						
-					} else if (mem.Member.MemberType == MemberTypes.Field) {
-						var m = (FieldInfo)mem.Member;
-						val = m.GetValue (obj);						
-					} else {
-						throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType.ToString ());
 #else
 					if (mem.Member is PropertyInfo) {
-						var m = (PropertyInfo)mem.Member;
-						val = m.GetValue(obj, null);
-					} else if (mem.Member is FieldInfo) {
-						var m = (FieldInfo)mem.Member;
-						val = m.GetValue(obj);
-					} else {
-						throw new NotSupportedException("MemberExpr: " + mem.Member.DeclaringType.ToString());
 #endif
+						var m = (PropertyInfo)mem.Member;
+						val = m.GetValue (obj, null);
+#if !NETFX_CORE
+					} else if (mem.Member.MemberType == MemberTypes.Field) {
+#else
+					} else if (mem.Member is FieldInfo) {
+#endif
+#if SILVERLIGHT
+                        val = Expression.Lambda (expr).Compile ().DynamicInvoke ();
+#else
+						var m = (FieldInfo)mem.Member;
+						val = m.GetValue (obj);
+#endif
+					} else {
+						throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType.ToString ());
 					}
 					
 					//

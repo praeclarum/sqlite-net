@@ -46,5 +46,7 @@
     <Compile Include="ContainsTest.cs" />
     <Compile Include="NullableTest.cs" />
     <Compile Include="DropTableTest.cs" />
+    <Compile Include="LinqTest.cs" />
+    <Compile Include="TestDb.cs" />
   </ItemGroup>
 </Project>
