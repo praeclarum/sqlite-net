@@ -214,13 +214,13 @@ namespace SQLite
 			return GetMapping (typeof (T));
 		}
 
-        private struct IndexInfo
-        {
-            public string IndexName;
-            public int Order;
-            public string ColumnName;
-            public string TableName;
-        }
+		private struct IndexInfo
+		{
+			public string IndexName;
+			public int Order;
+			public string ColumnName;
+			public string TableName;
+		}
 
 		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
@@ -243,7 +243,8 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable<T> () {
+		public int CreateTable<T> ()
+		{
 			var ty = typeof(T);
 			
 			if (_tables == null) {
@@ -268,37 +269,36 @@ namespace SQLite
 				MigrateTable (map);
 			}
 
-		    var allIndexedColumns =
-		        map.Columns.SelectMany(
-		            c => c.Indices,
-		            (c, i) => new IndexInfo
-		                          {
-		                              IndexName = i.Name ?? c.Name,
-		                              Order = i.Order,
-		                              ColumnName = c.Name,
-		                              TableName = map.TableName
-		                          });
-		    var aggregatedIndexes =
-		        allIndexedColumns.Aggregate(
-		            new Dictionary<string, List<IndexInfo>>(),
-		            (dict, info) =>
-		                {
-		                    if (!dict.ContainsKey(info.IndexName))
-		                        dict.Add(info.IndexName, new List<IndexInfo>());
-		                    dict[info.IndexName].Add(info);
-		                    return dict;
-		                });
-
-            foreach (var indexName in aggregatedIndexes.Keys)
-            {
-                var indexGroup = aggregatedIndexes[indexName];
-                const string sqlFormat = "create index if not exists \"{0}\" on \"{1}\"(\"{2}\")";
-                var columns = String.Join("\",\"", indexGroup.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
-                var sql = String.Format(sqlFormat, "IX_" + indexName, indexGroup.First().TableName, columns);
-                count += Execute(sql);
-            }
-            
-            return count;
+			var allIndexedColumns =
+				map.Columns.SelectMany(
+					c => c.Indices,
+					(c, i) => new IndexInfo
+						{
+							IndexName = i.Name ?? c.Name,
+							Order = i.Order,
+							ColumnName = c.Name,
+							TableName = map.TableName
+						});
+			var aggregatedIndexes =
+				allIndexedColumns.Aggregate(
+					new Dictionary<string, List<IndexInfo>>(),
+					(dict, info) =>
+						{
+							if (!dict.ContainsKey(info.IndexName))
+								dict.Add(info.IndexName, new List<IndexInfo>());
+							dict[info.IndexName].Add(info);
+							return dict;
+						});
+			
+			foreach (var indexName in aggregatedIndexes.Keys) {
+				var indexGroup = aggregatedIndexes[indexName];
+				const string sqlFormat = "create index if not exists \"{0}\" on \"{1}\"(\"{2}\")";
+				var columns = String.Join("\",\"", indexGroup.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
+				var sql = String.Format(sqlFormat, "IX_" + indexName, indexGroup.First().TableName, columns);
+				count += Execute(sql);
+			}
+			
+			return count;
 		}
 
 		public class TableInfo
@@ -762,20 +762,20 @@ namespace SQLite
 		public void Close ()
 		{
 			if (_open && Handle != NullHandle) {
-                try {
-                    foreach (var sqlInsertCommand in _mappings.Values) {
-                        sqlInsertCommand.Dispose();
-                    }
-                    var r = SQLite3.Close(Handle);
-                    if (r != SQLite3.Result.OK) {
-                        string msg = SQLite3.GetErrmsg(Handle);
-                        throw SQLiteException.New(r, msg);
-                    }
-                }
-                finally {
-                    Handle = NullHandle;
-                    _open = false;
-                }
+				try {
+					foreach (var sqlInsertCommand in _mappings.Values) {
+						sqlInsertCommand.Dispose();
+					}
+					var r = SQLite3.Close(Handle);
+					if (r != SQLite3.Result.OK) {
+						string msg = SQLite3.GetErrmsg(Handle);
+						throw SQLiteException.New(r, msg);
+					}
+				}
+				finally {
+					Handle = NullHandle;
+					_open = false;
+				}
 			}
 		}
 	}
@@ -790,17 +790,19 @@ namespace SQLite
 
 	public class IndexedAttribute : Attribute
 	{
-        public string Name { get; set; }
-        public int Order { get; set; }
-        public IndexedAttribute()
-        {
-        }
-        public IndexedAttribute(string name, int order)
-        {
-            Name = name;
-            Order = order;
-        }
-    }
+		public string Name { get; set; }
+		public int Order { get; set; }
+		
+		public IndexedAttribute()
+		{
+		}
+		
+		public IndexedAttribute(string name, int order)
+		{
+			Name = name;
+			Order = order;
+		}
+	}
 
 	public class IgnoreAttribute : Attribute
 	{
@@ -902,42 +904,41 @@ namespace SQLite
 		PreparedSqlLiteInsertCommand _insertCommand;
 		string _insertCommandExtra = null;
 
-        public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
-        {
-
-            if (_insertCommand == null) {
-                _insertCommand = CreateInsertCommand(conn, extra);
-                _insertCommandExtra = extra;
-            }
-            else if (_insertCommandExtra != extra) {
-                _insertCommand.Dispose();
-                _insertCommand = CreateInsertCommand(conn, extra);
-                _insertCommandExtra = extra;
-            }
-            return _insertCommand;
-        }
-
-        private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
-        {
-            var cols = InsertColumns;
-            var insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", TableName, 
-                string.Join (",", (from c in cols
-                                   select "\"" + c.Name + "\"").ToArray ()), 
-                                   string.Join (",", (from c in cols
-                                                      select "?").ToArray ()), extra);
-                                                                                                                                                                   
-            var insertCommand = new PreparedSqlLiteInsertCommand(conn);
-            insertCommand.CommandText = insertSql;
-            return insertCommand;
-        }
-
-        protected internal void Dispose()
-        {
-            if (_insertCommand != null) {
-                _insertCommand.Dispose();
-                _insertCommand = null;
-            }
-        }
+		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
+		{
+			if (_insertCommand == null) {
+				_insertCommand = CreateInsertCommand(conn, extra);
+				_insertCommandExtra = extra;
+			}
+			else if (_insertCommandExtra != extra) {
+				_insertCommand.Dispose();
+				_insertCommand = CreateInsertCommand(conn, extra);
+				_insertCommandExtra = extra;
+			}
+			return _insertCommand;
+		}
+		
+		private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
+		{
+			var cols = InsertColumns;
+			var insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", TableName, 
+						       string.Join (",", (from c in cols
+									  select "\"" + c.Name + "\"").ToArray ()), 
+						       string.Join (",", (from c in cols
+									  select "?").ToArray ()), extra);
+			
+			var insertCommand = new PreparedSqlLiteInsertCommand(conn);
+			insertCommand.CommandText = insertSql;
+			return insertCommand;
+		}
+		
+		protected internal void Dispose()
+		{
+			if (_insertCommand != null) {
+				_insertCommand.Dispose();
+				_insertCommand = null;
+			}
+		}
 
 		public abstract class Column
 		{
@@ -951,7 +952,7 @@ namespace SQLite
 
 			public bool IsPK { get; protected set; }
 
-            public IEnumerable<IndexedAttribute> Indices { get; set; }
+			public IEnumerable<IndexedAttribute> Indices { get; set; }
 
 			public bool IsNullable { get; protected set; }
 
@@ -975,7 +976,7 @@ namespace SQLite
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
 				IsPK = Orm.IsPK (prop);
-                Indices = Orm.GetIndices(prop);
+				Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
 				MaxStringLength = Orm.MaxStringLength (prop);
 			}
@@ -1078,13 +1079,13 @@ namespace SQLite
 #endif
 		}
 
-        public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
-        {
-            var attrs = p.GetCustomAttributes(typeof(IndexedAttribute), true);
-            return attrs.Cast<IndexedAttribute>();
-        }
-
-        public static int MaxStringLength(PropertyInfo p)
+		public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes(typeof(IndexedAttribute), true);
+			return attrs.Cast<IndexedAttribute>();
+		}
+		
+		public static int MaxStringLength(PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
 #if !NETFX_CORE
@@ -1092,7 +1093,7 @@ namespace SQLite
 				return ((MaxLengthAttribute)attrs [0]).Value;
 #else
 			if (attrs.Count() > 0) {
-                return ((MaxLengthAttribute)attrs.First()).Value;
+				return ((MaxLengthAttribute)attrs.First()).Value;
 #endif
 			} else {
 				return DefaultMaxStringLength;
@@ -1276,9 +1277,9 @@ namespace SQLite
 				} else if (value is DateTime) {
 					SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
 #if !NETFX_CORE
-					} else if (value.GetType().IsEnum) {
+				} else if (value.GetType().IsEnum) {
 #else
-					} else if (value.GetType().GetTypeInfo().IsEnum) {
+				} else if (value.GetType().GetTypeInfo().IsEnum) {
 #endif
 					SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
 				} else if (value is byte[]) {
@@ -1677,7 +1678,7 @@ namespace SQLite
 					} else if (mem.Member is FieldInfo) {
 #endif
 #if SILVERLIGHT
-                        val = Expression.Lambda (expr).Compile ().DynamicInvoke ();
+						val = Expression.Lambda (expr).Compile ().DynamicInvoke ();
 #else
 						var m = (FieldInfo)mem.Member;
 						val = m.GetValue (obj);
