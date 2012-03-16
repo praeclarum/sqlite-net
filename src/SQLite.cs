@@ -29,6 +29,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Reflection;
+#if NETFX_CORE
+using System.Reflection.RuntimeExtensions;
+#endif
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -831,7 +834,9 @@ namespace SQLite
 #if !NETFX_CORE
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 #else
-			var props = MappedType.GetTypeInfo().DeclaredProperties;
+			var props = from p in MappedType.GetRuntimeProperties()
+						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
+						select p;
 #endif
 			var cols = new List<Column> ();
 			foreach (var p in props) {
