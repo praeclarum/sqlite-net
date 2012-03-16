@@ -201,6 +201,18 @@ namespace SQLite
 			}
 			return map;
 		}
+		
+		/// <summary>
+		/// Retrieves the mapping that is automatically generated for the given type.
+		/// </summary>
+		/// <returns>
+		/// The mapping represents the schema of the columns of the database and contains 
+		/// methods to set and get properties of objects.
+		/// </returns>
+		public TableMapping GetMapping<T> ()
+		{
+			return GetMapping (typeof (T));
+		}
 
         private struct IndexInfo
         {

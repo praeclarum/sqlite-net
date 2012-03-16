@@ -48,5 +48,6 @@
     <Compile Include="DropTableTest.cs" />
     <Compile Include="LinqTest.cs" />
     <Compile Include="TestDb.cs" />
+    <Compile Include="InheritanceTest.cs" />
   </ItemGroup>
 </Project>
