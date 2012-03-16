@@ -1249,8 +1249,7 @@ namespace SQLite
 				} else {
 					b.Index = nextIdx++;
 				}
-			}
-			foreach (var b in _bindings) {
+				
 				BindParameter (stmt, b.Index, b.Value);
 			}
 		}
