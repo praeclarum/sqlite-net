@@ -229,7 +229,7 @@ namespace SQLite
 		{
 			var map = GetMapping (typeof (T));
 
-			var query = string.Format("drop table \"{0}\"", map.TableName);
+			var query = string.Format("drop table if exists \"{0}\"", map.TableName);
 
 			return Execute (query);
 		}
