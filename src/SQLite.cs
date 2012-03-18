@@ -274,7 +274,7 @@ namespace SQLite
 					c => c.Indices,
 					(c, i) => new IndexInfo
 						{
-							IndexName = i.Name ?? c.Name,
+							IndexName = i.Name ?? map.TableName + "_" + c.Name,
 							Order = i.Order,
 							ColumnName = c.Name,
 							TableName = map.TableName
@@ -294,7 +294,7 @@ namespace SQLite
 				var indexGroup = aggregatedIndexes[indexName];
 				const string sqlFormat = "create index if not exists \"{0}\" on \"{1}\"(\"{2}\")";
 				var columns = String.Join("\",\"", indexGroup.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
-				var sql = String.Format(sqlFormat, "IX_" + indexName, indexGroup.First().TableName, columns);
+				var sql = String.Format(sqlFormat, indexName, indexGroup.First().TableName, columns);
 				count += Execute(sql);
 			}
 			
