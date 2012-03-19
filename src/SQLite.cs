@@ -274,7 +274,7 @@ namespace SQLite
 					c => c.Indices,
 					(c, i) => new IndexInfo
 						{
-							IndexName = i.Name ?? c.Name,
+							IndexName = i.Name ?? map.TableName + "_" + c.Name,
 							Order = i.Order,
 							ColumnName = c.Name,
 							TableName = map.TableName
@@ -294,7 +294,7 @@ namespace SQLite
 				var indexGroup = aggregatedIndexes[indexName];
 				const string sqlFormat = "create index if not exists \"{0}\" on \"{1}\"(\"{2}\")";
 				var columns = String.Join("\",\"", indexGroup.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
-				var sql = String.Format(sqlFormat, "IX_" + indexName, indexGroup.First().TableName, columns);
+				var sql = String.Format(sqlFormat, indexName, indexGroup.First().TableName, columns);
 				count += Execute(sql);
 			}
 			
@@ -808,6 +808,10 @@ namespace SQLite
 	{
 	}
 
+	public class UniqueAttribute : Attribute
+	{
+	}
+
 	public class MaxLengthAttribute : Attribute
 	{
 		public int Value { get; private set; }
@@ -950,6 +954,8 @@ namespace SQLite
 
 			public bool IsAutoInc { get; protected set; }
 
+			public bool IsUnique { get; protected set; }
+
 			public bool IsPK { get; protected set; }
 
 			public IEnumerable<IndexedAttribute> Indices { get; set; }
@@ -975,6 +981,7 @@ namespace SQLite
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
+				IsUnique = Orm.IsUnique (prop);
 				IsPK = Orm.IsPK (prop);
 				Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
@@ -1006,6 +1013,8 @@ namespace SQLite
 			}
 			if (p.IsAutoInc) {
 				decl += "autoincrement ";
+			} else if (p.IsUnique) {
+				decl += "unique ";
 			}
 			if (!p.IsNullable) {
 				decl += "not null ";
@@ -1072,6 +1081,16 @@ namespace SQLite
 		public static bool IsAutoInc (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
+#if !NETFX_CORE
+			return attrs.Length > 0;
+#else
+			return attrs.Count() > 0;
+#endif
+		}
+
+		public static bool IsUnique (MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof(UniqueAttribute), true);
 #if !NETFX_CORE
 			return attrs.Length > 0;
 #else
