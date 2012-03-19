@@ -49,5 +49,6 @@
     <Compile Include="LinqTest.cs" />
     <Compile Include="TestDb.cs" />
     <Compile Include="InheritanceTest.cs" />
+    <Compile Include="UnicodeTest.cs" />
   </ItemGroup>
 </Project>
