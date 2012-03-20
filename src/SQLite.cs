@@ -214,12 +214,18 @@ namespace SQLite
 			return GetMapping (typeof (T));
 		}
 
+		private struct IndexedColumn
+		{
+			public int Order;
+			public string ColumnName;
+		}
+
 		private struct IndexInfo
 		{
 			public string IndexName;
-			public int Order;
-			public string ColumnName;
 			public string TableName;
+			public bool Unique;
+			public List<IndexedColumn> Columns;
 		}
 
 		/// <summary>
@@ -269,32 +275,36 @@ namespace SQLite
 				MigrateTable (map);
 			}
 
-			var allIndexedColumns =
-				map.Columns.SelectMany(
-					c => c.Indices,
-					(c, i) => new IndexInfo
-						{
-							IndexName = i.Name ?? map.TableName + "_" + c.Name,
-							Order = i.Order,
-							ColumnName = c.Name,
-							TableName = map.TableName
-						});
-			var aggregatedIndexes =
-				allIndexedColumns.Aggregate(
-					new Dictionary<string, List<IndexInfo>>(),
-					(dict, info) =>
-						{
-							if (!dict.ContainsKey(info.IndexName))
-								dict.Add(info.IndexName, new List<IndexInfo>());
-							dict[info.IndexName].Add(info);
-							return dict;
-						});
-			
-			foreach (var indexName in aggregatedIndexes.Keys) {
-				var indexGroup = aggregatedIndexes[indexName];
-				const string sqlFormat = "create index if not exists \"{0}\" on \"{1}\"(\"{2}\")";
-				var columns = String.Join("\",\"", indexGroup.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
-				var sql = String.Format(sqlFormat, indexName, indexGroup.First().TableName, columns);
+			var indexes = new Dictionary<string, IndexInfo> ();
+			foreach (var c in map.Columns) {
+				foreach (var i in c.Indices) {
+					var iname = i.Name ?? map.TableName + "_" + c.Name;
+					IndexInfo iinfo;
+					if (!indexes.TryGetValue (iname, out iinfo)) {
+						iinfo = new IndexInfo {
+							IndexName = iname,
+							TableName = map.TableName,
+							Unique = i.Unique,
+							Columns = new List<IndexedColumn> ()
+						};
+						indexes.Add (iname, iinfo);
+					}
+
+					if (i.Unique != iinfo.Unique)
+						throw new Exception ("All the columns in an index must have the same value for their Unique property");
+
+					iinfo.Columns.Add (new IndexedColumn {
+						Order = i.Order,
+						ColumnName = c.Name
+					});
+				}
+			}
+
+			foreach (var indexName in indexes.Keys) {
+				var index = indexes[indexName];
+				const string sqlFormat = "create {3} index if not exists \"{0}\" on \"{1}\"(\"{2}\")";
+				var columns = String.Join("\",\"", index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
+				var sql = String.Format (sqlFormat, indexName, index.TableName, columns, index.Unique ? "unique" : "");
 				count += Execute(sql);
 			}
 			
@@ -792,6 +802,7 @@ namespace SQLite
 	{
 		public string Name { get; set; }
 		public int Order { get; set; }
+		public virtual bool Unique { get; set; }
 		
 		public IndexedAttribute()
 		{
@@ -808,8 +819,12 @@ namespace SQLite
 	{
 	}
 
-	public class UniqueAttribute : Attribute
+	public class UniqueAttribute : IndexedAttribute
 	{
+		public override bool Unique {
+			get { return true; }
+			set { /* throw?  */ }
+		}
 	}
 
 	public class MaxLengthAttribute : Attribute
@@ -954,8 +969,6 @@ namespace SQLite
 
 			public bool IsAutoInc { get; protected set; }
 
-			public bool IsUnique { get; protected set; }
-
 			public bool IsPK { get; protected set; }
 
 			public IEnumerable<IndexedAttribute> Indices { get; set; }
@@ -981,7 +994,6 @@ namespace SQLite
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
-				IsUnique = Orm.IsUnique (prop);
 				IsPK = Orm.IsPK (prop);
 				Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
@@ -1013,8 +1025,6 @@ namespace SQLite
 			}
 			if (p.IsAutoInc) {
 				decl += "autoincrement ";
-			} else if (p.IsUnique) {
-				decl += "unique ";
 			}
 			if (!p.IsNullable) {
 				decl += "not null ";
@@ -1081,16 +1091,6 @@ namespace SQLite
 		public static bool IsAutoInc (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
-#if !NETFX_CORE
-			return attrs.Length > 0;
-#else
-			return attrs.Count() > 0;
-#endif
-		}
-
-		public static bool IsUnique (MemberInfo p)
-		{
-			var attrs = p.GetCustomAttributes (typeof(UniqueAttribute), true);
 #if !NETFX_CORE
 			return attrs.Length > 0;
 #else
