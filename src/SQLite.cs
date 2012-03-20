@@ -249,10 +249,23 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable<T> ()
+		public int CreateTable<T>()
 		{
-			var ty = typeof(T);
-			
+			return CreateTable(typeof (T));
+		}
+
+		/// <summary>
+		/// Executes a "create table if not exists" on the database. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <param name="ty">Type to reflect to a database table.</param>
+		/// <returns>
+		/// The number of entries added to the database schema.
+		/// </returns>
+		public int CreateTable(Type ty)
+		{
 			if (_tables == null) {
 				_tables = new Dictionary<string, TableMapping> ();
 			}
