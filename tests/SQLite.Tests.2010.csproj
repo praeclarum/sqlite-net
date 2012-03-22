@@ -107,13 +107,18 @@
     <Compile Include="BooleanTest.cs" />
     <Compile Include="..\src\SQLite.cs" />
     <Compile Include="ByteArrayTest.cs" />
+    <Compile Include="DropTableTest.cs" />
+    <Compile Include="InheritanceTest.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
+    <Compile Include="LinqTest.cs" />
     <Compile Include="MultiplePKsTest.cs" />
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />
     <Compile Include="NullableTest.cs" />
+    <Compile Include="TestDb.cs" />
+    <Compile Include="UnicodeTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
