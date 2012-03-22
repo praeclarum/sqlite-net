@@ -1,9 +1,5 @@
-
 using System;
-using System.IO;
-using System.Collections.Generic;
 using System.Linq;
-
 using NUnit.Framework;
 
 namespace SQLite.Tests
@@ -11,62 +7,6 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class CreateTableTest
 	{
-		public class Product
-		{
-			[AutoIncrement, PrimaryKey]
-			public int Id { get; set; }
-			public string Name { get; set; }
-			public decimal Price { get; set; }
-		}
-		public class Order
-		{
-			[AutoIncrement, PrimaryKey]
-			public int Id { get; set; }
-			public DateTime PlacedTime { get; set; }
-		}
-		public class OrderHistory
-		{
-			[AutoIncrement, PrimaryKey]
-			public int Id { get; set; }
-			public int OrderId { get; set; }
-			public DateTime Time { get; set; }
-			public string Comment { get; set; }
-		}
-		public class OrderLine
-		{
-			[AutoIncrement, PrimaryKey]
-			public int Id { get; set; }
-            [Indexed("IX_OrderProduct", 1)]
-			public int OrderId { get; set; }
-            [Indexed("IX_OrderProduct", 2)]
-            public int ProductId { get; set; }
-			public int Quantity { get; set; }
-			public decimal UnitPrice { get; set; }
-			public OrderLineStatus Status { get; set; }
-		}
-		[PrimaryKeyNames("Id", AutoIncrement = true)]
-		public class ClassLevelPK
-		{
-			public int Id { get; set; }
-		}
-		[PrimaryKeyNames("ID")]
-		public class ClassLevelPK_MissingKey
-		{
-			public int Id { get; set; }
-		}
-		public enum OrderLineStatus {
-			Placed = 1,
-			Shipped = 100
-		}
-
-		public class TestDb : SQLiteConnection
-		{
-			public TestDb () : base(Path.GetTempFileName ())
-			{
-				Trace = true;
-			}
-		}
-
 		[Test]
 		public void CreateThem ()
 		{
@@ -76,19 +16,16 @@ namespace SQLite.Tests
 			db.CreateTable<Order> ();
 			db.CreateTable<OrderLine> ();
 			db.CreateTable<OrderHistory> ();
-			db.CreateTable<ClassLevelPK> ();
-			Assert.Throws(typeof(KeyNotFoundException  ), () => db.CreateTable<ClassLevelPK_MissingKey> ());
 			
-			var orderLine = db.GetMapping<OrderLine>();
+			var orderLine = db.GetMapping(typeof(OrderLine));
 			Assert.AreEqual(6, orderLine.Columns.Length, "Order history has 3 columns");
 			
-			var l = new OrderLine{Status = OrderLineStatus.Shipped};
+			var l = new OrderLine() {
+				Status = OrderLineStatus.Shipped
+			};
 			db.Insert(l);
 			var lo = db.Table<OrderLine>().Where(x => x.Status == OrderLineStatus.Shipped).FirstOrDefault();
 			Assert.AreEqual(lo.Id, l.Id);
-			
-			db.DropTable<Order> ();
-			Assert.Throws(typeof(SQLiteException), ()=> db.Insert(new Order()));
 		}
 	}
 }

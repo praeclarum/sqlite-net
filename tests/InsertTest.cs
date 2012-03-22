@@ -19,11 +19,10 @@ namespace SQLite.Tests
             [AutoIncrement, PrimaryKey]
             public int Id { get; set; }
             public String Text { get; set; }
-			public Guid GUID { get; set; }
 
             public override string ToString ()
             {
-				return string.Format("[TestObj: Id={0}, Text={1}, Guid={2}]", Id, Text, GUID);
+            	return string.Format("[TestObj: Id={0}, Text={1}]", Id, Text);
             }
 
         }
@@ -58,10 +57,9 @@ namespace SQLite.Tests
         public void InsertALot()
         {
 			int n = 100000;
-			var q = from i in Enumerable.Range(1, n) select new TestObj()
-			{
-				Text = "I am",
-				GUID = Guid.NewGuid()
+			var q =	from i in Enumerable.Range(1, n)
+					select new TestObj() {
+				Text = "I am"
 			};
 			var objs = q.ToArray();
 			var db = new TestDb(Path.GetTempFileName());
@@ -78,12 +76,10 @@ namespace SQLite.Tests
 			
 			var inObjs = db.CreateCommand("select * from TestObj").ExecuteQuery<TestObj>().ToArray();
 			
-			for (var i = 0; i < inObjs.Length; i++)
-			{
+			for (var i = 0; i < inObjs.Length; i++) {
 				Assert.AreEqual(i+1, objs[i].Id);
 				Assert.AreEqual(i+1, inObjs[i].Id);
-				Assert.AreEqual(objs[i].Text, inObjs[i].Text);
-				Assert.AreEqual(objs[i].GUID, inObjs[i].GUID);
+				Assert.AreEqual("I am", inObjs[i].Text);
 			}
 			
 			var numCount = db.CreateCommand("select count(*) from TestObj").ExecuteScalar<int>();
@@ -97,8 +93,9 @@ namespace SQLite.Tests
         public void InsertTwoTimes()
         {
             var db = new TestDb(Path.GetTempFileName());
-			var obj1 = new TestObj{ Text = "GLaDOS loves testing!"           , GUID = Guid.NewGuid() };
-			var obj2 = new TestObj{ Text = "Keep testing, just keep testing" , GUID = Guid.NewGuid() };
+            var obj1 = new TestObj() { Text = "GLaDOS loves testing!" };
+            var obj2 = new TestObj() { Text = "Keep testing, just keep testing" };
+
 
             var numIn1 = db.Insert(obj1);
             var numIn2 = db.Insert(obj2);
@@ -109,8 +106,6 @@ namespace SQLite.Tests
             Assert.AreEqual(2, result.Count);
             Assert.AreEqual(obj1.Text, result[0].Text);
             Assert.AreEqual(obj2.Text, result[1].Text);
-			Assert.AreEqual(obj1.GUID, result[0].GUID);
-			Assert.AreEqual(obj2.GUID, result[1].GUID);
 
             db.Close();
         }
@@ -119,7 +114,7 @@ namespace SQLite.Tests
         public void InsertIntoTwoTables()
         {
             var db = new TestDb(Path.GetTempFileName());
-			var obj1 = new TestObj()  { Text = "GLaDOS loves testing!" , GUID = Guid.NewGuid() };
+            var obj1 = new TestObj() { Text = "GLaDOS loves testing!" };
             var obj2 = new TestObj2() { Text = "Keep testing, just keep testing" };
 
             var numIn1 = db.Insert(obj1);
@@ -130,7 +125,6 @@ namespace SQLite.Tests
             var result1 = db.Query<TestObj>("select * from TestObj").ToList();
             Assert.AreEqual(numIn1, result1.Count);
             Assert.AreEqual(obj1.Text, result1.First().Text);
-			Assert.AreEqual(obj1.GUID, result1.First().GUID);
 
             var result2 = db.Query<TestObj>("select * from TestObj2").ToList();
             Assert.AreEqual(numIn2, result2.Count);
@@ -173,5 +167,7 @@ namespace SQLite.Tests
 
             db.Close();
         }
+
+        
     }
 }

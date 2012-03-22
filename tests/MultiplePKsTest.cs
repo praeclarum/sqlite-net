@@ -58,15 +58,6 @@ namespace SQLite.Tests
 			db.Update(obj);
 			Assert.AreEqual("I've been changed", db.Get<TestObj1>(5,3).Text);
 			
-			// update a specific field of an object
-			db.Update<TestObj1>("Text", "I've been changed also", 8, 2);
-			Assert.AreEqual("I've been changed also", db.Get<TestObj1>(8,2).Text);
-			
-			// update a specific field for all objects in a table
-			db.UpdateAll<TestObj1>("Text", "All changed");
-			foreach (var o in (from o in db.Table<TestObj1>() select o))
-				Assert.AreEqual("All changed", o.Text);
-			
 			// count objects in the table
 			var numCount = db.Table<TestObj1>().Count();
 			Assert.AreEqual(numCount, objs.Length);
@@ -87,15 +78,6 @@ namespace SQLite.Tests
 			var pks = db.GetPrimaryKeys(obj);
 			Assert.AreEqual(obj.Id0, (int)pks[0]);
 			Assert.AreEqual(obj.Id1, (int)pks[1]);
-			
-			// check querying for an object that isn't in the table
-			Assert.IsNull(db.GetOrDefault<TestObj1>(11,-1));
-			
-			// check querying with an incorrect number of primary keys
-			try { db.GetOrDefault<TestObj1>(1); }
-			catch (SQLiteException ex) { Assert.AreEqual(SQLite3.Result.Error, ex.Result); }
-			try { db.GetOrDefault<TestObj1>(1,2,3); }
-			catch (SQLiteException ex) { Assert.AreEqual(SQLite3.Result.Error, ex.Result); }
 		}
 		
 		/// <summary>Testing multiple keys given by property attribute and class inheritance</summary>
@@ -131,10 +113,8 @@ namespace SQLite.Tests
 			Assert.AreEqual(2, obj.Id1);
 			Assert.AreEqual(3, obj.Id2);
 			Assert.AreEqual("I am (1,2,3)", obj.Text);
-
-			Assert.IsNull(db.GetOrDefault<TestObj2>(1,1,10));
+			
 			Assert.Throws(typeof(SQLiteException), ()=> db.Get<TestObj2>(1,2));
-			Assert.Throws(typeof(SQLiteException), ()=> db.GetOrDefault<TestObj2>(1,2));
 			
 			var pks = db.GetPrimaryKeys(obj);
 			var obj2 = db.Get<TestObj2>(pks);
@@ -154,10 +134,6 @@ namespace SQLite.Tests
 			obj.Text = "I've been changed";
 			Assert.AreEqual(1, db.Update(obj));
 			Assert.AreEqual("I've been changed", db.Get<TestObj2>(obj.Id0, obj.Id1, obj.Id2).Text);
-			
-			// single property update
-			Assert.AreEqual(1, db.Update<TestObj2>("Text", "Changed again", obj.Id0, obj.Id1, obj.Id2));
- 			Assert.AreEqual("Changed again", db.Get<TestObj2>(obj.Id0, obj.Id1, obj.Id2).Text);
 			
 			// delete
 			Assert.AreEqual(1, db.Delete(obj));
