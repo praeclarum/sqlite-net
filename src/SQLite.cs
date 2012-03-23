@@ -275,9 +275,9 @@ namespace SQLite
 				_tables.Add (ty.FullName, map);
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
-			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
-			var decl = string.Join (",\n", decls.ToArray ());
+			var decl = (map.PK.Length > 1)
+				? string.Join (",\n", (from c in map.Columns select Orm.SqlDecl (c,false)).ToArray ()) + ",\n" + Orm.SqlTblConstaintPk (map.Columns)
+				: string.Join (",\n", (from c in map.Columns select Orm.SqlDecl (c,true )).ToArray ());
 			query += decl;
 			query += ")";
 			
@@ -360,7 +360,7 @@ namespace SQLite
 			}
 			
 			foreach (var p in toBeAdded) {
-				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p);
+				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p,true);
 				Execute (addCol);
 			}
 		}
@@ -551,25 +551,65 @@ namespace SQLite
 			return new TableQuery<T> (this);
 		}
 
+		/// <summary>Convert the variable arguments of the 'Get' methods into an arguments array</summary>
+		private object[] ArgsArray(object pk, params object[] pks)
+		{
+			var args = new List<object>{pk};
+			args.AddRange(pks);
+			return args.ToArray();
+		}
+
+		/// <summary>
+		/// Retrieves the objects matching the given primary key(s) from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type has one or more designated PrimaryKey(s) (using the
+		/// PrimaryKeyAttribute or PrimaryKeyNamesAttribute).
+		/// </summary>
+		/// <param name="pk">The primary key for 'T'.</param>
+		/// <param name="pks">Any addition primary keys for multiple pk tables</param>
+		/// <returns>The list of objects with the given primary key(s).</returns>
+		private List<T> GetList<T>(object[] pks) where T :new()
+		{
+			var map = GetMapping<T>();
+			if (map.PK.Length != pks.Length)
+				throw SQLiteException.New(SQLite3.Result.Error, "Incorrect number of primary key values provided");
+			
+			string query = string.Format("select * from \"{0}\" where {1}"
+				,map.TableName
+				,string.Join(" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray()));
+			
+			return Query<T>(query, pks);
+		}
+
 		/// <summary>
 		/// Attempts to retrieve an object with the given primary key from the table
 		/// associated with the specified type. Use of this method requires that
 		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
 		/// </summary>
-		/// <param name="pk">
-		/// The primary key.
-		/// </param>
-		/// <returns>
-		/// The object with the given primary key. Throws a not found exception
-		/// if the object is not found.
-		/// </returns>
-		public T Get<T> (object pk) where T : new()
+		/// <param name="pk">The primary key for 'T'.</param>
+		/// <param name="pks">Any addition primary keys for multiple pk tables</param>
+		/// <returns>The object with the given primary key. Throws a not found exception if the object is not found.</returns>
+		public T Get<T>(object pk, params object[] pks)  where T : new()
 		{
-			var map = GetMapping (typeof(T));
-			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
-			return Query<T> (query, pk).First ();
+			return Get<T>(ArgsArray(pk, pks));
+		}
+		public T Get<T>(object[] pks) where T:new()
+		{
+			return GetList<T>(pks).First();
 		}
 
+		/// <summary>
+		/// Returns an array containing the values of the primary keys in 'obj'
+		/// </summary>
+		public object[] GetPrimaryKeys<T>(T obj)
+		{
+			var map = GetMapping<T>();
+			var args = new object[map.PK.Length];
+			for (int i = 0; i != map.PK.Length; ++i)
+				args[i] = map.PK[i].GetValue(obj);
+			return args;
+		}
+		
 		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
@@ -723,15 +763,20 @@ namespace SQLite
 
 		/// <summary>
 		/// Updates all of the columns of a table using the specified object
-		/// except for its primary key.
-		/// The object is required to have a primary key.
+		/// except for its primary key(s).
+		/// The object is required to have at least one primary key.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
+		/// The object to update. It must have one or more primary keys designated using the PrimaryKeyAttribute.
 		/// </param>
 		/// <returns>
 		/// The number of rows updated.
 		/// </returns>
+		public int Update<T>(T obj)
+		{
+			return Update(obj, obj.GetType());
+		}
+		
 		public int Update (object obj)
 		{
 			if (obj == null) {
@@ -747,23 +792,21 @@ namespace SQLite
 			}
 			
 			var map = GetMapping (objType);
-			
-			var pk = map.PK;
-			
-			if (pk == null) {
+			if (map.PK == null) {
 				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
+
+			var cols = from c in map.Columns where map.PK.Contains (c) == false select c;
+			var vals = from c in cols select c.GetValue (obj);
+			var query = string.Format("update \"{0}\" set {1} where {2}"
+				,map.TableName
+				,string.Join(", "   , (from c in cols   select "\""+c.Name+"\" = ?").ToArray())
+				,string.Join(" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray())
+				);
 			
-			var cols = from p in map.Columns
-				where p != pk
-				select p;
-			var vals = from c in cols
-				select c.GetValue (obj);
-			var ps = new List<object> (vals);
-			ps.Add (pk.GetValue (obj));
-			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
-				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
-			return Execute (q, ps.ToArray ());
+			var args = new List<object> (vals);
+			args.AddRange(from c in map.PK select c.GetValue (obj));
+			return Execute (query, args.ToArray ());
 		}
 
 		/// <summary>
@@ -778,12 +821,16 @@ namespace SQLite
 		public int Delete<T> (T obj)
 		{
 			var map = GetMapping (obj.GetType ());
-			var pk = map.PK;
-			if (pk == null) {
+			if (map.PK == null) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
-			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-			return Execute (q, pk.GetValue (obj));
+			var query = string.Format("delete from \"{0}\" where {1}"
+				,map.TableName
+				,string.Join(" and ", (from c in map.PK select "\""+c.Name+"\" = ?").ToArray())
+				);
+			
+			var args = from c in map.PK select c.GetValue(obj);
+			return Execute (query, args.ToArray ());
 		}
 
 		public void Dispose ()
@@ -812,14 +859,38 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class PrimaryKeyAttribute : Attribute
 	{
+		/// <summary>Defines the order of keys for multiple primary key tables</summary>
+		public int MultiKeyOrder { get; set; }
+		public PrimaryKeyAttribute() { MultiKeyOrder = 0; }
 	}
 
+	///<summary>
+	/// Class level attribute for declaring primary keys for partial and inherited classes.
+	/// Notice that, for sqlite3, AutoIncrement and multiple primary keys are mutually exclusive
+	/// The order of keys listed in the attribute is the order that they should be provided
+	/// in calls to Get(), Update(), etc
+	///</summary>
+	[AttributeUsage(AttributeTargets.Class|AttributeTargets.Struct, AllowMultiple = false, Inherited = true)]
+	public class PrimaryKeyNamesAttribute : Attribute
+	{
+		public string[] KeyNames      { get; private set; }
+		public bool     AutoIncrement { get; set; }
+		public PrimaryKeyNamesAttribute(params string[] keyNames)
+		{
+			KeyNames = keyNames;
+			AutoIncrement  = false;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class AutoIncrementAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class IndexedAttribute : Attribute
 	{
 		public string Name { get; set; }
@@ -837,10 +908,12 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class IgnoreAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class UniqueAttribute : IndexedAttribute
 	{
 		public override bool Unique {
@@ -849,20 +922,20 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class MaxLengthAttribute : Attribute
 	{
 		public int Value { get; private set; }
-
 		public MaxLengthAttribute (int length)
 		{
 			Value = length;
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
 	public class CollationAttribute: Attribute
 	{
 		public string Value { get; private set; }
-
 		public CollationAttribute (string collation)
 		{
 			Value = collation;
@@ -876,11 +949,10 @@ namespace SQLite
 		public string TableName { get; private set; }
 
 		public Column[] Columns { get; private set; }
+		public Column[] PK { get; private set; }
 
-		public Column PK { get; private set; }
-
-		Column _autoPk = null;
-		Column[] _insertColumns = null;
+		private readonly Column _autoPk = null;
+		private Column[] _insertColumns = null;
 
 		public TableMapping (Type type)
 		{
@@ -894,6 +966,7 @@ namespace SQLite
 						select p;
 #endif
 			var cols = new List<Column> ();
+			var pks = new List<Column> ();
 			foreach (var p in props) {
 #if !NETFX_CORE
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
@@ -901,20 +974,25 @@ namespace SQLite
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 #endif
 				if (p.CanWrite && !ignore) {
-					cols.Add (new PropColumn (p));
-				}
-			}
-			Columns = cols.ToArray ();
-			foreach (var c in Columns) {
-				if (c.IsAutoInc && c.IsPK) {
-					_autoPk = c;
-				}
-				if (c.IsPK) {
-					PK = c;
+					var c = new PropColumn (p);
+					cols.Add (c);
+					if (c.IsPK) {
+						pks.Add(c);
+						if (c.IsAutoInc) {
+							if (_autoPk != null) throw SQLiteException.New(SQLite3.Result.Error, "Only one property can be an auto incrementing primary key");
+							_autoPk = c;
+						}
+					}
 				}
 			}
 			
+			// Ensure the primary key array contains the primary keys in the correct order
+			pks.Sort((lhs,rhs) => lhs.PKOrder - rhs.PKOrder);
+			
+			Columns = cols.ToArray ();
+			PK = pks.ToArray ();
 			HasAutoIncPK = _autoPk != null;
+			ValidateKeys(type);
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -941,7 +1019,6 @@ namespace SQLite
 			return exact;
 		}
 
-		
 		PreparedSqlLiteInsertCommand _insertCommand;
 		string _insertCommandExtra = null;
 
@@ -973,6 +1050,22 @@ namespace SQLite
 			return insertCommand;
 		}
 		
+		private void ValidateKeys(Type type)
+		{
+			// Check all keys given by PrimaryKeyNamesAttribute exist
+			var attrs = type.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+			if (attrs.Length != 0)
+			{
+				var attr = (PrimaryKeyNamesAttribute)attrs[0];
+				foreach (string key in attr.KeyNames)
+				{
+					string k = key;
+					if (!Array.Exists(PK, c => c.Name == k))
+						throw new KeyNotFoundException("Primary key " + k + " not found on type " + type.Name);
+				}
+			}
+		}
+
 		protected internal void Dispose()
 		{
 			if (_insertCommand != null) {
@@ -993,6 +1086,8 @@ namespace SQLite
 
 			public bool IsPK { get; protected set; }
 
+			public int PKOrder { get; protected set; }
+
 			public IEnumerable<IndexedAttribute> Indices { get; set; }
 
 			public bool IsNullable { get; protected set; }
@@ -1006,17 +1101,19 @@ namespace SQLite
 
 		public class PropColumn : Column
 		{
-			PropertyInfo _prop;
+			private readonly PropertyInfo _prop;
 
 			public PropColumn (PropertyInfo prop)
 			{
+				int pkOrder;
 				_prop = prop;
 				Name = prop.Name;
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
 				IsAutoInc = Orm.IsAutoInc (prop);
-				IsPK = Orm.IsPK (prop);
+				IsPK = Orm.IsPK (prop, out pkOrder);
+				PKOrder = pkOrder;
 				Indices = Orm.GetIndices(prop);
 				IsNullable = !IsPK;
 				MaxStringLength = Orm.MaxStringLength (prop);
@@ -1038,11 +1135,17 @@ namespace SQLite
 	{
 		public const int DefaultMaxStringLength = 140;
 
-		public static string SqlDecl (TableMapping.Column p)
+		/// <summary>Generate a table constraint for the primary key columns</summary>
+		public static string SqlTblConstaintPk(IEnumerable<TableMapping.Column> cols)
+		{
+			return "primary key (" + string.Join(",", (from c in cols where c.IsPK select c.Name).ToArray()) + ")";
+		}
+		
+		public static string SqlDecl (TableMapping.Column p, bool includePK)
 		{
 			string decl = "\"" + p.Name + "\" " + SqlType (p) + " ";
 			
-			if (p.IsPK) {
+			if (includePK && p.IsPK) {
 				decl += "primary key ";
 			}
 			if (p.IsAutoInc) {
@@ -1085,14 +1188,36 @@ namespace SQLite
 			}
 		}
 
-		public static bool IsPK (MemberInfo p)
+		public static bool IsPK (MemberInfo p, out int order)
 		{
+			// Check for PrimaryKeyAttribute first
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
 #if !NETFX_CORE
-			return attrs.Length > 0;
+			if (attrs.Length != 0)
 #else
-			return attrs.Count() > 0;
+			if (attrs.Count() != 0)
 #endif
+			{
+				order = ((PrimaryKeyAttribute)attrs[0]).MultiKeyOrder;
+				return true;
+			}
+			
+			// Check for PrimaryKeyNamesAttribute on the class
+			attrs = p.ReflectedType.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+#if !NETFX_CORE
+			if (attrs.Length != 0)
+#else
+			if (attrs.Count() != 0)
+#endif
+			{
+				PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
+				order = Array.IndexOf(att.KeyNames, p.Name);
+				if (order != -1) return true;
+			}
+
+			// Not a primary key
+			order = 0;
+			return false;
 		}
 
 		public static string Collation (MemberInfo p)
@@ -1112,12 +1237,30 @@ namespace SQLite
 
 		public static bool IsAutoInc (MemberInfo p)
 		{
+			// Check for AutoIncrementAttribute first
 			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
 #if !NETFX_CORE
-			return attrs.Length > 0;
+			if (attrs.Length != 0) return true;
 #else
-			return attrs.Count() > 0;
+			if (attrs.Count() != 0) return true;
 #endif
+			
+			// Check for PrimaryKeyNamesAttribute on the class
+			attrs = p.ReflectedType.GetCustomAttributes(typeof(PrimaryKeyNamesAttribute), true);
+#if !NETFX_CORE
+			if (attrs.Length != 0)
+#else
+			if (attrs.Count() != 0)
+#endif
+			{
+			    // SQLite does not support multiple primary keys and auto increment at the same time
+			    PrimaryKeyNamesAttribute att = (PrimaryKeyNamesAttribute)attrs.First();
+				if (att.KeyNames.Length == 1 && att.KeyNames[0] == p.Name && att.AutoIncrement)
+					return true;
+			}
+			
+			// Not auto increment
+			return false;
 		}
 
 		public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
