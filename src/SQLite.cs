@@ -674,20 +674,23 @@ namespace SQLite
 			return Insert (obj, extra, obj.GetType ());
 		}
 
-		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
-		/// </summary>
-		/// <param name="obj">
-		/// The object to insert.
-		/// </param>
-		/// <param name="extra">
-		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
-		/// </param>
-		/// <returns>
-		/// The number of rows added to the table.
-		/// </returns>
-		public int Insert (object obj, string extra, Type objType)
+	    /// <summary>
+	    /// Inserts the given object and retrieves its
+	    /// auto incremented primary key if it has one.
+	    /// </summary>
+	    /// <param name="obj">
+	    /// The object to insert.
+	    /// </param>
+	    /// <param name="extra">
+	    /// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+	    /// </param>
+	    /// <param name="objType">
+	    /// The type of object to insert.
+	    /// </param>
+	    /// <returns>
+	    /// The number of rows added to the table.
+	    /// </returns>
+	    public int Insert (object obj, string extra, Type objType)
 		{
 			if (obj == null || objType == null) {
 				return 0;
@@ -953,11 +956,20 @@ namespace SQLite
 		private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
 		{
 			var cols = InsertColumns;
-			var insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", TableName, 
-						       string.Join (",", (from c in cols
-									  select "\"" + c.Name + "\"").ToArray ()), 
-						       string.Join (",", (from c in cols
-									  select "?").ToArray ()), extra);
+		    string insertSql;
+            if (!cols.Any() && Columns.Count() == 1 && Columns[0].IsAutoInc)
+            {
+                insertSql = string.Format("insert {1} into \"{0}\" default values", TableName, extra);
+            }
+            else
+            {
+                insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
+                                   string.Join(",", (from c in cols
+                                                     select "\"" + c.Name + "\"").ToArray()),
+                                   string.Join(",", (from c in cols
+                                                     select "?").ToArray()), extra);
+                
+            }
 			
 			var insertCommand = new PreparedSqlLiteInsertCommand(conn);
 			insertCommand.CommandText = insertSql;
