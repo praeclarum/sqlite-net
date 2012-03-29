@@ -366,6 +366,15 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Creates a new SQLiteCommand. Can be overridden to provide a sub-class.
+		/// </summary>
+		/// <seealso cref="SQLiteCommand.OnInstanceCreated"/>
+		protected virtual SQLiteCommand NewCommand ()
+		{
+			return new SQLiteCommand (this);
+		}
+
+		/// <summary>
 		/// Creates a new SQLiteCommand given the command text with arguments. Place a '?'
 		/// in the command text for each of the arguments.
 		/// </summary>
@@ -383,7 +392,7 @@ namespace SQLite
 			if (!_open) {
 				throw SQLiteException.New (SQLite3.Result.Error, "Cannot create commands from unopened database");
 			} else {
-				var cmd = new SQLiteCommand (this);
+				var cmd = NewCommand ();
 				cmd.CommandText = cmdText;
 				foreach (var o in ps) {
 					cmd.Bind (o);
@@ -1195,6 +1204,23 @@ namespace SQLite
 			return ExecuteDeferredQuery<T>(map).ToList();
 		}
 
+		/// <summary>
+		/// Invoked every time an instance is loaded from the database.
+		/// </summary>
+		/// <param name='obj'>
+		/// The newly created object.
+		/// </param>
+		/// <remarks>
+		/// This can be overridden in combination with the <see cref="SQLiteConnection.NewCommand"/>
+		/// method to hook into the life-cycle of objects.
+		///
+		/// Type safety is not possible because MonoTouch does not support virtual generic methods.
+		/// </remarks>
+		protected virtual void OnInstanceCreated (object obj)
+		{
+			// Can be overridden.
+		}
+
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
@@ -1220,6 +1246,7 @@ namespace SQLite
 						var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
 						cols [i].SetValue (obj, val);
  					}
+					OnInstanceCreated (obj);
 					yield return (T)obj;
 				}
 			}

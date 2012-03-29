@@ -50,5 +50,6 @@
     <Compile Include="TestDb.cs" />
     <Compile Include="InheritanceTest.cs" />
     <Compile Include="UnicodeTest.cs" />
+    <Compile Include="UniqueTest.cs" />
   </ItemGroup>
 </Project>
