@@ -1535,7 +1535,8 @@ namespace SQLite
 				} else if (value is Single || value is Double || value is Decimal) {
 					SQLite3.BindDouble (stmt, index, Convert.ToDouble (value));
 				} else if (value is DateTime) {
-					SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+					string ts = ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss.FFF");
+					SQLite3.BindText (stmt, index, ts, -1, NegativePointer);
 #if !NETFX_CORE
 				} else if (value.GetType().IsEnum) {
 #else
