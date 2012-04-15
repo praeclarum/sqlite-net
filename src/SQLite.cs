@@ -1110,7 +1110,7 @@ namespace SQLite
 				return "float";
 			} else if (clrType == typeof(String)) {
 				int len = p.MaxStringLength;
-				return "varchar(" + len + ")";
+				return  len <= 0 ? "text" : "varchar(" + len + ")";
 			} else if (clrType == typeof(DateTime)) {
 				return "datetime";
 #if !NETFX_CORE
