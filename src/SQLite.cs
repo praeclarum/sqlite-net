@@ -274,18 +274,28 @@ namespace SQLite
 				map = GetMapping (ty);
 				_tables.Add (ty.FullName, map);
 			}
-			var query = "create table if not exists \"" + map.TableName + "\"(\n";
 			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
-			var decl = string.Join (",\n", decls.ToArray ());
-			query += decl;
-			query += ")";
 			
-			var count = Execute (query);
+			// This is proper way of checking if table exists
+			SQLiteCommand cmd = CreateCommand("SELECT IFNULL(count(*), 0) AS Flag FROM sqlite_master WHERE type='table' AND name= ?;", map.TableName);
+			int tblCount = cmd.ExecuteScalar<int>();
 			
-			if (count == 0) { //Possible bug: This always seems to return 0?
-				// Table already exists, migrate it
-				MigrateTable (map);
+			int count = 0;
+			if (tblCount == 0)
+			{
+				var query = "create table if not exists \"" + map.TableName + "\"(\n";
+				
+				var decls = map.Columns.Select (p => Orm.SqlDecl (p));
+				var decl = string.Join (",\n", decls.ToArray ());
+				query += decl;
+				query += ")";
+				
+				Execute (query);
+				count++;
+			}
+			else
+			{
+				MigrateTable (map); // Table already exists, migrate it
 			}
 
 			var indexes = new Dictionary<string, IndexInfo> ();
