@@ -868,6 +868,33 @@ namespace SQLite
 			Value = collation;
 		}
 	}
+	
+	public class MapTableAttribute : Attribute
+	{
+		public MapTableAttribute(string tableName)
+		{
+			TableName = tableName;
+		}
+		
+		public string TableName  {
+			get;
+			private set;
+		}
+	}
+
+
+	public class MapColumnAttribute : Attribute
+	{
+		public MapColumnAttribute(string tableName)
+		{
+			ColumnName = tableName;
+		}
+		
+		public string ColumnName  {
+			get;
+			private set;
+		}
+	}
 
 	public class TableMapping
 	{
@@ -885,7 +912,9 @@ namespace SQLite
 		public TableMapping (Type type)
 		{
 			MappedType = type;
-			TableName = MappedType.Name;
+			//TableName = MappedType.Name;
+			object[] tableName = MappedType.GetCustomAttributes(typeof(MapTableAttribute), false);
+			TableName = (tableName.Length == 0) ? MappedType.Name : (tableName[0] as MapTableAttribute).TableName;
 #if !NETFX_CORE
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 #else
@@ -1011,7 +1040,9 @@ namespace SQLite
 			public PropColumn (PropertyInfo prop)
 			{
 				_prop = prop;
-				Name = prop.Name;
+				//Name = prop.Name;
+				object[] mapName = prop.GetCustomAttributes (typeof(MapColumnAttribute), true);
+				Name = mapName.Length > 0 ? (mapName[0] as MapColumnAttribute).ColumnName : prop.Name;
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
