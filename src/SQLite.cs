@@ -110,7 +110,7 @@ namespace SQLite
 			var r = SQLite3.Open (DatabasePath, out handle);
 			Handle = handle;
 			if (r != SQLite3.Result.OK) {
-				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
+				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 			_open = true;
 			
@@ -130,7 +130,7 @@ namespace SQLite
 			var r = SQLite3.Open (DatabasePath, out handle, (int) openFlags, IntPtr.Zero);
 			Handle = handle;
 			if (r != SQLite3.Result.OK) {
-				throw SQLiteException.New (r, "Could not open database file: " + DatabasePath);
+				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 			_open = true;
 			
