@@ -3,3 +3,7 @@
 *.userprefs
 tests/bin
 tests/test-results
+*.user
+*.suo
+_Resharper*
+obj
