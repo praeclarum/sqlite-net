@@ -60,12 +60,12 @@ namespace SQLite.Tests
 			if (columns == null)
 				throw new Exception ("Don't!");
 			var idx = indexes.SingleOrDefault (i => i.name == iname);
-			Assert.NotNull (idx, String.Format ("Index {0} not found", iname));
+			Assert.IsNotNull (idx, String.Format ("Index {0} not found", iname));
 			Assert.AreEqual (idx.unique, unique, String.Format ("Index {0} unique expected {1} but got {2}", iname, unique, idx.unique));
 			var idx_columns = db.Query<IndexColumns> (String.Format ("PRAGMA INDEX_INFO (\"{0}\")", iname));
 			Assert.AreEqual (columns.Length, idx_columns.Count, String.Format ("# of columns: expected {0}, got {1}", columns.Length, idx_columns.Count));
 			foreach (var col in columns) {
-				Assert.NotNull (idx_columns.SingleOrDefault (c => c.name == col), String.Format ("Column {0} not in index {1}", col, idx.name));
+				Assert.IsNotNull (idx_columns.SingleOrDefault (c => c.name == col), String.Format ("Column {0} not in index {1}", col, idx.name));
 			}
 		}
 	}
