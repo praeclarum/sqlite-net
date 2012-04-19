@@ -1698,6 +1698,7 @@ namespace SQLite
 				
 				var call = (MethodCallExpression)expr;
 				var args = new CompileResult[call.Arguments.Count];
+				var obj = call.Object != null ? CompileExpr (call.Object, queryArgs) : null;
 				
 				for (var i = 0; i < args.Length; i++) {
 					args [i] = CompileExpr (call.Arguments [i], queryArgs);
@@ -1709,6 +1710,8 @@ namespace SQLite
 					sqlCall = "(" + args [0].CommandText + " like " + args [1].CommandText + ")";
 				} else if (call.Method.Name == "Contains" && args.Length == 2) {
 					sqlCall = "(" + args [1].CommandText + " in " + args [0].CommandText + ")";
+				} else if (call.Method.Name == "Contains" && args.Length == 1) {
+					sqlCall = "(" + args [0].CommandText + " in " + obj.CommandText + ")";
 				} else {
 					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
 				}
