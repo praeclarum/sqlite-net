@@ -274,18 +274,28 @@ namespace SQLite
 				map = GetMapping (ty);
 				_tables.Add (ty.FullName, map);
 			}
-			var query = "create table if not exists \"" + map.TableName + "\"(\n";
 			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
-			var decl = string.Join (",\n", decls.ToArray ());
-			query += decl;
-			query += ")";
 			
-			var count = Execute (query);
+			// This is proper way of checking if table exists
+			SQLiteCommand cmd = CreateCommand("SELECT IFNULL(count(*), 0) AS Flag FROM sqlite_master WHERE type='table' AND name= ?;", map.TableName);
+			int tblCount = cmd.ExecuteScalar<int>();
 			
-			if (count == 0) { //Possible bug: This always seems to return 0?
-				// Table already exists, migrate it
-				MigrateTable (map);
+			int count = 0;
+			if (tblCount == 0)
+			{
+				var query = "create table if not exists \"" + map.TableName + "\"(\n";
+				
+				var decls = map.Columns.Select (p => Orm.SqlDecl (p));
+				var decl = string.Join (",\n", decls.ToArray ());
+				query += decl;
+				query += ")";
+				
+				Execute (query);
+				count++;
+			}
+			else
+			{
+				MigrateTable (map); // Table already exists, migrate it
 			}
 
 			var indexes = new Dictionary<string, IndexInfo> ();
@@ -873,6 +883,33 @@ namespace SQLite
 			Value = collation;
 		}
 	}
+	
+	public class MapTableAttribute : Attribute
+	{
+		public MapTableAttribute(string tableName)
+		{
+			TableName = tableName;
+		}
+		
+		public string TableName  {
+			get;
+			private set;
+		}
+	}
+
+
+	public class MapColumnAttribute : Attribute
+	{
+		public MapColumnAttribute(string tableName)
+		{
+			ColumnName = tableName;
+		}
+		
+		public string ColumnName  {
+			get;
+			private set;
+		}
+	}
 
 	public class TableMapping
 	{
@@ -890,7 +927,9 @@ namespace SQLite
 		public TableMapping (Type type)
 		{
 			MappedType = type;
-			TableName = MappedType.Name;
+			//TableName = MappedType.Name;
+			object[] tableName = MappedType.GetCustomAttributes(typeof(MapTableAttribute), false);
+			TableName = (tableName.Length == 0) ? MappedType.Name : (tableName[0] as MapTableAttribute).TableName;
 #if !NETFX_CORE
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 #else
@@ -1025,7 +1064,9 @@ namespace SQLite
 			public PropColumn (PropertyInfo prop)
 			{
 				_prop = prop;
-				Name = prop.Name;
+				//Name = prop.Name;
+				object[] mapName = prop.GetCustomAttributes (typeof(MapColumnAttribute), true);
+				Name = mapName.Length > 0 ? (mapName[0] as MapColumnAttribute).ColumnName : prop.Name;
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
@@ -1083,7 +1124,7 @@ namespace SQLite
 				return "float";
 			} else if (clrType == typeof(String)) {
 				int len = p.MaxStringLength;
-				return "varchar(" + len + ")";
+				return  len <= 0 ? "text" : "varchar(" + len + ")";
 			} else if (clrType == typeof(DateTime)) {
 				return "datetime";
 #if !NETFX_CORE
