@@ -2025,10 +2025,15 @@ namespace SQLite
 			return result;
 		}
 #else
-		public static Result Open(string filename, out Sqlite3.sqlite3 db)
+
+        public static Result Open(string filename, out Sqlite3.sqlite3 db)
+        {
+            return (Result) Sqlite3.sqlite3_open(filename, out db);
+        }
+
+		public static Result Open(string filename, out Sqlite3.sqlite3 db, int flags, IntPtr zVfs)
 		{
-			db = new Sqlite3.sqlite3();
-			return (Result)Sqlite3.sqlite3_open(filename, ref db);
+			return (Result)Sqlite3.sqlite3_open_v2(filename, out db, flags, null);
 		}
 
 		public static Result Close(Sqlite3.sqlite3 db)
@@ -2069,7 +2074,7 @@ namespace SQLite
 
 		public static Result Finalize(Sqlite3.Vdbe stmt)
 		{
-			return (Result)Sqlite3.sqlite3_finalize(ref stmt);
+			return (Result)Sqlite3.sqlite3_finalize(stmt);
 		}
 
 		public static long LastInsertRowid(Sqlite3.sqlite3 db)
@@ -2192,5 +2197,4 @@ namespace SQLite
 			Null = 5
 		}
 	}
-	
 }
