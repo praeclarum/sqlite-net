@@ -795,8 +795,10 @@ namespace SQLite
 		{
 			if (_open && Handle != NullHandle) {
 				try {
-					foreach (var sqlInsertCommand in _mappings.Values) {
-						sqlInsertCommand.Dispose();
+          if (_mappings != null) {
+            foreach (var sqlInsertCommand in _mappings.Values) {
+              sqlInsertCommand.Dispose();
+            }
 					}
 					var r = SQLite3.Close(Handle);
 					if (r != SQLite3.Result.OK) {
