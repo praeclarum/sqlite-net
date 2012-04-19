@@ -1564,6 +1564,11 @@ namespace SQLite
 			return q;
 		}
 
+		public T ElementAt (int index)
+		{
+			return Skip (index).Take (1).First ();
+		}
+
 		bool _deferred = false;
 		public TableQuery<T> Deferred ()
 		{
