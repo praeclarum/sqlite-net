@@ -1,3 +1,4 @@
+//https://github.com/praeclarum/sqlite-net/tree/master/src
 //
 // Copyright (c) 2009-2012 Krueger Systems, Inc.
 // 
@@ -274,12 +275,10 @@ namespace SQLite
 				map = GetMapping (ty);
 				_tables.Add (ty.FullName, map);
 			}
-			
-			
-			// This is proper way of checking if table exists
+
 			SQLiteCommand cmd = CreateCommand("SELECT IFNULL(count(*), 0) AS Flag FROM sqlite_master WHERE type='table' AND name= ?;", map.TableName);
 			int tblCount = cmd.ExecuteScalar<int>();
-			
+
 			int count = 0;
 			if (tblCount == 0)
 			{
@@ -294,9 +293,7 @@ namespace SQLite
 				count++;
 			}
 			else
-			{
-				MigrateTable (map); // Table already exists, migrate it
-			}
+				MigrateTable (map);
 
 			var indexes = new Dictionary<string, IndexInfo> ();
 			foreach (var c in map.Columns) {
@@ -879,9 +876,9 @@ namespace SQLite
 		}
 	}
 	
-	public class MapTableAttribute : Attribute
+	public class TableAttribute : Attribute
 	{
-		public MapTableAttribute(string tableName)
+		public TableAttribute(string tableName)
 		{
 			TableName = tableName;
 		}
@@ -893,9 +890,9 @@ namespace SQLite
 	}
 
 
-	public class MapColumnAttribute : Attribute
+	public class ColumnAttribute : Attribute
 	{
-		public MapColumnAttribute(string tableName)
+		public ColumnAttribute(string tableName)
 		{
 			ColumnName = tableName;
 		}
@@ -922,9 +919,10 @@ namespace SQLite
 		public TableMapping (Type type)
 		{
 			MappedType = type;
-			//TableName = MappedType.Name;
-			object[] tableName = MappedType.GetCustomAttributes(typeof(MapTableAttribute), false);
-			TableName = (tableName.Length == 0) ? MappedType.Name : (tableName[0] as MapTableAttribute).TableName;
+			
+			object[] tableName = MappedType.GetCustomAttributes(typeof(TableAttribute), false);
+			TableName = (tableName.Length == 0) ? MappedType.Name : (tableName[0] as TableAttribute).TableName;
+			
 #if !NETFX_CORE
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 #else
@@ -1050,9 +1048,10 @@ namespace SQLite
 			public PropColumn (PropertyInfo prop)
 			{
 				_prop = prop;
-				//Name = prop.Name;
-				object[] mapName = prop.GetCustomAttributes (typeof(MapColumnAttribute), true);
-				Name = mapName.Length > 0 ? (mapName[0] as MapColumnAttribute).ColumnName : prop.Name;
+
+				object[] mapName = prop.GetCustomAttributes (typeof(ColumnAttribute), true);
+				Name = mapName.Length > 0 ? (mapName[0] as ColumnAttribute).ColumnName : prop.Name;
+				
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
@@ -1603,6 +1602,11 @@ namespace SQLite
 			return q;
 		}
 
+		public T ElementAt (int index)
+		{
+			return Skip (index).Take (1).First ();
+		}
+				
 		bool _deferred = false;
 		public TableQuery<T> Deferred ()
 		{
