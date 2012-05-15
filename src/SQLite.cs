@@ -1713,7 +1713,12 @@ namespace SQLite
 					sqlCall = "(" + args [1].CommandText + " in " + args [0].CommandText + ")";
 				}
 				else if (call.Method.Name == "Contains" && args.Length == 1) {
-					sqlCall = "(" + args [0].CommandText + " in " + obj.CommandText + ")";
+					if (call.Object != null && call.Object.Type == typeof(string)) {
+						sqlCall = "(" + obj.CommandText + " like ('%' || " + args [0].CommandText + " || '%'))";
+					}
+					else {
+						sqlCall = "(" + args [0].CommandText + " in " + obj.CommandText + ")";
+					}
 				}
 				else if (call.Method.Name == "StartsWith" && args.Length == 1) {
 					sqlCall = "(" + obj.CommandText + " like (" + args [0].CommandText + " || '%'))";

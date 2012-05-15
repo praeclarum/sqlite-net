@@ -44,5 +44,15 @@ namespace SQLite.Tests
 			var bs = db.Table<Product> ().Where (x => x.Name.EndsWith ("o")).ToList ();
 			Assert.AreEqual (1, bs.Count);
 		}
+		
+		[Test]
+		public void Contains ()
+		{
+			var fs = db.Table<Product> ().Where (x => x.Name.Contains ("o")).ToList ();
+			Assert.AreEqual (2, fs.Count);
+			
+			var bs = db.Table<Product> ().Where (x => x.Name.Contains ("a")).ToList ();
+			Assert.AreEqual (2, bs.Count);
+		}
 	}
 }
