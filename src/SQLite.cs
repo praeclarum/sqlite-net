@@ -778,7 +778,7 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows deleted.
 		/// </returns>
-		public int Delete<T> (T obj)
+		public int Delete (object obj)
 		{
 			var map = GetMapping (obj.GetType ());
 			var pk = map.PK;
