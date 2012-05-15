@@ -52,5 +52,6 @@
     <Compile Include="InheritanceTest.cs" />
     <Compile Include="UnicodeTest.cs" />
     <Compile Include="UniqueTest.cs" />
+    <Compile Include="StringQueryTest.cs" />
   </ItemGroup>
 </Project>

@@ -1708,11 +1708,20 @@ namespace SQLite
 				
 				if (call.Method.Name == "Like" && args.Length == 2) {
 					sqlCall = "(" + args [0].CommandText + " like " + args [1].CommandText + ")";
-				} else if (call.Method.Name == "Contains" && args.Length == 2) {
+				}
+				else if (call.Method.Name == "Contains" && args.Length == 2) {
 					sqlCall = "(" + args [1].CommandText + " in " + args [0].CommandText + ")";
-				} else if (call.Method.Name == "Contains" && args.Length == 1) {
+				}
+				else if (call.Method.Name == "Contains" && args.Length == 1) {
 					sqlCall = "(" + args [0].CommandText + " in " + obj.CommandText + ")";
-				} else {
+				}
+				else if (call.Method.Name == "StartsWith" && args.Length == 1) {
+					sqlCall = "(" + obj.CommandText + " like (" + args [0].CommandText + " || '%'))";
+				}
+				else if (call.Method.Name == "EndsWith" && args.Length == 1) {
+					sqlCall = "(" + obj.CommandText + " like ('%' || " + args [0].CommandText + "))";
+				}
+				else {
 					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
 				}
 				return new CompileResult { CommandText = sqlCall };
