@@ -1777,7 +1777,11 @@ namespace SQLite
 						val = m.GetValue (obj);
 #endif
 					} else {
+#if !NETFX_CORE
 						throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType.ToString ());
+#else
+						throw new NotSupportedException ("MemberExpr: " + mem.Member.DeclaringType.ToString ());
+#endif
 					}
 					
 					//
