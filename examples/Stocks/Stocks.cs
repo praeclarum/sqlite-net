@@ -4,6 +4,7 @@ using System.Linq;
 using Path = System.IO.Path;
 
 using SQLite;
+using System.Globalization;
 
 namespace Stocks
 {
@@ -48,7 +49,7 @@ namespace Stocks
 		}
 		public Valuation QueryLatestValuation (Stock stock)
 		{
-			return Table<Valuation> ().Where(x => x.StockId == stock.Id).OrderBy(x => x.Time).Take(1).FirstOrDefault();
+			return Table<Valuation> ().Where(x => x.StockId == stock.Id).OrderByDescending(x => x.Time).Take(1).FirstOrDefault();
 		}
 		public Stock QueryStock (string stockSymbol)
 		{
@@ -85,9 +86,7 @@ namespace Stocks
 			//
 			try {
 				var newVals = new YahooScraper ().GetValuations (stock, latestDate + TimeSpan.FromHours (23), DateTime.Now);
-				foreach (var v in newVals) {
-					Insert (v);
-				}
+				InsertAll (newVals);
 			} catch (System.Net.WebException ex) {
 				Console.WriteLine (ex);
 			}
@@ -115,7 +114,7 @@ namespace Stocks
 					} else {
 						yield return new Valuation {
 							StockId = stock.Id,
-							Price = decimal.Parse (parts[priceCol]),
+							Price = decimal.Parse (parts[priceCol], CultureInfo.InvariantCulture),
 							Time = DateTime.Parse (parts[dateCol])
 						};
 					}

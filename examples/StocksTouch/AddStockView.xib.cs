@@ -9,50 +9,41 @@ namespace Stocks.Touch
 {
 	public partial class AddStockView : UIViewController
 	{
-		#region Constructors
-
-		// The IntPtr and NSCoder constructors are required for controllers that need 
-		// to be able to be created from a xib rather than from managed code
-
-		public AddStockView (IntPtr handle) : base(handle)
+		Database _db;
+		
+		public event EventHandler Finished = delegate {};
+		
+		public AddStockView (Database db)
+			: base("AddStockView", null)
 		{
-			Initialize ();
-		}
-
-		[Export("initWithCoder:")]
-		public AddStockView (NSCoder coder) : base(coder)
-		{
-			Initialize ();
+			_db = db;
+			
+			Title = "New Symbol";
+			NavigationItem.LeftBarButtonItem = new UIBarButtonItem(UIBarButtonSystemItem.Cancel, Cancel);
+			NavigationItem.RightBarButtonItem = new UIBarButtonItem(UIBarButtonSystemItem.Done, AddSymbol);
 		}
 		
-		Database Db;
-
-		public AddStockView (Database db) : base("AddStockView", null)
-		{
-			Db = db;
-			Initialize ();
-		}
-
-		void Initialize ()
-		{
-		}
-		
-		#endregion
-		
-		public event Action Finished;
+		UITextField _symbolName;
 		
 		public override void ViewDidLoad ()
 		{
-			addBtn.TouchUpInside += delegate {
-				Db.UpdateStock(symbolName.Text);
-				DismissModalViewControllerAnimated(true);
-				if (Finished != null) {
-					Finished();
-				}
+			_symbolName = symbolName;
+			_symbolName.ShouldReturn = delegate {
+				AddSymbol (symbolName, EventArgs.Empty);
+				return true;
 			};
 		}
-
 		
+		void Cancel (object sender, EventArgs e)
+		{
+			DismissModalViewControllerAnimated(true);
+		}
 		
+		void AddSymbol (object sender, EventArgs e)
+		{
+			_db.UpdateStock (symbolName.Text);
+			DismissModalViewControllerAnimated (true);
+			Finished (this, EventArgs.Empty);
+		}
 	}
 }
