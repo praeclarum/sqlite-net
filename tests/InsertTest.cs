@@ -74,7 +74,7 @@ namespace SQLite.Tests
         [Test]
         public void InsertALot()
         {
-			int n = 100000;
+			int n = 10000;
 			var q =	from i in Enumerable.Range(1, n)
 					select new TestObj() {
 				Text = "I am"
