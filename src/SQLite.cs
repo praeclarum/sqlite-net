@@ -42,6 +42,7 @@ using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
+using System.Threading;
 #endif
 
 namespace SQLite
@@ -83,6 +84,8 @@ namespace SQLite
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
+        internal long PoolId { get; private set; }
+        private PoolEntry PoolEntry { get; set; }
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 #if USE_CSHARP_SQLITE
@@ -97,6 +100,10 @@ namespace SQLite
 
 		public bool Trace { get; set; }
 
+#if NETFX_CORE
+        private static string MetroStyleDataPath = null;
+#endif
+
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
@@ -105,16 +112,7 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (string databasePath)
 		{
-			DatabasePath = databasePath;
-			Sqlite3DatabaseHandle handle;
-			var r = SQLite3.Open (DatabasePath, out handle);
-			Handle = handle;
-			if (r != SQLite3.Result.OK) {
-				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
-			}
-			_open = true;
-			
-			BusyTimeout = TimeSpan.FromSeconds (0.1);
+            this.Initialize(databasePath, SQLiteOpenFlags.ReadWrite, false);
 		}
 
 		/// <summary>
@@ -125,17 +123,34 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags)
 		{
-			DatabasePath = databasePath;
-			Sqlite3DatabaseHandle handle;
-			var r = SQLite3.Open (DatabasePath, out handle, (int) openFlags, IntPtr.Zero);
-			Handle = handle;
-			if (r != SQLite3.Result.OK) {
-				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
-			}
-			_open = true;
-			
-			BusyTimeout = TimeSpan.FromSeconds (0.1);
+            this.Initialize(databasePath, openFlags, true);
 		}
+
+        private void Initialize(string databasePath, SQLiteOpenFlags openFlags, bool hasFlags)
+        {
+// @mbrit - 2012-06-18 - Metro-style apps always use the same path...
+#if NETFX_CORE
+            DatabasePath = string.Format("{0}\\{1}", MetroStyleDataPath, databasePath);
+#else
+            DatabasePath = databasePath;
+#endif
+
+            Sqlite3DatabaseHandle handle;
+            SQLite3.Result r = 0;
+            if(hasFlags)
+                r = SQLite3.Open(DatabasePath, out handle, (int)openFlags, IntPtr.Zero);
+            else
+                r = SQLite3.Open(DatabasePath, out handle);
+
+            Handle = handle;
+            if (r != SQLite3.Result.OK)
+            {
+                throw SQLiteException.New(r, String.Format("Could not open database file: {0} ({1})", DatabasePath, r));
+            }
+            _open = true;
+
+            BusyTimeout = TimeSpan.FromSeconds(0.1);
+        }
 		
 		static SQLiteConnection ()
 		{
@@ -143,7 +158,11 @@ namespace SQLite
 				var ti = new TableInfo ();
 				ti.name = "magic";
 			}
-		}
+
+#if NETFX_CORE
+            MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+#endif
+        }
 		
 		/// <summary>
 		/// Used to list some code that we want the MonoTouch linker
@@ -791,10 +810,13 @@ namespace SQLite
 
 		public void Dispose ()
 		{
-			Close ();
+            if (this.PoolEntry != null)
+                SQLiteConnectionPool.Current.ConnectionFinished (this);
+            else
+                this.CloseInternal ();
 		}
 
-		public void Close ()
+		public void CloseInternal ()
 		{
 			if (_open && Handle != NullHandle) {
 				try {
@@ -815,7 +837,13 @@ namespace SQLite
 				}
 			}
 		}
-	}
+
+        internal void Enlist(PoolEntry poolEntry, long poolId)
+        {
+            this.PoolEntry = poolEntry;
+            this.PoolId = poolId;
+        }
+    }
 
 	public class PrimaryKeyAttribute : Attribute
 	{

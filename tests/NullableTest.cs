@@ -2,15 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
-using System.IO;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class NullableTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class NullableTest
 	{
 		public class NullableIntClass
 		{
@@ -31,11 +39,15 @@ namespace SQLite.Tests
 			}
 		}
 
-		[Test]
-		[Description("Create a table with a nullable int column then insert and select against it")]
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        [Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableInt()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -78,11 +90,15 @@ namespace SQLite.Tests
 			}
 		}
 
-		[Test]
-		[Description("Create a table with a nullable int column then insert and select against it")]
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        [Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableFloat()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			db.CreateTable<NullableFloatClass>();
 
 			NullableFloatClass withNull = new NullableFloatClass() { NullableFloat = null };
@@ -127,10 +143,14 @@ namespace SQLite.Tests
 			}
 		}
 
-		[Test]
-		public void NullableString()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void NullableString()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -150,10 +170,14 @@ namespace SQLite.Tests
 			Assert.AreEqual(withData, results[2]);
 		}
 
-		[Test]
-		public void WhereNotNull()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void WhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -175,10 +199,14 @@ namespace SQLite.Tests
 			Assert.AreEqual(withMinus1, results[2]);
 		}
 
-		[Test]
-		public void WhereNull()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void WhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -197,10 +225,14 @@ namespace SQLite.Tests
 			Assert.AreEqual(withNull, results[0]);
 		}
 
-		[Test]
-		public void StringWhereNull()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void StringWhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -216,10 +248,14 @@ namespace SQLite.Tests
 			Assert.AreEqual(withNull, results[0]);
 		}
 
-		[Test]
-		public void StringWhereNotNull()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void StringWhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };

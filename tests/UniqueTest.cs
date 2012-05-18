@@ -1,12 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class UniqueIndexTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class UniqueIndexTest
 	{
 		public class TheOne {
 			[PrimaryKey, AutoIncrement]
@@ -41,8 +50,12 @@ namespace SQLite.Tests
 			public bool unique { get; set;}
 		}
 
-		[Test]
-		public void CreateUniqueIndexes ()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void CreateUniqueIndexes()
 		{
 			using (var db = new TestDb ()) {
 				db.CreateTable<TheOne> ();

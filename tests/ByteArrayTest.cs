@@ -5,12 +5,20 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class ByteArrayTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class ByteArrayTest
 	{
 		public class ByteArrayClass
 		{
@@ -26,8 +34,12 @@ namespace SQLite.Tests
 			}
 		}
 
-		[Test]
-		[Description("Create objects with various byte arrays and check they can be stored and retrieved correctly")]
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        [Description("Create objects with various byte arrays and check they can be stored and retrieved correctly")]
 		public void ByteArrays()
 		{
 			//Byte Arrays for comparisson
@@ -41,7 +53,7 @@ namespace SQLite.Tests
 				new ByteArrayClass() { bytes = null } //Null should be supported
 			};
 
-			SQLiteConnection database = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection database = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert all of the ByteArrayClass
@@ -59,8 +71,12 @@ namespace SQLite.Tests
 			}
 		}
 
-		[Test]
-		[Description("Create A large byte array and check it can be stored and retrieved correctly")]
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        [Description("Create A large byte array and check it can be stored and retrieved correctly")]
 		public void LargeByteArray()
 		{
 			const int byteArraySize = 1024 * 1024;
@@ -70,7 +86,7 @@ namespace SQLite.Tests
 
 			ByteArrayClass byteArray = new ByteArrayClass() { bytes = bytes };
 
-			SQLiteConnection database = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection database = new SQLiteConnection(TestHelper.GetTempDatabaseName());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert the ByteArrayClass

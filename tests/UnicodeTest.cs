@@ -1,14 +1,27 @@
 using System;
 using System.Linq;
+
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class UnicodeTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class UnicodeTest
 	{
-		[Test]
-		public void Insert ()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void Insert()
 		{
 			var db = new TestDb ();
 			
@@ -24,9 +37,13 @@ namespace SQLite.Tests
 			
 			Assert.AreEqual (testString, p.Name);
 		}
-		
-		[Test]
-		public void Query ()
+
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void Query()
 		{
 			var db = new TestDb ();
 			

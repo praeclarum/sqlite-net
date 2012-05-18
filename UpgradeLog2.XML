@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="SQLite.MetroStyle">
+</Property><Property Name="Solution File" Value="C:\Code\sqlite-net-metrostyle3\sqlite-net\SQLite.MetroStyle.sln">
+</Property><Property Name="Date" Value="18 May 2012">
+</Property><Property Name="Time" Value="10:54">
+</Property><Property Name="Log Number" Value="2">
+</Property></Properties><Event ErrorLevel="3" Project="" Source="SQLite.MetroStyle.sln" Description="SafeUpgrade">
+</Event><Event ErrorLevel="0" Project="" Source="SQLite.MetroStyle.sln" Description="File successfully backed up as C:\Code\sqlite-net-metrostyle3\sqlite-net\Backup1\SQLite.MetroStyle.sln">
+</Event><Event ErrorLevel="0" Project="" Source="SQLite.MetroStyle.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="SQLite.MetroStyle.sln" Description="Converted">
+</Event></UpgradeLog>

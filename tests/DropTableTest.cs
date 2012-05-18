@@ -6,12 +6,20 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class DropTableTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class DropTableTest
 	{
 		public class Product
 		{
@@ -23,13 +31,18 @@ namespace SQLite.Tests
 		
 		public class TestDb : SQLiteConnection
 		{
-			public TestDb () : base(Path.GetTempFileName ())
+			public TestDb () : base(TestHelper.GetTempDatabaseName ())
 			{
 				Trace = true;
 			}
 		}
-		
-		[Test, ExpectedException (typeof (SQLiteException))]
+
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        [ExpectedException(typeof(SQLiteException))]
 		public void CreateInsertDrop ()
 		{
 			var db = new TestDb ();

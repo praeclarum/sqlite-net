@@ -1,12 +1,21 @@
 using System;
 using System.Linq;
-using NUnit.Framework;
 using System.Collections.Generic;
+
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
+using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class LinqTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class LinqTest
 	{
 		TestDb CreateDb ()
 		{
@@ -17,9 +26,13 @@ namespace SQLite.Tests
 			db.CreateTable<OrderHistory> ();
 			return db;
 		}
-		
-		[Test]
-		public void FunctionParameter ()
+
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void FunctionParameter()
 		{
 			var db = CreateDb ();
 			
@@ -41,9 +54,13 @@ namespace SQLite.Tests
 			Assert.AreEqual (1, r.Count);
 			Assert.AreEqual ("A", r [0].Name);
 		}
-		
-		[Test]
-		public void WhereGreaterThan ()
+
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void WhereGreaterThan()
 		{
 			var db = CreateDb ();
 			

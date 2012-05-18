@@ -1,14 +1,27 @@
 using System;
 using System.Linq;
+
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class CreateTableTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class CreateTableTest
 	{
-		[Test]
-		public void CreateThem ()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void CreateThem()
 		{
 			var db = new TestDb ();
 			
@@ -20,8 +33,12 @@ namespace SQLite.Tests
 			VerifyCreations(db);
 		}
 
-	    [Test]
-        public void CreateAsPassedInTypes ()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void CreateAsPassedInTypes()
         {
             var db = new TestDb();
 

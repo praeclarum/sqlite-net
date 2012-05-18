@@ -3,14 +3,22 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
-using System.Diagnostics;
+#endif
 
 namespace SQLite.Tests
-{    
+{
+#if NETFX_CORE
+    [TestClass]
+#else
     [TestFixture]
+#endif
     public class ContainsTest
     {
         public class TestObj
@@ -34,8 +42,12 @@ namespace SQLite.Tests
 				CreateTable<TestObj>();
             }
         }
-		
+
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void ContainsConstantData()
         {
 			int n = 20;
@@ -44,7 +56,7 @@ namespace SQLite.Tests
 				Name = i.ToString()
 			};
 			
-			var db = new TestDb(Path.GetTempFileName());
+			var db = new TestDb(TestHelper.GetTempDatabaseName());
 			
 			db.InsertAll(cq);
 			
@@ -58,8 +70,12 @@ namespace SQLite.Tests
 			var more = (from o in db.Table<TestObj>() where moreq.Contains(o.Name) select o).ToList();
 			Assert.AreEqual(2, more.Count);
         }
-		
-		[Test]
+
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
         public void ContainsQueriedData()
         {
 			int n = 20;
@@ -68,7 +84,7 @@ namespace SQLite.Tests
 				Name = i.ToString()
 			};
 			
-			var db = new TestDb(Path.GetTempFileName());
+			var db = new TestDb(TestHelper.GetTempDatabaseName());
 			
 			db.InsertAll(cq);
 			

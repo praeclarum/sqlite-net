@@ -3,14 +3,22 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
-using System.Diagnostics;
+#endif
 
 namespace SQLite.Tests
-{    
+{
+#if NETFX_CORE
+    [TestClass]
+#else
     [TestFixture]
+#endif
     public class CollateTest
     {
         public class TestObj
@@ -44,8 +52,12 @@ namespace SQLite.Tests
 				CreateTable<TestObj>();
             }
         }
-		
+
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void Collate()
         {
 			var obj = new TestObj() {
@@ -55,7 +67,7 @@ namespace SQLite.Tests
 				CollateNoCase = "Alpha ",
 			};
 			
-			var db = new TestDb(Path.GetTempFileName());
+			var db = new TestDb(TestHelper.GetTempDatabaseName());
 						
 			db.Insert(obj);			
 			
