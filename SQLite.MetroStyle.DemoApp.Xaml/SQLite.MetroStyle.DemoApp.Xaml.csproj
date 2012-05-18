@@ -191,7 +191,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SQLite.Engine\SQLiteMetro.vcxproj">
+    <ProjectReference Include="..\SQLite.MetroStyle.Engine\SQLiteMetro.vcxproj">
       <Project>{2863e6a4-5cb3-43aa-bb1c-8b74822b4ca1}</Project>
       <Name>SQLite.MetroStyle.Engine</Name>
     </ProjectReference>
