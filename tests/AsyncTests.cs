@@ -12,767 +12,748 @@ using NUnit.Framework;
 
 namespace SQLite.Tests
 {
-    // @mbrit - 2012-05-14 - NOTE - the lack of async use in this class is because the VS11 test runner falsely
-    // reports any failing test as succeeding if marked as async. Should be fixed in the "June 2012" drop...
+	// @mbrit - 2012-05-14 - NOTE - the lack of async use in this class is because the VS11 test runner falsely
+	// reports any failing test as succeeding if marked as async. Should be fixed in the "June 2012" drop...
 
-    public class Customer
-    {
-        [AutoIncrement, PrimaryKey]
-        public int Id { get; set; }
+	public class Customer
+	{
+		[AutoIncrement, PrimaryKey]
+		public int Id { get; set; }
 
-        [MaxLength(64)]
-        public string FirstName { get; set; }
+		[MaxLength (64)]
+		public string FirstName { get; set; }
 
-        [MaxLength(64)]
-        public string LastName { get; set; }
+		[MaxLength (64)]
+		public string LastName { get; set; }
 
-        [MaxLength(64)]
-        public string Email { get; set; }
-    }
+		[MaxLength (64)]
+		public string Email { get; set; }
+	}
 
-    /// <summary>
-    /// Defines tests that exercise async behaviour.
-    /// </summary>
+	/// <summary>
+	/// Defines tests that exercise async behaviour.
+	/// </summary>
 #if NETFX_CORE
-    [TestClass]
+	[TestClass]
 #else
-    [TestFixture]
+	[TestFixture]
 #endif
-    public class AsyncTests
-    {
-        private const string DatabaseName = "async.db";
-
-#if NETFX_CORE
-        [TestMethod]
-#else
-        [Test]
-#endif
-        public void TestCreateTableAsync()
-        {
-            string path = null;
-            var conn = GetConnection(ref path);
-
-            // drop the customer table...
-            conn.ExecuteAsync("drop table if exists Customer").Wait();
-
-            // run...
-            conn.CreateTableAsync<Customer>().Wait();
-
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                // run it - if it's missing we'll get a failure...
-                check.Execute("select * from Customer");
-            }
-        }
-
-        internal static SQLiteAsyncConnection GetConnection()
-        {
-            string path = null;
-            return GetConnection(ref path);
-        }
-
-        internal static SQLiteAsyncConnection GetConnection(ref string path)
-        {
-#if NETFX_CORE
-            return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsyncMetroStyle(DatabaseName, ref path));
-#else
-            path = Path.Combine(Path.GetTemp, DatabaseName);
-            return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsync(DatabaseName));
-#endif
-        }
+	public class AsyncTests
+	{
+		private const string DatabaseName = "async.db";
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestDropTableAsync()
-        {
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestCreateTableAsync ()
+		{
+			string path = null;
+			var conn = GetConnection (ref path);
 
-            // drop it...
-            conn.DropTableAsync<Customer>().Wait();
+			// drop the customer table...
+			conn.ExecuteAsync ("drop table if exists Customer").Wait ();
 
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                // load it back and check - should be missing
-                var command = check.CreateCommand("select name from sqlite_master where type='table' and name='customer'");
-                Assert.IsNull(command.ExecuteScalar<string>());
-            }
-        }
+			// run...
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-        private Customer CreateCustomer()
-        {
-            Customer customer = new Customer()
-            {
-                FirstName = "foo",
-                LastName = "bar",
-                Email = Guid.NewGuid().ToString()
-            };
-            return customer;
-        }
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				// run it - if it's missing we'll get a failure...
+				check.Execute ("select * from Customer");
+			}
+		}
+
+		internal static SQLiteAsyncConnection GetConnection ()
+		{
+			string path = null;
+			return GetConnection (ref path);
+		}
+
+		internal static SQLiteAsyncConnection GetConnection (ref string path)
+		{
+#if NETFX_CORE
+			return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsyncMetroStyle(DatabaseName, ref path));
+#else
+			path = Path.Combine (Path.GetTemp, DatabaseName);
+			return new SQLiteAsyncConnection (SQLiteConnectionSpecification.CreateForAsync (DatabaseName));
+#endif
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestInsertAsync()
-        {
-            // create...
-            Customer customer = this.CreateCustomer();
+		public void TestDropTableAsync ()
+		{
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // connect...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
+			// drop it...
+			conn.DropTableAsync<Customer> ().Wait ();
 
-            // run...
-            conn.InsertAsync(customer).Wait();
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				// load it back and check - should be missing
+				var command = check.CreateCommand ("select name from sqlite_master where type='table' and name='customer'");
+				Assert.IsNull (command.ExecuteScalar<string> ());
+			}
+		}
 
-            // check that we got an id...
-            Assert.AreNotEqual(0, customer.Id);
-
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                // load it back...
-                Customer loaded = check.Get<Customer>(customer.Id);
-                Assert.AreEqual(loaded.Id, customer.Id);
-            }
-        }
+		private Customer CreateCustomer ()
+		{
+			Customer customer = new Customer () {
+				FirstName = "foo",
+				LastName = "bar",
+				Email = Guid.NewGuid ().ToString ()
+			};
+			return customer;
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestUpdateAsync()
-        {
-            // create...
-            Customer customer = CreateCustomer();
+		public void TestInsertAsync ()
+		{
+			// create...
+			Customer customer = this.CreateCustomer ();
 
-            // connect...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
+			// connect...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // run...
-            conn.InsertAsync(customer).Wait();
+			// run...
+			conn.InsertAsync (customer).Wait ();
 
-            // change it...
-            string newEmail = Guid.NewGuid().ToString();
-            customer.Email = newEmail;
+			// check that we got an id...
+			Assert.AreNotEqual (0, customer.Id);
 
-            // save it...
-            conn.UpdateAsync(customer).Wait();
-
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                // load it back - should be changed...
-                Customer loaded = check.Get<Customer>(customer.Id);
-                Assert.AreEqual(newEmail, loaded.Email);
-            }
-        }
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				// load it back...
+				Customer loaded = check.Get<Customer> (customer.Id);
+				Assert.AreEqual (loaded.Id, customer.Id);
+			}
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestDeleteAsync()
-        {
-            // create...
-            Customer customer = CreateCustomer();
+		public void TestUpdateAsync ()
+		{
+			// create...
+			Customer customer = CreateCustomer ();
 
-            // connect...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
+			// connect...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // run...
-            conn.InsertAsync(customer).Wait();
+			// run...
+			conn.InsertAsync (customer).Wait ();
 
-            // delete it...
-            conn.DeleteAsync(customer).Wait();
+			// change it...
+			string newEmail = Guid.NewGuid ().ToString ();
+			customer.Email = newEmail;
 
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                // load it back - should be null...
-                var loaded = check.Table<Customer>().Where(v => v.Id == customer.Id).ToList();
-                Assert.AreEqual(0, loaded.Count);
-            }
-        }
+			// save it...
+			conn.UpdateAsync (customer).Wait ();
+
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				// load it back - should be changed...
+				Customer loaded = check.Get<Customer> (customer.Id);
+				Assert.AreEqual (newEmail, loaded.Email);
+			}
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestGetAsync()
-        {
-            // create...
-            Customer customer = new Customer();
-            customer.FirstName = "foo";
-            customer.LastName = "bar";
-            customer.Email = Guid.NewGuid().ToString();
+		public void TestDeleteAsync ()
+		{
+			// create...
+			Customer customer = CreateCustomer ();
 
-            // connect and insert...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.InsertAsync(customer).Wait();
+			// connect...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // check...
-            Assert.AreNotEqual(0, customer.Id);
+			// run...
+			conn.InsertAsync (customer).Wait ();
 
-            // get it back...
-            var task = conn.GetAsync<Customer>(customer.Id);
-            task.Wait();
-            Customer loaded = task.Result;
+			// delete it...
+			conn.DeleteAsync (customer).Wait ();
 
-            // check...
-            Assert.AreEqual(customer.Id, loaded.Id);
-        }
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				// load it back - should be null...
+				var loaded = check.Table<Customer> ().Where (v => v.Id == customer.Id).ToList ();
+				Assert.AreEqual (0, loaded.Count);
+			}
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestGetSafeAsyncItemPresent()
-        {
-            // create...
-            Customer customer = CreateCustomer();
+		public void TestGetAsync ()
+		{
+			// create...
+			Customer customer = new Customer ();
+			customer.FirstName = "foo";
+			customer.LastName = "bar";
+			customer.Email = Guid.NewGuid ().ToString ();
 
-            // connect and insert...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.InsertAsync(customer).Wait();
+			// connect and insert...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.InsertAsync (customer).Wait ();
 
-            // check...
-            Assert.AreNotEqual(0, customer.Id);
+			// check...
+			Assert.AreNotEqual (0, customer.Id);
 
-            // get it back...
-            var task = conn.GetSafeAsync<Customer>(customer.Id);
-            task.Wait();
-            Customer loaded = task.Result;
+			// get it back...
+			var task = conn.GetAsync<Customer> (customer.Id);
+			task.Wait ();
+			Customer loaded = task.Result;
 
-            // check...
-            Assert.AreEqual(customer.Id, loaded.Id);
-        }
+			// check...
+			Assert.AreEqual (customer.Id, loaded.Id);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestGetSafeAsyncItemMissing()
-        {
-            // connect and insert...
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestGetSafeAsyncItemPresent ()
+		{
+			// create...
+			Customer customer = CreateCustomer ();
 
-            // now get one that doesn't exist...
-            var task = conn.GetSafeAsync<Customer>(-1);
-            task.Wait();
+			// connect and insert...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.InsertAsync (customer).Wait ();
 
-            // check...
-            Assert.IsNull(task.Result);
-        }
+			// check...
+			Assert.AreNotEqual (0, customer.Id);
+
+			// get it back...
+			var task = conn.GetSafeAsync<Customer> (customer.Id);
+			task.Wait ();
+			Customer loaded = task.Result;
+
+			// check...
+			Assert.AreEqual (customer.Id, loaded.Id);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestQueryAsync()
-        {
-            // connect...
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestGetSafeAsyncItemMissing ()
+		{
+			// connect and insert...
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // insert some...
-            List<Customer> customers = new List<Customer>();
-            for (int index = 0; index < 5; index++)
-            {
-                Customer customer = CreateCustomer();
+			// now get one that doesn't exist...
+			var task = conn.GetSafeAsync<Customer> (-1);
+			task.Wait ();
 
-                // insert...
-                conn.InsertAsync(customer).Wait();
-
-                // add...
-                customers.Add(customer);
-            }
-
-            // return the third one...
-            var task = conn.QueryAsync<Customer>("select * from customer where id=?", customers[2].Id);
-            task.Wait();
-            var loaded = task.Result;
-
-            // check...
-            Assert.AreEqual(1, loaded.Count);
-            Assert.AreEqual(customers[2].Email, loaded[0].Email);
-        }
+			// check...
+			Assert.IsNull (task.Result);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestDeferredQueryAsync()
-        {
-            // connect...
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestQueryAsync ()
+		{
+			// connect...
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // insert some...
-            List<Customer> customers = new List<Customer>();
-            for (int index = 0; index < 5; index++)
-            {
-                Customer customer = new Customer();
-                customer.FirstName = "foo";
-                customer.LastName = "bar";
-                customer.Email = Guid.NewGuid().ToString();
+			// insert some...
+			List<Customer> customers = new List<Customer> ();
+			for (int index = 0; index < 5; index++) {
+				Customer customer = CreateCustomer ();
 
-                // insert...
-                conn.InsertAsync(customer).Wait();
+				// insert...
+				conn.InsertAsync (customer).Wait ();
 
-                // add...
-                customers.Add(customer);
-            }
+				// add...
+				customers.Add (customer);
+			}
 
-            // return the third one...
-            var task = conn.DeferredQueryAsync<Customer>("select * from customer where id=?", customers[2].Id);
-            task.Wait();
-            var loaded = task.Result.ToList();
+			// return the third one...
+			var task = conn.QueryAsync<Customer> ("select * from customer where id=?", customers[2].Id);
+			task.Wait ();
+			var loaded = task.Result;
 
-            // check...
-            Assert.AreEqual(1, loaded.Count);
-            Assert.AreEqual(customers[2].Email, loaded[0].Email);
-        }
+			// check...
+			Assert.AreEqual (1, loaded.Count);
+			Assert.AreEqual (customers[2].Email, loaded[0].Email);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestTableAsync()
-        {
-            // connect...
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestDeferredQueryAsync ()
+		{
+			// connect...
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // insert some...
-            List<Customer> customers = new List<Customer>();
-            for (int index = 0; index < 5; index++)
-            {
-                Customer customer = new Customer();
-                customer.FirstName = "foo";
-                customer.LastName = "bar";
-                customer.Email = Guid.NewGuid().ToString();
+			// insert some...
+			List<Customer> customers = new List<Customer> ();
+			for (int index = 0; index < 5; index++) {
+				Customer customer = new Customer ();
+				customer.FirstName = "foo";
+				customer.LastName = "bar";
+				customer.Email = Guid.NewGuid ().ToString ();
 
-                // insert...
-                conn.InsertAsync(customer).Wait();
+				// insert...
+				conn.InsertAsync (customer).Wait ();
 
-                // add...
-                customers.Add(customer);
-            }
+				// add...
+				customers.Add (customer);
+			}
 
-            // run the table operation...
-            var query = conn.Table<Customer>();
-            var loaded = query.ToList();
+			// return the third one...
+			var task = conn.DeferredQueryAsync<Customer> ("select * from customer where id=?", customers[2].Id);
+			task.Wait ();
+			var loaded = task.Result.ToList ();
 
-            // check that we got them all back...
-            Assert.AreEqual(5, loaded.Count);
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[0].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[1].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[2].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[3].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[4].Id));
-        }
+			// check...
+			Assert.AreEqual (1, loaded.Count);
+			Assert.AreEqual (customers[2].Email, loaded[0].Email);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestTableAsyncWithClone()
-        {
-            // connect...
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestTableAsync ()
+		{
+			// connect...
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
 
-            // insert some...
-            List<Customer> customers = new List<Customer>();
-            for (int index = 0; index < 5; index++)
-            {
-                Customer customer = new Customer();
-                customer.FirstName = "foo";
-                customer.LastName = "bar";
-                customer.Email = Guid.NewGuid().ToString();
+			// insert some...
+			List<Customer> customers = new List<Customer> ();
+			for (int index = 0; index < 5; index++) {
+				Customer customer = new Customer ();
+				customer.FirstName = "foo";
+				customer.LastName = "bar";
+				customer.Email = Guid.NewGuid ().ToString ();
 
-                // insert...
-                conn.InsertAsync(customer).Wait();
+				// insert...
+				conn.InsertAsync (customer).Wait ();
 
-                // add...
-                customers.Add(customer);
-            }
+				// add...
+				customers.Add (customer);
+			}
 
-            // run the table operation...
-            var query = conn.Table<Customer>();
+			// run the table operation...
+			var query = conn.Table<Customer> ();
+			var loaded = query.ToList ();
 
-            // clone it...
-            var cloned = query.Clone();
-            var loaded = cloned.ToList();
-
-            // check that we got them all back...
-            Assert.AreEqual(5, loaded.Count);
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[0].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[1].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[2].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[3].Id));
-            Assert.IsNotNull(loaded.Where(v => v.Id == customers[4].Id));
-        }
+			// check that we got them all back...
+			Assert.AreEqual (5, loaded.Count);
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[0].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[1].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[2].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[3].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[4].Id));
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestExecuteAsync()
-        {
-            // connect...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestTableAsyncWithClone ()
+		{
+			// connect...
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
 
-            // do a manual insert...
-            string email = Guid.NewGuid().ToString();
-            conn.ExecuteAsync("insert into customer (firstname, lastname, email) values (?, ?, ?)",
-                "foo", "bar", email).Wait();
+			// insert some...
+			List<Customer> customers = new List<Customer> ();
+			for (int index = 0; index < 5; index++) {
+				Customer customer = new Customer ();
+				customer.FirstName = "foo";
+				customer.LastName = "bar";
+				customer.Email = Guid.NewGuid ().ToString ();
 
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                // load it back - should be null...
-                var result = check.Table<Customer>().Where(v => v.Email == email);
-                Assert.IsNotNull(result);
-            }
-        }
+				// insert...
+				conn.InsertAsync (customer).Wait ();
+
+				// add...
+				customers.Add (customer);
+			}
+
+			// run the table operation...
+			var query = conn.Table<Customer> ();
+
+			// clone it...
+			var cloned = query.Clone ();
+			var loaded = cloned.ToList ();
+
+			// check that we got them all back...
+			Assert.AreEqual (5, loaded.Count);
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[0].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[1].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[2].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[3].Id));
+			Assert.IsNotNull (loaded.Where (v => v.Id == customers[4].Id));
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestInsertAllAsync()
-        {
-            // create a bunch of customers...
-            List<Customer> customers = new List<Customer>();
-            for (int index = 0; index < 100; index++)
-            {
-                Customer customer = new Customer();
-                customer.FirstName = "foo";
-                customer.LastName = "bar";
-                customer.Email = Guid.NewGuid().ToString();
-                customers.Add(customer);
-            }
+		public void TestExecuteAsync ()
+		{
+			// connect...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // connect...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
+			// do a manual insert...
+			string email = Guid.NewGuid ().ToString ();
+			conn.ExecuteAsync ("insert into customer (firstname, lastname, email) values (?, ?, ?)",
+				"foo", "bar", email).Wait ();
 
-            // insert them all...
-            conn.InsertAllAsync(customers).Wait();
-
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                for (int index = 0; index < customers.Count; index++)
-                {
-                    // load it back and check...
-                    Customer loaded = check.Get<Customer>(customers[index].Id);
-                    Assert.AreEqual(loaded.Email, customers[index].Email);
-                }
-            }
-        }
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				// load it back - should be null...
+				var result = check.Table<Customer> ().Where (v => v.Email == email);
+				Assert.IsNotNull (result);
+			}
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestRunInTransactionAsync()
-        {
-            // connect...
-            string path = null;
-            var conn = GetConnection(ref path);
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestInsertAllAsync ()
+		{
+			// create a bunch of customers...
+			List<Customer> customers = new List<Customer> ();
+			for (int index = 0; index < 100; index++) {
+				Customer customer = new Customer ();
+				customer.FirstName = "foo";
+				customer.LastName = "bar";
+				customer.Email = Guid.NewGuid ().ToString ();
+				customers.Add (customer);
+			}
 
-            // run...
-            Customer customer = new Customer();
-            conn.RunInTransactionAsync((c) =>
-            {
-                // insert...
-                customer.FirstName = "foo";
-                customer.LastName = "bar";
-                customer.Email = Guid.NewGuid().ToString();
-                conn.InsertAsync(customer).Wait();
+			// connect...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-                // delete it again...
-                conn.ExecuteAsync("delete from customer where id=?", customer.Id).Wait();
+			// insert them all...
+			conn.InsertAllAsync (customers).Wait ();
 
-            }).Wait();
-
-            // check...
-            using (SQLiteConnection check = new SQLiteConnection(path))
-            {
-                // load it back and check - should be deleted...
-                var loaded = check.Table<Customer>().Where(v => v.Id == customer.Id).ToList();
-                Assert.AreEqual(0, loaded.Count);
-            }
-        }
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				for (int index = 0; index < customers.Count; index++) {
+					// load it back and check...
+					Customer loaded = check.Get<Customer> (customers[index].Id);
+					Assert.AreEqual (loaded.Email, customers[index].Email);
+				}
+			}
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestExecuteScalar()
-        {
-            // connect...
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestRunInTransactionAsync ()
+		{
+			// connect...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // check...
-            var task = conn.ExecuteScalarAsync<object>("select name from sqlite_master where type='table' and name='customer'");
-            task.Wait();
-            object name = task.Result;
-            Assert.AreNotEqual("Customer", name);
-        }
+			// run...
+			Customer customer = new Customer ();
+			conn.RunInTransactionAsync ((c) => {
+				// insert...
+				customer.FirstName = "foo";
+				customer.LastName = "bar";
+				customer.Email = Guid.NewGuid ().ToString ();
+				conn.InsertAsync (customer).Wait ();
+
+				// delete it again...
+				conn.ExecuteAsync ("delete from customer where id=?", customer.Id).Wait ();
+
+			}).Wait ();
+
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				// load it back and check - should be deleted...
+				var loaded = check.Table<Customer> ().Where (v => v.Id == customer.Id).ToList ();
+				Assert.AreEqual (0, loaded.Count);
+			}
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableQueryToListAsync()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestExecuteScalar ()
+		{
+			// connect...
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // create...
-            Customer customer = this.CreateCustomer();
-            conn.InsertAsync(customer).Wait();
-
-            // query...
-            var query = conn.Table<Customer>();
-            var task = query.ToListAsync();
-            task.Wait();
-            var items = task.Result;
-
-            // check...
-            var loaded = items.Where(v => v.Id == customer.Id).First();
-            Assert.AreEqual(customer.Email, loaded.Email);
-        }
+			// check...
+			var task = conn.ExecuteScalarAsync<object> ("select name from sqlite_master where type='table' and name='customer'");
+			task.Wait ();
+			object name = task.Result;
+			Assert.AreNotEqual ("Customer", name);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableQueryWhereOperation()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		public void TestAsyncTableQueryToListAsync ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // create...
-            Customer customer = this.CreateCustomer();
-            conn.InsertAsync(customer).Wait();
+			// create...
+			Customer customer = this.CreateCustomer ();
+			conn.InsertAsync (customer).Wait ();
 
-            // query...
-            var query = conn.Table<Customer>();
-            var task = query.ToListAsync();
-            task.Wait();
-            var items = task.Result;
+			// query...
+			var query = conn.Table<Customer> ();
+			var task = query.ToListAsync ();
+			task.Wait ();
+			var items = task.Result;
 
-            // check...
-            var loaded = items.Where(v => v.Id == customer.Id).First();
-            Assert.AreEqual(customer.Email, loaded.Email);
-        }
+			// check...
+			var loaded = items.Where (v => v.Id == customer.Id).First ();
+			Assert.AreEqual (customer.Email, loaded.Email);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableQueryCountAsync()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestAsyncTableQueryWhereOperation ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
 
-            // create...
-            for (int index = 0; index < 10; index++)
-                conn.InsertAsync(this.CreateCustomer()).Wait();
+			// create...
+			Customer customer = this.CreateCustomer ();
+			conn.InsertAsync (customer).Wait ();
 
-            // load...
-            var query = conn.Table<Customer>();
-            var task = query.CountAsync();
-            task.Wait();
+			// query...
+			var query = conn.Table<Customer> ();
+			var task = query.ToListAsync ();
+			task.Wait ();
+			var items = task.Result;
 
-            // check...
-            Assert.AreEqual(10, task.Result);
-        }
+			// check...
+			var loaded = items.Where (v => v.Id == customer.Id).First ();
+			Assert.AreEqual (customer.Email, loaded.Email);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableOrderBy()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestAsyncTableQueryCountAsync ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
 
-            // create...
-            for (int index = 0; index < 10; index++)
-                conn.InsertAsync(this.CreateCustomer()).Wait();
+			// create...
+			for (int index = 0; index < 10; index++)
+				conn.InsertAsync (this.CreateCustomer ()).Wait ();
 
-            // query...
-            var query = conn.Table<Customer>().OrderBy(v => v.Email);
-            var task = query.ToListAsync();
-            task.Wait();
-            var items = task.Result;
+			// load...
+			var query = conn.Table<Customer> ();
+			var task = query.CountAsync ();
+			task.Wait ();
 
-            // check...
-            Assert.AreEqual(-1, string.Compare(items[0].Email, items[9].Email));
-        }
+			// check...
+			Assert.AreEqual (10, task.Result);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableOrderByDescending()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestAsyncTableOrderBy ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
 
-            // create...
-            for (int index = 0; index < 10; index++)
-                conn.InsertAsync(this.CreateCustomer()).Wait();
+			// create...
+			for (int index = 0; index < 10; index++)
+				conn.InsertAsync (this.CreateCustomer ()).Wait ();
 
-            // query...
-            var query = conn.Table<Customer>().OrderByDescending(v => v.Email);
-            var task = query.ToListAsync();
-            task.Wait();
-            var items = task.Result;
+			// query...
+			var query = conn.Table<Customer> ().OrderBy (v => v.Email);
+			var task = query.ToListAsync ();
+			task.Wait ();
+			var items = task.Result;
 
-            // check...
-            Assert.AreEqual(1, string.Compare(items[0].Email, items[9].Email));
-        }
+			// check...
+			Assert.AreEqual (-1, string.Compare (items[0].Email, items[9].Email));
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableQueryTake()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestAsyncTableOrderByDescending ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
 
-            // create...
-            for (int index = 0; index < 10; index++)
-            {
-                var customer = this.CreateCustomer();
-                customer.FirstName = index.ToString();
-                conn.InsertAsync(customer).Wait();
-            }
+			// create...
+			for (int index = 0; index < 10; index++)
+				conn.InsertAsync (this.CreateCustomer ()).Wait ();
 
-            // query...
-            var query = conn.Table<Customer>().OrderBy(v => v.FirstName).Take(1);
-            var task = query.ToListAsync();
-            task.Wait();
-            var items = task.Result;
+			// query...
+			var query = conn.Table<Customer> ().OrderByDescending (v => v.Email);
+			var task = query.ToListAsync ();
+			task.Wait ();
+			var items = task.Result;
 
-            // check...
-            Assert.AreEqual(1, items.Count);
-            Assert.AreEqual("0", items[0].FirstName);
-        }
+			// check...
+			Assert.AreEqual (1, string.Compare (items[0].Email, items[9].Email));
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableQuerySkip()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestAsyncTableQueryTake ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
 
-            // create...
-            for (int index = 0; index < 10; index++)
-            {
-                var customer = this.CreateCustomer();
-                customer.FirstName = index.ToString();
-                conn.InsertAsync(customer).Wait();
-            }
+			// create...
+			for (int index = 0; index < 10; index++) {
+				var customer = this.CreateCustomer ();
+				customer.FirstName = index.ToString ();
+				conn.InsertAsync (customer).Wait ();
+			}
 
-            // query...
-            var query = conn.Table<Customer>().OrderBy(v => v.FirstName).Skip(5);
-            var task = query.ToListAsync();
-            task.Wait();
-            var items = task.Result;
+			// query...
+			var query = conn.Table<Customer> ().OrderBy (v => v.FirstName).Take (1);
+			var task = query.ToListAsync ();
+			task.Wait ();
+			var items = task.Result;
 
-            // check...
-            Assert.AreEqual(5, items.Count);
-            Assert.AreEqual("5", items[0].FirstName);
-        }
+			// check...
+			Assert.AreEqual (1, items.Count);
+			Assert.AreEqual ("0", items[0].FirstName);
+		}
 
 #if NETFX_CORE
-        [TestMethod]
+		[TestMethod]
 #else
-        [Test]
+		[Test]
 #endif
-        public void TestAsyncTableElementAtAsync()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
-            conn.ExecuteAsync("delete from customer").Wait();
+		public void TestAsyncTableQuerySkip ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
 
-            // create...
-            for (int index = 0; index < 10; index++)
-            {
-                var customer = this.CreateCustomer();
-                customer.FirstName = index.ToString();
-                conn.InsertAsync(customer).Wait();
-            }
+			// create...
+			for (int index = 0; index < 10; index++) {
+				var customer = this.CreateCustomer ();
+				customer.FirstName = index.ToString ();
+				conn.InsertAsync (customer).Wait ();
+			}
 
-            // query...
-            var query = conn.Table<Customer>().OrderBy(v => v.FirstName);
-            var task = query.ElementAtAsync(7);
-            task.Wait();
-            var loaded = task.Result;
+			// query...
+			var query = conn.Table<Customer> ().OrderBy (v => v.FirstName).Skip (5);
+			var task = query.ToListAsync ();
+			task.Wait ();
+			var items = task.Result;
 
-            // check...
-            Assert.AreEqual("7", loaded.FirstName);
-        }
-    }
+			// check...
+			Assert.AreEqual (5, items.Count);
+			Assert.AreEqual ("5", items[0].FirstName);
+		}
+
+#if NETFX_CORE
+		[TestMethod]
+#else
+		[Test]
+#endif
+		public void TestAsyncTableElementAtAsync ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
+
+			// create...
+			for (int index = 0; index < 10; index++) {
+				var customer = this.CreateCustomer ();
+				customer.FirstName = index.ToString ();
+				conn.InsertAsync (customer).Wait ();
+			}
+
+			// query...
+			var query = conn.Table<Customer> ().OrderBy (v => v.FirstName);
+			var task = query.ElementAtAsync (7);
+			task.Wait ();
+			var loaded = task.Result;
+
+			// check...
+			Assert.AreEqual ("7", loaded.FirstName);
+		}
+	}
 }
