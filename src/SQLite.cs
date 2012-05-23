@@ -571,6 +571,25 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
+		/// </summary>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param>
+		/// <returns>
+		/// The object with the given primary key or null
+		/// if the object is not found.
+		/// </returns>
+		public T Find<T> (object pk) where T : new ()
+		{
+			var map = GetMapping (typeof (T));
+			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
+			return Query<T> (query, pk).FirstOrDefault ();
+		}
+
+		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
 		public bool IsInTransaction { get; private set; }

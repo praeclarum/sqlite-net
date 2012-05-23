@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 //
 // Copyright (c) 2012 Krueger Systems, Inc.
 // 
@@ -23,6 +20,9 @@ using System.Collections.Generic;
 // THE SOFTWARE.
 //
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -116,10 +116,10 @@ namespace SQLite
 		{
 			return Task.Factory.StartNew (() => {
 				using (var conn = GetConnection ()) {
-					using (conn.Lock ())
+					using (conn.Lock ()) {
 						return conn.Insert (item);
+					}
 				}
-
 			});
 		}
 
@@ -127,10 +127,10 @@ namespace SQLite
 		{
 			return Task.Factory.StartNew (() => {
 				using (var conn = GetConnection ()) {
-					using (conn.Lock ())
+					using (conn.Lock ()) {
 						return conn.Update (item);
+					}
 				}
-
 			});
 		}
 
@@ -138,8 +138,9 @@ namespace SQLite
 		{
 			return Task.Factory.StartNew (() => {
 				using (var conn = GetConnection ()) {
-					using (conn.Lock ())
+					using (conn.Lock ()) {
 						return conn.Delete (item);
+					}
 				}
 			});
 		}
@@ -149,30 +150,20 @@ namespace SQLite
 		{
 			return Task.Factory.StartNew (() => {
 				using (var conn = GetConnection ()) {
-					using (conn.Lock ())
+					using (conn.Lock ()) {
 						return conn.Get<T> (pk);
+					}
 				}
 			});
 		}
 
-		public Task<T> GetSafeAsync<T> (object pk)
+		public Task<T> FindAsync<T> (object pk)
 			where T : new ()
 		{
-			// TODO: Replace with Find
-			return Task<T>.Factory.StartNew (() => {
-				// go...
+			return Task.Factory.StartNew (() => {
 				using (var conn = GetConnection ()) {
 					using (conn.Lock ()) {
-						// create a command...
-						var map = conn.GetMapping<T> ();
-						var query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
-
-						var command = conn.CreateCommand (query, pk);
-						var results = command.ExecuteQuery<T> ();
-						if (results.Count > 0)
-							return results[0];
-						else
-							return default (T);
+						return conn.Find<T> (pk);
 					}
 				}
 			});
