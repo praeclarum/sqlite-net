@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -41,6 +42,49 @@ namespace SQLite.Tests
 	public class AsyncTests
 	{
 		private const string DatabaseName = "async.db";
+		
+		#if NETFX_CORE
+		[TestMethod]
+#else
+		[Test]
+#endif
+		public void StressAsync ()
+		{
+			string path = null;
+			var conn = GetConnection (ref path);
+			
+			conn.CreateTableAsync<Customer> ().Wait ();
+			
+			var threadCount = 0;
+			var doneEvent = new AutoResetEvent (false);
+			var n = 500;
+			var errors = new List<Exception> ();
+			for (var i = 0; i < n; i++) {
+				ThreadPool.QueueUserWorkItem (delegate {
+					try {
+						var obj = new Customer {
+							FirstName = i.ToString (),
+						};
+						conn.InsertAsync (obj);
+					}
+					catch (Exception ex) {
+						lock (errors) {
+							errors.Add (ex);
+						}
+					}
+					threadCount++;
+					if (threadCount == n) {
+						doneEvent.Set();
+					}
+				});
+			}
+			doneEvent.WaitOne ();
+			
+			var c = conn.Table<Customer> ().CountAsync ().Result;
+			
+			Assert.AreEqual (0, errors.Count);
+			Assert.AreEqual (n, c);			
+		}
 
 #if NETFX_CORE
 		[TestMethod]
