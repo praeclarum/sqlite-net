@@ -1,4 +1,3 @@
-
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -6,12 +5,20 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class ConnectionTrackingTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class ConnectionTrackingTest
 	{
 		public class Product
 		{
@@ -40,7 +47,7 @@ namespace SQLite.Tests
 
 		public class TestDb : SQLiteConnection
 		{
-			public TestDb () : base(Path.GetTempFileName ())
+			public TestDb () : base(TestHelper.GetTempDatabasePath ())
 			{
 				CreateTable<Product> ();
 				CreateTable<OrderLine> ();
@@ -48,8 +55,12 @@ namespace SQLite.Tests
 			}
 		}
 
-		[Test]
-		public void CreateThem ()
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void CreateThem()
 		{
 			var db = new TestDb ();
 			

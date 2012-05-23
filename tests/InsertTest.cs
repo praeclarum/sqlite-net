@@ -4,14 +4,22 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
-using System.Diagnostics;
+#endif
 
 namespace SQLite.Tests
-{    
+{
+#if NETFX_CORE
+    [TestClass]
+#else
     [TestFixture]
+#endif
     public class InsertTest
     {
         private TestDb _db;
@@ -59,19 +67,32 @@ namespace SQLite.Tests
                 CreateTable<OneColumnObj>();
             }
         }
-		
+
+#if NETFX_CORE
+        [TestInitialize]
+#else
         [SetUp]
+#endif
         public void Setup()
         {
-            _db = new TestDb(Path.GetTempFileName());
-        }
-        [TearDown]
-        public void TearDown()
-        {
-            if (_db != null) _db.Close();
+            _db = new TestDb(TestHelper.GetTempDatabasePath());
         }
 
+#if NETFX_CORE
+        [TestCleanup]
+#else
+        [TearDown]
+#endif
+        public void TearDown()
+        {
+            if (_db != null) _db.Dispose();
+        }
+
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void InsertALot()
         {
 			int n = 10000;
@@ -104,7 +125,11 @@ namespace SQLite.Tests
 			Assert.AreEqual(numCount, n, "Num counted must = num objects");
         }
 
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void InsertTwoTimes()
         {
             var obj1 = new TestObj() { Text = "GLaDOS loves testing!" };
@@ -122,7 +147,11 @@ namespace SQLite.Tests
             Assert.AreEqual(obj2.Text, result[1].Text);
         }
 
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void InsertIntoTwoTables()
         {
             var obj1 = new TestObj() { Text = "GLaDOS loves testing!" };
@@ -141,7 +170,11 @@ namespace SQLite.Tests
             Assert.AreEqual(numIn2, result2.Count);
         }
 
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void InsertWithExtra()
         {
             var obj1 = new TestObj2() { Id=1, Text = "GLaDOS loves testing!" };
@@ -173,7 +206,11 @@ namespace SQLite.Tests
             Assert.AreEqual(obj2.Text, result.First().Text);
         }
 
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void InsertIntoOneColumnAutoIncrementTable()
         {
             var obj = new OneColumnObj();
@@ -182,7 +219,5 @@ namespace SQLite.Tests
             var result = _db.Get<OneColumnObj>(1);
             Assert.AreEqual(1, result.Id);
         }
-
-        
     }
 }

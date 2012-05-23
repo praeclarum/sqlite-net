@@ -5,11 +5,21 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
+
+using System.Diagnostics;
 
 namespace SQLite.Tests
 {    
+#if NETFX_CORE
+    [TestClass]
+#else
     [TestFixture]
+#endif
     public class BooleanTest
     {
         public class VO
@@ -42,11 +52,15 @@ namespace SQLite.Tests
                 return cmd.ExecuteScalar<int>();                
             }
         }
-        
+
+#if NETFX_CORE
+        [TestMethod]
+#else
         [Test]
+#endif
         public void TestBoolean()
         {
-            var tmpFile = Path.GetTempFileName();
+            var tmpFile = TestHelper.GetTempDatabasePath();
             var db = new DbAcs(tmpFile);         
             db.buildTable();
             for (int i = 0; i < 10; i++)
@@ -56,13 +70,14 @@ namespace SQLite.Tests
             Assert.AreEqual(4, db.CountWithFlag(true));
             Assert.AreEqual(6, db.CountWithFlag(false));
 
-            Console.WriteLine("VO with true flag:");
+            // @mbrit - 2012-05-18 - no Console.WriteLine in WinRT...
+            Debug.WriteLine("VO with true flag:");
             foreach (var vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", true))
-                Console.WriteLine(vo.ToString());
+                Debug.WriteLine(vo.ToString());
 
-            Console.WriteLine("VO with false flag:");
+            Debug.WriteLine("VO with false flag:");
             foreach (var vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", false))
-                Console.WriteLine(vo.ToString());
+                Debug.WriteLine(vo.ToString());
         }
     }
 }

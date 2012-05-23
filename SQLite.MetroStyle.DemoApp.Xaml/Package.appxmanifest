@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
+
+  <Identity Name="1ccf1e44-f752-4130-8e01-9340a04c3051"
+            Publisher="CN=Matthew"
+            Version="1.0.0.0" />
+
+  <Properties>
+    <DisplayName>SQLite.MetroStyle.DemoApp.Xaml</DisplayName>
+    <PublisherDisplayName>Matthew</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>SQLite.MetroStyle.DemoApp.Xaml</Description>
+  </Properties>
+
+  <Prerequisites>
+    <OSMinVersion>6.2</OSMinVersion>
+    <OSMaxVersionTested>6.2</OSMaxVersionTested>
+  </Prerequisites>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+        Executable="$targetnametoken$.exe"
+        EntryPoint="SQLite.MetroStyle.DemoApp.Xaml.App">
+        <VisualElements
+            DisplayName="SQLite.MetroStyle.DemoApp.Xaml"
+            Logo="Assets\Logo.png"
+            SmallLogo="Assets\SmallLogo.png"
+            Description="SQLite.MetroStyle.DemoApp.Xaml"
+            ForegroundText="light"
+            BackgroundColor="#222222">
+            <DefaultTile ShowName="allLogos" />
+            <SplashScreen Image="Assets\SplashScreen.png" />
+        </VisualElements>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <Capability Name="internetClient" />
+  </Capabilities>
+</Package>

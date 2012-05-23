@@ -1,11 +1,20 @@
 using System;
 using System.Linq;
+
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using NUnit.Framework;
+#endif
 
 namespace SQLite.Tests
 {
-	[TestFixture]
-	public class InheritanceTest
+#if NETFX_CORE
+    [TestClass]
+#else
+    [TestFixture]
+#endif
+    public class InheritanceTest
 	{
 		class Base
 		{
@@ -19,10 +28,13 @@ namespace SQLite.Tests
 		{
 			public string DerivedProp { get; set; }
 		}
-		
-		
-		[Test]
-		public void InheritanceWorks ()
+
+#if NETFX_CORE
+        [TestMethod]
+#else
+        [Test]
+#endif
+        public void InheritanceWorks()
 		{
 			var db = new TestDb ();
 			
