@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.IO;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -51,25 +52,37 @@ namespace SQLite.Tests
 		public void StressAsync ()
 		{
 			string path = null;
-			var conn = GetConnection (ref path);
+			var globalConn = GetConnection (ref path);
 			
-			conn.CreateTableAsync<Customer> ().Wait ();
+			globalConn.CreateTableAsync<Customer> ().Wait ();
 			
 			var threadCount = 0;
 			var doneEvent = new AutoResetEvent (false);
 			var n = 500;
-			var errors = new List<Exception> ();
+			var errors = new List<string> ();
 			for (var i = 0; i < n; i++) {
 				ThreadPool.QueueUserWorkItem (delegate {
 					try {
+						var conn = GetConnection ();
 						var obj = new Customer {
 							FirstName = i.ToString (),
 						};
-						conn.InsertAsync (obj);
+						conn.InsertAsync (obj).Wait ();
+						if (obj.Id == 0) {
+							lock (errors) {
+								errors.Add ("Bad Id");
+							}
+						}
+						var obj2 = (from c in conn.Table<Customer> () where c.Id == obj.Id select c).ToListAsync ().Result.FirstOrDefault();
+						if (obj2 == null) {
+							lock (errors) {
+								errors.Add ("Failed query");
+							}
+						}
 					}
 					catch (Exception ex) {
 						lock (errors) {
-							errors.Add (ex);
+							errors.Add (ex.Message);
 						}
 					}
 					threadCount++;
@@ -80,10 +93,10 @@ namespace SQLite.Tests
 			}
 			doneEvent.WaitOne ();
 			
-			var c = conn.Table<Customer> ().CountAsync ().Result;
+			var count = globalConn.Table<Customer> ().CountAsync ().Result;
 			
 			Assert.AreEqual (0, errors.Count);
-			Assert.AreEqual (n, c);			
+			Assert.AreEqual (n, count);			
 		}
 
 #if NETFX_CORE
@@ -109,20 +122,33 @@ namespace SQLite.Tests
 			}
 		}
 
-		internal static SQLiteAsyncConnection GetConnection ()
+		SQLiteAsyncConnection GetConnection ()
 		{
 			string path = null;
 			return GetConnection (ref path);
 		}
-
-		internal static SQLiteAsyncConnection GetConnection (ref string path)
+		
+		string _path;
+		string _connectionString;
+		
+		[SetUp]
+		public void SetUp()
 		{
 #if NETFX_CORE
-			return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsyncMetroStyle(DatabaseName, ref path));
+			_connectionString = DatabaseName;
+			_path = _connectionString;
 #else
-			path = System.IO.Path.GetTempFileName ();
-			return new SQLiteAsyncConnection (path);
+			_connectionString = Path.Combine (Path.GetTempPath (), DatabaseName);
+			_path = _connectionString;
 #endif
+			SQLite.SQLiteConnectionPool.Shared.Reset ();
+			System.IO.File.Delete (_path);
+		}
+		
+		SQLiteAsyncConnection GetConnection (ref string path)
+		{
+			path = _path;
+			return new SQLiteAsyncConnection (_connectionString);
 		}
 
 #if NETFX_CORE
