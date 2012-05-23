@@ -84,8 +84,8 @@ namespace SQLite
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
+        private IPoolEntry PoolEntry { get; set; }
         internal long PoolId { get; private set; }
-        private PoolEntry PoolEntry { get; set; }
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 #if USE_CSHARP_SQLITE
@@ -99,10 +99,6 @@ namespace SQLite
 		public bool TimeExecution { get; set; }
 
 		public bool Trace { get; set; }
-
-#if NETFX_CORE
-        private static string MetroStyleDataPath = null;
-#endif
 
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
@@ -128,12 +124,7 @@ namespace SQLite
 
         private void Initialize(string databasePath, SQLiteOpenFlags openFlags, bool hasFlags)
         {
-// @mbrit - 2012-06-18 - Metro-style apps always use the same path...
-#if NETFX_CORE
-            DatabasePath = string.Format("{0}\\{1}", MetroStyleDataPath, databasePath);
-#else
             DatabasePath = databasePath;
-#endif
 
             Sqlite3DatabaseHandle handle;
             SQLite3.Result r = 0;
@@ -158,10 +149,6 @@ namespace SQLite
 				var ti = new TableInfo ();
 				ti.name = "magic";
 			}
-
-#if NETFX_CORE
-            MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
-#endif
         }
 		
 		/// <summary>
@@ -811,9 +798,13 @@ namespace SQLite
 		public void Dispose ()
 		{
             if (this.PoolEntry != null)
-                SQLiteConnectionPool.Current.ConnectionFinished (this);
+            {
+                // slightly strange implementation that provides loose-coupling to the 
+                // async version of this library...
+                this.PoolEntry.Owner.ConnectionFinished(this);
+            }
             else
-                this.CloseInternal ();
+                this.CloseInternal();
 		}
 
 		public void CloseInternal ()
@@ -838,7 +829,7 @@ namespace SQLite
 			}
 		}
 
-        internal void Enlist(PoolEntry poolEntry, long poolId)
+        internal void Enlist(IPoolEntry poolEntry, long poolId)
         {
             this.PoolEntry = poolEntry;
             this.PoolId = poolId;
@@ -2243,4 +2234,17 @@ namespace SQLite
 			Null = 5
 		}
 	}
+
+    internal interface IPoolEntry
+    {
+        IPoolOwner Owner
+        {
+            get;
+        }
+    }
+
+    internal interface IPoolOwner
+    {
+        void ConnectionFinished(SQLiteConnection conn);
+    }
 }

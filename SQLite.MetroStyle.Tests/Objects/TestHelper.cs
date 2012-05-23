@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,9 +9,9 @@ namespace SQLite.Tests
 {
     internal static class TestHelper
     {
-        internal static string GetTempDatabaseName()
+        internal static string GetTempDatabasePath()
         {
-            return Guid.NewGuid().ToString() + ".db";
+            return Path.Combine(SQLiteConnectionSpecification.MetroStyleDataPath, Guid.NewGuid().ToString() + ".db");
         }
     }
 }

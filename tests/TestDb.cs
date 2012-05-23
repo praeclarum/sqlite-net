@@ -41,7 +41,7 @@ namespace SQLite.Tests
 
 	public class TestDb : SQLiteConnection
 	{
-		public TestDb () : base (TestHelper.GetTempDatabaseName ())
+		public TestDb () : base (TestHelper.GetTempDatabasePath ())
 		{
 			Trace = true;
 		}

@@ -5,6 +5,7 @@ using System.Text;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Windows.UI.Xaml.Shapes;
 #else
 using NUnit.Framework;
 #endif
@@ -48,7 +49,8 @@ namespace SQLite.Tests
 #endif
         public void TestCreateTableAsync()
         {
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
 
             // drop the customer table...
             conn.ExecuteAsync("drop table if exists Customer").Wait();
@@ -57,16 +59,27 @@ namespace SQLite.Tests
             conn.CreateTableAsync<Customer>().Wait();
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 // run it - if it's missing we'll get a failure...
                 check.Execute("select * from Customer");
             }
         }
 
-        private SQLiteAsyncConnection GetConnection()
+        internal static SQLiteAsyncConnection GetConnection()
         {
+            string path = null;
+            return GetConnection(ref path);
+        }
+
+        internal static SQLiteAsyncConnection GetConnection(ref string path)
+        {
+#if NETFX_CORE
+            return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsyncMetroStyle(DatabaseName, ref path));
+#else
+            path = Path.Combine(Path.GetTemp, DatabaseName);
             return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsync(DatabaseName));
+#endif
         }
 
 #if NETFX_CORE
@@ -76,14 +89,15 @@ namespace SQLite.Tests
 #endif
         public void TestDropTableAsync()
         {
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
 
             // drop it...
             conn.DropTableAsync<Customer>().Wait();
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 // load it back and check - should be missing
                 var command = check.CreateCommand("select name from sqlite_master where type='table' and name='customer'");
@@ -113,7 +127,8 @@ namespace SQLite.Tests
             Customer customer = this.CreateCustomer();
 
             // connect...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
 
             // run...
@@ -123,7 +138,7 @@ namespace SQLite.Tests
             Assert.AreNotEqual(0, customer.Id);
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 // load it back...
                 Customer loaded = check.Get<Customer>(customer.Id);
@@ -142,7 +157,8 @@ namespace SQLite.Tests
             Customer customer = CreateCustomer();
 
             // connect...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
 
             // run...
@@ -156,7 +172,7 @@ namespace SQLite.Tests
             conn.UpdateAsync(customer).Wait();
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 // load it back - should be changed...
                 Customer loaded = check.Get<Customer>(customer.Id);
@@ -175,7 +191,8 @@ namespace SQLite.Tests
             Customer customer = CreateCustomer();
 
             // connect...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
 
             // run...
@@ -185,7 +202,7 @@ namespace SQLite.Tests
             conn.DeleteAsync(customer).Wait();
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 // load it back - should be null...
                 var loaded = check.Table<Customer>().Where(v => v.Id == customer.Id).ToList();
@@ -207,7 +224,8 @@ namespace SQLite.Tests
             customer.Email = Guid.NewGuid().ToString();
 
             // connect and insert...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
             conn.InsertAsync(customer).Wait();
 
@@ -234,7 +252,8 @@ namespace SQLite.Tests
             Customer customer = CreateCustomer();
 
             // connect and insert...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
             conn.InsertAsync(customer).Wait();
 
@@ -433,7 +452,8 @@ namespace SQLite.Tests
         public void TestExecuteAsync()
         {
             // connect...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
 
             // do a manual insert...
@@ -442,7 +462,7 @@ namespace SQLite.Tests
                 "foo", "bar", email).Wait();
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 // load it back - should be null...
                 var result = check.Table<Customer>().Where(v => v.Email == email);
@@ -469,14 +489,15 @@ namespace SQLite.Tests
             }
 
             // connect...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
 
             // insert them all...
             conn.InsertAllAsync(customers).Wait();
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 for (int index = 0; index < customers.Count; index++)
                 {
@@ -495,7 +516,8 @@ namespace SQLite.Tests
         public void TestRunInTransactionAsync()
         {
             // connect...
-            var conn = GetConnection();
+            string path = null;
+            var conn = GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
 
             // run...
@@ -514,7 +536,7 @@ namespace SQLite.Tests
             }).Wait();
 
             // check...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 // load it back and check - should be deleted...
                 var loaded = check.Table<Customer>().Where(v => v.Id == customer.Id).ToList();

@@ -48,7 +48,7 @@ namespace SQLite.Tests
         public void TestApplicationSuspended()
         {
             // create a connection and do something...
-            SQLiteAsyncConnection conn = new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsync(DatabaseName));
+            var conn = AsyncTests.GetConnection();
             conn.CreateTableAsync<Customer>().Wait();
             conn.InsertAsync(this.CreateCustomer()).Wait();
 
@@ -56,7 +56,7 @@ namespace SQLite.Tests
             SQLiteConnectionPool.Current.ApplicationSuspended();
 
             // do something again - should all spring into life...
-            conn = new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsync(DatabaseName));
+            conn = AsyncTests.GetConnection();
             conn.CreateTableAsync<Customer>().Wait();
             conn.InsertAsync(this.CreateCustomer()).Wait();
         }
@@ -69,7 +69,8 @@ namespace SQLite.Tests
         public void TestMultithreading()
         {
             // connect...
-            SQLiteAsyncConnection conn = new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsync(DatabaseName));
+            string path = null;
+            var conn = AsyncTests.GetConnection(ref path);
             conn.CreateTableAsync<Customer>().Wait();
             conn.ExecuteAsync("delete from customer").Wait();
 
@@ -89,7 +90,7 @@ namespace SQLite.Tests
             Task.WaitAll(tasks.ToArray());
 
             // load...
-            using (SQLiteConnection check = new SQLiteConnection(DatabaseName))
+            using (SQLiteConnection check = new SQLiteConnection(path))
             {
                 var loadeds = check.Table<Customer>().ToList();
                 Assert.AreEqual(customers.Count, loadeds.Count);

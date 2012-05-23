@@ -75,7 +75,7 @@ namespace SQLite.Tests
 #endif
         public void Setup()
         {
-            _db = new TestDb(TestHelper.GetTempDatabaseName());
+            _db = new TestDb(TestHelper.GetTempDatabasePath());
         }
 
 #if NETFX_CORE

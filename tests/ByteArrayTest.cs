@@ -53,7 +53,7 @@ namespace SQLite.Tests
 				new ByteArrayClass() { bytes = null } //Null should be supported
 			};
 
-			SQLiteConnection database = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection database = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert all of the ByteArrayClass
@@ -86,7 +86,7 @@ namespace SQLite.Tests
 
 			ByteArrayClass byteArray = new ByteArrayClass() { bytes = bytes };
 
-			SQLiteConnection database = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection database = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert the ByteArrayClass

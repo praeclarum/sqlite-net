@@ -47,7 +47,7 @@ namespace SQLite.Tests
         [Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableInt()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -98,7 +98,7 @@ namespace SQLite.Tests
         [Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableFloat()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			db.CreateTable<NullableFloatClass>();
 
 			NullableFloatClass withNull = new NullableFloatClass() { NullableFloat = null };
@@ -150,7 +150,7 @@ namespace SQLite.Tests
 #endif
         public void NullableString()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -177,7 +177,7 @@ namespace SQLite.Tests
 #endif
         public void WhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -206,7 +206,7 @@ namespace SQLite.Tests
 #endif
         public void WhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -232,7 +232,7 @@ namespace SQLite.Tests
 #endif
         public void StringWhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -255,7 +255,7 @@ namespace SQLite.Tests
 #endif
         public void StringWhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabaseName());
+			SQLiteConnection db = new SQLiteConnection(TestHelper.GetTempDatabasePath());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };

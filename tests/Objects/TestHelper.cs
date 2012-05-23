@@ -8,7 +8,7 @@ namespace SQLite.Tests
 {
     public static class TestHelper
     {
-        internal static string GetTempDatabaseName()
+        internal static string GetTempDatabasePath()
         {
             return Path.GetTempFileName();
         }

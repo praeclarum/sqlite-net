@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -42,7 +42,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <Prefer32Bit>false</Prefer32Bit>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -63,42 +63,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="..\src\AsyncTableQuery.cs">
-      <Link>AsyncTableQuery.cs</Link>
-    </Compile>
-    <Compile Include="..\src\CreateTablesResult.cs">
-      <Link>CreateTablesResult.cs</Link>
-    </Compile>
-    <Compile Include="..\src\PooledConnection.cs">
-      <Link>PooledConnection.cs</Link>
-    </Compile>
-    <Compile Include="..\src\PooledConnectionState.cs">
-      <Link>PooledConnectionState.cs</Link>
-    </Compile>
-    <Compile Include="..\src\PoolEntry.cs">
-      <Link>PoolEntry.cs</Link>
-    </Compile>
     <Compile Include="..\src\SQLite.cs" />
-    <Compile Include="..\src\SQLiteAsyncConnection.cs">
-      <Link>SQLiteAsyncConnection.cs</Link>
-    </Compile>
-    <Compile Include="..\src\SQLiteConnectionPool.cs">
-      <Link>SQLiteConnectionPool.cs</Link>
-    </Compile>
-    <Compile Include="..\src\SQLiteConnectionSpecification.cs">
-      <Link>SQLiteConnectionSpecification.cs</Link>
-    </Compile>
-    <Compile Include="..\src\SQLiteConnectionWithLock.cs">
-      <Link>SQLiteConnectionWithLock.cs</Link>
-    </Compile>
-    <Compile Include="AsyncTests.cs" />
     <Compile Include="BooleanTest.cs" />
     <Compile Include="ByteArrayTest.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
     <Compile Include="GuidTests.cs" />
     <Compile Include="Objects\TestHelper.cs" />
-    <Compile Include="PoolingTests.cs" />
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />

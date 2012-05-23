@@ -111,35 +111,11 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\src\AsyncTableQuery.cs">
-      <Link>Database\AsyncTableQuery.cs</Link>
-    </Compile>
-    <Compile Include="..\src\CreateTablesResult.cs">
-      <Link>Database\CreateTablesResult.cs</Link>
-    </Compile>
-    <Compile Include="..\src\PooledConnection.cs">
-      <Link>Database\PooledConnection.cs</Link>
-    </Compile>
-    <Compile Include="..\src\PooledConnectionState.cs">
-      <Link>Database\PooledConnectionState.cs</Link>
-    </Compile>
-    <Compile Include="..\src\PoolEntry.cs">
-      <Link>Database\PoolEntry.cs</Link>
-    </Compile>
     <Compile Include="..\src\SQLite.cs">
       <Link>Database\SQLite.cs</Link>
     </Compile>
-    <Compile Include="..\src\SQLiteAsyncConnection.cs">
-      <Link>Database\SQLiteAsyncConnection.cs</Link>
-    </Compile>
-    <Compile Include="..\src\SQLiteConnectionPool.cs">
-      <Link>Database\SQLiteConnectionPool.cs</Link>
-    </Compile>
-    <Compile Include="..\src\SQLiteConnectionSpecification.cs">
-      <Link>Database\SQLiteConnectionSpecification.cs</Link>
-    </Compile>
-    <Compile Include="..\src\SQLiteConnectionWithLock.cs">
-      <Link>Database\SQLiteConnectionWithLock.cs</Link>
+    <Compile Include="..\src\SQLiteAsync.cs">
+      <Link>Database\SQLiteAsync.cs</Link>
     </Compile>
     <Compile Include="Common\BindableBase.cs" />
     <Compile Include="Common\BooleanToVisibilityConverter.cs" />
@@ -163,6 +139,9 @@
     <None Include="SQLite.MetroStyle.DemoApp.Xaml_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\bin\sqlite3.dll">
+      <Link>sqlite3.dll</Link>
+    </Content>
     <Content Include="Assets\Logo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -189,12 +168,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SQLite.MetroStyle.Engine\SQLiteMetro.vcxproj">
-      <Project>{2863e6a4-5cb3-43aa-bb1c-8b74822b4ca1}</Project>
-      <Name>SQLite.MetroStyle.Engine</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' ">
     <VisualStudioVersion>11.0</VisualStudioVersion>

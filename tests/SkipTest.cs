@@ -56,7 +56,7 @@ namespace SQLite.Tests
 				Order = i
 			};
 			var objs = cq.ToArray();
-			var db = new TestDb(TestHelper.GetTempDatabaseName());
+			var db = new TestDb(TestHelper.GetTempDatabasePath());
 						
 			var numIn = db.InsertAll(objs);			
 			Assert.AreEqual(numIn, n, "Num inserted must = num objects");

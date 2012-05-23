@@ -60,7 +60,7 @@ namespace SQLite.Tests
 #endif
         public void TestBoolean()
         {
-            var tmpFile = TestHelper.GetTempDatabaseName();
+            var tmpFile = TestHelper.GetTempDatabasePath();
             var db = new DbAcs(tmpFile);         
             db.buildTable();
             for (int i = 0; i < 10; i++)

@@ -56,7 +56,7 @@ namespace SQLite.Tests
 				Name = i.ToString()
 			};
 			
-			var db = new TestDb(TestHelper.GetTempDatabaseName());
+			var db = new TestDb(TestHelper.GetTempDatabasePath());
 			
 			db.InsertAll(cq);
 			
@@ -84,7 +84,7 @@ namespace SQLite.Tests
 				Name = i.ToString()
 			};
 			
-			var db = new TestDb(TestHelper.GetTempDatabaseName());
+			var db = new TestDb(TestHelper.GetTempDatabasePath());
 			
 			db.InsertAll(cq);
 			

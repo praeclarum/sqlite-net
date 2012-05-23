@@ -54,7 +54,7 @@ namespace SQLite.MetroStyle.DemoApp.Xaml
 
         private SQLiteAsyncConnection GetConnection()
         {
-            return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsync("foobar.db"));
+            return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsyncMetroStyle("foobar.db"));
         }
 
         private void HandleCreateTable(object sender, RoutedEventArgs e)
