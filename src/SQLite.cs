@@ -836,6 +836,30 @@ namespace SQLite
 		}
 	}
 
+	/// <summary>
+	/// Represents a parsed connection string.
+	/// </summary>
+	class SQLiteConnectionString
+	{
+		public string ConnectionString { get; private set; }
+		public string DatabasePath { get; private set; }
+
+#if NETFX_CORE
+		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+#endif
+
+		public SQLiteConnectionString (string connectionString)
+		{
+			ConnectionString = connectionString;
+
+#if NETFX_CORE
+			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, connectionString);
+#else
+			DatabasePath = connectionString;
+#endif
+		}
+	}
+
 	public class PrimaryKeyAttribute : Attribute
 	{
 	}

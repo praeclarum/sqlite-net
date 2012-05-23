@@ -32,16 +32,16 @@ namespace SQLite
 {
 	public class SQLiteAsyncConnection
 	{
-		SQLiteConnectionSpecification _spec;
+		SQLiteConnectionString _connectionString;
 
 		public SQLiteAsyncConnection (string connectionString)
 		{
-			_spec = new SQLiteConnectionSpecification (connectionString);
+			_connectionString = new SQLiteConnectionString (connectionString);
 		}
 
 		SQLiteConnectionWithLock GetConnection ()
 		{
-			return SQLiteConnectionPool.Shared.GetConnection (_spec);
+			return SQLiteConnectionPool.Shared.GetConnection (_connectionString);
 		}
 
 		public Task<CreateTablesResult> CreateTableAsync<T> ()
@@ -322,15 +322,15 @@ namespace SQLite
 
 	class SQLiteConnectionPool
 	{
-		class PoolEntry
+		class Entry
 		{
-			public SQLiteConnectionSpecification Specification { get; private set; }
+			public SQLiteConnectionString ConnectionString { get; private set; }
 			public SQLiteConnectionWithLock Connection { get; private set; }
 
-			internal PoolEntry (SQLiteConnectionSpecification spec)
+			public Entry (SQLiteConnectionString connectionString)
 			{
-				Specification = spec;
-				Connection = new SQLiteConnectionWithLock (spec);
+				ConnectionString = connectionString;
+				Connection = new SQLiteConnectionWithLock (connectionString);
 			}
 
 			public void OnApplicationSuspended ()
@@ -340,7 +340,7 @@ namespace SQLite
 			}
 		}
 
-		readonly Dictionary<string, PoolEntry> _entries = new Dictionary<string, PoolEntry> ();
+		readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry> ();
 		readonly object _entriesLock = new object ();
 
 		static readonly SQLiteConnectionPool _shared = new SQLiteConnectionPool ();
@@ -356,14 +356,14 @@ namespace SQLite
 			}
 		}
 
-		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionSpecification spec)
+		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString)
 		{
 			lock (_entriesLock) {
-				PoolEntry entry;
-				string key = spec.ConnectionString;
+				Entry entry;
+				string key = connectionString.ConnectionString;
 
 				if (!_entries.TryGetValue (key, out entry)) {
-					entry = new PoolEntry (spec);
+					entry = new Entry (connectionString);
 					_entries[key] = entry;
 				}
 
@@ -377,7 +377,7 @@ namespace SQLite
 		public void Reset ()
 		{
 			lock (_entriesLock) {
-				foreach (PoolEntry entry in _entries.Values) {
+				foreach (var entry in _entries.Values) {
 					entry.OnApplicationSuspended ();
 				}
 				_entries.Clear ();
@@ -394,36 +394,12 @@ namespace SQLite
 		}
 	}
 
-	/// <summary>
-	/// Represents a parsed connection string.
-	/// </summary>
-	class SQLiteConnectionSpecification
-	{
-		public string ConnectionString { get; private set; }
-		public string DatabasePath { get; private set; }
-
-#if NETFX_CORE
-		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
-#endif
-
-		public SQLiteConnectionSpecification (string connectionString)
-		{
-			ConnectionString = connectionString;
-
-#if NETFX_CORE
-			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, connectionString);
-#else
-			DatabasePath = connectionString;
-#endif
-		}
-	}
-
 	class SQLiteConnectionWithLock : SQLiteConnection
 	{
 		readonly object _lockPoint = new object ();
 
-		public SQLiteConnectionWithLock (SQLiteConnectionSpecification spec)
-			: base (spec.DatabasePath)
+		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString)
+			: base (connectionString.DatabasePath)
 		{
 		}
 
