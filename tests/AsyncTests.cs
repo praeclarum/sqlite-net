@@ -76,8 +76,8 @@ namespace SQLite.Tests
 #if NETFX_CORE
 			return new SQLiteAsyncConnection(SQLiteConnectionSpecification.CreateForAsyncMetroStyle(DatabaseName, ref path));
 #else
-			path = Path.Combine (Path.GetTemp, DatabaseName);
-			return new SQLiteAsyncConnection (SQLiteConnectionSpecification.CreateForAsync (DatabaseName));
+			path = System.IO.Path.GetTempFileName ();
+			return new SQLiteAsyncConnection (path);
 #endif
 		}
 
@@ -240,7 +240,7 @@ namespace SQLite.Tests
 #else
 		[Test]
 #endif
-		public void TestGetSafeAsyncItemPresent ()
+		public void TestFindAsyncItemPresent ()
 		{
 			// create...
 			Customer customer = CreateCustomer ();
@@ -255,7 +255,7 @@ namespace SQLite.Tests
 			Assert.AreNotEqual (0, customer.Id);
 
 			// get it back...
-			var task = conn.GetSafeAsync<Customer> (customer.Id);
+			var task = conn.FindAsync<Customer> (customer.Id);
 			task.Wait ();
 			Customer loaded = task.Result;
 
@@ -268,14 +268,14 @@ namespace SQLite.Tests
 #else
 		[Test]
 #endif
-		public void TestGetSafeAsyncItemMissing ()
+		public void TestFindAsyncItemMissing ()
 		{
 			// connect and insert...
 			var conn = GetConnection ();
 			conn.CreateTableAsync<Customer> ().Wait ();
 
 			// now get one that doesn't exist...
-			var task = conn.GetSafeAsync<Customer> (-1);
+			var task = conn.FindAsync<Customer> (-1);
 			task.Wait ();
 
 			// check...
@@ -320,42 +320,6 @@ namespace SQLite.Tests
 #else
 		[Test]
 #endif
-		public void TestDeferredQueryAsync ()
-		{
-			// connect...
-			var conn = GetConnection ();
-			conn.CreateTableAsync<Customer> ().Wait ();
-
-			// insert some...
-			List<Customer> customers = new List<Customer> ();
-			for (int index = 0; index < 5; index++) {
-				Customer customer = new Customer ();
-				customer.FirstName = "foo";
-				customer.LastName = "bar";
-				customer.Email = Guid.NewGuid ().ToString ();
-
-				// insert...
-				conn.InsertAsync (customer).Wait ();
-
-				// add...
-				customers.Add (customer);
-			}
-
-			// return the third one...
-			var task = conn.DeferredQueryAsync<Customer> ("select * from customer where id=?", customers[2].Id);
-			task.Wait ();
-			var loaded = task.Result.ToList ();
-
-			// check...
-			Assert.AreEqual (1, loaded.Count);
-			Assert.AreEqual (customers[2].Email, loaded[0].Email);
-		}
-
-#if NETFX_CORE
-		[TestMethod]
-#else
-		[Test]
-#endif
 		public void TestTableAsync ()
 		{
 			// connect...
@@ -380,50 +344,7 @@ namespace SQLite.Tests
 
 			// run the table operation...
 			var query = conn.Table<Customer> ();
-			var loaded = query.ToList ();
-
-			// check that we got them all back...
-			Assert.AreEqual (5, loaded.Count);
-			Assert.IsNotNull (loaded.Where (v => v.Id == customers[0].Id));
-			Assert.IsNotNull (loaded.Where (v => v.Id == customers[1].Id));
-			Assert.IsNotNull (loaded.Where (v => v.Id == customers[2].Id));
-			Assert.IsNotNull (loaded.Where (v => v.Id == customers[3].Id));
-			Assert.IsNotNull (loaded.Where (v => v.Id == customers[4].Id));
-		}
-
-#if NETFX_CORE
-		[TestMethod]
-#else
-		[Test]
-#endif
-		public void TestTableAsyncWithClone ()
-		{
-			// connect...
-			var conn = GetConnection ();
-			conn.CreateTableAsync<Customer> ().Wait ();
-			conn.ExecuteAsync ("delete from customer").Wait ();
-
-			// insert some...
-			List<Customer> customers = new List<Customer> ();
-			for (int index = 0; index < 5; index++) {
-				Customer customer = new Customer ();
-				customer.FirstName = "foo";
-				customer.LastName = "bar";
-				customer.Email = Guid.NewGuid ().ToString ();
-
-				// insert...
-				conn.InsertAsync (customer).Wait ();
-
-				// add...
-				customers.Add (customer);
-			}
-
-			// run the table operation...
-			var query = conn.Table<Customer> ();
-
-			// clone it...
-			var cloned = query.Clone ();
-			var loaded = cloned.ToList ();
+			var loaded = query.ToListAsync ().Result;
 
 			// check that we got them all back...
 			Assert.AreEqual (5, loaded.Count);
