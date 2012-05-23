@@ -1,6 +1,28 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+//
+// Copyright (c) 2012 Krueger Systems, Inc.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
+
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -17,9 +39,9 @@ namespace SQLite
 			_spec = new SQLiteConnectionSpecification (connectionString);
 		}
 
-		SQLiteConnectionWithLock GetConcreteConnection ()
+		SQLiteConnectionWithLock GetConnection ()
 		{
-			return SQLiteConnectionPool.Current.GetConnection (_spec);
+			return SQLiteConnectionPool.Shared.GetConnection (_spec);
 		}
 
 		public Task<CreateTablesResult> CreateTableAsync<T> ()
@@ -66,7 +88,7 @@ namespace SQLite
 		{
 			return Task.Factory.StartNew (() => {
 				CreateTablesResult result = new CreateTablesResult ();
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ()) {
 						foreach (Type type in types) {
 							int aResult = conn.CreateTable (type);
@@ -82,7 +104,7 @@ namespace SQLite
 			where T : new ()
 		{
 			return Task.Factory.StartNew (() => {
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ()) {
 						return conn.DropTable<T> ();
 					}
@@ -93,7 +115,7 @@ namespace SQLite
 		public Task<int> InsertAsync (object item)
 		{
 			return Task.Factory.StartNew (() => {
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ())
 						return conn.Insert (item);
 				}
@@ -104,7 +126,7 @@ namespace SQLite
 		public Task<int> UpdateAsync (object item)
 		{
 			return Task.Factory.StartNew (() => {
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ())
 						return conn.Update (item);
 				}
@@ -115,7 +137,7 @@ namespace SQLite
 		public Task<int> DeleteAsync (object item)
 		{
 			return Task.Factory.StartNew (() => {
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ())
 						return conn.Delete (item);
 				}
@@ -126,7 +148,7 @@ namespace SQLite
 			where T : new ()
 		{
 			return Task.Factory.StartNew (() => {
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ())
 						return conn.Get<T> (pk);
 				}
@@ -139,14 +161,14 @@ namespace SQLite
 			// TODO: Replace with Find
 			return Task<T>.Factory.StartNew (() => {
 				// go...
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ()) {
 						// create a command...
 						var map = conn.GetMapping<T> ();
-						string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
+						var query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
 
-						SQLiteCommand command = conn.CreateCommand (query, pk);
-						List<T> results = command.ExecuteQuery<T> ();
+						var command = conn.CreateCommand (query, pk);
+						var results = command.ExecuteQuery<T> ();
 						if (results.Count > 0)
 							return results[0];
 						else
@@ -159,7 +181,7 @@ namespace SQLite
 		public Task<int> ExecuteAsync (string query, params object[] args)
 		{
 			return Task<int>.Factory.StartNew (() => {
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ())
 						return conn.Execute (query, args);
 				}
@@ -170,7 +192,7 @@ namespace SQLite
 		public Task<int> InsertAllAsync (IEnumerable items)
 		{
 			return Task.Factory.StartNew (() => {
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ()) {
 						return conn.InsertAll (items);
 					}
@@ -181,14 +203,14 @@ namespace SQLite
 		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action)
 		{
 			return Task.Factory.StartNew (() => {
-				using (var conn = this.GetConcreteConnection ()) {
+				using (var conn = this.GetConnection ()) {
 					using (conn.Lock ()) {
 						conn.BeginTransaction ();
 						try {
 							action (this);
 							conn.Commit ();
 						}
-						catch (Exception ex) {
+						catch (Exception) {
 							conn.Rollback ();
 							throw;
 						}
@@ -200,21 +222,21 @@ namespace SQLite
 		public AsyncTableQuery<T> Table<T> ()
 			where T : new ()
 		{
+			//
 			// This isn't async as the underlying connection doesn't go out to the database
-			// until the query is performed.
-			using (var conn = GetConcreteConnection ()) {
+			// until the query is performed. The Async methods are on the query iteself.
+			//
+			using (var conn = GetConnection ()) {
 				return new AsyncTableQuery<T> (conn.Table<T> ());
 			}
 		}
 
 		public Task<T> ExecuteScalarAsync<T> (string sql, params object[] args)
 		{
-			// run...
 			return Task<T>.Factory.StartNew (() => {
-				// get...
-				using (var conn = GetConcreteConnection ()) {
+				using (var conn = GetConnection ()) {
 					using (conn.Lock ()) {
-						SQLiteCommand command = conn.CreateCommand (sql, args);
+						var command = conn.CreateCommand (sql, args);
 						return command.ExecuteScalar<T> ();
 					}
 				}
@@ -224,12 +246,11 @@ namespace SQLite
 		public Task<List<T>> QueryAsync<T> (string sql, params object[] args)
 			where T : new ()
 		{
-			// run...
 			return Task<List<T>>.Factory.StartNew (() => {
-				// get...
-				using (var conn = GetConcreteConnection ()) {
-					using (conn.Lock ())
+				using (var conn = GetConnection ()) {
+					using (conn.Lock ()) {
 						return conn.Query<T> (sql, args);
+					}
 				}
 			});
 		}
@@ -273,25 +294,27 @@ namespace SQLite
 		public Task<List<T>> ToListAsync ()
 		{
 			return Task.Factory.StartNew (() => {
-				// TODO: Lock the connection
-				// load the items from the underlying store...
-				return _innerQuery.ToList ();
+				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
+					return _innerQuery.ToList ();
+				}
 			});
 		}
 
 		public Task<int> CountAsync ()
 		{
 			return Task.Factory.StartNew (() => {
-				// TODO: Lock the connection
-				return _innerQuery.Count ();
+				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
+					return _innerQuery.Count ();
+				}
 			});
 		}
 
 		public Task<T> ElementAtAsync (int index)
 		{
 			return Task.Factory.StartNew (() => {
-				// TODO: Lock the connection
-				return _innerQuery.ElementAt (index);
+				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
+					return _innerQuery.ElementAt (index);
+				}
 			});
 		}
 	}
@@ -329,16 +352,16 @@ namespace SQLite
 		readonly Dictionary<string, PoolEntry> _entries = new Dictionary<string, PoolEntry> ();
 		readonly object _entriesLock = new object ();
 
-		static readonly SQLiteConnectionPool _current = new SQLiteConnectionPool ();
+		static readonly SQLiteConnectionPool _shared = new SQLiteConnectionPool ();
 
 		/// <summary>
 		/// Gets the singleton instance of the connection tool.
 		/// </summary>
-		public static SQLiteConnectionPool Current
+		public static SQLiteConnectionPool Shared
 		{
 			get
 			{
-				return _current;
+				return _shared;
 			}
 		}
 
@@ -346,7 +369,7 @@ namespace SQLite
 		{
 			lock (_entriesLock) {
 				PoolEntry entry;
-				string key = spec.Key;
+				string key = spec.ConnectionString;
 
 				if (!_entries.TryGetValue (key, out entry)) {
 					entry = new PoolEntry (spec);
@@ -381,20 +404,20 @@ namespace SQLite
 	}
 
 	/// <summary>
-	/// Defines a class that points to a database.
+	/// Represents a parsed connection string.
 	/// </summary>
 	class SQLiteConnectionSpecification
 	{
-		public string Key { get; private set; }
+		public string ConnectionString { get; private set; }
 		public string DatabasePath { get; private set; }
 
 #if NETFX_CORE
-		internal static string MetroStyleDataPath = null;
+		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
 #endif
 
 		public SQLiteConnectionSpecification (string connectionString)
 		{
-			Key = connectionString;
+			ConnectionString = connectionString;
 
 #if NETFX_CORE
 			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, connectionString);
@@ -402,13 +425,6 @@ namespace SQLite
 			DatabasePath = connectionString;
 #endif
 		}
-
-#if NETFX_CORE
-		static SQLiteConnectionSpecification ()
-		{
-			MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
-		}
-#endif
 	}
 
 	class SQLiteConnectionWithLock : SQLiteConnection
