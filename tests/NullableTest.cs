@@ -4,7 +4,15 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SetUp = Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute;
+using TestFixture = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
+#else
 using NUnit.Framework;
+#endif
+
 using System.IO;
 
 namespace SQLite.Tests
@@ -35,7 +43,7 @@ namespace SQLite.Tests
 		[Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableInt()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -82,7 +90,7 @@ namespace SQLite.Tests
 		[Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableFloat()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
 			db.CreateTable<NullableFloatClass>();
 
 			NullableFloatClass withNull = new NullableFloatClass() { NullableFloat = null };
@@ -130,7 +138,7 @@ namespace SQLite.Tests
 		[Test]
 		public void NullableString()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -153,7 +161,7 @@ namespace SQLite.Tests
 		[Test]
 		public void WhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -178,7 +186,7 @@ namespace SQLite.Tests
 		[Test]
 		public void WhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -200,7 +208,7 @@ namespace SQLite.Tests
 		[Test]
 		public void StringWhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -219,7 +227,7 @@ namespace SQLite.Tests
 		[Test]
 		public void StringWhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };

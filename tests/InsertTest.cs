@@ -6,7 +6,16 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SetUp = Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute;
+using TearDown = Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute;
+using TestFixture = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
+#else
 using NUnit.Framework;
+#endif
+
 using System.Diagnostics;
 
 namespace SQLite.Tests
@@ -63,7 +72,7 @@ namespace SQLite.Tests
         [SetUp]
         public void Setup()
         {
-            _db = new TestDb(Path.GetTempFileName());
+            _db = new TestDb(TestPath.GetTempFileName());
         }
         [TearDown]
         public void TearDown()

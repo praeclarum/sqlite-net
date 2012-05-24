@@ -4,7 +4,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SetUp = Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute;
+using TestFixture = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
+#else
 using NUnit.Framework;
+#endif
+
 
 namespace SQLite.Tests {
     [TestFixture]
@@ -30,7 +39,7 @@ namespace SQLite.Tests {
 
         [Test]
         public void ShouldPersistAndReadGuid() {
-            var db = new TestDb(Path.GetTempFileName());
+            var db = new TestDb(TestPath.GetTempFileName());
 
             var obj1 = new TestObj() { Id=new Guid("36473164-C9E4-4CDF-B266-A0B287C85623"), Text = "First Guid Object" };
             var obj2 = new TestObj() {  Id=new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6"), Text = "Second Guid Object" };

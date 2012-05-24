@@ -124,6 +124,54 @@
     <Compile Include="..\AsyncTests.cs">
       <Link>AsyncTests.cs</Link>
     </Compile>
+    <Compile Include="..\BooleanTest.cs">
+      <Link>BooleanTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ByteArrayTest.cs">
+      <Link>ByteArrayTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CollateTest.cs">
+      <Link>CollateTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ContainsTest.cs">
+      <Link>ContainsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CreateTableTest.cs">
+      <Link>CreateTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DropTableTest.cs">
+      <Link>DropTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\GuidTests.cs">
+      <Link>GuidTests.cs</Link>
+    </Compile>
+    <Compile Include="..\InheritanceTest.cs">
+      <Link>InheritanceTest.cs</Link>
+    </Compile>
+    <Compile Include="..\InsertTest.cs">
+      <Link>InsertTest.cs</Link>
+    </Compile>
+    <Compile Include="..\LinqTest.cs">
+      <Link>LinqTest.cs</Link>
+    </Compile>
+    <Compile Include="..\NullableTest.cs">
+      <Link>NullableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\SkipTest.cs">
+      <Link>SkipTest.cs</Link>
+    </Compile>
+    <Compile Include="..\StringQueryTest.cs">
+      <Link>StringQueryTest.cs</Link>
+    </Compile>
+    <Compile Include="..\TestDb.cs">
+      <Link>TestDb.cs</Link>
+    </Compile>
+    <Compile Include="..\UnicodeTest.cs">
+      <Link>UnicodeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\UniqueTest.cs">
+      <Link>UniqueTest.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

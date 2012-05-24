@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace SQLite.Tests
 {
@@ -41,9 +42,22 @@ namespace SQLite.Tests
 
 	public class TestDb : SQLiteConnection
 	{
-		public TestDb () : base (System.IO.Path.GetTempFileName ())
+		public TestDb () : base (TestPath.GetTempFileName ())
 		{
 			Trace = true;
+		}
+	}
+
+	public class TestPath
+	{
+		public static string GetTempFileName ()
+		{
+#if NETFX_CORE
+			var name = Guid.NewGuid () + ".sqlite";
+			return Path.Combine (Windows.Storage.ApplicationData.Current.LocalFolder.Path, name);
+#else
+			return Path.GetTempFileName ();
+#endif
 		}
 	}
 }
