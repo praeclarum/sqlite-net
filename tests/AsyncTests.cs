@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.IO;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Windows.UI.Xaml.Shapes;
+using SetUp = Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute;
+using TestFixture = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
 #else
 using NUnit.Framework;
 #endif
@@ -35,20 +38,12 @@ namespace SQLite.Tests
 	/// <summary>
 	/// Defines tests that exercise async behaviour.
 	/// </summary>
-#if NETFX_CORE
-	[TestClass]
-#else
 	[TestFixture]
-#endif
 	public class AsyncTests
 	{
 		private const string DatabaseName = "async.db";
 		
-		#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void StressAsync ()
 		{
 			string path = null;
@@ -61,7 +56,7 @@ namespace SQLite.Tests
 			var n = 500;
 			var errors = new List<string> ();
 			for (var i = 0; i < n; i++) {
-				ThreadPool.QueueUserWorkItem (delegate {
+				Task.Factory.StartNew (delegate {
 					try {
 						var conn = GetConnection ();
 						var obj = new Customer {
@@ -134,15 +129,21 @@ namespace SQLite.Tests
 		[SetUp]
 		public void SetUp()
 		{
+			SQLite.SQLiteConnectionPool.Shared.Reset ();
 #if NETFX_CORE
 			_connectionString = DatabaseName;
-			_path = _connectionString;
+			_path = Path.Combine (Windows.Storage.ApplicationData.Current.LocalFolder.Path, DatabaseName);
+			try {
+				var f = Windows.Storage.StorageFile.GetFileFromPathAsync (_path).AsTask ().Result;
+				f.DeleteAsync ().AsTask ().Wait ();
+			}
+			catch (Exception) {
+			}
 #else
 			_connectionString = Path.Combine (Path.GetTempPath (), DatabaseName);
 			_path = _connectionString;
-#endif
-			SQLite.SQLiteConnectionPool.Shared.Reset ();
 			System.IO.File.Delete (_path);
+#endif
 		}
 		
 		SQLiteAsyncConnection GetConnection (ref string path)
@@ -151,11 +152,7 @@ namespace SQLite.Tests
 			return new SQLiteAsyncConnection (_connectionString);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestDropTableAsync ()
 		{
 			string path = null;
@@ -183,11 +180,7 @@ namespace SQLite.Tests
 			return customer;
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestInsertAsync ()
 		{
 			// create...
@@ -212,11 +205,7 @@ namespace SQLite.Tests
 			}
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestUpdateAsync ()
 		{
 			// create...
@@ -245,11 +234,7 @@ namespace SQLite.Tests
 			}
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestDeleteAsync ()
 		{
 			// create...
@@ -274,11 +259,7 @@ namespace SQLite.Tests
 			}
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestGetAsync ()
 		{
 			// create...
@@ -305,11 +286,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (customer.Id, loaded.Id);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestFindAsyncItemPresent ()
 		{
 			// create...
@@ -333,11 +310,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (customer.Id, loaded.Id);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestFindAsyncItemMissing ()
 		{
 			// connect and insert...
@@ -352,11 +325,7 @@ namespace SQLite.Tests
 			Assert.IsNull (task.Result);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestQueryAsync ()
 		{
 			// connect...
@@ -385,11 +354,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (customers[2].Email, loaded[0].Email);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestTableAsync ()
 		{
 			// connect...
@@ -425,11 +390,7 @@ namespace SQLite.Tests
 			Assert.IsNotNull (loaded.Where (v => v.Id == customers[4].Id));
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestExecuteAsync ()
 		{
 			// connect...
@@ -450,11 +411,7 @@ namespace SQLite.Tests
 			}
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestInsertAllAsync ()
 		{
 			// create a bunch of customers...
@@ -485,11 +442,7 @@ namespace SQLite.Tests
 			}
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestRunInTransactionAsync ()
 		{
 			// connect...
@@ -519,11 +472,7 @@ namespace SQLite.Tests
 			}
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestExecuteScalar ()
 		{
 			// connect...
@@ -537,11 +486,7 @@ namespace SQLite.Tests
 			Assert.AreNotEqual ("Customer", name);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableQueryToListAsync ()
 		{
 			var conn = GetConnection ();
@@ -562,11 +507,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (customer.Email, loaded.Email);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableQueryWhereOperation ()
 		{
 			var conn = GetConnection ();
@@ -587,11 +528,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (customer.Email, loaded.Email);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableQueryCountAsync ()
 		{
 			var conn = GetConnection ();
@@ -611,11 +548,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (10, task.Result);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableOrderBy ()
 		{
 			var conn = GetConnection ();
@@ -636,11 +569,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (-1, string.Compare (items[0].Email, items[9].Email));
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableOrderByDescending ()
 		{
 			var conn = GetConnection ();
@@ -661,11 +590,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (1, string.Compare (items[0].Email, items[9].Email));
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableQueryTake ()
 		{
 			var conn = GetConnection ();
@@ -690,11 +615,7 @@ namespace SQLite.Tests
 			Assert.AreEqual ("0", items[0].FirstName);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableQuerySkip ()
 		{
 			var conn = GetConnection ();
@@ -719,11 +640,7 @@ namespace SQLite.Tests
 			Assert.AreEqual ("5", items[0].FirstName);
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestAsyncTableElementAtAsync ()
 		{
 			var conn = GetConnection ();
