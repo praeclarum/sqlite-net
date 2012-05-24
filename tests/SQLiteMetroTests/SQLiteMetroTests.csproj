@@ -132,6 +132,9 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\lib\metro\sqlite3.dll">
+      <Link>sqlite3.dll</Link>
+    </Content>
     <Content Include="Images\UnitTestLogo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
