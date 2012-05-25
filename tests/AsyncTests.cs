@@ -504,7 +504,7 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void TestAsyncTableQueryToFirstAsync ()
+		public void TestAsyncTableQueryToFirstAsyncFound ()
 		{
 			var conn = GetConnection ();
 			conn.CreateTableAsync<Customer>().Wait();
@@ -524,7 +524,24 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void TestAsyncTableQueryToFirstOrDefaultAsyncFound()
+		[ExpectedException(typeof(AggregateException))]
+		public void TestAsyncTableQueryToFirstAsyncMissing ()
+		{
+			var conn = GetConnection();
+			conn.CreateTableAsync<Customer>().Wait();
+
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
+
+			// query...
+			var query = conn.Table<Customer>().Where(v => v.Id == -1);
+			var task = query.FirstAsync();
+			task.Wait();
+		}
+
+		[Test]
+		public void TestAsyncTableQueryToFirstOrDefaultAsyncFound ()
 		{
 			var conn = GetConnection();
 			conn.CreateTableAsync<Customer>().Wait();
@@ -544,7 +561,7 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void TestAsyncTableQueryToFirstOrDefaultAsyncMissing()
+		public void TestAsyncTableQueryToFirstOrDefaultAsyncMissing ()
 		{
 			var conn = GetConnection();
 			conn.CreateTableAsync<Customer>().Wait();
