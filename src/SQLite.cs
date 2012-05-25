@@ -570,6 +570,24 @@ namespace SQLite
 			return Query<T> (query, pk).First ();
 		}
 
+        /// <summary>
+        /// Attempts to retrieve an object with the given Linq expression from the table
+        /// associated with the specified type. 
+        /// </summary>
+        /// <param name="expression">
+        /// A Linq expression.
+        /// </param>
+        /// <returns>
+        /// The object with the given linq expression. Throws a not found exception
+        /// if the object is not found.
+        /// </returns>
+        public T Get<T>(Expression<Func<T, bool>> expression) where T : new()
+        {
+            var map = GetMapping(typeof(T));
+            string query = string.Format("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
+            return Table<T>().Where(expression).First();
+        }
+
 		/// <summary>
 		/// Attempts to retrieve an object with the given primary key from the table
 		/// associated with the specified type. Use of this method requires that
