@@ -71,5 +71,33 @@ namespace SQLite.Tests
 			Assert.AreEqual (1, r.Count);
 			Assert.AreEqual ("A", r [0].Name);
 		}
+		
+		[Test]
+        public void TestGetWithExpression()
+		{
+			var db = CreateDb();
+			
+			db.Insert (new Product {
+				Name = "A",
+				Price = 20,
+			});
+			
+			db.Insert (new Product {
+				Name = "B",
+				Price = 10,
+			});
+
+            db.Insert(new Product
+            {
+                Name = "C",
+                Price = 5,
+            });
+			
+			Assert.AreEqual (2, db.Table<Product> ().Count ());
+			
+			var r = db.Get<Product>(x => x.Price == 10);
+            Assert.IsNotNull(r);
+			Assert.AreEqual ("A", r.Name);
+		}
 	}
 }

@@ -584,7 +584,6 @@ namespace SQLite
         public T Get<T>(Expression<Func<T, bool>> expression) where T : new()
         {
             var map = GetMapping(typeof(T));
-            string query = string.Format("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
             return Table<T>().Where(expression).First();
         }
 

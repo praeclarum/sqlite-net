@@ -663,5 +663,29 @@ namespace SQLite.Tests
 			// check...
 			Assert.AreEqual ("7", loaded.FirstName);
 		}
+
+
+        [Test]
+        public void TestAsyncGetWithExpression()
+        {
+            var conn = GetConnection();
+            conn.CreateTableAsync<Customer>().Wait();
+            conn.ExecuteAsync("delete from customer").Wait();
+
+            // create...
+            for (int index = 0; index < 10; index++)
+            {
+                var customer = this.CreateCustomer();
+                customer.FirstName = index.ToString();
+                conn.InsertAsync(customer).Wait();
+            }
+
+            // get...
+            var result = conn.GetAsync<Customer>(x => x.FirstName == "7");
+            result.Wait();
+            var loaded = result.Result;
+            // check...
+            Assert.AreEqual("7", loaded.FirstName);
+        }
 	}
 }
