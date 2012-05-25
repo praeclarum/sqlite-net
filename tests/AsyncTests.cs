@@ -94,11 +94,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (n, count);			
 		}
 
-#if NETFX_CORE
-		[TestMethod]
-#else
 		[Test]
-#endif
 		public void TestCreateTableAsync ()
 		{
 			string path = null;
@@ -505,6 +501,83 @@ namespace SQLite.Tests
 			// check...
 			var loaded = items.Where (v => v.Id == customer.Id).First ();
 			Assert.AreEqual (customer.Email, loaded.Email);
+		}
+
+		[Test]
+		public void TestAsyncTableQueryToFirstAsyncFound ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer>().Wait();
+
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
+
+			// query...
+			var query = conn.Table<Customer> ().Where(v => v.Id == customer.Id);
+			var task = query.FirstAsync ();
+			task.Wait();
+			var loaded = task.Result;
+
+			// check...
+			Assert.AreEqual(customer.Email, loaded.Email);
+		}
+
+		[Test]
+		[ExpectedException(typeof(AggregateException))]
+		public void TestAsyncTableQueryToFirstAsyncMissing ()
+		{
+			var conn = GetConnection();
+			conn.CreateTableAsync<Customer>().Wait();
+
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
+
+			// query...
+			var query = conn.Table<Customer>().Where(v => v.Id == -1);
+			var task = query.FirstAsync();
+			task.Wait();
+		}
+
+		[Test]
+		public void TestAsyncTableQueryToFirstOrDefaultAsyncFound ()
+		{
+			var conn = GetConnection();
+			conn.CreateTableAsync<Customer>().Wait();
+
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
+
+			// query...
+			var query = conn.Table<Customer>().Where(v => v.Id == customer.Id);
+			var task = query.FirstOrDefaultAsync();
+			task.Wait();
+			var loaded = task.Result;
+
+			// check...
+			Assert.AreEqual(customer.Email, loaded.Email);
+		}
+
+		[Test]
+		public void TestAsyncTableQueryToFirstOrDefaultAsyncMissing ()
+		{
+			var conn = GetConnection();
+			conn.CreateTableAsync<Customer>().Wait();
+
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
+
+			// query...
+			var query = conn.Table<Customer>().Where(v => v.Id == -1);
+			var task = query.FirstOrDefaultAsync();
+			task.Wait();
+			var loaded = task.Result;
+
+			// check...
+			Assert.IsNull(loaded);
 		}
 
 		[Test]
