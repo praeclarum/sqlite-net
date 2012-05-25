@@ -1931,17 +1931,17 @@ namespace SQLite
 			return GetEnumerator ();
 		}
 
-        internal T ToFirst ()
-        {
-            var query = Take (1);
-            return query.ToList().First ();
-        }
+		public T First ()
+		{
+			var query = Take (1);
+			return query.ToList<T>().First ();
+		}
 
-        internal T ToFirstOrDefault ()
-        {
-            var query = this.Take (1);
-            return query.ToList().FirstOrDefault ();
-        }
+		public T FirstOrDefault ()
+		{
+			var query = this.Take (1);
+			return query.ToList<T>().FirstOrDefault ();
+		}
     }
 
 	public static class SQLite3

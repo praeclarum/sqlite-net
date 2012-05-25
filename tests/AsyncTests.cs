@@ -503,65 +503,65 @@ namespace SQLite.Tests
 			Assert.AreEqual (customer.Email, loaded.Email);
 		}
 
-        [Test]
-        public void TestAsyncTableQueryToFirstAsync ()
-        {
-            var conn = GetConnection ();
-            conn.CreateTableAsync<Customer>().Wait();
+		[Test]
+		public void TestAsyncTableQueryToFirstAsync ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer>().Wait();
 
-            // create...
-            Customer customer = this.CreateCustomer();
-            conn.InsertAsync(customer).Wait();
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
 
-            // query...
-            var query = conn.Table<Customer> ().Where(v => v.Id == customer.Id);
-            var task = query.ToFirstAsync ();
-            task.Wait();
-            var loaded = task.Result;
+			// query...
+			var query = conn.Table<Customer> ().Where(v => v.Id == customer.Id);
+			var task = query.FirstAsync ();
+			task.Wait();
+			var loaded = task.Result;
 
-            // check...
-            Assert.AreEqual(customer.Email, loaded.Email);
-        }
+			// check...
+			Assert.AreEqual(customer.Email, loaded.Email);
+		}
 
-        [Test]
-        public void TestAsyncTableQueryToFirstOrDefaultAsyncFound()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		[Test]
+		public void TestAsyncTableQueryToFirstOrDefaultAsyncFound()
+		{
+			var conn = GetConnection();
+			conn.CreateTableAsync<Customer>().Wait();
 
-            // create...
-            Customer customer = this.CreateCustomer();
-            conn.InsertAsync(customer).Wait();
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
 
-            // query...
-            var query = conn.Table<Customer>().Where(v => v.Id == customer.Id);
-            var task = query.ToFirstOrDefaultAsync();
-            task.Wait();
-            var loaded = task.Result;
+			// query...
+			var query = conn.Table<Customer>().Where(v => v.Id == customer.Id);
+			var task = query.FirstOrDefaultAsync();
+			task.Wait();
+			var loaded = task.Result;
 
-            // check...
-            Assert.AreEqual(customer.Email, loaded.Email);
-        }
+			// check...
+			Assert.AreEqual(customer.Email, loaded.Email);
+		}
 
-        [Test]
-        public void TestAsyncTableQueryToFirstOrDefaultAsyncMissing()
-        {
-            var conn = GetConnection();
-            conn.CreateTableAsync<Customer>().Wait();
+		[Test]
+		public void TestAsyncTableQueryToFirstOrDefaultAsyncMissing()
+		{
+			var conn = GetConnection();
+			conn.CreateTableAsync<Customer>().Wait();
 
-            // create...
-            Customer customer = this.CreateCustomer();
-            conn.InsertAsync(customer).Wait();
+			// create...
+			Customer customer = this.CreateCustomer();
+			conn.InsertAsync(customer).Wait();
 
-            // query...
-            var query = conn.Table<Customer>().Where(v => v.Id == -1);
-            var task = query.ToFirstOrDefaultAsync();
-            task.Wait();
-            var loaded = task.Result;
+			// query...
+			var query = conn.Table<Customer>().Where(v => v.Id == -1);
+			var task = query.FirstOrDefaultAsync();
+			task.Wait();
+			var loaded = task.Result;
 
-            // check...
-            Assert.IsNull(loaded);
-        }
+			// check...
+			Assert.IsNull(loaded);
+		}
 
 		[Test]
 		public void TestAsyncTableQueryWhereOperation ()
