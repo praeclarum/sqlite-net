@@ -1930,7 +1930,19 @@ namespace SQLite
 		{
 			return GetEnumerator ();
 		}
-	}
+
+		public T First ()
+		{
+			var query = Take (1);
+			return query.ToList<T>().First ();
+		}
+
+		public T FirstOrDefault ()
+		{
+			var query = this.Take (1);
+			return query.ToList<T>().FirstOrDefault ();
+		}
+    }
 
 	public static class SQLite3
 	{

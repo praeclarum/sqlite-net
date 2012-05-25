@@ -299,7 +299,25 @@ namespace SQLite
 				}
 			});
 		}
-	}
+
+		public Task<T> FirstAsync ()
+		{
+			return Task<T>.Factory.StartNew(() => {
+				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
+					return _innerQuery.First ();
+				}
+			});
+		}
+
+		public Task<T> FirstOrDefaultAsync ()
+		{
+			return Task<T>.Factory.StartNew(() => {
+				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
+					return _innerQuery.FirstOrDefault ();
+				}
+			});
+		}
+    }
 
 	public class CreateTablesResult
 	{
