@@ -47,7 +47,15 @@ The library contains simple attributes that you can use to control the construct
     	public decimal Price { get; set; }
     }
 
-With these, you can automatically generate tables in your database by calling `CreateTable`:
+Once you've defined the objects in your model you have a choice of APIs. You can use the "synchronous API" where calls
+block one at a time, or you can use the "asynchronous API" where calls do not block. You may care to use the asynchronous
+API for mobile applications in order to increase reponsiveness.
+
+Both APIs are explained in the two sections below.
+
+Synchronous API
+---
+Once you have defined your entity, you can automatically generate tables in your database by calling `CreateTable`:
 
     var db = new SQLiteConnection("foofoo");
     db.CreateTable<Stock>();
@@ -62,7 +70,17 @@ You can insert rows in the database using `Insert`. If the table contains an aut
     	Console.WriteLine("{0} == {1}", s.Symbol, s.Id);
     }
 
-You can query the database using the `Query` method of `SQLiteConnection`:
+Similar methods exist for `Update` and `Delete`.
+
+The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
+
+		var conn = new SQLiteConnection("foofoo");
+		var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+
+		foreach (var stock in query)
+			Debug.WriteLine("Stock: " + stock.Symbol);
+
+You can also query the database at a low-level using the `Query` method:
 
     public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock)
     {
@@ -80,7 +98,72 @@ The generic parameter to the `Query` method specifies the type of object to crea
     	return db.Query<Val> ("select 'Price' as 'Money', 'Time' as 'Date' from Valuation where StockId = ?", stock.Id);
     }
 
-Updates must be performed manually using the `Execute` method of `SQLiteConnection`.
+You can perform low-level updates of the database using the `Execute` method.
+
+Asynchronous API
+---
+The asynchronous library uses the Task Parallel Library (TPL). As such, normal use of `Task` objects, and the `async` and `await` keywords 
+will work for you.
+
+Once you have defined your entity, you can automatically generate tables by calling `CreateTableAsync`:
+
+	var conn = new SQLiteAsyncConnection("foofoo");
+	conn.CreateTableAsync<Stock>().ContinueWith((results) =>
+	{
+		Debug.WriteLine("Table created!");
+	});
+
+You can insert rows in the database using `Insert`. If the table contains an auto-incremented primary key, then the value for that key will be available to you after the insert:
+
+		Stock stock = new Stock()
+		{
+			Symbol = "AAPL"
+		};
+
+		var conn = new SQLiteAsyncConnection("foofoo");
+		conn.InsertAsync(stock).ContinueWith((t) =>
+		{
+			Debug.WriteLine("New customer ID: {0}", stock.Id);
+		});
+
+Similar methods exist for `UpdateAsync` and `DeleteAsync`.
+
+Querying for data is most straightforwardly done using the `Table` method. This will return an `AsyncTableQuery` instance back, whereupon
+you can add predictates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special 
+retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
+
+		var conn = new SQLiteAsyncConnection("foofoo");
+		var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+			
+		query.ToListAsync().ContinueWith((t) =>
+		{
+			foreach (var stock in t.Result)
+				Debug.WriteLine("Stock: " + stock.Symbol);
+		});
+
+There are a number of low-level methods available. You can also query the database directly via the `QueryAsync` method. Over and above the change 
+operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to change sets of data directly within the database.
+
+Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
+
+		var conn = new SQLiteAsyncConnection("foofoo");
+		conn.ExecuteScalarAsync<int>("select count(*) from Stock", null).ContinueWith((t) =>
+		{
+			Debug.WriteLine(string.Format("Found '{0}' stock items.", t.Result));
+		});
+
+
+Special note on use within Metro-style
+===
+sqlite-net is fully compliant with Metro-style. This library will pass Microsoft Store validation.
+
+Users should note:
+
+* Database files will always be created in the path returned by `Windows.Storage.ApplicationData.Current.LocalFolder.Path`.
+
+* You will need a copy of sqlite3.dll that has been compiled against SQLite.org's WinRT branch. Although this isn't in mainstream
+support, it is expected to be. You can find more information on that and download a properly compiled sqlite3.dll from
+[https://github.com/mbrit/sqlite-metrostyle].
 
 Meta
 ===

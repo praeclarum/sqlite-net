@@ -93,11 +93,11 @@ namespace SQLite.Tests
                 Price = 5,
             });
 			
-			Assert.AreEqual (2, db.Table<Product> ().Count ());
+			Assert.AreEqual (3, db.Table<Product> ().Count ());
 			
 			var r = db.Get<Product>(x => x.Price == 10);
             Assert.IsNotNull(r);
-			Assert.AreEqual ("A", r.Name);
+			Assert.AreEqual ("B", r.Name);
 		}
 	}
 }
