@@ -72,7 +72,15 @@ You can insert rows in the database using `Insert`. If the table contains an aut
 
 Similar methods exist for `Update` and `Delete`.
 
-You can query the database directly using the `Query` method of `SQLiteConnection`:
+The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
+
+		var conn = new SQLiteConnection("foofoo");
+		var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+
+		foreach (var stock in query)
+			Debug.WriteLine("Stock: " + stock.Symbol);
+
+You can also query the database at a low-level using the `Query` method:
 
     public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock)
     {
@@ -90,7 +98,7 @@ The generic parameter to the `Query` method specifies the type of object to crea
     	return db.Query<Val> ("select 'Price' as 'Money', 'Time' as 'Date' from Valuation where StockId = ?", stock.Id);
     }
 
-Updates must be performed manually using the `Execute` method of `SQLiteConnection`.
+You can perform low-level updates of the database using the `Execute` method.
 
 Asynchronous API
 ---
@@ -121,7 +129,7 @@ You can insert rows in the database using `Insert`. If the table contains an aut
 Similar methods exist for `UpdateAsync` and `DeleteAsync`.
 
 Querying for data is most straightforwardly done using the `Table` method. This will return an `AsyncTableQuery` instance back, whereupon
-you can add predictates for constraining via WHERE clauses and adding ORDER BY. The database is not physically touched until one of the special 
+you can add predictates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special 
 retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
 
 		var conn = new SQLiteAsyncConnection("foofoo");
@@ -133,7 +141,7 @@ retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is c
 				Debug.WriteLine("Stock: " + stock.Symbol);
 		});
 
-There are a number of low-levvel methods available. You can also query the database directly via the `QueryAsync` method. Over and above the change 
+There are a number of low-level methods available. You can also query the database directly via the `QueryAsync` method. Over and above the change 
 operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to change sets of data directly within the database.
 
 Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
