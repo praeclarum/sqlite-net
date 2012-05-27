@@ -757,6 +757,7 @@ namespace SQLite.Tests
             var result = conn.GetAsync<Customer>(x => x.FirstName == "7");
             result.Wait();
             var loaded = result.Result;
+
             // check...
             Assert.AreEqual("7", loaded.FirstName);
         }
