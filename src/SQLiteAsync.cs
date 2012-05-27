@@ -232,6 +232,14 @@ namespace SQLite
 				}
 			});
 		}
+
+		/// <summary>
+		/// Call this method from your app's OnSuspended method to free up open database connections.
+		/// </summary>
+		public void ApplicationSuspended ()
+		{
+			SQLiteConnectionPool.Shared.ApplicationSuspended ();
+		}
 	}
 
 	//
