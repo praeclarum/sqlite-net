@@ -427,7 +427,7 @@ namespace SQLite
 
 		public IDisposable Lock ()
 		{
-			return new LockWrapper (this);
+			return new LockWrapper (_lockPoint);
 		}
 
 		private class LockWrapper : IDisposable
