@@ -1703,6 +1703,18 @@ namespace SQLite
 				_where = Expression.AndAlso (_where, pred);
 			}
 		}
+				
+		public TableQuery<TResult> Join<TInner, TKey, TResult> (
+			TableQuery<TInner> inner,
+			Expression<Func<T, TKey>> outerKeySelector,
+			Expression<Func<TInner, TKey>> innerKeySelector,
+			Expression<Func<T, TInner, TResult>> resultSelector
+		)
+			where TResult : new ()
+			where TInner : new ()
+		{
+			throw new NotImplementedException ();
+		}
 
 		private SQLiteCommand GenerateCommand (string selectionList)
 		{
