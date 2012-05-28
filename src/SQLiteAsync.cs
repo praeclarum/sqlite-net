@@ -140,17 +140,6 @@ namespace SQLite
 			});
 		}
 
-        public Task<T> GetAsync<T>(Expression<Func<T, bool>> expression)
-			where T : new ()
-		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Get<T> (expression);
-				}
-			});
-		}
-
         public Task<T> GetAsync<T>(object pk)
             where T : new()
         {
@@ -171,6 +160,30 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Find<T> (pk);
+				}
+			});
+		}
+		
+		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
+            where T : new()
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.Get<T> (predicate);
+                }
+            });
+        }
+
+		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate)
+			where T : new ()
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Find<T> (predicate);
 				}
 			});
 		}

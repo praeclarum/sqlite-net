@@ -571,20 +571,19 @@ namespace SQLite
 		}
 
         /// <summary>
-        /// Attempts to retrieve an object with the given Linq expression from the table
+        /// Attempts to retrieve the first object that matches the predicate from the table
         /// associated with the specified type. 
         /// </summary>
-        /// <param name="expression">
-        /// A Linq expression.
+        /// <param name="predicate">
+        /// A predicate for which object to find.
         /// </param>
         /// <returns>
-        /// The object with the given linq expression. Throws a not found exception
+        /// The object that matches the given predicate. Throws a not found exception
         /// if the object is not found.
         /// </returns>
-        public T Get<T>(Expression<Func<T, bool>> expression) where T : new()
+        public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
         {
-            var map = GetMapping(typeof(T));
-            return Table<T>().Where(expression).First();
+            return Table<T> ().Where (predicate).First ();
         }
 
 		/// <summary>
@@ -605,6 +604,22 @@ namespace SQLite
 			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
 			return Query<T> (query, pk).FirstOrDefault ();
 		}
+		
+		/// <summary>
+        /// Attempts to retrieve the first object that matches the predicate from the table
+        /// associated with the specified type. 
+        /// </summary>
+        /// <param name="predicate">
+        /// A predicate for which object to find.
+        /// </param>
+        /// <returns>
+        /// The object that matches the given predicate or null
+        /// if the object is not found.
+        /// </returns>
+        public T Find<T> (Expression<Func<T, bool>> predicate) where T : new()
+        {
+            return Table<T> ().Where (predicate).FirstOrDefault ();
+        }
 
 		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.

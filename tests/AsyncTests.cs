@@ -256,7 +256,7 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void TestGetAsync ()
+		public void GetAsync ()
 		{
 			// create...
 			Customer customer = new Customer ();
@@ -280,6 +280,49 @@ namespace SQLite.Tests
 
 			// check...
 			Assert.AreEqual (customer.Id, loaded.Id);
+		}
+		
+		[Test]
+		public void FindAsyncWithExpression ()
+		{
+			// create...
+			Customer customer = new Customer ();
+			customer.FirstName = "foo";
+			customer.LastName = "bar";
+			customer.Email = Guid.NewGuid ().ToString ();
+
+			// connect and insert...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.InsertAsync (customer).Wait ();
+
+			// check...
+			Assert.AreNotEqual (0, customer.Id);
+
+			// get it back...
+			var task = conn.FindAsync<Customer> (x => x.Id == customer.Id);
+			task.Wait ();
+			Customer loaded = task.Result;
+
+			// check...
+			Assert.AreEqual (customer.Id, loaded.Id);
+		}
+		
+		[Test]
+		public void FindAsyncWithExpressionNull ()
+		{
+			// connect and insert...
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+
+			// get it back...
+			var task = conn.FindAsync<Customer> (x => x.Id == 1);
+			task.Wait ();
+			var loaded = task.Result;
+
+			// check...
+			Assert.IsNull (loaded);
 		}
 
 		[Test]

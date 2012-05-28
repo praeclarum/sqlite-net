@@ -73,7 +73,7 @@ namespace SQLite.Tests
 		}
 		
 		[Test]
-        public void TestGetWithExpression()
+        public void GetWithExpression ()
 		{
 			var db = CreateDb();
 			
@@ -98,6 +98,15 @@ namespace SQLite.Tests
 			var r = db.Get<Product>(x => x.Price == 10);
             Assert.IsNotNull(r);
 			Assert.AreEqual ("B", r.Name);
+		}
+		
+		[Test]
+        public void FindWithExpression ()
+		{
+			var db = CreateDb();
+			
+			var r = db.Find<Product> (x => x.Price == 10);
+            Assert.IsNull (r);
 		}
 	}
 }
