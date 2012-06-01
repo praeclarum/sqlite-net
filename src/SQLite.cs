@@ -29,9 +29,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Reflection;
-#if NETFX_CORE
-using System.Reflection.RuntimeExtensions;
-#endif
 using System.Linq;
 using System.Linq.Expressions;
 

@@ -1,6 +1,15 @@
 using System;
 using System.IO;
 
+#if NETFX_CORE
+class DescriptionAttribute : Attribute
+{
+	public DescriptionAttribute (string desc)
+	{
+	}
+}
+#endif
+
 namespace SQLite.Tests
 {
 	public class Product
