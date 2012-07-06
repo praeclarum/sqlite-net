@@ -575,8 +575,7 @@ namespace SQLite
 		public T Get<T> (object pk) where T : new()
 		{
 			var map = GetMapping (typeof(T));
-			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
-			return Query<T> (query, pk).First ();
+			return Query<T> (map.GetByPrimaryKeySql, pk).First ();
 		}
 
         /// <summary>
@@ -610,8 +609,27 @@ namespace SQLite
 		public T Find<T> (object pk) where T : new ()
 		{
 			var map = GetMapping (typeof (T));
-			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
-			return Query<T> (query, pk).FirstOrDefault ();
+			return Query<T> (map.GetByPrimaryKeySql, pk).FirstOrDefault ();
+		}
+
+		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
+		/// </summary>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param>
+		/// <param name="map">
+		/// The TableMapping used to identify the object type.
+		/// </param>
+		/// <returns>
+		/// The object with the given primary key or null
+		/// if the object is not found.
+		/// </returns>
+		public object Find (object pk, TableMapping map)
+		{
+			return Query (map, map.GetByPrimaryKeySql, pk).FirstOrDefault ();
 		}
 		
 		/// <summary>
@@ -968,6 +986,8 @@ namespace SQLite
 
 		public Column PK { get; private set; }
 
+		public string GetByPrimaryKeySql { get; private set; }
+
 		Column _autoPk = null;
 		Column[] _insertColumns = null;
 
@@ -1004,6 +1024,14 @@ namespace SQLite
 			}
 			
 			HasAutoIncPK = _autoPk != null;
+
+			if (PK != null) {
+				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" where \"{1}\" = ?", TableName, PK.Name);
+			}
+			else {
+				// People should not be calling Get/Find without a PK
+				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
+			}
 		}
 
 		public bool HasAutoIncPK { get; private set; }
