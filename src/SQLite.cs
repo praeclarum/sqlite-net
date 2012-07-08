@@ -919,14 +919,39 @@ namespace SQLite
 		}
 	}
 
+    [AttributeUsage (AttributeTargets.Class)]
+	public class TableAttribute : Attribute
+	{
+		public string Name { get; set; }
+
+		public TableAttribute (string name)
+		{
+			Name = name;
+		}
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
+	public class ColumnAttribute : Attribute
+	{
+		public string Name { get; set; }
+
+		public ColumnAttribute (string name)
+		{
+			Name = name;
+		}
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
 	public class PrimaryKeyAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage (AttributeTargets.Property)]
 	public class AutoIncrementAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage (AttributeTargets.Property)]
 	public class IndexedAttribute : Attribute
 	{
 		public string Name { get; set; }
@@ -944,10 +969,12 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage (AttributeTargets.Property)]
 	public class IgnoreAttribute : Attribute
 	{
 	}
 
+	[AttributeUsage (AttributeTargets.Property)]
 	public class UniqueAttribute : IndexedAttribute
 	{
 		public override bool Unique {
@@ -956,6 +983,7 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage (AttributeTargets.Property)]
 	public class MaxLengthAttribute : Attribute
 	{
 		public int Value { get; private set; }
@@ -966,6 +994,7 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage (AttributeTargets.Property)]
 	public class CollationAttribute: Attribute
 	{
 		public string Value { get; private set; }
@@ -994,7 +1023,16 @@ namespace SQLite
 		public TableMapping (Type type)
 		{
 			MappedType = type;
-			TableName = MappedType.Name;
+
+#if NETFX_CORE
+			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
+                .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
+#else
+			var tableAttr = (TableAttribute)type.GetCustomAttributes (typeof (TableAttribute), true).FirstOrDefault ();
+#endif
+
+			TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
+
 #if !NETFX_CORE
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 #else
@@ -1006,8 +1044,10 @@ namespace SQLite
 			foreach (var p in props) {
 #if !NETFX_CORE
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
+				var colAttr = p.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
+				var colAttr = p.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
 #endif
 				if (p.CanWrite && !ignore) {
 					cols.Add (new PropColumn (p));
@@ -1136,8 +1176,10 @@ namespace SQLite
 
 			public PropColumn (PropertyInfo prop)
 			{
+				var colAttr = (ColumnAttribute)prop.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
+
 				_prop = prop;
-				Name = prop.Name;
+				Name = colAttr == null ? prop.Name : colAttr.Name;
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
 				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);

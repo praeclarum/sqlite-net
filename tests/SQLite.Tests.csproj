@@ -56,5 +56,6 @@
     <Compile Include="..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
+    <Compile Include="MappingTest.cs" />
   </ItemGroup>
 </Project>
