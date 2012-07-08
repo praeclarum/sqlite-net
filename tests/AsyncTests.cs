@@ -488,6 +488,7 @@ namespace SQLite.Tests
 			string path = null;
 			var conn = GetConnection (ref path);
 			conn.CreateTableAsync<Customer> ().Wait ();
+			bool transactionCompleted = false;
 
 			// run...
 			Customer customer = new Customer ();
@@ -496,14 +497,17 @@ namespace SQLite.Tests
 				customer.FirstName = "foo";
 				customer.LastName = "bar";
 				customer.Email = Guid.NewGuid ().ToString ();
-				conn.InsertAsync (customer).Wait ();
+				c.Insert (customer);
 
 				// delete it again...
-				conn.ExecuteAsync ("delete from customer where id=?", customer.Id).Wait ();
+				c.Execute ("delete from customer where id=?", customer.Id);
 
-			}).Wait ();
+				// set completion flag
+				transactionCompleted = true;
+			}).Wait (10000);
 
 			// check...
+			Assert.IsTrue(transactionCompleted);
 			using (SQLiteConnection check = new SQLiteConnection (path)) {
 				// load it back and check - should be deleted...
 				var loaded = check.Table<Customer> ().Where (v => v.Id == customer.Id).ToList ();

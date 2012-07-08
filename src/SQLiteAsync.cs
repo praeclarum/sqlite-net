@@ -208,6 +208,7 @@ namespace SQLite
 			});
 		}
 
+        [Obsolete("Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead.")]
 		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action)
 		{
 			return Task.Factory.StartNew (() => {
@@ -225,6 +226,28 @@ namespace SQLite
 				}
 			});
 		}
+
+        public Task RunInTransactionAsync(Action<SQLiteConnection> action)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = this.GetConnection();
+                using (conn.Lock())
+                {
+                    conn.BeginTransaction();
+                    try
+                    {
+                        action(conn);
+                        conn.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        conn.Rollback();
+                        throw;
+                    }
+                }
+            });
+        }
 
 		public AsyncTableQuery<T> Table<T> ()
 			where T : new ()
