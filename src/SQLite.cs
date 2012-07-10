@@ -19,7 +19,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-
 #if WINDOWS_PHONE
 #define USE_CSHARP_SQLITE
 #endif
@@ -31,6 +30,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 
 #if USE_CSHARP_SQLITE
 using Community.CsharpSqlite;
@@ -80,6 +80,9 @@ namespace SQLite
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
+
+		private int _trasactionDepth = 0;
+		private Random _rand = new Random ();
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 #if USE_CSHARP_SQLITE
@@ -651,28 +654,166 @@ namespace SQLite
 		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
-		public bool IsInTransaction { get; private set; }
+		public bool IsInTransaction {
+			get { return _trasactionDepth > 0; }
+		}
 
 		/// <summary>
 		/// Begins a new transaction. Call <see cref="Commit"/> to end the transaction.
 		/// </summary>
+		/// <example cref="System.InvalidOperationException">Throws if a transaction has already begun.</example>
 		public void BeginTransaction ()
 		{
-			if (!IsInTransaction) {
-				Execute ("begin transaction");
-				IsInTransaction = true;
+			// The BEGIN command only works if the transaction stack is empty, 
+			//    or in other words if there are no pending transactions. 
+			// If the transaction stack is not empty when the BEGIN command is invoked, 
+			//    then the command fails with an error.
+			// Rather than crash with an error, we will just ignore calls to BeginTransaction
+			//    that would result in an error.
+			if (Interlocked.CompareExchange (ref _trasactionDepth, 1, 0) == 0) {
+				try {
+					Execute ("begin transaction");
+				} catch (Exception ex) {
+					var sqlExp = ex as SQLiteException;
+					if (sqlExp != null) {
+						// It is recommended that applications respond to the errors listed below 
+						//    by explicitly issuing a ROLLBACK command.
+						// TODO: This rollback failsafe should be localized to all throw sites.
+						switch (sqlExp.Result) {
+						case SQLite3.Result.IOError:
+						case SQLite3.Result.Full:
+						case SQLite3.Result.Busy:
+						case SQLite3.Result.NoMem:
+						case SQLite3.Result.Interrupt:
+							RollbackTo (null, true);
+							break;
+						}
+					} else {
+						// Call decrement and not VolatileWrite in case we've already 
+						//    created a transaction point in SaveTransactionPoint since the catch.
+						Interlocked.Decrement (ref _trasactionDepth);
+					}
+
+					throw;
+				}
+			} else { 
+				// Calling BeginTransaction on an already open transaction is invalid
+				throw new System.InvalidOperationException ("Cannot begin a transaction while already in a transaction.");
 			}
+		}
+
+		/// <summary>
+		/// Creates a savepoint in the database at the current point in the transaction timeline.
+		/// Begins a new transaction if one is not in progress.
+		/// 
+		/// Call <see cref="RollbackTo"/> to undo transactions since the returned savepoint.
+		/// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
+		/// Call <see cref="Commit"/> to end the transaction, committing all changes.
+		/// </summary>
+		/// <returns>A string naming the savepoint.</returns>
+		public string SaveTransactionPoint ()
+		{
+			int depth = Interlocked.Increment (ref _trasactionDepth) - 1;
+			string retVal = "S" + (short)_rand.Next (short.MaxValue) + "D" + depth;
+
+			try {
+				Execute ("savepoint " + retVal);
+			} catch (Exception ex) {
+				var sqlExp = ex as SQLiteException;
+				if (sqlExp != null) {
+					// It is recommended that applications respond to the errors listed below 
+					//    by explicitly issuing a ROLLBACK command.
+					// TODO: This rollback failsafe should be localized to all throw sites.
+					switch (sqlExp.Result) {
+					case SQLite3.Result.IOError:
+					case SQLite3.Result.Full:
+					case SQLite3.Result.Busy:
+					case SQLite3.Result.NoMem:
+					case SQLite3.Result.Interrupt:
+						RollbackTo (null, true);
+						break;
+					}
+				} else {
+					Interlocked.Decrement (ref _trasactionDepth);
+				}
+
+				throw;
+			}
+
+			return retVal;
+		}
+
+		/// <summary>
+		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/> or <see cref="SaveTransactionPoint"/>.
+		/// </summary>
+		public void Rollback ()
+		{
+			RollbackTo (null, false);
+		}
+
+		/// <summary>
+		/// Rolls back the savepoint created by <see cref="BeginTransaction"/> or SaveTransactionPoint.
+		/// </summary>
+		/// <param name="savepoint">The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint"/>.  If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback"/></param>
+		public void RollbackTo (string savepoint)
+		{
+			RollbackTo (savepoint, false);
 		}
 
 		/// <summary>
 		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/>.
 		/// </summary>
-		public void Rollback ()
+		/// <param name="noThrow">true to avoid throwing exceptions, false otherwise</param>
+		private void RollbackTo (string savepoint, bool noThrow)
 		{
-			if (IsInTransaction) {
-				Execute ("rollback");
-				IsInTransaction = false;
+			// Rolling back without a TO clause rolls backs all transactions 
+			//    and leaves the transaction stack empty.   
+			try {
+				if (String.IsNullOrEmpty (savepoint)) {
+					if (Interlocked.Exchange (ref _trasactionDepth, 0) > 0) {
+						Execute ("rollback");
+					}
+				} else {
+					DoSavePointExecute (savepoint, "rollback to ");
+				}   
+			} catch (SQLiteException) {
+				if (!noThrow)
+					throw;
+            
 			}
+			// No need to rollback if there are no transactions open.
+		}
+
+		/// <summary>
+		/// Releases a savepoint returned from <see cref="SaveTransactionPoint"/>.  Releasing a savepoint 
+		///    makes changes since that savepoint permanent if the savepoint began the transaction,
+		///    or otherwise the changes are permanent pending a call to <see cref="Commit"/>.
+		/// 
+		/// The RELEASE command is like a COMMIT for a SAVEPOINT.
+		/// </summary>
+		/// <param name="savepoint">The name of the savepoint to release.  The string should be the result of a call to <see cref="SaveTransactionPoint"/></param>
+		public void Release (string savepoint)
+		{
+			DoSavePointExecute (savepoint, "release ");
+		}
+
+		private void DoSavePointExecute (string savepoint, string cmd)
+		{
+			// Validate the savepoint
+			int firstLen = savepoint.IndexOf ('D');
+			if (firstLen >= 2 && savepoint.Length > firstLen + 1) {
+				int depth;
+				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
+					// TODO: Mild race here, but inescapable without locking almost everywhere.
+					if (0 <= depth && depth < _trasactionDepth) {
+						Thread.VolatileWrite (ref _trasactionDepth, depth);
+						Execute (cmd + savepoint);
+						return;
+					}
+				}
+			}
+
+			throw new ArgumentException ("savePoint", "savePoint is not valid, and should be the result of a call to SaveTransactionPoint.");
 		}
 
 		/// <summary>
@@ -680,11 +821,12 @@ namespace SQLite
 		/// </summary>
 		public void Commit ()
 		{
-			if (IsInTransaction) {
+			if (Interlocked.Exchange (ref _trasactionDepth, 0) != 0) {
 				Execute ("commit");
-				IsInTransaction = false;
 			}
+			// Do nothing on a commit with no open transaction
 		}
+
 
 		/// <summary>
 		/// Executes <param name="action"> within a transaction and automatically rollsback the transaction
@@ -697,7 +839,7 @@ namespace SQLite
 		/// </param>
 		public void RunInTransaction (Action action)
 		{
-			if (IsInTransaction) {
+			if (_trasactionDepth != 0) {
 				throw new InvalidOperationException ("The connection must not already be in a transaction when RunInTransaction is called");
 			}
 			try {
@@ -2084,8 +2226,20 @@ namespace SQLite
 			IOError = 10,
 			Corrupt = 11,
 			NotFound = 12,
+			Full = 13,
+			CannotOpen = 14,
+			LockErr = 15,
+			Empty = 16,
+			SchemaChngd = 17,
 			TooBig = 18,
 			Constraint = 19,
+			Mismatch = 20,
+			Misuse = 21,
+			NotImplementedLFS = 22,
+			AccessDenied = 23,
+			Format = 24,
+			Range = 25,
+			NonDBFile = 26,
 			Row = 100,
 			Done = 101
 		}
