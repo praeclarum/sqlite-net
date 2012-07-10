@@ -744,17 +744,18 @@ namespace SQLite
       private void _rollbackTo(string savepoint, bool noThrow) {
          // Rolling back without a TO clause rolls backs all transactions 
          //    and leaves the transaction stack empty.   
-         if (Interlocked.Exchange(ref _trasactionDepth, 0) > 0) {
             try {
                if (String.IsNullOrEmpty(savepoint)) {
-                  Execute("rollback");
+                  if (Interlocked.Exchange(ref _trasactionDepth, 0) > 0) {
+                     Execute("rollback");
+                  }
                } else {
                   _doSavePointExecute(savepoint, "rollback to ");
                }   
             } catch (SQLiteException) {
                if (!noThrow)
                   throw;
-            }
+            
          }
          // No need to rollback if there are no transactions open.
       }
@@ -770,7 +771,6 @@ namespace SQLite
       /// <param name="savepoint">The name of the savepoint to release.  The string should be the result of a call to <see cref="SaveTransactionPoint"/></param>
       public void Release(string savepoint) {
          _doSavePointExecute(savepoint, "release ");
-
       }
 
       private void _doSavePointExecute(string savepoint, string cmd) {
