@@ -154,6 +154,9 @@
     <Compile Include="..\LinqTest.cs">
       <Link>LinqTest.cs</Link>
     </Compile>
+    <Compile Include="..\MappingTest.cs">
+      <Link>MappingTest.cs</Link>
+    </Compile>
     <Compile Include="..\NullableTest.cs">
       <Link>NullableTest.cs</Link>
     </Compile>
