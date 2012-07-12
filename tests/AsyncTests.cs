@@ -570,9 +570,7 @@ namespace SQLite.Tests
 			Assert.AreEqual(customer.Email, loaded.Email);
 		}
 
-#if !NETFX_CORE
 		[Test]
-		[ExpectedException(typeof(AggregateException))]
 		public void TestAsyncTableQueryToFirstAsyncMissing ()
 		{
 			var conn = GetConnection();
@@ -585,9 +583,8 @@ namespace SQLite.Tests
 			// query...
 			var query = conn.Table<Customer>().Where(v => v.Id == -1);
 			var task = query.FirstAsync();
-			task.Wait();
+			ExceptionAssert.Throws<AggregateException>(() => task.Wait());
 		}
-#endif
 
 		[Test]
 		public void TestAsyncTableQueryToFirstOrDefaultAsyncFound ()
