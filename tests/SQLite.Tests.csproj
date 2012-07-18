@@ -58,5 +58,6 @@
       <Link>SQLiteAsync.cs</Link>
     </Compile>
     <Compile Include="MappingTest.cs" />
+    <Compile Include="DateTimeTest.cs" />
   </ItemGroup>
 </Project>

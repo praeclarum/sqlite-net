@@ -97,13 +97,21 @@ namespace SQLite
 
 		public bool Trace { get; set; }
 
+		public bool StoreDateTimeAsTicks { get; private set; }
+
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
 		/// <param name="databasePath">
 		/// Specifies the path to the database file.
 		/// </param>
-		public SQLiteConnection (string databasePath)
+		/// <param name="storeDateTimeAsTicks">
+		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		/// absolutely do want to store them as Ticks in all new projects. The default of false is
+		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
+		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// </param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false)
 		{
 			DatabasePath = databasePath;
 			Sqlite3DatabaseHandle handle;
@@ -113,6 +121,8 @@ namespace SQLite
 				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 			_open = true;
+
+			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
@@ -123,7 +133,13 @@ namespace SQLite
 		/// <param name="databasePath">
 		/// Specifies the path to the database file.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags)
+		/// <param name="storeDateTimeAsTicks">
+		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		/// absolutely do want to store them as Ticks in all new projects. The default of false is
+		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
+		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
 		{
 			DatabasePath = databasePath;
 			Sqlite3DatabaseHandle handle;
@@ -145,6 +161,8 @@ namespace SQLite
 				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 			_open = true;
+
+			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
@@ -288,7 +306,7 @@ namespace SQLite
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
 			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p));
+			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
 			query += ")";
@@ -372,7 +390,7 @@ namespace SQLite
 			}
 			
 			foreach (var p in toBeAdded) {
-				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p);
+				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p, StoreDateTimeAsTicks);
 				Execute (addCol);
 			}
 		}
@@ -1052,19 +1070,21 @@ namespace SQLite
 	{
 		public string ConnectionString { get; private set; }
 		public string DatabasePath { get; private set; }
+		public bool StoreDateTimeAsTicks { get; private set; }
 
 #if NETFX_CORE
 		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
 #endif
 
-		public SQLiteConnectionString (string connectionString)
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
 		{
-			ConnectionString = connectionString;
+			ConnectionString = databasePath;
+			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 
 #if NETFX_CORE
-			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, connectionString);
+			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, databasePath);
 #else
-			DatabasePath = connectionString;
+			DatabasePath = databasePath;
 #endif
 		}
 	}
@@ -1356,9 +1376,9 @@ namespace SQLite
 	{
 		public const int DefaultMaxStringLength = 140;
 
-		public static string SqlDecl (TableMapping.Column p)
+		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
-			string decl = "\"" + p.Name + "\" " + SqlType (p) + " ";
+			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
 			
 			if (p.IsPK) {
 				decl += "primary key ";
@@ -1376,7 +1396,7 @@ namespace SQLite
 			return decl;
 		}
 
-		public static string SqlType (TableMapping.Column p)
+		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
 			var clrType = p.ColumnType;
 			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
@@ -1389,7 +1409,7 @@ namespace SQLite
 				int len = p.MaxStringLength;
 				return "varchar(" + len + ")";
 			} else if (clrType == typeof(DateTime)) {
-				return "datetime";
+				return storeDateTimeAsTicks ? "bigint" : "datetime";
 #if !NETFX_CORE
 			} else if (clrType.IsEnum) {
 #else
@@ -1631,13 +1651,13 @@ namespace SQLite
 					b.Index = nextIdx++;
 				}
 				
-				BindParameter (stmt, b.Index, b.Value);
+				BindParameter (stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks);
 			}
 		}
 
 		internal static IntPtr NegativePointer = new IntPtr (-1);
 
-		internal static void BindParameter (Sqlite3Statement stmt, int index, object value)
+		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
 		{
 			if (value == null) {
 				SQLite3.BindNull (stmt, index);
@@ -1655,7 +1675,12 @@ namespace SQLite
 				} else if (value is Single || value is Double || value is Decimal) {
 					SQLite3.BindDouble (stmt, index, Convert.ToDouble (value));
 				} else if (value is DateTime) {
-					SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+					if (storeDateTimeAsTicks) {
+						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
+					}
+					else {
+						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+					}
 #if !NETFX_CORE
 				} else if (value.GetType().IsEnum) {
 #else
@@ -1699,8 +1724,13 @@ namespace SQLite
 				} else if (clrType == typeof(float)) {
 					return (float)SQLite3.ColumnDouble (stmt, index);
 				} else if (clrType == typeof(DateTime)) {
-					var text = SQLite3.ColumnString (stmt, index);
-					return DateTime.Parse (text);
+					if (_conn.StoreDateTimeAsTicks) {
+						return new DateTime (SQLite3.ColumnInt64 (stmt, index));
+					}
+					else {
+						var text = SQLite3.ColumnString (stmt, index);
+						return DateTime.Parse (text);
+					}
 #if !NETFX_CORE
 				} else if (clrType.IsEnum) {
 #else
@@ -1774,7 +1804,7 @@ namespace SQLite
 			//bind the values.
 			if (source != null) {
 				for (int i = 0; i < source.Length; i++) {
-					SQLiteCommand.BindParameter (Statement, i + 1, source [i]);
+					SQLiteCommand.BindParameter (Statement, i + 1, source [i], Connection.StoreDateTimeAsTicks);
 				}
 			}
 			r = SQLite3.Step (Statement);

@@ -34,9 +34,9 @@ namespace SQLite
 	{
 		SQLiteConnectionString _connectionString;
 
-		public SQLiteAsyncConnection (string connectionString)
+		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = false)
 		{
-			_connectionString = new SQLiteConnectionString (connectionString);
+			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks);
 		}
 
 		SQLiteConnectionWithLock GetConnection ()
@@ -457,7 +457,7 @@ namespace SQLite
 		readonly object _lockPoint = new object ();
 
 		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString)
-			: base (connectionString.DatabasePath)
+			: base (connectionString.DatabasePath, connectionString.StoreDateTimeAsTicks)
 		{
 		}
 

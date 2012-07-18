@@ -51,7 +51,7 @@ namespace SQLite.Tests
 
 	public class TestDb : SQLiteConnection
 	{
-		public TestDb () : base (TestPath.GetTempFileName ())
+		public TestDb (bool storeDateTimeAsTicks = false) : base (TestPath.GetTempFileName (), storeDateTimeAsTicks)
 		{
 			Trace = true;
 		}

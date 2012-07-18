@@ -6,5 +6,5 @@
 _Resharper*
 obj
 bin
-tests/test-results
-tests/TestResults/
+test-results
+TestResults
