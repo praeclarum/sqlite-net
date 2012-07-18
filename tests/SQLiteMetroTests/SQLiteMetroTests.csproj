@@ -142,6 +142,9 @@
     <Compile Include="..\DropTableTest.cs">
       <Link>DropTableTest.cs</Link>
     </Compile>
+    <Compile Include="..\ExceptionAssert.cs">
+      <Link>ExceptionAssert.cs</Link>
+    </Compile>
     <Compile Include="..\GuidTests.cs">
       <Link>GuidTests.cs</Link>
     </Compile>

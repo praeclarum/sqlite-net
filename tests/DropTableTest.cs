@@ -37,8 +37,7 @@ namespace SQLite.Tests
 			}
 		}
 		
-#if !NETFX_CORE
-		[Test, ExpectedException (typeof (SQLiteException))]
+		[Test]
 		public void CreateInsertDrop ()
 		{
 			var db = new TestDb ();
@@ -56,8 +55,7 @@ namespace SQLite.Tests
 			
 			db.DropTable<Product> ();
 			
-			db.Table<Product> ().Count (); // Should throw
+			ExceptionAssert.Throws<SQLiteException>(() => db.Table<Product> ().Count ());
 		}
-#endif
 	}
 }
