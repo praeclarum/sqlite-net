@@ -59,5 +59,6 @@
     </Compile>
     <Compile Include="MappingTest.cs" />
     <Compile Include="DateTimeTest.cs" />
+    <Compile Include="TransactionTest.cs" />
   </ItemGroup>
 </Project>

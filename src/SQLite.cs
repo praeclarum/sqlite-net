@@ -879,6 +879,28 @@ namespace SQLite
 				throw;
 			}
 		}
+		
+		/// <summary>
+		/// Executes <param name="action"> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
+		/// exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
+		/// is rethrown.
+		/// </summary>
+		/// <param name="action">
+		/// The <see cref="Action"/> to perform within a transaction. <param name="action"> can contain any number
+		/// of operations on the connection but should never call <see cref="BeginTransaction"/> or
+		/// <see cref="Commit"/>.
+		/// </param>
+		public void RunInSavepointTransaction (Action action)
+		{
+			try {
+				var savePoint = SaveTransactionPoint ();
+				action ();
+				Release (savePoint);
+			} catch (Exception) {
+				Rollback ();
+				throw;
+			}
+		}
 
 		/// <summary>
 		/// Inserts all specified objects.
