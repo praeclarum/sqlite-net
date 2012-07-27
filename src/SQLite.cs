@@ -144,6 +144,10 @@ namespace SQLite
 			DatabasePath = databasePath;
 			Sqlite3DatabaseHandle handle;
 			
+#if SILVERLIGHT
+			var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
+#else
+			// open using the byte[]
 			// in the case where the path may include Unicode
 			// force open to using UTF-8 using sqlite3_open_v2
 			byte[] databasePathAsBytes;
@@ -152,10 +156,10 @@ namespace SQLite
 			databasePathLength = System.Text.Encoding.UTF8.GetByteCount(DatabasePath);
 			databasePathAsBytes = new byte[databasePathLength + 1];
 			databasePathLength = System.Text.Encoding.UTF8.GetBytes(DatabasePath, 0, DatabasePath.Length, databasePathAsBytes, 0);
-			
-			// open using the byte[]
+
 			var r = SQLite3.Open (databasePathAsBytes, out handle, (int) openFlags, IntPtr.Zero);
-			
+#endif
+
 			Handle = handle;
 			if (r != SQLite3.Result.OK) {
 				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
@@ -826,6 +830,8 @@ namespace SQLite
 					if (0 <= depth && depth < _trasactionDepth) {
 #if NETFX_CORE
                         Volatile.Write (ref _trasactionDepth, depth);
+#elif SILVERLIGHT
+						_trasactionDepth = depth;
 #else
                         Thread.VolatileWrite (ref _trasactionDepth, depth);
 #endif
