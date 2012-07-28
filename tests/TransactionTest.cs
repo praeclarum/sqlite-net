@@ -63,7 +63,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SuccessfulSavepointTransaction()
 		{
-			db.RunInSavepointTransaction(() => {
+			db.RunInTransaction(() => {
 				db.Delete(testObjects[0]);
 				db.Delete(testObjects[1]);
 				db.Insert(new TestObj());
@@ -76,7 +76,7 @@ namespace SQLite.Tests
 		public void FailSavepointTransaction()
 		{
 			try {
-				db.RunInSavepointTransaction(() => {
+				db.RunInTransaction(() => {
 					db.Delete(testObjects[0]);
 
 					throw new TransactionTestException();
@@ -91,10 +91,10 @@ namespace SQLite.Tests
 		[Test]
 		public void SuccessfulNestedSavepointTransaction()
 		{
-			db.RunInSavepointTransaction(() => {
+			db.RunInTransaction(() => {
 				db.Delete(testObjects[0]);
 
-				db.RunInSavepointTransaction(() => {
+				db.RunInTransaction(() => {
 					db.Delete(testObjects[1]);
 				});
 			});
@@ -106,10 +106,10 @@ namespace SQLite.Tests
 		public void FailNestedSavepointTransaction()
 		{
 			try {
-				db.RunInSavepointTransaction(() => {
+				db.RunInTransaction(() => {
 					db.Delete(testObjects[0]);
 
-					db.RunInSavepointTransaction(() => {
+					db.RunInTransaction(() => {
 						db.Delete(testObjects[1]);
 
 						throw new TransactionTestException();

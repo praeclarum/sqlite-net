@@ -855,31 +855,6 @@ namespace SQLite
 			// Do nothing on a commit with no open transaction
 		}
 
-
-		/// <summary>
-		/// Executes <param name="action"> within a transaction and automatically rollsback the transaction
-		/// if an exception occurs. The exception is rethrown.
-		/// </summary>
-		/// <param name="action">
-		/// The <see cref="Action"/> to perform within a transaction. <param name="action"> can contain any number
-		/// of operations on the connection but should never call <see cref="BeginTransaction"/>,
-		/// <see cref="Rollback"/>, or <see cref="Commit"/>.
-		/// </param>
-		public void RunInTransaction (Action action)
-		{
-			if (_trasactionDepth != 0) {
-				throw new InvalidOperationException ("The connection must not already be in a transaction when RunInTransaction is called");
-			}
-			try {
-				BeginTransaction ();
-				action ();
-				Commit ();
-			} catch (Exception) {
-				Rollback ();
-				throw;
-			}
-		}
-		
 		/// <summary>
 		/// Executes <param name="action"> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
 		/// exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
@@ -890,7 +865,7 @@ namespace SQLite
 		/// of operations on the connection but should never call <see cref="BeginTransaction"/> or
 		/// <see cref="Commit"/>.
 		/// </param>
-		public void RunInSavepointTransaction (Action action)
+		public void RunInTransaction (Action action)
 		{
 			try {
 				var savePoint = SaveTransactionPoint ();
