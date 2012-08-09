@@ -1411,65 +1411,7 @@ namespace SQLite
 			
 			return val;		
         }
-
-        public Dictionary<string, object> ExecuteScalar()
-        {
-            if (_conn.Trace)
-            {
-                Debug.WriteLine("Executing Query: " + this);
-            }
-
-            var stmt = Prepare();
-            try
-            {
-                var cols = new string[SQLite3.ColumnCount(stmt)];
-
-                for (int i = 0; i < cols.Length; i++)
-                {
-                    var name = SQLite3.ColumnName16(stmt, i);
-                    cols[i] = name;
-                }
-
-                if (SQLite3.Step(stmt) == SQLite3.Result.Row)
-                {
-                    var obj = new Dictionary<string, object>();
-                    for (int i = 0; i < cols.Length; i++)
-                    {
-                        var colType = SQLite3.ColumnType(stmt, i);
-
-                        Type targetType;
-                        switch (colType)
-                        {
-                            case SQLite3.ColType.Text:
-                                targetType = typeof(string);
-                                break;
-                            case SQLite3.ColType.Integer:
-                                targetType = typeof(int);
-                                break;
-                            case SQLite3.ColType.Float:
-                                targetType = typeof(double);
-                                break;
-                            default:
-                                targetType = typeof(object);
-                                break;
-                        }
-
-                        var val = ReadCol(stmt, i, colType, targetType);
-                        obj.Add(cols[i], val);
-                    }
-                    OnInstanceCreated(obj);
-                    return obj;
-                }
-                else {
-                    return null;
-                }
-            }
-            finally
-            {
-                SQLite3.Finalize(stmt);
-            }
-        }
-
+     
 		public void Bind (string name, object val)
 		{
 			_bindings.Add (new Binding {
