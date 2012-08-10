@@ -7,6 +7,7 @@ using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestCl
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
 #else
 using NUnit.Framework;
+using System.Collections.Generic;
 #endif
 
 namespace SQLite.Tests
@@ -60,6 +61,11 @@ namespace SQLite.Tests
 
 			var found42 = db.Table<Foo> ().Where (f => f.Bar == 42).FirstOrDefault();
 			Assert.IsNotNull (found42);
+
+			var ordered = new List<Foo>(db.Table<Foo>().OrderByDescending(f => f.Bar));
+			Assert.AreEqual(2, ordered.Count);
+			Assert.AreEqual(69, ordered[0].Bar);
+			Assert.AreEqual(42, ordered[1].Bar);
 		}
 
 		#endregion
