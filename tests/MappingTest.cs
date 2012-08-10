@@ -39,6 +39,30 @@ namespace SQLite.Tests
 			Assert.AreEqual ("Id", mapping.Columns [0].Name);
 			Assert.AreEqual ("AGoodColumnName", mapping.Columns [1].Name);
 		}
+
+		#region Issue #86
+
+		[Table("foo")]
+		public class Foo
+		{
+		    [Column("baz")]
+		    public int Bar { get; set; }
+		}
+
+		[Test]
+		public void Issue86 ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<Foo> ();
+
+			db.Insert (new Foo { Bar = 42 } );
+			db.Insert (new Foo { Bar = 69 } );
+
+			var found42 = db.Table<Foo> ().Where (f => f.Bar == 42).FirstOrDefault();
+			Assert.IsNotNull (found42);
+		}
+
+		#endregion
 	}
 }
 

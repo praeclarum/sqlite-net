@@ -1217,13 +1217,11 @@ namespace SQLite
 			foreach (var p in props) {
 #if !NETFX_CORE
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
-				var colAttr = p.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
-				var colAttr = p.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
 #endif
 				if (p.CanWrite && !ignore) {
-					cols.Add (new PropColumn (p));
+					cols.Add (new Column (p));
 				}
 			}
 			Columns = cols.ToArray ();
@@ -1265,12 +1263,17 @@ namespace SQLite
 			}
 		}
 
-		public Column FindColumn (string name)
+		public Column FindColumnWithPropertyName (string propertyName)
 		{
-			var exact = Columns.Where (c => c.Name == name).FirstOrDefault ();
+			var exact = Columns.Where (c => c.PropertyName == propertyName).FirstOrDefault ();
 			return exact;
 		}
 
+		public Column FindColumn (string columnName)
+		{
+			var exact = Columns.Where (c => c.Name == columnName).FirstOrDefault ();
+			return exact;
+		}
 		
 		PreparedSqlLiteInsertCommand _insertCommand;
 		string _insertCommandExtra = null;
@@ -1320,34 +1323,29 @@ namespace SQLite
 			}
 		}
 
-		public abstract class Column
-		{
-			public string Name { get; protected set; }
-
-			public Type ColumnType { get; protected set; }
-
-			public string Collation { get; protected set; }
-
-			public bool IsAutoInc { get; protected set; }
-
-			public bool IsPK { get; protected set; }
-
-			public IEnumerable<IndexedAttribute> Indices { get; set; }
-
-			public bool IsNullable { get; protected set; }
-
-			public int MaxStringLength { get; protected set; }
-
-			public abstract void SetValue (object obj, object val);
-
-			public abstract object GetValue (object obj);
-		}
-
-		public class PropColumn : Column
+		public class Column
 		{
 			PropertyInfo _prop;
 
-			public PropColumn (PropertyInfo prop)
+			public string Name { get; private set; }
+
+			public string PropertyName { get { return _prop.Name; } }
+
+			public Type ColumnType { get; private set; }
+
+			public string Collation { get; private set; }
+
+			public bool IsAutoInc { get; private set; }
+
+			public bool IsPK { get; private set; }
+
+			public IEnumerable<IndexedAttribute> Indices { get; set; }
+
+			public bool IsNullable { get; private set; }
+
+			public int MaxStringLength { get; private set; }
+
+			public Column (PropertyInfo prop)
 			{
 				var colAttr = (ColumnAttribute)prop.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
 
@@ -1363,12 +1361,12 @@ namespace SQLite
 				MaxStringLength = Orm.MaxStringLength (prop);
 			}
 
-			public override void SetValue (object obj, object val)
+			public void SetValue (object obj, object val)
 			{
 				_prop.SetValue (obj, val, null);
 			}
 
-			public override object GetValue (object obj)
+			public object GetValue (object obj)
 			{
 				return _prop.GetValue (obj, null);
 			}
@@ -2101,8 +2099,10 @@ namespace SQLite
 				if (mem.Expression.NodeType == ExpressionType.Parameter) {
 					//
 					// This is a column of our table, output just the column name
+					// Need to translate it if that column name is mapped
 					//
-					return new CompileResult { CommandText = "\"" + mem.Member.Name + "\"" };
+					var columnName = Table.FindColumnWithPropertyName (mem.Member.Name).Name;
+					return new CompileResult { CommandText = "\"" + columnName + "\"" };
 				} else {
 					object obj = null;
 					if (mem.Expression != null) {
