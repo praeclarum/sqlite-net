@@ -39,6 +39,7 @@ using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
+using System.Text;
 #endif
 
 namespace SQLite
@@ -390,7 +391,7 @@ namespace SQLite
 				throw SQLiteException.New (SQLite3.Result.Error, "Cannot create commands from unopened database");
 			} else {
 				var cmd = NewCommand ();
-				cmd.CommandText = cmdText;
+				cmd.CommandText = cmdText.Trim().TrimEnd(';');
 				foreach (var o in ps) {
 					cmd.Bind (o);
 				}
@@ -1237,7 +1238,8 @@ namespace SQLite
 		SQLiteConnection _conn;
 		private List<Binding> _bindings;
 
-		public string CommandText { get; set; }
+		public string CommandText { get; set; }        
+        internal string remainingText;
 
 		internal SQLiteCommand (SQLiteConnection conn)
 		{
@@ -1253,18 +1255,30 @@ namespace SQLite
 			}
 			
 			var r = SQLite3.Result.OK;
-			var stmt = Prepare ();
-			r = SQLite3.Step (stmt);
-			Finalize (stmt);
-			if (r == SQLite3.Result.Done) {
-				int rowsAffected = SQLite3.Changes (_conn.Handle);
-				return rowsAffected;
-			} else if (r == SQLite3.Result.Error) {
-				string msg = SQLite3.GetErrmsg (_conn.Handle);
-				throw SQLiteException.New (r, msg);
-			} else {
-				throw SQLiteException.New (r, r.ToString ());
-			}
+            var rowsAffected = 0;
+
+            remainingText = CommandText;
+            while (!string.IsNullOrEmpty(remainingText))        // should cycle through
+            {
+                var stmt = Prepare();
+                r = SQLite3.Step(stmt);
+                Finalize(stmt);
+                if (r == SQLite3.Result.Done)
+                {
+                    rowsAffected += SQLite3.Changes(_conn.Handle);
+                }
+                else if (r == SQLite3.Result.Error)
+                {
+                    string msg = SQLite3.GetErrmsg(_conn.Handle);
+                    throw SQLiteException.New(r, msg);
+                }
+                else
+                {
+                    throw SQLiteException.New(r, r.ToString());
+                }
+            }
+
+            return rowsAffected;
 		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> () where T : new()
@@ -1310,33 +1324,63 @@ namespace SQLite
 				Debug.WriteLine ("Executing Query: " + this);
 			}
 
-			var stmt = Prepare ();
-			try
-			{
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+            var rowsAffected = 0;
 
-				for (int i = 0; i < cols.Length; i++) {
-					var name = SQLite3.ColumnName16 (stmt, i);
-					cols [i] = map.FindColumn (name);
-				}
-			
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var obj = Activator.CreateInstance(map.MappedType);
-					for (int i = 0; i < cols.Length; i++) {
-						if (cols [i] == null)
-							continue;
-						var colType = SQLite3.ColumnType (stmt, i);
-						var val = ReadCol (stmt, i, colType, cols [i].ColumnType);
-						cols [i].SetValue (obj, val);
- 					}
-					OnInstanceCreated (obj);
-					yield return (T)obj;
-				}
-			}
-			finally
-			{
-				SQLite3.Finalize(stmt);
-			}
+            remainingText = CommandText.Trim().TrimEnd(';');
+            while (!string.IsNullOrEmpty(remainingText))        // should cycle through
+            {
+                var stmt = Prepare();
+                try
+                {
+                    var cols = new TableMapping.Column[SQLite3.ColumnCount(stmt)];
+
+                    if (cols.Length > 0)
+                    {
+                        for (int i = 0; i < cols.Length; i++)
+                        {
+                            var name = SQLite3.ColumnName16(stmt, i);
+                            cols[i] = map.FindColumn(name);
+                        }
+
+                        while (SQLite3.Step(stmt) == SQLite3.Result.Row)
+                        {
+                            var obj = Activator.CreateInstance(map.MappedType);
+                            for (int i = 0; i < cols.Length; i++)
+                            {
+                                if (cols[i] == null)
+                                    continue;
+                                var colType = SQLite3.ColumnType(stmt, i);
+                                var val = ReadCol(stmt, i, colType, cols[i].ColumnType);
+                                cols[i].SetValue(obj, val);
+                            }
+                            OnInstanceCreated(obj);
+                            yield return (T)obj;
+                        }
+                    }
+                    else
+                    {
+                        // TODO: Move this block into its own function
+                        var r = SQLite3.Step(stmt);
+                        if (r == SQLite3.Result.Done)
+                        {
+                            rowsAffected += SQLite3.Changes(_conn.Handle);
+                        }
+                        else if (r == SQLite3.Result.Error)
+                        {
+                            string msg = SQLite3.GetErrmsg(_conn.Handle);
+                            throw SQLiteException.New(r, msg);
+                        }
+                        else
+                        {
+                            throw SQLiteException.New(r, r.ToString());
+                        }
+                    }
+                }
+                finally
+                {
+                    SQLite3.Finalize(stmt);
+                }
+            }
 		}
 
         public IEnumerable<Dictionary<string, object>> ExecuteDeferredQuery()
@@ -1346,51 +1390,78 @@ namespace SQLite
                 Debug.WriteLine("Executing Query: " + this);
             }
 
-            var stmt = Prepare();
-            try
+            var rowsAffected = 0;
+
+            remainingText = CommandText.Trim().TrimEnd(';');
+            while (!string.IsNullOrEmpty(remainingText))        // should cycle through
             {
-                var cols = new string[SQLite3.ColumnCount(stmt)];
-
-                for (int i = 0; i < cols.Length; i++)
+                var stmt = Prepare();
+                try
                 {
-                    var name = SQLite3.ColumnName16(stmt, i);
-                    cols[i] = name;
-                }
+                    var cols = new string[SQLite3.ColumnCount(stmt)];
 
-                while (SQLite3.Step(stmt) == SQLite3.Result.Row)
-                {
-                    var obj = new Dictionary<string, object>();
-                    for (int i = 0; i < cols.Length; i++)
+                    if (cols.Length > 0)
                     {
-                        var colType = SQLite3.ColumnType(stmt, i);
-
-                        Type targetType;
-                        switch (colType)
+                        for (int i = 0; i < cols.Length; i++)
                         {
-                            case SQLite3.ColType.Text:
-                                targetType = typeof(string);
-                                break;
-                            case SQLite3.ColType.Integer:
-                                targetType = typeof(int);
-                                break;
-                            case SQLite3.ColType.Float:
-                                targetType = typeof(double);
-                                break;
-                            default:
-                                targetType = typeof(object);
-                                break;
+                            var name = SQLite3.ColumnName16(stmt, i);
+                            cols[i] = name;
                         }
 
-                        var val = ReadCol(stmt, i, colType, targetType);
-                        obj.Add(cols[i], val);
+                        while (SQLite3.Step(stmt) == SQLite3.Result.Row)
+                        {
+                            var obj = new Dictionary<string, object>();
+                            for (int i = 0; i < cols.Length; i++)
+                            {
+                                var colType = SQLite3.ColumnType(stmt, i);
+
+                                Type targetType;
+                                switch (colType)
+                                {
+                                    case SQLite3.ColType.Text:
+                                        targetType = typeof(string);
+                                        break;
+                                    case SQLite3.ColType.Integer:
+                                        targetType = typeof(int);
+                                        break;
+                                    case SQLite3.ColType.Float:
+                                        targetType = typeof(double);
+                                        break;
+                                    default:
+                                        targetType = typeof(object);
+                                        break;
+                                }
+
+                                var val = ReadCol(stmt, i, colType, targetType);
+                                obj.Add(cols[i], val);
+                            }
+                            OnInstanceCreated(obj);
+                            yield return obj;
+                        }
                     }
-                    OnInstanceCreated(obj);
-                    yield return obj;
+                    else
+                    {
+                        // TODO: Move this block into its own function
+                        var r = SQLite3.Step(stmt);
+                        if (r == SQLite3.Result.Done)
+                        {
+                            rowsAffected += SQLite3.Changes(_conn.Handle);
+                        }
+                        else if (r == SQLite3.Result.Error)
+                        {
+                            string msg = SQLite3.GetErrmsg(_conn.Handle);
+                            throw SQLiteException.New(r, msg);
+                        }
+                        else
+                        {
+                            throw SQLiteException.New(r, r.ToString());
+                        }
+                    }
                 }
-            }
-            finally
-            {
-                SQLite3.Finalize(stmt);
+                finally
+                {
+                    SQLite3.Finalize(stmt);
+                }
             }
         }
 
@@ -1399,16 +1470,47 @@ namespace SQLite
 			if (_conn.Trace) {
 				Debug.WriteLine ("Executing Query: " + this);
 			}
-			
+
+            var rowsAffected = 0;
+
 			T val = default(T);
-			
-			var stmt = Prepare ();
-			if (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-				var colType = SQLite3.ColumnType (stmt, 0);
-				val = (T)ReadCol (stmt, 0, colType, typeof(T));
-			}
-			Finalize (stmt);
-			
+
+            remainingText = CommandText.Trim().TrimEnd(';');
+            while (!string.IsNullOrEmpty(remainingText))        // should cycle through
+            {
+                var stmt = Prepare();
+
+                var colcount = SQLite3.ColumnCount(stmt);
+                if (colcount > 0)
+                {
+                    if (SQLite3.Step(stmt) == SQLite3.Result.Row)
+                    {
+                        var colType = SQLite3.ColumnType(stmt, 0);
+                        val = (T)ReadCol(stmt, 0, colType, typeof(T));
+                    }
+                }
+                else
+                {
+                    // TODO: Move this block into its own function
+                    var r = SQLite3.Step(stmt);
+                    if (r == SQLite3.Result.Done)
+                    {
+                        rowsAffected += SQLite3.Changes(_conn.Handle);
+                    }
+                    else if (r == SQLite3.Result.Error)
+                    {
+                        string msg = SQLite3.GetErrmsg(_conn.Handle);
+                        throw SQLiteException.New(r, msg);
+                    }
+                    else
+                    {
+                        throw SQLiteException.New(r, r.ToString());
+                    }
+                }
+
+                Finalize(stmt);
+            }
+
 			return val;		
         }
      
@@ -1439,7 +1541,7 @@ namespace SQLite
 
 		Sqlite3Statement Prepare()
 		{
-			var stmt = SQLite3.Prepare2 (_conn.Handle, CommandText);
+            var stmt = SQLite3.Prepare2(_conn.Handle, ref remainingText);
 			BindAll (stmt);
 			return stmt;
 		}
@@ -1573,6 +1675,7 @@ namespace SQLite
 		protected SQLiteConnection Connection { get; set; }
 
 		public string CommandText { get; set; }
+        internal string remainingText;
 
 		protected Sqlite3Statement Statement { get; set; }
 #if USE_CSHARP_SQLITE
@@ -1593,6 +1696,8 @@ namespace SQLite
 			}
 
 			var r = SQLite3.Result.OK;
+
+            remainingText = CommandText.Trim().TrimEnd(';');
 
 			if (!Initialized) {
 				Statement = Prepare ();
@@ -1623,8 +1728,8 @@ namespace SQLite
 
 		protected virtual Sqlite3Statement Prepare ()
 		{
-			var stmt = SQLite3.Prepare2 (Connection.Handle, CommandText);
-			return stmt;
+			var stmt = SQLite3.Prepare2 (Connection.Handle, ref remainingText);
+            return stmt;
 		}
 
 		public void Dispose ()
@@ -2094,16 +2199,96 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_changes", CallingConvention=CallingConvention.Cdecl)]
 		public static extern int Changes (IntPtr db);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention=CallingConvention.Cdecl)]
-		public static extern Result Prepare2 (IntPtr db, string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
+        [DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
+        //        public static extern Result Prepare2(IntPtr db, string sql, int numBytes, out IntPtr stmt, out string pzTail);
+        public static extern Result Prepare2(IntPtr db, IntPtr pSql, int numBytes, out IntPtr stmt, out IntPtr pzTail);
 
-		public static IntPtr Prepare2 (IntPtr db, string query)
+        //int sqlite3_prepare_v2(
+        //  sqlite3 *db,            /* Database handle */
+        //  const char *zSql,       /* SQL statement, UTF-8 encoded */
+        //  int nByte,              /* Maximum length of zSql in bytes. */
+        //  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+        //  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+        //);
+
+        // This library used to just handle one statement at a time, but I was able to get it to handle multiple ones
+        // by using "out string pzTail". However it is flaky because there are memory allocation issues in the returned
+        // object, because pzTail should actually be a pointer to the const char zSql.  I suspect you ultimately have to 
+        // implement it using IntPtrs.  IntPtr pSQL and IntPtr pzTail.
+
+        #region From System.Data.SQLite SQLiteConvert.cs
+        /********************************************************
+         * ADO.NET 2.0 Data Provider for SQLite Version 3.X
+         * Written by Robert Simpson (robert@blackcastlesoft.com)
+         * 
+         * Released to the public domain, use at your own risk!
+         ********************************************************/
+
+        /// <summary>
+        /// Converts a string to a UTF-8 encoded byte array sized to include a null-terminating character.
+        /// </summary>
+        /// <param name="sourceText">The string to convert to UTF-8</param>
+        /// <returns>A byte array containing the converted string plus an extra 0 terminating byte at the end of the array.</returns>
+        public static byte[] ToUTF8(string sourceText)
+        {
+            var _utf8 = Encoding.UTF8;
+
+            Byte[] byteArray;
+            int nlen = _utf8.GetByteCount(sourceText) + 1;
+
+            byteArray = new byte[nlen];
+            nlen = _utf8.GetBytes(sourceText, 0, sourceText.Length, byteArray, 0);
+            byteArray[nlen] = 0;
+
+            return byteArray;
+        }
+
+        /// <summary>
+        /// Converts a UTF-8 encoded IntPtr of the specified length into a .NET string
+        /// </summary>
+        /// <param name="nativestring">The pointer to the memory where the UTF-8 string is encoded</param>
+        /// <param name="nativestringlen">The number of bytes to decode</param>
+        /// <returns>A string containing the translated character(s)</returns>
+        public static string UTF8ToString(IntPtr nativestring, int nativestringlen)
+        {
+            var _utf8 = Encoding.UTF8;
+
+            if (nativestringlen == 0 || nativestring == IntPtr.Zero) return "";
+            if (nativestringlen == -1)
+            {
+                do
+                {
+                    nativestringlen++;
+                } while (Marshal.ReadByte(nativestring, nativestringlen) != 0);
+            }
+
+            byte[] byteArray = new byte[nativestringlen];
+
+            Marshal.Copy(nativestring, byteArray, 0, nativestringlen);
+
+            return _utf8.GetString(byteArray, 0, nativestringlen);
+        }
+        #endregion
+
+        public static IntPtr Prepare2(IntPtr db, ref string query)
 		{
-			IntPtr stmt;
-			var r = Prepare2 (db, query, query.Length, out stmt, IntPtr.Zero);
-			if (r != Result.OK) {
+            IntPtr stmt;
+
+            byte[] b = ToUTF8(query);
+            GCHandle handle = GCHandle.Alloc(b, GCHandleType.Pinned);
+            IntPtr pSql = handle.AddrOfPinnedObject();
+
+            IntPtr pzTail;
+            var r = Prepare2(db, pSql, b.Length - 1, out stmt, out pzTail);
+
+            query = UTF8ToString(pzTail, -1);
+
+            if (r != Result.OK) {
 				throw SQLiteException.New (r, GetErrmsg (db));
 			}
+
+            handle.Free();
+
 			return stmt;
 		}
 
