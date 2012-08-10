@@ -1999,7 +1999,7 @@ namespace SQLite
 						q._orderBys = new List<Ordering> ();
 					}
 					q._orderBys.Add (new Ordering {
-						ColumnName = mem.Member.Name,
+						ColumnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name,
 						Ascending = asc
 					});
 					return q;
