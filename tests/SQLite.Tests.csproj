@@ -61,5 +61,6 @@
     <Compile Include="DateTimeTest.cs" />
     <Compile Include="TransactionTest.cs" />
     <Compile Include="DeleteTest.cs" />
+    <Compile Include="ScalarTest.cs" />
   </ItemGroup>
 </Project>
