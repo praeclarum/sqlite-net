@@ -1021,21 +1021,62 @@ namespace SQLite
 		/// <summary>
 		/// Deletes the given object from the database using its primary key.
 		/// </summary>
-		/// <param name="obj">
+		/// <param name="objectToDelete">
 		/// The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
 		/// </param>
 		/// <returns>
 		/// The number of rows deleted.
 		/// </returns>
-		public int Delete (object obj)
+		public int Delete (object objectToDelete)
 		{
-			var map = GetMapping (obj.GetType ());
+			var map = GetMapping (objectToDelete.GetType ());
 			var pk = map.PK;
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
 			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-			return Execute (q, pk.GetValue (obj));
+			return Execute (q, pk.GetValue (objectToDelete));
+		}
+
+		/// <summary>
+		/// Deletes the object with the specified primary key.
+		/// </summary>
+		/// <param name="primaryKey">
+		/// The primary key of the object to delete.
+		/// </param>
+		/// <returns>
+		/// The number of objects deleted.
+		/// </returns>
+		/// <typeparam name='T'>
+		/// The type of object.
+		/// </typeparam>
+		public int Delete<T> (object primaryKey)
+		{
+			var map = GetMapping (typeof (T));
+			var pk = map.PK;
+			if (pk == null) {
+				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
+			}
+			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
+			return Execute (q, primaryKey);
+		}
+
+		/// <summary>
+		/// Deletes all the objects from the specified table.
+		/// WARNING WARNING: Let me repeat. It deletes ALL the objects from the
+		/// specified table. Do you really want to do that?
+		/// </summary>
+		/// <returns>
+		/// The number of objects deleted.
+		/// </returns>
+		/// <typeparam name='T'>
+		/// The type of objects to delete.
+		/// </typeparam>
+		public int DeleteAll<T> ()
+		{
+			var map = GetMapping (typeof (T));
+			var query = string.Format("delete from \"{0}\"", map.TableName);
+			return Execute (query);
 		}
 
 		public void Dispose ()
