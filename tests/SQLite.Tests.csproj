@@ -62,5 +62,6 @@
     <Compile Include="TransactionTest.cs" />
     <Compile Include="DeleteTest.cs" />
     <Compile Include="ScalarTest.cs" />
+    <Compile Include="JoinTest.cs" />
   </ItemGroup>
 </Project>

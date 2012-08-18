@@ -1584,12 +1584,12 @@ namespace SQLite
 			}
 		}
 
-		public IEnumerable<T> ExecuteDeferredQuery<T> () where T : new()
+		public IEnumerable<T> ExecuteDeferredQuery<T> ()
 		{
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T)));
 		}
 
-		public List<T> ExecuteQuery<T> () where T : new()
+		public List<T> ExecuteQuery<T> ()
 		{
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))).ToList();
 		}
@@ -1918,7 +1918,16 @@ namespace SQLite
 		}
 	}
 
-	public class TableQuery<T> : IEnumerable<T> where T : new()
+	public abstract class BaseTableQuery
+	{
+		protected class Ordering
+		{
+			public string ColumnName { get; set; }
+			public bool Ascending { get; set; }
+		}
+	}
+
+	public class TableQuery<T> : BaseTableQuery, IEnumerable<T>
 	{
 		public SQLiteConnection Connection { get; private set; }
 
@@ -1929,12 +1938,13 @@ namespace SQLite
 		int? _limit;
 		int? _offset;
 
-		class Ordering
-		{
-			public string ColumnName { get; set; }
-
-			public bool Ascending { get; set; }
-		}
+		BaseTableQuery _joinInner;
+		Expression _joinInnerKeySelector;
+		BaseTableQuery _joinOuter;
+		Expression _joinOuterKeySelector;
+		Expression _joinSelector;
+				
+		Expression _selector;
 
 		TableQuery (SQLiteConnection conn, TableMapping table)
 		{
@@ -1948,9 +1958,9 @@ namespace SQLite
 			Table = Connection.GetMapping (typeof(T));
 		}
 
-		public TableQuery<T> Clone ()
+		public TableQuery<U> Clone<U> ()
 		{
-			var q = new TableQuery<T> (Connection, Table);
+			var q = new TableQuery<U> (Connection, Table);
 			q._where = _where;
 			q._deferred = _deferred;
 			if (_orderBys != null) {
@@ -1958,6 +1968,12 @@ namespace SQLite
 			}
 			q._limit = _limit;
 			q._offset = _offset;
+			q._joinInner = _joinInner;
+			q._joinInnerKeySelector = _joinInnerKeySelector;
+			q._joinOuter = _joinOuter;
+			q._joinOuterKeySelector = _joinOuterKeySelector;
+			q._joinSelector = _joinSelector;
+			q._selector = _selector;
 			return q;
 		}
 
@@ -1966,7 +1982,7 @@ namespace SQLite
 			if (predExpr.NodeType == ExpressionType.Lambda) {
 				var lambda = (LambdaExpression)predExpr;
 				var pred = lambda.Body;
-				var q = Clone ();
+				var q = Clone<T> ();
 				q.AddWhere (pred);
 				return q;
 			} else {
@@ -1976,14 +1992,14 @@ namespace SQLite
 
 		public TableQuery<T> Take (int n)
 		{
-			var q = Clone ();
+			var q = Clone<T> ();
 			q._limit = n;
 			return q;
 		}
 
 		public TableQuery<T> Skip (int n)
 		{
-			var q = Clone ();
+			var q = Clone<T> ();
 			q._offset = n;
 			return q;
 		}
@@ -1996,7 +2012,7 @@ namespace SQLite
 		bool _deferred = false;
 		public TableQuery<T> Deferred ()
 		{
-			var q = Clone();
+			var q = Clone<T> ();
 			q._deferred = true;
 			return q;
 		}
@@ -2017,7 +2033,7 @@ namespace SQLite
 				var lambda = (LambdaExpression)orderExpr;
 				var mem = lambda.Body as MemberExpression;
 				if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter)) {
-					var q = Clone ();
+					var q = Clone<T> ();
 					if (q._orderBys == null) {
 						q._orderBys = new List<Ordering> ();
 					}
@@ -2047,36 +2063,52 @@ namespace SQLite
 			TableQuery<TInner> inner,
 			Expression<Func<T, TKey>> outerKeySelector,
 			Expression<Func<TInner, TKey>> innerKeySelector,
-			Expression<Func<T, TInner, TResult>> resultSelector
-		)
-			where TResult : new ()
-			where TInner : new ()
+			Expression<Func<T, TInner, TResult>> resultSelector)
 		{
-			throw new NotImplementedException ();
+			var q = new TableQuery<TResult> (Connection, Connection.GetMapping (typeof (TResult))) {
+				_joinOuter = this,
+				_joinOuterKeySelector = outerKeySelector,
+				_joinInner = inner,
+				_joinInnerKeySelector = innerKeySelector,
+				_joinSelector = resultSelector,
+			};
+			return q;
+		}
+				
+		public TableQuery<TResult> Select<TResult> (Expression<Func<T, TResult>> selector)
+		{
+			var q = Clone<TResult> ();
+			q._selector = selector;
+			return q;
 		}
 
 		private SQLiteCommand GenerateCommand (string selectionList)
 		{
-			var cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
-			var args = new List<object> ();
-			if (_where != null) {
-				var w = CompileExpr (_where, args);
-				cmdText += " where " + w.CommandText;
+			if (_joinInner != null && _joinOuter != null) {
+				throw new NotSupportedException ("Joins are not supported.");
 			}
-			if ((_orderBys != null) && (_orderBys.Count > 0)) {
-				var t = string.Join (", ", _orderBys.Select (o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray ());
-				cmdText += " order by " + t;
-			}
-			if (_limit.HasValue) {
-				cmdText += " limit " + _limit.Value;
-			}
-			if (_offset.HasValue) {
-				if (!_limit.HasValue) {
-					cmdText += " limit -1 ";
+			else {
+				var cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
+				var args = new List<object> ();
+				if (_where != null) {
+					var w = CompileExpr (_where, args);
+					cmdText += " where " + w.CommandText;
 				}
-				cmdText += " offset " + _offset.Value;
+				if ((_orderBys != null) && (_orderBys.Count > 0)) {
+					var t = string.Join (", ", _orderBys.Select (o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray ());
+					cmdText += " order by " + t;
+				}
+				if (_limit.HasValue) {
+					cmdText += " limit " + _limit.Value;
+				}
+				if (_offset.HasValue) {
+					if (!_limit.HasValue) {
+						cmdText += " limit -1 ";
+					}
+					cmdText += " offset " + _offset.Value;
+				}
+				return Connection.CreateCommand (cmdText, args.ToArray ());
 			}
-			return Connection.CreateCommand (cmdText, args.ToArray ());
 		}
 
 		class CompileResult
