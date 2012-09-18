@@ -2310,11 +2310,11 @@ namespace SQLite
 			} else if (n == ExpressionType.LessThanOrEqual) {
 				return "<=";
 			} else if (n == ExpressionType.And) {
-				return "and";
+				return "&";
 			} else if (n == ExpressionType.AndAlso) {
 				return "and";
 			} else if (n == ExpressionType.Or) {
-				return "or";
+				return "|";
 			} else if (n == ExpressionType.OrElse) {
 				return "or";
 			} else if (n == ExpressionType.Equal) {
