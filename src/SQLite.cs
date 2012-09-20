@@ -923,6 +923,58 @@ namespace SQLite
 			}
 			return c;
 		}
+		public int InsertAll (System.Collections.IEnumerable objects, string extra, bool beginTransaction = true)
+		{
+			if (beginTransaction) {
+				BeginTransaction ();
+			}
+			var c = 0;
+			foreach (var r in objects) {
+				c += Insert (r,extra);
+			}
+			if (beginTransaction) {
+				Commit ();
+			}
+			return c;
+		}
+		public int InsertAll (System.Collections.IEnumerable objects, Type objType, bool beginTransaction = true)
+		{
+			if (beginTransaction) {
+				BeginTransaction ();
+			}
+			var c = 0;
+			foreach (var r in objects) {
+				c += Insert (r,objType);
+			}
+			if (beginTransaction) {
+				Commit ();
+			}
+			return c;
+		}
+		
+		/// <summary>
+		/// Updates all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+		public int UpdateAll (System.Collections.IEnumerable objects, bool beginTransaction = true)
+		{
+			if (beginTransaction) {
+				BeginTransaction ();
+			}
+			var c = 0;
+			foreach (var r in objects) {
+				c += Update (r);
+			}
+			if (beginTransaction) {
+				Commit ();
+			}
+			return c;
+		}
 
 		/// <summary>
 		/// Inserts the given object and retrieves its
