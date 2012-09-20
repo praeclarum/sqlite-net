@@ -30,7 +30,16 @@ namespace SQLite.Tests
 			public void AssertEquals(ByteArrayClass other)
 			{
 				Assert.AreEqual(other.ID, ID);
-				CollectionAssert.AreEqual(other.bytes, bytes);
+				if (other.bytes == null || bytes == null) {
+					Assert.IsNull (other.bytes);
+					Assert.IsNull (bytes);
+				}
+				else {
+					Assert.AreEqual(other.bytes.Length, bytes.Length);
+					for (var i = 0; i < bytes.Length; i++) {
+						Assert.AreEqual(other.bytes[i], bytes[i]);
+					}
+				}
 			}
 		}
 

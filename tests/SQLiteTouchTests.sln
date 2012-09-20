@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLiteTouchTests", "SQLiteTouchTests\SQLiteTouchTests.csproj", "{D61A2E10-513B-4F20-8046-CAA914CEE437}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|iPhoneSimulator = Debug|iPhoneSimulator
+		Release|iPhoneSimulator = Release|iPhoneSimulator
+		Debug|iPhone = Debug|iPhone
+		Release|iPhone = Release|iPhone
+		Ad-Hoc|iPhone = Ad-Hoc|iPhone
+		AppStore|iPhone = AppStore|iPhone
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Ad-Hoc|iPhone.ActiveCfg = Ad-Hoc|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Ad-Hoc|iPhone.Build.0 = Ad-Hoc|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.AppStore|iPhone.ActiveCfg = AppStore|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.AppStore|iPhone.Build.0 = AppStore|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Debug|iPhone.ActiveCfg = Debug|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Debug|iPhone.Build.0 = Debug|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhoneSimulator
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Debug|iPhoneSimulator.Build.0 = Debug|iPhoneSimulator
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Release|iPhone.ActiveCfg = Release|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Release|iPhone.Build.0 = Release|iPhone
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
+		{D61A2E10-513B-4F20-8046-CAA914CEE437}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = SQLiteTouchTests\SQLiteTouchTests.csproj
+	EndGlobalSection
+EndGlobal

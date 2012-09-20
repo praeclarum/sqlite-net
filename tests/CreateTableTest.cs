@@ -41,11 +41,25 @@ namespace SQLite.Tests
 
             VerifyCreations(db);
         }
+
+		[Test]
+		public void CreateTwice ()
+		{
+			var db = new TestDb ();
+			
+			db.CreateTable<Product> ();
+			db.CreateTable<OrderLine> ();
+			db.CreateTable<Order> ();
+			db.CreateTable<OrderLine> ();
+			db.CreateTable<OrderHistory> ();
+			
+			VerifyCreations(db);
+		}
         
         private static void VerifyCreations(TestDb db)
         {
             var orderLine = db.GetMapping(typeof(OrderLine));
-            Assert.AreEqual(6, orderLine.Columns.Length, "Order history has 3 columns");
+            Assert.AreEqual(6, orderLine.Columns.Length);
 
             var l = new OrderLine()
             {
