@@ -122,7 +122,7 @@ namespace SQLite
 			}
 			_open = true;
 #if NETFX_CORE
-            Execute("PRAGMA temp_store = memory;");
+			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
 #endif
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
@@ -169,7 +169,7 @@ namespace SQLite
 			}
 			_open = true;
 #if NETFX_CORE
-            Execute("PRAGMA temp_store = memory;");
+			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
 #endif
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
@@ -2423,6 +2423,9 @@ namespace SQLite
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
+
+		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
+		public static extern int SetDirectory (uint directoryType, string directoryPath);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_busy_timeout", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
