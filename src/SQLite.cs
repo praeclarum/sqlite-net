@@ -121,6 +121,9 @@ namespace SQLite
 				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 			_open = true;
+#if NETFX_CORE
+            Execute("PRAGMA temp_store = memory;");
+#endif
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
@@ -165,6 +168,9 @@ namespace SQLite
 				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 			_open = true;
+#if NETFX_CORE
+            Execute("PRAGMA temp_store = memory;");
+#endif
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
