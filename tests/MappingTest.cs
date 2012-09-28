@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -7,7 +8,6 @@ using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestCl
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
 #else
 using NUnit.Framework;
-using System.Collections.Generic;
 #endif
 
 namespace SQLite.Tests
