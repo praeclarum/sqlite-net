@@ -2558,7 +2558,7 @@ namespace SQLite
 		public static Sqlite3.Vdbe Prepare2(Sqlite3.sqlite3 db, string query)
 		{
 			Sqlite3.Vdbe stmt = new Sqlite3.Vdbe();
-			var r = Sqlite3.sqlite3_prepare_v2(db, query, query.Length, ref stmt, 0);
+			var r = Sqlite3.sqlite3_prepare_v2(db, query, System.Text.UTF8Encoding.UTF8.GetByteCount(query), ref stmt, 0);
 			if (r != 0)
 			{
 				throw SQLiteException.New((Result)r, GetErrmsg(db));
