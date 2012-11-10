@@ -909,18 +909,15 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, bool beginTransaction = true)
+		public int InsertAll (System.Collections.IEnumerable objects)
 		{
-			if (beginTransaction) {
-				BeginTransaction ();
-			}
 			var c = 0;
-			foreach (var r in objects) {
-				c += Insert (r);
-			}
-			if (beginTransaction) {
-				Commit ();
-			}
+			RunInTransaction(() => {
+				foreach (var r in objects)
+				{
+					c += Insert(r);
+				}
+			});
 			return c;
 		}
 
