@@ -919,66 +919,59 @@ namespace SQLite
 		{
 			var c = 0;
 			RunInTransaction(() => {
-				foreach (var r in objects)
-				{
-					c += Insert(r);
+				foreach (var r in objects) {
+					c += Insert (r);
 				}
 			});
 			return c;
 		}
-		public int InsertAll (System.Collections.IEnumerable objects, string extra, bool beginTransaction = true)
-		{
-			if (beginTransaction) {
-				BeginTransaction ();
-			}
-			var c = 0;
-			foreach (var r in objects) {
-				c += Insert (r,extra);
-			}
-			if (beginTransaction) {
-				Commit ();
-			}
-			return c;
-		}
-		public int InsertAll (System.Collections.IEnumerable objects, Type objType, bool beginTransaction = true)
-		{
-			if (beginTransaction) {
-				BeginTransaction ();
-			}
-			var c = 0;
-			foreach (var r in objects) {
-				c += Insert (r,objType);
-			}
-			if (beginTransaction) {
-				Commit ();
-			}
-			return c;
-		}
-		
+
 		/// <summary>
-		/// Updates all specified objects.
+		/// Inserts all specified objects.
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
 		/// </param>
+		/// <param name="extra">
+		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int UpdateAll (System.Collections.IEnumerable objects, bool beginTransaction = true)
+		public int InsertAll (System.Collections.IEnumerable objects, string extra)
 		{
-			if (beginTransaction) {
-				BeginTransaction ();
-			}
 			var c = 0;
-			foreach (var r in objects) {
-				c += Update (r);
-			}
-			if (beginTransaction) {
-				Commit ();
-			}
+			RunInTransaction (() => {
+				foreach (var r in objects) {
+					c += Insert (r, extra);
+				}
+			});
 			return c;
 		}
 
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+		public int InsertAll (System.Collections.IEnumerable objects, Type objType)
+		{
+			var c = 0;
+			RunInTransaction (() => {
+				foreach (var r in objects) {
+					c += Insert (r, objType);
+				}
+			});
+			return c;
+		}
+		
 		/// <summary>
 		/// Inserts the given object and retrieves its
 		/// auto incremented primary key if it has one.
@@ -997,11 +990,37 @@ namespace SQLite
 			return Insert (obj, "", obj.GetType ());
 		}
 
+		/// <summary>
+		/// Inserts the given object and retrieves its
+		/// auto incremented primary key if it has one.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
 		public int Insert (object obj, Type objType)
 		{
 			return Insert (obj, "", objType);
 		}
 
+		/// <summary>
+		/// Inserts the given object and retrieves its
+		/// auto incremented primary key if it has one.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <param name="extra">
+		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
 		public int Insert (object obj, string extra)
 		{
 			if (obj == null) {
@@ -1070,6 +1089,20 @@ namespace SQLite
 			return Update (obj, obj.GetType ());
 		}
 
+		/// <summary>
+		/// Updates all of the columns of a table using the specified object
+		/// except for its primary key.
+		/// The object is required to have a primary key.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows updated.
+		/// </returns>
 		public int Update (object obj, Type objType)
 		{
 			if (obj == null || objType == null) {
@@ -1094,6 +1127,26 @@ namespace SQLite
 			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
 				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
 			return Execute (q, ps.ToArray ());
+		}
+
+		/// <summary>
+		/// Updates all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified.
+		/// </returns>
+		public int UpdateAll (System.Collections.IEnumerable objects)
+		{
+			var c = 0;
+			RunInTransaction (() => {
+				foreach (var r in objects) {
+					c += Update (r);
+				}
+			});
+			return c;
 		}
 
 		/// <summary>
