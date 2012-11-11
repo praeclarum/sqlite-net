@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <authors>Frank Krueger</authors>
     <owners>Frank Krueger,Tim Heuer</owners>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
@@ -14,7 +14,7 @@
 	<summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
 	<releaseNotes>
     <![CDATA[
-		v1.0.5: Update with commits through 10-Aug-2012.  Adds ExecuteScalar, DeleteAll, Delete<T>.  Fixes some column name remapping.  Issues fixed: 57,70,79,86
+		v1.0.6: Update with commits through 10-NOV-2012.
 		]]>
 	</releaseNotes>
   </metadata>
