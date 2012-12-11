@@ -70,5 +70,31 @@ namespace SQLite.Tests
             Assert.AreEqual(lo.Id, l.Id);
         }
 
+		class Issue115_MyObject
+		{
+			[PrimaryKey]
+			public string UniqueId { get; set; }
+			public byte OtherValue { get; set; }
+		}
+
+		[Test]
+		public void Issue115_MissingPrimaryKey ()
+		{
+			using (var conn = new TestDb ()) {
+
+				conn.CreateTable<Issue115_MyObject> ();
+				conn.InsertAll (from i in Enumerable.Range (0, 10) select new Issue115_MyObject {
+					UniqueId = i.ToString (),
+					OtherValue = (byte)(i * 10),
+				});
+
+				var query = conn.Table<Issue115_MyObject> ();
+				foreach (var itm in query) {
+					itm.OtherValue++;
+					Assert.AreEqual (1, conn.Update (itm, typeof(Issue115_MyObject)));
+				}
+			}
+		}
+
     }
 }
