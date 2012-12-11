@@ -243,5 +243,21 @@ namespace SQLite.Tests
 
 			Assert.AreEqual(0, _db.Table<UniqueObj>().Count());
 		}
+
+		[Test]
+		public void InsertOrReplace ()
+		{
+			_db.Trace = true;
+			_db.InsertAll (from i in Enumerable.Range(1, 20) select new TestObj { Text = "#" + i });
+
+			Assert.AreEqual (20, _db.Table<TestObj> ().Count ());
+
+			var t = new TestObj { Id = 5, Text = "Foo", };
+			_db.InsertOrReplace (t);
+
+			var r = (from x in _db.Table<TestObj> () orderby x.Id select x).ToList ();
+			Assert.AreEqual (20, r.Count);
+			Assert.AreEqual ("Foo", r[4].Text);
+		}
     }
 }

@@ -108,5 +108,80 @@ namespace SQLite.Tests
 			var r = db.Find<Product> (x => x.Price == 10);
             Assert.IsNull (r);
 		}
+
+		[Test]
+		public void OrderByCast ()
+		{
+			var db = CreateDb();
+
+			db.Insert (new Product {
+				Name = "A",
+				TotalSales = 1,
+			});
+			db.Insert (new Product {
+				Name = "B",
+				TotalSales = 100,
+			});
+
+			var nocast = (from p in db.Table<Product> () orderby p.TotalSales descending select p).ToList ();
+			Assert.AreEqual (2, nocast.Count);
+			Assert.AreEqual ("B", nocast [0].Name);
+
+			var cast = (from p in db.Table<Product> () orderby (int)p.TotalSales descending select p).ToList ();
+			Assert.AreEqual (2, cast.Count);
+			Assert.AreEqual ("B", cast [0].Name);			
+		}
+
+		public class Issue96_A
+		{
+			[ AutoIncrement, PrimaryKey]
+			public int ID { get; set; }
+			public string AddressLine { get; set; }
+			
+			[Indexed]
+			public int? ClassB { get; set; }
+			[Indexed]
+			public int? ClassC { get; set; }
+		}
+		
+		public class Issue96_B
+		{
+			[ AutoIncrement, PrimaryKey]
+			public int ID { get; set; }
+			public string CustomerName { get; set; }
+		}
+		
+		public class Issue96_C
+		{
+			[ AutoIncrement, PrimaryKey]
+			public int ID { get; set; }
+			public string SupplierName { get; set; }
+		}
+
+		[Test]
+		public void Issue96_NullabelIntsInQueries ()
+		{
+			var db = CreateDb();
+			db.CreateTable<Issue96_A> ();
+
+			var id = 42;
+
+			db.Insert (new Issue96_A {
+				ClassB = id,
+			});
+			db.Insert (new Issue96_A {
+				ClassB = null,
+			});
+			db.Insert (new Issue96_A {
+				ClassB = null,
+			});
+			db.Insert (new Issue96_A {
+				ClassB = null,
+			});
+
+
+			Assert.AreEqual (1, db.Table<Issue96_A>().Where(p => p.ClassB == id).Count ());
+			Assert.AreEqual (3, db.Table<Issue96_A>().Where(p => p.ClassB == null).Count ());
+		}
 	}
 }
