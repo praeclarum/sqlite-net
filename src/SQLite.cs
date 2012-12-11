@@ -2382,7 +2382,7 @@ namespace SQLite
 			} else if (expr.NodeType == ExpressionType.MemberAccess) {
 				var mem = (MemberExpression)expr;
 				
-				if (mem.Expression.NodeType == ExpressionType.Parameter) {
+				if (mem.Expression!=null && mem.Expression.NodeType == ExpressionType.Parameter) {
 					//
 					// This is a column of our table, output just the column name
 					// Need to translate it if that column name is mapped
