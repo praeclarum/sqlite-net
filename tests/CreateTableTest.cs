@@ -95,6 +95,5 @@ namespace SQLite.Tests
 				}
 			}
 		}
-
     }
 }

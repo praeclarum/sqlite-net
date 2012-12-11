@@ -18,6 +18,8 @@ namespace SQLite.Tests
 		public int Id { get; set; }
 		public string Name { get; set; }
 		public decimal Price { get; set; }
+
+		public uint TotalSales { get; set; }
 	}
 	public class Order
 	{

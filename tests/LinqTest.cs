@@ -108,5 +108,28 @@ namespace SQLite.Tests
 			var r = db.Find<Product> (x => x.Price == 10);
             Assert.IsNull (r);
 		}
+
+		[Test]
+		public void OrderByCast ()
+		{
+			var db = CreateDb();
+
+			db.Insert (new Product {
+				Name = "A",
+				TotalSales = 1,
+			});
+			db.Insert (new Product {
+				Name = "B",
+				TotalSales = 100,
+			});
+
+			var nocast = (from p in db.Table<Product> () orderby p.TotalSales descending select p).ToList ();
+			Assert.AreEqual (2, nocast.Count);
+			Assert.AreEqual ("B", nocast [0].Name);
+
+			var cast = (from p in db.Table<Product> () orderby (int)p.TotalSales descending select p).ToList ();
+			Assert.AreEqual (2, cast.Count);
+			Assert.AreEqual ("B", cast [0].Name);			
+		}
 	}
 }

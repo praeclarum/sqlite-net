@@ -2151,7 +2151,17 @@ namespace SQLite
 		{
 			if (orderExpr.NodeType == ExpressionType.Lambda) {
 				var lambda = (LambdaExpression)orderExpr;
-				var mem = lambda.Body as MemberExpression;
+				
+				MemberExpression mem = null;
+				
+				var unary = lambda.Body as UnaryExpression;
+				if (unary != null && unary.NodeType == ExpressionType.Convert) {
+					mem = unary.Operand as MemberExpression;
+				}
+				else {
+					mem = lambda.Body as MemberExpression;
+				}
+				
 				if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter)) {
 					var q = Clone<T> ();
 					if (q._orderBys == null) {
