@@ -994,6 +994,27 @@ namespace SQLite
 		/// <summary>
 		/// Inserts the given object and retrieves its
 		/// auto incremented primary key if it has one.
+		/// If a UNIQUE constraint violation occurs with
+		/// some pre-existing object, this function deletes
+		/// the old object.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified.
+		/// </returns>
+		public int InsertOrReplace (object obj)
+		{
+			if (obj == null) {
+				return 0;
+			}
+			return Insert (obj, "OR REPLACE", obj.GetType ());
+		}
+
+		/// <summary>
+		/// Inserts the given object and retrieves its
+		/// auto incremented primary key if it has one.
 		/// </summary>
 		/// <param name="obj">
 		/// The object to insert.
@@ -1009,6 +1030,27 @@ namespace SQLite
 			return Insert (obj, "", objType);
 		}
 
+		/// <summary>
+		/// Inserts the given object and retrieves its
+		/// auto incremented primary key if it has one.
+		/// If a UNIQUE constraint violation occurs with
+		/// some pre-existing object, this function deletes
+		/// the old object.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified.
+		/// </returns>
+		public int InsertOrReplace (object obj, Type objType)
+		{
+			return Insert (obj, "OR REPLACE", objType);
+		}
+		
 		/// <summary>
 		/// Inserts the given object and retrieves its
 		/// auto incremented primary key if it has one.
@@ -1053,8 +1095,10 @@ namespace SQLite
 			}
 			
 			var map = GetMapping (objType);
+
+			var replacing = string.Compare (extra, "OR REPLACE", StringComparison.InvariantCultureIgnoreCase) == 0;
 			
-			var cols = map.InsertColumns;
+			var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
 			var vals = new object[cols.Length];
 			for (var i = 0; i < vals.Length; i++) {
 				vals [i] = cols [i].GetValue (obj);
@@ -1376,6 +1420,7 @@ namespace SQLite
 
 		Column _autoPk = null;
 		Column[] _insertColumns = null;
+		Column[] _insertOrReplaceColumns = null;
 
 		public TableMapping (Type type)
 		{
@@ -1447,6 +1492,15 @@ namespace SQLite
 			}
 		}
 
+		public Column[] InsertOrReplaceColumns {
+			get {
+				if (_insertOrReplaceColumns == null) {
+					_insertOrReplaceColumns = Columns.ToArray ();
+				}
+				return _insertOrReplaceColumns;
+			}
+		}
+
 		public Column FindColumnWithPropertyName (string propertyName)
 		{
 			var exact = Columns.Where (c => c.PropertyName == propertyName).FirstOrDefault ();
@@ -1486,6 +1540,12 @@ namespace SQLite
             }
             else
             {
+				var replacing = string.Compare (extra, "OR REPLACE", StringComparison.InvariantCultureIgnoreCase) == 0;
+
+				if (replacing) {
+					cols = InsertOrReplaceColumns;
+				}
+
                 insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
                                    string.Join(",", (from c in cols
                                                      select "\"" + c.Name + "\"").ToArray()),
