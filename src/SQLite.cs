@@ -162,8 +162,8 @@ namespace SQLite
 		static SQLiteConnection ()
 		{
 			if (_preserveDuringLinkMagic) {
-				var ti = new TableInfo ();
-				ti.name = "magic";
+				var ti = new ColumnInfo ();
+				ti.Name = "magic";
 			}
 		}
 
@@ -354,33 +354,44 @@ namespace SQLite
 			return count;
 		}
 
-		public class TableInfo
+		public class ColumnInfo
 		{
-			public int cid { get; set; }
+//			public int cid { get; set; }
 
-			public string name { get; set; }
+			[Column ("name")]
+			public string Name { get; set; }
 
-			public string type { get; set; }
+//			[Column ("type")]
+//			public string ColumnType { get; set; }
 
-			public int notnull { get; set; }
+//			public int notnull { get; set; }
 
-			public string dflt_value { get; set; }
+//			public string dflt_value { get; set; }
 
-			public int pk { get; set; }
+//			public int pk { get; set; }
+
+			public override string ToString ()
+			{
+				return Name;
+			}
+		}
+
+		public IEnumerable<ColumnInfo> GetTableInfo (string tableName)
+		{
+			var query = "pragma table_info(\"" + tableName + "\")";			
+			return Query<ColumnInfo> (query);
 		}
 
 		void MigrateTable (TableMapping map)
 		{
-			var query = "pragma table_info(\"" + map.TableName + "\")";
-			
-			var existingCols = Query<TableInfo> (query);
+			var existingCols = GetTableInfo (map.TableName);
 			
 			var toBeAdded = new List<TableMapping.Column> ();
 			
 			foreach (var p in map.Columns) {
 				var found = false;
 				foreach (var c in existingCols) {
-					found = p.Name == c.name;
+					found = (string.Compare (p.Name, c.Name, StringComparison.InvariantCultureIgnoreCase) == 0);
 					if (found)
 						break;
 				}

@@ -64,5 +64,6 @@
     <Compile Include="ScalarTest.cs" />
     <Compile Include="JoinTest.cs" />
     <Compile Include="OpenTests.cs" />
+    <Compile Include="MigrationTest.cs" />
   </ItemGroup>
 </Project>
