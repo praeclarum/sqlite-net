@@ -112,22 +112,8 @@ namespace SQLite
 		/// down sides, when setting storeDateTimeAsTicks = true.
 		/// </param>
 		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
 		{
-			DatabasePath = databasePath;
-			Sqlite3DatabaseHandle handle;
-			var r = SQLite3.Open (DatabasePath, out handle);
-			Handle = handle;
-			if (r != SQLite3.Result.OK) {
-				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
-			}
-			_open = true;
-#if NETFX_CORE
-			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
-#endif
-
-			StoreDateTimeAsTicks = storeDateTimeAsTicks;
-			
-			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 
 		/// <summary>
@@ -145,21 +131,20 @@ namespace SQLite
 		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
 		{
 			DatabasePath = databasePath;
+
+#if NETFX_CORE
+			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
+#endif
+
 			Sqlite3DatabaseHandle handle;
-			
+
 #if SILVERLIGHT
 			var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
 #else
 			// open using the byte[]
 			// in the case where the path may include Unicode
 			// force open to using UTF-8 using sqlite3_open_v2
-			byte[] databasePathAsBytes;
-			int databasePathLength;
-			
-			databasePathLength = System.Text.Encoding.UTF8.GetByteCount(DatabasePath);
-			databasePathAsBytes = new byte[databasePathLength + 1];
-			databasePathLength = System.Text.Encoding.UTF8.GetBytes(DatabasePath, 0, DatabasePath.Length, databasePathAsBytes, 0);
-
+			var databasePathAsBytes = GetNullTerminatedUtf8 (DatabasePath);
 			var r = SQLite3.Open (databasePathAsBytes, out handle, (int) openFlags, IntPtr.Zero);
 #endif
 
@@ -168,9 +153,6 @@ namespace SQLite
 				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 			_open = true;
-#if NETFX_CORE
-			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
-#endif
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
@@ -183,6 +165,14 @@ namespace SQLite
 				var ti = new TableInfo ();
 				ti.name = "magic";
 			}
+		}
+
+		static byte[] GetNullTerminatedUtf8 (string s)
+		{
+			var utf8Length = System.Text.Encoding.UTF8.GetByteCount (s);
+			var bytes = new byte [utf8Length + 1];
+			utf8Length = System.Text.Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
+			return bytes;
 		}
 		
 		/// <summary>
