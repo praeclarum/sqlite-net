@@ -2317,7 +2317,7 @@ namespace SQLite
 				var valr = CompileExpr (u.Operand, queryArgs);
 				return new CompileResult {
 					CommandText = valr.CommandText,
-					Value = valr.Value != null ? Convert.ChangeType (valr.Value, ty, null) : null
+					Value = valr.Value != null ? ConvertTo (valr.Value, ty) : null
 				};
 			} else if (expr.NodeType == ExpressionType.MemberAccess) {
 				var mem = (MemberExpression)expr;
@@ -2402,6 +2402,18 @@ namespace SQLite
 				}
 			}
 			throw new NotSupportedException ("Cannot compile: " + expr.NodeType.ToString ());
+		}
+
+		static object ConvertTo (object obj, Type t)
+		{
+			Type nut = Nullable.GetUnderlyingType(t);
+			
+			if (nut != null) {
+				if (obj == null) return null;				
+				return Convert.ChangeType (obj, nut);
+			} else {
+				return Convert.ChangeType (obj, t);
+			}
 		}
 
 		/// <summary>

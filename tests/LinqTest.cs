@@ -131,5 +131,57 @@ namespace SQLite.Tests
 			Assert.AreEqual (2, cast.Count);
 			Assert.AreEqual ("B", cast [0].Name);			
 		}
+
+		public class Issue96_A
+		{
+			[ AutoIncrement, PrimaryKey]
+			public int ID { get; set; }
+			public string AddressLine { get; set; }
+			
+			[Indexed]
+			public int? ClassB { get; set; }
+			[Indexed]
+			public int? ClassC { get; set; }
+		}
+		
+		public class Issue96_B
+		{
+			[ AutoIncrement, PrimaryKey]
+			public int ID { get; set; }
+			public string CustomerName { get; set; }
+		}
+		
+		public class Issue96_C
+		{
+			[ AutoIncrement, PrimaryKey]
+			public int ID { get; set; }
+			public string SupplierName { get; set; }
+		}
+
+		[Test]
+		public void Issue96_NullabelIntsInQueries ()
+		{
+			var db = CreateDb();
+			db.CreateTable<Issue96_A> ();
+
+			var id = 42;
+
+			db.Insert (new Issue96_A {
+				ClassB = id,
+			});
+			db.Insert (new Issue96_A {
+				ClassB = null,
+			});
+			db.Insert (new Issue96_A {
+				ClassB = null,
+			});
+			db.Insert (new Issue96_A {
+				ClassB = null,
+			});
+
+
+			Assert.AreEqual (1, db.Table<Issue96_A>().Where(p => p.ClassB == id).Count ());
+			Assert.AreEqual (3, db.Table<Issue96_A>().Where(p => p.ClassB == null).Count ());
+		}
 	}
 }
