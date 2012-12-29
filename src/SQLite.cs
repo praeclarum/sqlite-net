@@ -391,7 +391,7 @@ namespace SQLite
 			foreach (var p in map.Columns) {
 				var found = false;
 				foreach (var c in existingCols) {
-					found = (string.Compare (p.Name, c.Name, StringComparison.InvariantCultureIgnoreCase) == 0);
+					found = (string.Compare (p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0);
 					if (found)
 						break;
 				}
@@ -1096,7 +1096,7 @@ namespace SQLite
 			
 			var map = GetMapping (objType);
 
-			var replacing = string.Compare (extra, "OR REPLACE", StringComparison.InvariantCultureIgnoreCase) == 0;
+			var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 			
 			var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
 			var vals = new object[cols.Length];
@@ -1540,7 +1540,7 @@ namespace SQLite
             }
             else
             {
-				var replacing = string.Compare (extra, "OR REPLACE", StringComparison.InvariantCultureIgnoreCase) == 0;
+				var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 
 				if (replacing) {
 					cols = InsertOrReplaceColumns;
