@@ -2359,6 +2359,9 @@ namespace SQLite
 				else if (call.Method.Name == "EndsWith" && args.Length == 1) {
 					sqlCall = "(" + obj.CommandText + " like ('%' || " + args [0].CommandText + "))";
 				}
+				else if (call.Method.Name == "Equals" && args.Length == 1) {
+					sqlCall = "(" + obj.CommandText + " = (" + args[0].CommandText + "))";
+				}
 				else {
 					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
 				}
