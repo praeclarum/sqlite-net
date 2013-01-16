@@ -9,7 +9,6 @@ using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestCl
 using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
 #else
 using NUnit.Framework;
-using NUnit.Framework.SyntaxHelpers;
 #endif
 
 using System.IO;
