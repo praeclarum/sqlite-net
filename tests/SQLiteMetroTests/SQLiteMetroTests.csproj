@@ -186,7 +186,7 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\lib\metro\sqlite3.dll">
+    <Content Include="..\..\lib\metro\x86\sqlite3.dll">
       <Link>sqlite3.dll</Link>
     </Content>
     <Content Include="Images\UnitTestLogo.png">
