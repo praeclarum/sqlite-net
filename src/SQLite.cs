@@ -1663,10 +1663,8 @@ namespace SQLite
 				return "integer";
 			} else if (clrType == typeof(byte[])) {
 				return "blob";
-#if SQLITE_SUPPORT_GUID
             } else if (clrType == typeof(Guid)) {
                 return "varchar(36)";
-#endif
             } else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -1934,10 +1932,8 @@ namespace SQLite
 					SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
                 } else if (value is byte[]){
                     SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
-#if SQLITE_SUPPORT_GUID
                 } else if (value is Guid) {
                     SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
-#endif
                 } else {
                     throw new NotSupportedException("Cannot store type: " + value.GetType());
                 }
@@ -1998,11 +1994,9 @@ namespace SQLite
 					return (sbyte)SQLite3.ColumnInt (stmt, index);
 				} else if (clrType == typeof(byte[])) {
 					return SQLite3.ColumnByteArray (stmt, index);
-#if SQLITE_SUPPORT_GUID
 				} else if (clrType == typeof(Guid)) {
                   var text = SQLite3.ColumnString(stmt, index);
                   return new Guid(text);
-#endif
                 } else{
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
