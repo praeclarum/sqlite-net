@@ -1,5 +1,4 @@
-﻿#if SQLITE_SUPPORT_GUID
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -34,7 +33,6 @@ namespace SQLite.Tests {
                 : base(path) {
                 CreateTable<TestObj>();
             }
-
         }
 
         [Test]
@@ -61,4 +59,3 @@ namespace SQLite.Tests {
         }
     }
 }
-#endif
