@@ -2380,7 +2380,13 @@ namespace SQLite
 					// This is a column of our table, output just the column name
 					// Need to translate it if that column name is mapped
 					//
-					var columnName = Table.FindColumnWithPropertyName (mem.Member.Name).Name;
+
+					var column = Table.FindColumnWithPropertyName (mem.Member.Name);
+
+					if(column==null)
+						throw new Exception(string.Format("Column {0} not found in database table. Maybe you are referencing a 'SQLite.Ignore' decorated property",mem.Member.Name));
+
+					var columnName =column.Name;
 					return new CompileResult { CommandText = "\"" + columnName + "\"" };
 				} else {
 					object obj = null;
