@@ -85,7 +85,7 @@ namespace SQLite
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
 
-		private int _trasactionDepth = 0;
+		private int _transactionDepth = 0;
 		private Random _rand = new Random ();
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
@@ -707,7 +707,7 @@ namespace SQLite
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
 		public bool IsInTransaction {
-			get { return _trasactionDepth > 0; }
+			get { return _transactionDepth > 0; }
 		}
 
 		/// <summary>
@@ -722,7 +722,7 @@ namespace SQLite
 			//    then the command fails with an error.
 			// Rather than crash with an error, we will just ignore calls to BeginTransaction
 			//    that would result in an error.
-			if (Interlocked.CompareExchange (ref _trasactionDepth, 1, 0) == 0) {
+			if (Interlocked.CompareExchange (ref _transactionDepth, 1, 0) == 0) {
 				try {
 					Execute ("begin transaction");
 				} catch (Exception ex) {
@@ -743,7 +743,7 @@ namespace SQLite
 					} else {
 						// Call decrement and not VolatileWrite in case we've already 
 						//    created a transaction point in SaveTransactionPoint since the catch.
-						Interlocked.Decrement (ref _trasactionDepth);
+						Interlocked.Decrement (ref _transactionDepth);
 					}
 
 					throw;
@@ -765,7 +765,7 @@ namespace SQLite
 		/// <returns>A string naming the savepoint.</returns>
 		public string SaveTransactionPoint ()
 		{
-			int depth = Interlocked.Increment (ref _trasactionDepth) - 1;
+			int depth = Interlocked.Increment (ref _transactionDepth) - 1;
 			string retVal = "S" + (short)_rand.Next (short.MaxValue) + "D" + depth;
 
 			try {
@@ -786,7 +786,7 @@ namespace SQLite
 						break;
 					}
 				} else {
-					Interlocked.Decrement (ref _trasactionDepth);
+					Interlocked.Decrement (ref _transactionDepth);
 				}
 
 				throw;
@@ -822,7 +822,7 @@ namespace SQLite
 			//    and leaves the transaction stack empty.   
 			try {
 				if (String.IsNullOrEmpty (savepoint)) {
-					if (Interlocked.Exchange (ref _trasactionDepth, 0) > 0) {
+					if (Interlocked.Exchange (ref _transactionDepth, 0) > 0) {
 						Execute ("rollback");
 					}
 				} else {
@@ -857,13 +857,13 @@ namespace SQLite
 				int depth;
 				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
-					if (0 <= depth && depth < _trasactionDepth) {
+					if (0 <= depth && depth < _transactionDepth) {
 #if NETFX_CORE
-                        Volatile.Write (ref _trasactionDepth, depth);
+                        Volatile.Write (ref _transactionDepth, depth);
 #elif SILVERLIGHT
-						_trasactionDepth = depth;
+						_transactionDepth = depth;
 #else
-                        Thread.VolatileWrite (ref _trasactionDepth, depth);
+                        Thread.VolatileWrite (ref _transactionDepth, depth);
 #endif
                         Execute (cmd + savepoint);
 						return;
@@ -879,7 +879,7 @@ namespace SQLite
 		/// </summary>
 		public void Commit ()
 		{
-			if (Interlocked.Exchange (ref _trasactionDepth, 0) != 0) {
+			if (Interlocked.Exchange (ref _transactionDepth, 0) != 0) {
 				Execute ("commit");
 			}
 			// Do nothing on a commit with no open transaction
