@@ -2515,6 +2515,11 @@ namespace SQLite
 			return GenerateCommand("count(*)").ExecuteScalar<int> ();			
 		}
 
+		public int Count (Expression<Func<T, bool>> predExpr)
+		{
+			return Where (predExpr).Count ();
+		}
+
 		public IEnumerator<T> GetEnumerator ()
 		{
 			if (!_deferred)
