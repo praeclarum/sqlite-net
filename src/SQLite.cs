@@ -73,6 +73,17 @@ namespace SQLite
 		ProtectionNone = 0x00400000
 	}
 
+    [Flags]
+    public enum CreateFlags
+    {
+        None = 0,
+        ImplicitPK = 1,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
+        ImplicitIndex = 2, // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
+        AllImplicit = 3,   // do both above
+
+        AutoIncPK = 4      // force PK field to be auto inc
+    }
+
 	/// <summary>
 	/// Represents an open connection to a SQLite database.
 	/// </summary>
@@ -214,19 +225,22 @@ namespace SQLite
 		/// </summary>
 		/// <param name="type">
 		/// The type whose mapping to the database is returned.
-		/// </param>
+		/// </param>         
+        /// <param name="createFlags">
+		/// Optional flags allowing implicit PK and indexes based on naming conventions
+		/// </param>     
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public TableMapping GetMapping (Type type)
+        public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
 			if (_mappings == null) {
 				_mappings = new Dictionary<string, TableMapping> ();
 			}
 			TableMapping map;
 			if (!_mappings.TryGetValue (type.FullName, out map)) {
-				map = new TableMapping (type);
+				map = new TableMapping (type, createFlags);
 				_mappings [type.FullName] = map;
 			}
 			return map;
@@ -279,9 +293,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable<T>()
+		public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None)
 		{
-			return CreateTable(typeof (T));
+			return CreateTable(typeof (T), createFlags);
 		}
 
 		/// <summary>
@@ -291,17 +305,18 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <param name="ty">Type to reflect to a database table.</param>
+        /// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable(Type ty)
+        public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
 			if (_tables == null) {
 				_tables = new Dictionary<string, TableMapping> ();
 			}
 			TableMapping map;
 			if (!_tables.TryGetValue (ty.FullName, out map)) {
-				map = GetMapping (ty);
+				map = GetMapping (ty, createFlags);
 				_tables.Add (ty.FullName, map);
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
@@ -1094,7 +1109,17 @@ namespace SQLite
 				return 0;
 			}
 			
+            
 			var map = GetMapping (objType);
+
+            if (map.PK != null && map.PK.IsAutoGuid) {
+                var prop = objType.GetProperty(map.PK.PropertyName);
+                if (prop != null) {
+                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
+                        prop.SetValue(obj, Guid.NewGuid(), null);
+                    }
+                }
+            }
 
 			var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 			
@@ -1106,8 +1131,9 @@ namespace SQLite
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
 			var count = insertCmd.ExecuteNonQuery (vals);
-			
-			if (map.HasAutoIncPK) {
+
+            if (map.HasAutoIncPK)
+            {
 				var id = SQLite3.LastInsertRowid (Handle);
 				map.SetAutoIncPK (obj, id);
 			}
@@ -1422,7 +1448,7 @@ namespace SQLite
 		Column[] _insertColumns = null;
 		Column[] _insertOrReplaceColumns = null;
 
-		public TableMapping (Type type)
+        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
 			MappedType = type;
 
@@ -1450,7 +1476,7 @@ namespace SQLite
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 #endif
 				if (p.CanWrite && !ignore) {
-					cols.Add (new Column (p));
+					cols.Add (new Column (p, createFlags));
 				}
 			}
 			Columns = cols.ToArray ();
@@ -1579,7 +1605,8 @@ namespace SQLite
 
 			public string Collation { get; private set; }
 
-			public bool IsAutoInc { get; private set; }
+            public bool IsAutoInc { get; private set; }
+            public bool IsAutoGuid { get; private set; }
 
 			public bool IsPK { get; private set; }
 
@@ -1589,21 +1616,34 @@ namespace SQLite
 
 			public int MaxStringLength { get; private set; }
 
-			public Column (PropertyInfo prop)
-			{
-				var colAttr = (ColumnAttribute)prop.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
+            public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+            {
+                var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
-				_prop = prop;
-				Name = colAttr == null ? prop.Name : colAttr.Name;
-				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the the actual type instead
-				ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-				Collation = Orm.Collation (prop);
-				IsAutoInc = Orm.IsAutoInc (prop);
-				IsPK = Orm.IsPK (prop);
-				Indices = Orm.GetIndices(prop);
-				IsNullable = !IsPK;
-				MaxStringLength = Orm.MaxStringLength (prop);
-			}
+                _prop = prop;
+                Name = colAttr == null ? prop.Name : colAttr.Name;
+                //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
+                ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                Collation = Orm.Collation(prop);
+
+                IsPK = Orm.IsPK(prop) || (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) && prop.Name == Orm.ImplicitPkName);
+
+                var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+                IsAutoGuid = isAuto && ColumnType == typeof(Guid);
+                IsAutoInc = isAuto && !IsAutoGuid;
+
+                Indices = Orm.GetIndices(prop);
+                if (!Indices.Any()
+                    && !IsPK
+                    && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
+                    && Name.EndsWith(Orm.ImplicitIndexSuffix)
+                    )
+                {
+                    Indices = new IndexedAttribute[] { new IndexedAttribute() };
+                }
+                IsNullable = !IsPK;
+                MaxStringLength = Orm.MaxStringLength(prop);
+            }
 
 			public void SetValue (object obj, object val)
 			{
@@ -1619,7 +1659,9 @@ namespace SQLite
 
 	public static class Orm
 	{
-		public const int DefaultMaxStringLength = 140;
+        public const int DefaultMaxStringLength = 140;
+        public const string ImplicitPkName = "Id";
+        public const string ImplicitIndexSuffix = "Id";
 
 		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
