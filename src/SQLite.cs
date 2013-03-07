@@ -1626,7 +1626,9 @@ namespace SQLite
                 ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
                 Collation = Orm.Collation(prop);
 
-                IsPK = Orm.IsPK(prop) || (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) && prop.Name == Orm.ImplicitPkName);
+                IsPK = Orm.IsPK(prop) ||
+					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
+					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
                 var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
                 IsAutoGuid = isAuto && ColumnType == typeof(Guid);
@@ -1636,7 +1638,7 @@ namespace SQLite
                 if (!Indices.Any()
                     && !IsPK
                     && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
-                    && Name.EndsWith(Orm.ImplicitIndexSuffix)
+                    && Name.EndsWith (Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
                     )
                 {
                     Indices = new IndexedAttribute[] { new IndexedAttribute() };
