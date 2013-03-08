@@ -1110,6 +1110,28 @@ namespace SQLite
             
 			var map = GetMapping (objType);
 
+#if NETFX_CORE
+            if (map.PK != null && map.PK.IsAutoGuid)
+            {
+                // no GetProperty so search our way up the inheritance chain till we find it
+                PropertyInfo prop;
+                while (objType != null)
+                {
+                    var info = objType.GetTypeInfo();
+                    prop = info.GetDeclaredProperty(map.PK.PropertyName);
+                    if (prop != null) 
+                    {
+                        if (prop.GetValue(obj, null).Equals(Guid.Empty))
+                        {
+                            prop.SetValue(obj, Guid.NewGuid(), null);
+                        }
+                        break; 
+                    }
+
+                    objType = info.BaseType;
+                }
+            }
+#else
             if (map.PK != null && map.PK.IsAutoGuid) {
                 var prop = objType.GetProperty(map.PK.PropertyName);
                 if (prop != null) {
@@ -1118,6 +1140,8 @@ namespace SQLite
                     }
                 }
             }
+#endif
+
 
 			var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 			
