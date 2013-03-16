@@ -181,6 +181,15 @@ namespace SQLite
 			}
 		}
 
+        public void EnableLoadExtension(int onoff)
+        {
+            SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
+			if (r != SQLite3.Result.OK) {
+				string msg = SQLite3.GetErrmsg (Handle);
+				throw SQLiteException.New (r, msg);
+			}
+        }
+
 		static byte[] GetNullTerminatedUtf8 (string s)
 		{
 			var utf8Length = System.Text.Encoding.UTF8.GetByteCount (s);
@@ -2642,6 +2651,9 @@ namespace SQLite
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr db);
+
+		[DllImport("sqlite3", EntryPoint = "sqlite3_enable_load_extension", CallingConvention=CallingConvention.Cdecl)]
+		public static extern Result EnableLoadExtension (IntPtr db, int onoff);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
