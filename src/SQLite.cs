@@ -409,7 +409,16 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
         {
-            var propertyInfo = (property.Body as MemberExpression).Member as PropertyInfo;
+            MemberExpression mx;
+            if (property.Body.NodeType == ExpressionType.Convert)
+            {
+                mx = ((UnaryExpression)property.Body).Operand as MemberExpression;
+            }
+            else
+            {
+                mx= (property.Body as MemberExpression);
+            }
+            var propertyInfo = mx.Member as PropertyInfo;
             if (propertyInfo == null)
             {
                 throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
