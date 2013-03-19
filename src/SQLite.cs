@@ -2497,6 +2497,8 @@ namespace SQLite
 					sqlCall = "(" + obj.CommandText + " = (" + args[0].CommandText + "))";
 				} else if (call.Method.Name == "ToLower") {
 					sqlCall = "(lower(" + obj.CommandText + "))"; 
+				} else if (call.Method.Name == "ToUpper") {
+					sqlCall = "(upper(" + obj.CommandText + "))"; 
 				} else {
 					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
 				}
