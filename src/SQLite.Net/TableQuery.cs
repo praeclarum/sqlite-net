@@ -348,6 +348,10 @@ namespace SQLite.Net
                 else if (call.Method.Name == "ToLower")
                 {
                     sqlCall = "(lower(" + obj.CommandText + "))";
+                } 
+                else if (call.Method.Name == "ToUpper")
+                {
+                    sqlCall = "(upper(" + obj.CommandText + "))";
                 }
                 else
                 {
