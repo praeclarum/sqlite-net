@@ -34,9 +34,14 @@ namespace SQLite
 	{
 		SQLiteConnectionString _connectionString;
 
-		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = false)
+		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks)
 		{
 			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks);
+		}
+
+		public SQLiteAsyncConnection (string databasePath)
+			: this(databasePath, false)
+		{
 		}
 
 		SQLiteConnectionWithLock GetConnection ()
