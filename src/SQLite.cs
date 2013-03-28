@@ -94,7 +94,7 @@ namespace SQLite
 		private Dictionary<string, TableMapping> _mappings = null;
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
-		private long _elapsedMilliseconds = 0;
+		private long _elapsedMilliseconds = 0;        
 
 		private int _transactionDepth = 0;
 		private Random _rand = new Random ();
@@ -109,6 +109,7 @@ namespace SQLite
 		public bool Trace { get; set; }
 
 		public bool StoreDateTimeAsTicks { get; private set; }
+        public bool CaseSensitive { get; private set; }
 
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
@@ -122,8 +123,11 @@ namespace SQLite
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+        /// <param name="CaseSensitive">
+		/// Specifies whether to store strings as case sensitive (true) or insensitive (false). This affects queries and sorting.
+		/// </param> 
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false, bool caseSensitive = true)
+            : this(databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, caseSensitive)
 		{
 		}
 
@@ -139,7 +143,10 @@ namespace SQLite
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
+        /// <param name="CaseSensitive">
+        /// Specifies whether to store strings as case sensitive (true) or insensitive (false). This affects queries and sorting.
+        /// </param> 
+        public SQLiteConnection(string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false, bool caseSensitive = true)
 		{
 			if (string.IsNullOrEmpty (databasePath))
 				throw new ArgumentException ("Must be specified", "databasePath");
@@ -169,7 +176,7 @@ namespace SQLite
 			_open = true;
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
-			
+            CaseSensitive = caseSensitive;
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 		
@@ -329,7 +336,7 @@ namespace SQLite
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
 			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
+			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks, CaseSensitive));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
 			query += ")";
@@ -1750,10 +1757,11 @@ namespace SQLite
         public const int DefaultMaxStringLength = 140;
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
+        private const string CaseInsensitive_Sql = "collate nocase";
 
-		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
+        public static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, bool caseSensitive = true)
 		{
-			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
+            string decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks, caseSensitive) + " ";
 			
 			if (p.IsPK) {
 				decl += "primary key ";
@@ -1771,7 +1779,7 @@ namespace SQLite
 			return decl;
 		}
 
-		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
+        public static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks, bool caseSensitive = true)
 		{
 			var clrType = p.ColumnType;
 			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
@@ -1782,7 +1790,7 @@ namespace SQLite
 				return "float";
 			} else if (clrType == typeof(String)) {
 				int len = p.MaxStringLength;
-				return "varchar(" + len + ")";
+                return "varchar(" + len + ")" + (caseSensitive ? "" : " " + CaseInsensitive_Sql);
 			} else if (clrType == typeof(DateTime)) {
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
 #if !NETFX_CORE
