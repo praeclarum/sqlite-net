@@ -122,8 +122,19 @@ namespace SQLite
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false)
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks)
 			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+		{
+		}
+
+		/// <summary>
+		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		public SQLiteConnection (string databasePath)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, false)
 		{
 		}
 
@@ -139,7 +150,7 @@ namespace SQLite
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks)
 		{
 			if (string.IsNullOrEmpty (databasePath))
 				throw new ArgumentException ("Must be specified", "databasePath");
@@ -172,6 +183,17 @@ namespace SQLite
 			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
+
+		/// <summary>
+		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags)
+			: this(databasePath, openFlags, false)
+		{
+		}
 		
 		static SQLiteConnection ()
 		{
@@ -202,7 +224,9 @@ namespace SQLite
 		/// Used to list some code that we want the MonoTouch linker
 		/// to see, but that we never want to actually execute.
 		/// </summary>
-		static bool _preserveDuringLinkMagic;
+#pragma warning disable 0649 // Suppress "is never assigned to" warnings
+		static bool _preserveDuringLinkMagic = default(bool);
+#pragma warning restore 0649
 
 		/// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -241,7 +265,7 @@ namespace SQLite
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-        public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping GetMapping(Type type, CreateFlags createFlags)
 		{
 			if (_mappings == null) {
 				_mappings = new Dictionary<string, TableMapping> ();
@@ -252,6 +276,21 @@ namespace SQLite
 				_mappings [type.FullName] = map;
 			}
 			return map;
+		}
+
+		/// <summary>
+		/// Retrieves the mapping that is automatically generated for the given type.
+		/// </summary>
+		/// <param name="type">
+		/// The type whose mapping to the database is returned.
+		/// </param>         
+		/// <returns>
+		/// The mapping represents the schema of the columns of the database and contains 
+		/// methods to set and get properties of objects.
+		/// </returns>
+        public TableMapping GetMapping(Type type)
+		{
+			return GetMapping(type, CreateFlags.None);
 		}
 		
 		/// <summary>
@@ -301,9 +340,23 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None)
+		public int CreateTable<T>(CreateFlags createFlags)
 		{
 			return CreateTable(typeof (T), createFlags);
+		}
+
+		/// <summary>
+		/// Executes a "create table if not exists" on the database. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// The number of entries added to the database schema.
+		/// </returns>
+		public int CreateTable<T>()
+		{
+			return CreateTable<T>(CreateFlags.None);
 		}
 
 		/// <summary>
@@ -317,7 +370,7 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-        public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
+        public int CreateTable(Type ty, CreateFlags createFlags)
 		{
 			if (_tables == null) {
 				_tables = new Dictionary<string, TableMapping> ();
@@ -375,6 +428,21 @@ namespace SQLite
 			return count;
 		}
 
+		/// <summary>
+		/// Executes a "create table if not exists" on the database. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <param name="ty">Type to reflect to a database table.</param>
+		/// <returns>
+		/// The number of entries added to the database schema.
+		/// </returns>
+        public int CreateTable(Type ty)
+		{
+			return CreateTable(ty, CreateFlags.None);
+		}
+
         /// <summary>
         /// Creates an index for the specified table and column.
         /// </summary>
@@ -382,11 +450,22 @@ namespace SQLite
         /// <param name="tableName">Name of the database table</param>
         /// <param name="columnName">Name of the column to index</param>
         /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
+        public int CreateIndex(string indexName, string tableName, string columnName, bool unique)
         {
             const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
             var sql = String.Format(sqlFormat, tableName, columnName, unique ? "unique" : "", indexName);
             return Execute(sql);
+        }
+
+		/// <summary>
+        /// Creates an index for the specified table and column.
+        /// </summary>
+        /// <param name="indexName">Name of the index to create</param>
+        /// <param name="tableName">Name of the database table</param>
+        /// <param name="columnName">Name of the column to index</param>
+        public int CreateIndex(string indexName, string tableName, string columnName)
+        {
+            return CreateIndex(indexName, tableName, columnName, false);
         }
 
         /// <summary>
@@ -395,9 +474,19 @@ namespace SQLite
         /// <param name="tableName">Name of the database table</param>
         /// <param name="columnName">Name of the column to index</param>
         /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string tableName, string columnName, bool unique = false)
+        public int CreateIndex(string tableName, string columnName, bool unique)
         {
             return CreateIndex(string.Concat(tableName, "_", columnName.Replace("\",\"", "_")), tableName, columnName, unique);
+        }
+
+		/// <summary>
+        /// Creates an index for the specified table and column.
+        /// </summary>
+        /// <param name="tableName">Name of the database table</param>
+        /// <param name="columnName">Name of the column to index</param>
+        public int CreateIndex(string tableName, string columnName)
+        {
+            return CreateIndex(tableName, columnName, false);
         }
 
         /// <summary>
@@ -407,7 +496,7 @@ namespace SQLite
         /// <typeparam name="T">Type to reflect to a database table.</typeparam>
         /// <param name="property">Property to index</param>
         /// <param name="unique">Whether the index should be unique</param>
-        public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
+        public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique)
         {
             MemberExpression mx;
             if (property.Body.NodeType == ExpressionType.Convert)
@@ -431,6 +520,17 @@ namespace SQLite
 
             CreateIndex(map.TableName, colName, unique);
         }
+
+		/// <summary>
+        /// Creates an index for the specified object property.
+        /// e.g. CreateIndex<Client>(c => c.Name);
+        /// </summary>
+        /// <typeparam name="T">Type to reflect to a database table.</typeparam>
+        /// <param name="property">Property to index</param>
+        public void CreateIndex<T>(Expression<Func<T, object>> property)
+        {
+			CreateIndex<T>(property, false);
+		}
 
 		public class ColumnInfo
 		{
@@ -1534,7 +1634,7 @@ namespace SQLite
 		Column[] _insertColumns;
 		Column[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping(Type type, CreateFlags createFlags)
 		{
 			MappedType = type;
 
@@ -1584,6 +1684,11 @@ namespace SQLite
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
+		}
+
+		public TableMapping(Type type)
+			: this(type, CreateFlags.None)
+		{
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -1701,8 +1806,8 @@ namespace SQLite
 			public bool IsNullable { get; private set; }
 
 			public int MaxStringLength { get; private set; }
-
-            public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+			
+            public Column(PropertyInfo prop, CreateFlags createFlags)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
@@ -1732,6 +1837,11 @@ namespace SQLite
                 IsNullable = !IsPK;
                 MaxStringLength = Orm.MaxStringLength(prop);
             }
+
+			public Column(PropertyInfo prop)
+				: this(prop, CreateFlags.None)
+            {
+			}
 
 			public void SetValue (object obj, object val)
 			{
