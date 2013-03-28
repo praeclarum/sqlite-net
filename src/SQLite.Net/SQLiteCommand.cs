@@ -267,6 +267,10 @@ namespace SQLite.Net
                 {
                     isqLite3Api.BindDouble(stmt, index, Convert.ToDouble(value));
                 }
+                else if (value is TimeSpan)
+                {
+                    isqLite3Api.BindInt64(stmt, index, ((TimeSpan) value).Ticks);
+                }
                 else if (value is DateTime)
                 {
                     if (storeDateTimeAsTicks)
@@ -323,6 +327,10 @@ namespace SQLite.Net
             if (clrType == typeof (float))
             {
                 return (float) _sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
+            }
+            if (clrType == typeof (TimeSpan))
+            {
+                return new TimeSpan(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index));
             }
             if (clrType == typeof (DateTime))
             {

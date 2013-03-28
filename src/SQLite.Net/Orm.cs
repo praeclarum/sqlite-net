@@ -80,6 +80,10 @@ namespace SQLite.Net
                 int len = p.MaxStringLength;
                 return "varchar(" + len + ")";
             }
+            if (clrType == typeof (TimeSpan))
+            {
+                return "bigint";
+            }
             if (clrType == typeof (DateTime))
             {
                 return storeDateTimeAsTicks ? "bigint" : "datetime";
