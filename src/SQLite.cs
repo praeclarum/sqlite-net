@@ -484,6 +484,89 @@ namespace SQLite
 			}
 		}
 
+        /// <summary>
+        /// Invoked just before an object will be inserted into the database.
+        /// </summary>
+        /// <param name='obj'>
+        /// The object to be inserted.
+        /// </param>
+        /// <param name='cancelInsert'>
+        /// Specifies if inserting should be canceled.
+        /// </param>
+        /// <remarks>
+        /// To use this hook please implement a partial class SQLiteConnection like this:
+        /// 
+        ///    public partial class SQLite.SQLiteConnection
+        ///    {
+        ///         partial void OnObjectInserting(object obj, ref bool cancelInsert)
+        ///         {
+        ///             ...
+        ///         }
+        ///    }
+        /// </remarks>
+        /// 
+        partial void OnObjectInserting(object obj, ref bool cancelInsert);
+
+        /// <summary>
+        /// Invoked just after an object has been inserted into the database.
+        /// </summary>
+        /// <param name='obj'>
+        /// The object which has been inserted.
+        /// </param>
+        /// <remarks>
+        /// To use this hook please implement a partial class SQLiteConnection like this:
+        /// 
+        ///    public partial class SQLite.SQLiteConnection
+        ///    {
+        ///         partial void OnObjectInserted(object obj)
+        ///         {
+        ///             ...
+        ///         }
+        ///    }
+        /// </remarks>
+        partial void OnObjectInserted(object obj);
+
+        /// <summary>
+        /// Invoked just before an object will be updated to the database.
+        /// </summary>
+        /// <param name='obj'>
+        /// The object to be updated.
+        /// </param>
+        /// <param name='cancelUpdate'>
+        /// Specifies if updating should be canceled.
+        /// </param>
+        /// <remarks>
+        /// To use this hook please implement a partial class SQLiteConnection like this:
+        /// 
+        ///    public partial class SQLite.SQLiteConnection
+        ///    {
+        ///         partial void OnObjectUpdating(object obj, ref bool cancelUpdate)
+        ///         {
+        ///             ...
+        ///         }
+        ///    }
+        /// </remarks>
+        partial void OnObjectUpdating(object obj, ref bool cancelUpdate);
+
+        /// <summary>
+        /// Invoked just after an object has been updated to the database.
+        /// </summary>
+        /// <param name='obj'>
+        /// The object which has been updated.
+        /// </param>
+        /// <remarks>
+        /// To use this hook please implement a partial class SQLiteConnection like this:
+        /// 
+        ///    public partial class SQLite.SQLiteConnection
+        ///    {
+        ///         partial void OnObjectUpdated(object obj)
+        ///         {
+        ///             ...
+        ///         }
+        ///    }
+        /// </remarks>
+        partial void OnObjectUpdated(object obj);
+
 		/// <summary>
 		/// Creates a new SQLiteCommand. Can be overridden to provide a sub-class.
 		/// </summary>
@@ -1170,7 +1253,12 @@ namespace SQLite
 			if (obj == null || objType == null) {
 				return 0;
 			}
-			
+
+            var cancelInsert = false;
+            OnObjectInserting(obj, ref cancelInsert);
+            if (cancelInsert) {
+                return 0;
+            }
             
 			var map = GetMapping (objType);
 
@@ -1223,6 +1311,8 @@ namespace SQLite
 				var id = SQLite3.LastInsertRowid (Handle);
 				map.SetAutoIncPK (obj, id);
 			}
+
+			OnObjectInserted(obj);
 			
 			return count;
 		}
@@ -1265,6 +1355,12 @@ namespace SQLite
 			if (obj == null || objType == null) {
 				return 0;
 			}
+
+            var cancelUpdate = false;
+            OnObjectUpdating(obj, ref cancelUpdate);
+            if (cancelUpdate) {
+                return 0;
+            }
 			
 			var map = GetMapping (objType);
 			
@@ -1283,8 +1379,11 @@ namespace SQLite
 			ps.Add (pk.GetValue (obj));
 			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
 				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
-			return Execute (q, ps.ToArray ());
-		}
+
+            var result = Execute(q, ps.ToArray());
+            OnObjectUpdated(obj);
+            return result;
+        }
 
 		/// <summary>
 		/// Updates all specified objects.
@@ -1924,6 +2023,44 @@ namespace SQLite
 			// Can be overridden.
 		}
 
+        /// <summary>
+        /// Invoked just before an object will be deserialized from the database.
+        /// </summary>
+        /// <param name='obj'>
+        /// The deserialized object.
+        /// </param>
+        /// <remarks>
+        /// To use this hook please implement a partial class SQLiteCommand like this:
+        /// 
+        ///    public partial class SQLite.SQLiteCommand
+        ///    {
+        ///         partial void OnObjectDeserializing(object obj)
+        ///         {
+        ///             ...
+        ///         }
+        ///    }
+        /// </remarks>
+        partial void OnObjectDeserializing(object obj);
+
+        /// <summary>
+        /// Invoked after an object has been deserialized from the database.
+        /// </summary>
+        /// <param name='obj'>
+        /// The deserialized object.
+        /// </param>
+        /// <remarks>
+        /// To use this hook please implement a partial class SQLiteCommand like this:
+        /// 
+        ///    public partial class SQLite.SQLiteCommand
+        ///    {
+        ///         partial void OnObjectDeserialized(object obj)
+        ///         {
+        ///             ...
+        ///         }
+        ///    }
+        /// </remarks>
+        partial void OnObjectDeserialized(object obj);
+
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
@@ -1942,6 +2079,7 @@ namespace SQLite
 			
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
 					var obj = Activator.CreateInstance(map.MappedType);
+					OnObjectDeserializing(obj);
 					for (int i = 0; i < cols.Length; i++) {
 						if (cols [i] == null)
 							continue;
@@ -1950,7 +2088,8 @@ namespace SQLite
 						cols [i].SetValue (obj, val);
  					}
 					OnInstanceCreated (obj);
-					yield return (T)obj;
+					OnObjectDeserialized(obj);
+                    yield return (T)obj;
 				}
 			}
 			finally
