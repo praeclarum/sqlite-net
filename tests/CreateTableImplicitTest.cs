@@ -33,6 +33,14 @@ namespace SQLite.Tests
             public int IndexedId { get; set; }
         }
 
+        class WithObject
+        {
+            public int Id { get; set; }
+            public string AColumn { get; set; }
+            public int IndexedId { get; set; }
+            public NoAttributes Parent { get; set; }
+        }
+
         private void CheckPK(TestDb db)
         {
             for (int i = 1; i <= 10; i++)
@@ -80,6 +88,18 @@ namespace SQLite.Tests
             CheckPK(db);
         }
 
+        [Test]
+        public void ImplicitIgnore()
+        {
+            var db = new TestDb();
+
+            db.CreateTable<WithObject>(CreateFlags.ImplicitPK | CreateFlags.IgnoreUnknownTypes);
+
+            var mapping = db.GetMapping<WithObject>();
+            var col = mapping.FindColumn("Parent");
+            Assert.IsNull(col);
+
+        }
 
         [Test]
         public void ImplicitAutoInc()

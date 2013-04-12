@@ -81,7 +81,10 @@ namespace SQLite
         ImplicitIndex = 2, // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
         AllImplicit = 3,   // do both above
 
-        AutoIncPK = 4      // force PK field to be auto inc
+        AutoIncPK = 4,     // force PK field to be auto inc
+        IgnoreUnknownTypes=8,    // ignore types that sqlite.net doesn't know about.  E.g. objects and interfaces
+
+        All = 11
     }
 
 	/// <summary>
@@ -1568,6 +1571,13 @@ namespace SQLite
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 #endif
+                if (!ignore && ((createFlags & CreateFlags.IgnoreUnknownTypes) == CreateFlags.IgnoreUnknownTypes))
+                {
+                    var ct = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+                    var sqlType = Orm.UnderlyingSqlType(ct, 1, false, false);
+                    ignore = string.IsNullOrEmpty(sqlType);
+                }
+
 				if (p.CanWrite && !ignore) {
 					cols.Add (new Column (p, createFlags));
 				}
@@ -1779,33 +1789,60 @@ namespace SQLite
 			return decl;
 		}
 
-        public static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks, bool caseSensitive = true)
-		{
-			var clrType = p.ColumnType;
-			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
-				return "integer";
-			} else if (clrType == typeof(UInt32) || clrType == typeof(Int64)) {
-				return "bigint";
-			} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
-				return "float";
-			} else if (clrType == typeof(String)) {
-				int len = p.MaxStringLength;
+        public static string UnderlyingSqlType(Type clrType, int maxStringLength, bool storeDateTimeAsTicks, bool caseSensitive = true)
+        {
+            if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32))
+            {
+                return "integer";
+            }
+            else if (clrType == typeof(UInt32) || clrType == typeof(Int64))
+            {
+                return "bigint";
+            }
+            else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal))
+            {
+                return "float";
+            }
+            else if (clrType == typeof(String))
+            {
+                int len = maxStringLength;
                 return "varchar(" + len + ")" + (caseSensitive ? "" : " " + CaseInsensitive_Sql);
-			} else if (clrType == typeof(DateTime)) {
-				return storeDateTimeAsTicks ? "bigint" : "datetime";
+            }
+            else if (clrType == typeof(DateTime))
+            {
+                return storeDateTimeAsTicks ? "bigint" : "datetime";
 #if !NETFX_CORE
 			} else if (clrType.IsEnum) {
 #else
-			} else if (clrType.GetTypeInfo().IsEnum) {
+            }
+            else if (clrType.GetTypeInfo().IsEnum)
+            {
 #endif
-				return "integer";
-			} else if (clrType == typeof(byte[])) {
-				return "blob";
-            } else if (clrType == typeof(Guid)) {
+                return "integer";
+            }
+            else if (clrType == typeof(byte[]))
+            {
+                return "blob";
+            }
+            else if (clrType == typeof(Guid))
+            {
                 return "varchar(36)";
-            } else {
-				throw new NotSupportedException ("Don't know about " + clrType);
-			}
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        public static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks, bool caseSensitive = true)
+		{
+			var clrType = p.ColumnType;
+            var typeString = UnderlyingSqlType(clrType, p.MaxStringLength, storeDateTimeAsTicks, caseSensitive);
+            if(string.IsNullOrEmpty(typeString))
+            {
+                throw new NotSupportedException("Don't know about " + clrType);
+            }
+            return typeString;
 		}
 
 		public static bool IsPK (MemberInfo p)
