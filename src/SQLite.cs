@@ -1524,18 +1524,18 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class ForeignKeyAttribute : Attribute
+	public class ForeingKeyAttribute : Attribute
 	{
 		public string Value { get; private set; }
 
-		public ForeignKeyAttribute (Type parentObject)
+		public ForeingKeyAttribute (Type parentObject)
 		{
 			Value = SetFKReferenceName(parentObject);
 		}
 
 		private string SetFKReferenceName (Type t)
 		{
-			string result = t.Name.ToLower();
+			string result = t.Name;
 
 			foreach (var p in t.GetProperties()) {
 #if !NETFX_CORE
@@ -1746,7 +1746,7 @@ namespace SQLite
 
             public bool IsAutoInc { get; private set; }
             public bool IsAutoGuid { get; private set; }
-			public bool IsForeignKey { get; private set; }
+			public bool IsForeingKey { get; private set; }
 
 			public bool OnUpdateCascade { get; private set; }
 
@@ -1760,7 +1760,7 @@ namespace SQLite
 
 			public int MaxStringLength { get; private set; }
 
-			public string ForeignKey { get; private set; }
+			public string ForeingKey { get; private set; }
 
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
@@ -1771,7 +1771,7 @@ namespace SQLite
                 //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
                 ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
                 Collation = Orm.Collation(prop);
-				IsForeignKey = Orm.IsForeignKey(prop);
+				IsForeingKey = Orm.IsForeingKey(prop);
 
                 IsPK = Orm.IsPK(prop) ||
 					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
@@ -1793,7 +1793,7 @@ namespace SQLite
                 IsNullable = !IsPK;
                 MaxStringLength = Orm.MaxStringLength(prop);
 
-				ForeignKey = Orm.GetForeignKey(prop);
+				ForeingKey = Orm.GetForeingKey(prop);
 				OnUpdateCascade = Orm.IsOnUpdateCascade(prop);
 				OnDeleteCascade = Orm.IsOnUpdateCascade(prop);
             }
@@ -1829,8 +1829,8 @@ namespace SQLite
 			if (!p.IsNullable) {
 				decl += "not null ";
 			}
-			if (p.IsForeignKey) {
-				decl += "foreign key references " + p.ForeignKey;
+			if (p.IsForeingKey) {
+				decl += ("foreing key references " + p.ForeingKey);
 			}
 			if (p.OnDeleteCascade) {
 				decl += "on delete cascade ";
@@ -1904,9 +1904,9 @@ namespace SQLite
 #endif
 		}
 
-		public static bool IsForeignKey (MemberInfo p)
+		public static bool IsForeingKey (MemberInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(ForeignKeyAttribute), true);
+			var attrs = p.GetCustomAttributes (typeof(ForeingKeyAttribute), true);
 #if !NETFX_CORE
 			return attrs.Length > 0;
 #else
@@ -1960,15 +1960,15 @@ namespace SQLite
 			}
 		}
 
-		public static string GetForeignKey(PropertyInfo p)
+		public static string GetForeingKey(PropertyInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
+			var attrs = p.GetCustomAttributes (typeof(ForeingKeyAttribute), true);
 #if !NETFX_CORE
 			if (attrs.Length > 0) {
-				return ((ForeignKeyAttribute)attrs [0]).Value;
+				return ((ForeingKeyAttribute)attrs [0]).Value;
 #else
 			if (attrs.Count() > 0) {
-				return ((ForeignKeyAttribute)attrs.First()).Value;
+				return ((ForeingKeyAttribute)attrs.First()).Value;
 #endif
 			} else {
 				return null;
