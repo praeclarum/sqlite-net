@@ -1494,6 +1494,16 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
+	public class OnUpdateCascadeAttribute : Attribute
+	{
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
+	public class OnDeleteCascadeAttribute : Attribute
+	{
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
 	public class UniqueAttribute : IndexedAttribute
 	{
 		public override bool Unique {
