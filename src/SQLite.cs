@@ -1829,8 +1829,14 @@ namespace SQLite
 			if (!p.IsNullable) {
 				decl += "not null ";
 			}
-			if (p.IsForeignKey){
+			if (p.IsForeignKey) {
 				decl += "foreign key references " + p.ForeignKey;
+			}
+			if (p.OnDeleteCascade) {
+				decl += "on delete cascade ";
+			}
+			if (p.OnUpdateCascade) {
+				decl += "on update cascade ";
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
 				decl += "collate " + p.Collation + " ";
