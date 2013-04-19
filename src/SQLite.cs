@@ -218,6 +218,15 @@ namespace SQLite
 			}
 		}
 
+		public SQLiteConnection SetForeignKeysPermissions(bool flag){
+			if(flag)
+				this.Execute("PRAGMA foreign_keys = ON;");
+			if(!flag)
+				this.Execute("PRAGMA foreign_keys = OFF;");
+
+			return this;
+		}
+
 		/// <summary>
 		/// Returns the mappings from types to tables that the connection
 		/// currently understands.
@@ -1504,6 +1513,11 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
+	public class ForeignKeyAttribute : Attribute
+	{
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
 	public class UniqueAttribute : IndexedAttribute
 	{
 		public override bool Unique {
@@ -1524,16 +1538,16 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class ForeingKeyAttribute : Attribute
+	public class ReferencesAttribute : Attribute
 	{
 		public string Value { get; private set; }
 
-		public ForeingKeyAttribute (Type parentObject)
+		public ReferencesAttribute (Type parentObject)
 		{
-			Value = SetFKReferenceName(parentObject);
+			Value = SetReferenceName(parentObject);
 		}
 
-		private string SetFKReferenceName (Type t)
+		private string SetReferenceName (Type t)
 		{
 			string result = t.Name;
 
@@ -1746,7 +1760,8 @@ namespace SQLite
 
             public bool IsAutoInc { get; private set; }
             public bool IsAutoGuid { get; private set; }
-			public bool IsForeingKey { get; private set; }
+			public bool IsReferenced { get; private set; }
+			public bool IsFK { get; private set; }
 
 			public bool OnUpdateCascade { get; private set; }
 
@@ -1760,7 +1775,7 @@ namespace SQLite
 
 			public int MaxStringLength { get; private set; }
 
-			public string ForeingKey { get; private set; }
+			public string ReferenceName { get; private set; }
 
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
@@ -1771,7 +1786,7 @@ namespace SQLite
                 //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
                 ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
                 Collation = Orm.Collation(prop);
-				IsForeingKey = Orm.IsForeingKey(prop);
+				IsReferenced = Orm.IsReferences(prop);
 
                 IsPK = Orm.IsPK(prop) ||
 					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
@@ -1793,9 +1808,11 @@ namespace SQLite
                 IsNullable = !IsPK;
                 MaxStringLength = Orm.MaxStringLength(prop);
 
-				ForeingKey = Orm.GetForeingKey(prop);
+				ReferenceName = Orm.GetReference(prop);
 				OnUpdateCascade = Orm.IsOnUpdateCascade(prop);
 				OnDeleteCascade = Orm.IsOnUpdateCascade(prop);
+				IsFK = Orm.IsForeignKey(prop);
+
             }
 
 			public void SetValue (object obj, object val)
@@ -1829,8 +1846,8 @@ namespace SQLite
 			if (!p.IsNullable) {
 				decl += "not null ";
 			}
-			if (p.IsForeingKey) {
-				decl += ("foreing key references " + p.ForeingKey);
+			if (p.IsReferenced) {
+				decl += ("references " + p.ReferenceName + " ");
 			}
 			if (p.OnDeleteCascade) {
 				decl += "on delete cascade ";
@@ -1894,6 +1911,16 @@ namespace SQLite
 #endif
 		}
 
+		public static bool IsForeignKey (MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof(ForeignKeyAttribute), true);
+#if !NETFX_CORE
+			return attrs.Length > 0;
+#else
+			return attrs.Count() > 0;
+#endif
+		}
+
 		public static bool IsOnDeleteCascade (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(OnDeleteCascadeAttribute), true);
@@ -1904,9 +1931,9 @@ namespace SQLite
 #endif
 		}
 
-		public static bool IsForeingKey (MemberInfo p)
+		public static bool IsReferences (MemberInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(ForeingKeyAttribute), true);
+			var attrs = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
 #if !NETFX_CORE
 			return attrs.Length > 0;
 #else
@@ -1960,12 +1987,12 @@ namespace SQLite
 			}
 		}
 
-		public static string GetForeingKey(PropertyInfo p)
+		public static string GetReference(PropertyInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(ForeingKeyAttribute), true);
+			var attrs = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
 #if !NETFX_CORE
 			if (attrs.Length > 0) {
-				return ((ForeingKeyAttribute)attrs [0]).Value;
+				return ((ReferencesAttribute)attrs [0]).Value;
 #else
 			if (attrs.Count() > 0) {
 				return ((ForeingKeyAttribute)attrs.First()).Value;
