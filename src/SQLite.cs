@@ -1748,6 +1748,10 @@ namespace SQLite
             public bool IsAutoGuid { get; private set; }
 			public bool IsForeignKey { get; private set; }
 
+			public bool OnUpdateCascade { get; private set; }
+
+			public bool OnDeleteCascade { get; private set; }
+
 			public bool IsPK { get; private set; }
 
 			public IEnumerable<IndexedAttribute> Indices { get; set; }
@@ -1788,7 +1792,10 @@ namespace SQLite
                 }
                 IsNullable = !IsPK;
                 MaxStringLength = Orm.MaxStringLength(prop);
+
 				ForeignKey = Orm.GetForeignKey(prop);
+				OnUpdateCascade = Orm.IsOnUpdateCascade(prop);
+				OnDeleteCascade = Orm.IsOnUpdateCascade(prop);
             }
 
 			public void SetValue (object obj, object val)
@@ -1864,6 +1871,26 @@ namespace SQLite
 		public static bool IsPK (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
+#if !NETFX_CORE
+			return attrs.Length > 0;
+#else
+			return attrs.Count() > 0;
+#endif
+		}
+
+		public static bool IsOnUpdateCascade (MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof(OnUpdateCascadeAttribute), true);
+#if !NETFX_CORE
+			return attrs.Length > 0;
+#else
+			return attrs.Count() > 0;
+#endif
+		}
+
+		public static bool IsOnDeleteCascade (MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof(OnDeleteCascadeAttribute), true);
 #if !NETFX_CORE
 			return attrs.Length > 0;
 #else
