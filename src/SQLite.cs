@@ -317,7 +317,7 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-        public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
+        public int CreateTable (Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
 			if (_tables == null) {
 				_tables = new Dictionary<string, TableMapping> ();
@@ -362,16 +362,17 @@ namespace SQLite
 					iinfo.Columns.Add (new IndexedColumn {
 						Order = i.Order,
 						ColumnName = c.Name
-					});
+					}
+					);
 				}
 			}
 
 			foreach (var indexName in indexes.Keys) {
-				var index = indexes[indexName];
-				var columns = String.Join("\",\"", index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
-                count += CreateIndex(indexName, index.TableName, columns, index.Unique);
-			}
-			
+				var index = indexes [indexName];
+				var columns = String.Join ("\",\"", index.Columns.OrderBy (i => i.Order).Select (i => i.ColumnName).ToArray ());
+				count += CreateIndex (indexName, index.TableName, columns, index.Unique);
+			} 
+
 			return count;
 		}
 
@@ -1513,6 +1514,36 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
+	public class ForeignKeyAttribute : Attribute
+	{
+		public string Value { get; private set; }
+
+		public ForeignKeyAttribute (Type parentObject)
+		{
+			Value = SetFKReferenceName(parentObject);
+		}
+
+		private string SetFKReferenceName (Type t)
+		{
+			string result = t.Name.ToLower();
+
+			foreach (var p in t.GetProperties()) {
+#if !NETFX_CORE
+				var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true).Length > 0;
+#else
+				var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true).Count() > 0;
+#endif
+				if(pk)
+					result += string.Format("({0})",p.Name);
+			}
+
+			return result;
+
+		}
+
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
 	public class CollationAttribute: Attribute
 	{
 		public string Value { get; private set; }
@@ -1572,7 +1603,7 @@ namespace SQLite
 					if(!one2many)
 						cols.Add (new Column (p, createFlags));
 					else{
-					//TODO: logic of one2mane relationship is here
+					//TODO: logic of one2many relationship is here
 					}
 				}
 
@@ -1705,6 +1736,7 @@ namespace SQLite
 
             public bool IsAutoInc { get; private set; }
             public bool IsAutoGuid { get; private set; }
+			public bool IsForeignKey { get; private set; }
 
 			public bool IsPK { get; private set; }
 
@@ -1713,6 +1745,8 @@ namespace SQLite
 			public bool IsNullable { get; private set; }
 
 			public int MaxStringLength { get; private set; }
+
+			public string ForeignKey { get; private set; }
 
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
@@ -1723,6 +1757,7 @@ namespace SQLite
                 //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
                 ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
                 Collation = Orm.Collation(prop);
+				IsForeignKey = Orm.IsForeignKey(prop);
 
                 IsPK = Orm.IsPK(prop) ||
 					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
@@ -1743,6 +1778,7 @@ namespace SQLite
                 }
                 IsNullable = !IsPK;
                 MaxStringLength = Orm.MaxStringLength(prop);
+				ForeignKey = Orm.GetForeignKey(prop);
             }
 
 			public void SetValue (object obj, object val)
@@ -1775,6 +1811,9 @@ namespace SQLite
 			}
 			if (!p.IsNullable) {
 				decl += "not null ";
+			}
+			if (p.IsForeignKey){
+				decl += "foreign key references " + p.ForeignKey;
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
 				decl += "collate " + p.Collation + " ";
@@ -1815,6 +1854,16 @@ namespace SQLite
 		public static bool IsPK (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
+#if !NETFX_CORE
+			return attrs.Length > 0;
+#else
+			return attrs.Count() > 0;
+#endif
+		}
+
+		public static bool IsForeignKey (MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof(ForeignKeyAttribute), true);
 #if !NETFX_CORE
 			return attrs.Length > 0;
 #else
@@ -1865,6 +1914,21 @@ namespace SQLite
 #endif
 			} else {
 				return DefaultMaxStringLength;
+			}
+		}
+
+		public static string GetForeignKey(PropertyInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
+#if !NETFX_CORE
+			if (attrs.Length > 0) {
+				return ((ForeignKeyAttribute)attrs [0]).Value;
+#else
+			if (attrs.Count() > 0) {
+				return ((ForeignKeyAttribute)attrs.First()).Value;
+#endif
+			} else {
+				return null;
 			}
 		}
 	}
