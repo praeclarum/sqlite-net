@@ -1460,6 +1460,11 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
+	public class One2ManyAttribute : Attribute
+	{
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
 	public class AutoIncrementAttribute : Attribute
 	{
 	}
@@ -1558,12 +1563,19 @@ namespace SQLite
 			foreach (var p in props) {
 #if !NETFX_CORE
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
+				var one2many = p.GetCustomAttributes (typeof(One2ManyAttribute), true).Length > 0;
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
+				var one2many = p.GetCustomAttributes (typeof(One2ManyAttribute), true).Count() > 0;
 #endif
 				if (p.CanWrite && !ignore) {
-					cols.Add (new Column (p, createFlags));
+					if(!one2many)
+						cols.Add (new Column (p, createFlags));
+					else{
+					//TODO: logic of one2mane relationship is here
+					}
 				}
+
 			}
 			Columns = cols.ToArray ();
 			foreach (var c in Columns) {
