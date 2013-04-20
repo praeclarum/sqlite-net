@@ -1281,6 +1281,15 @@ namespace SQLite
 			if (obj == null || objType == null) {
 				return 0;
 			}
+
+			if(HasOne2ManyAttribute(obj)){
+				Queue<object> queue = new Queue<object>();
+				foreach(object e in GetOne2ManyObjects(obj)){
+					queue.Enqueue(e);
+				}
+
+				Update(obj,objType,queue,0);
+			}
 			
 			var map = GetMapping (objType);
 			
@@ -1300,6 +1309,53 @@ namespace SQLite
 			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
 				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
 			return Execute (q, ps.ToArray ());
+		}
+
+		/// <summary>
+		/// Recursively updates all of the columns of a table and it's dependent objects using the specified object
+		/// except for its primary key.
+		/// The object is required to have a primary key.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows updated.
+		/// </returns>
+		private int Update (object obj, Type objType, Queue<object> queue, int resultCount)
+		{
+			if (obj == null || objType == null) {
+				return 0;
+			}
+			
+			var map = GetMapping (objType);
+			
+			var pk = map.PK;
+			
+			if (pk == null) {
+				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
+			}
+			
+			var cols = from p in map.Columns
+				where p != pk
+				select p;
+			var vals = from c in cols
+				select c.GetValue (obj);
+			var ps = new List<object> (vals);
+			ps.Add (pk.GetValue (obj));
+			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
+				select "\"" + c.Name + "\" = ? ").ToArray ()
+			), pk.Name);
+			resultCount += Execute (q, ps.ToArray ());
+
+			if (queue.Count > 1) {
+				Update(queue.Dequeue(),objType,queue,resultCount);
+			}
+
+			return resultCount;
 		}
 
 		/// <summary>
