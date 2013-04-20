@@ -1319,7 +1319,7 @@ namespace SQLite
 			}
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
-			resultCount = insertCmd.ExecuteNonQuery (vals);
+			resultCount += insertCmd.ExecuteNonQuery (vals);
 
             if (map.HasAutoIncPK)
             {
