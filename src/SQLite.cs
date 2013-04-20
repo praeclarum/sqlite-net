@@ -2862,7 +2862,7 @@ namespace SQLite
 		public T First ()
 		{
 			var query = Take (1);
-			return query.ToList<T>().First ();
+			return GetDependentObjects(query.ToList<T>().First ());
 		}
 
 		public T FirstOrDefault ()
@@ -2872,14 +2872,14 @@ namespace SQLite
 		}
 
 		private T GetDependentObjects<T> (T @object)
-		{
-			if (@object != null) {
-				var t = typeof(T);
-				PropertyInfo one2ManyProp = null;
-				Type childCollectionType = null;
-				string childIdPropName = string.Empty;
-				string id = string.Empty;
+		{			
+			var t = typeof(T);
+			PropertyInfo one2ManyProp = null;
+			Type childCollectionType = null;
+			string childIdPropName = string.Empty;
+			string id = string.Empty;
 
+			if (@object != null) {
 				foreach (var p in t.GetProperties()) {
 					var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
 					var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
@@ -2896,9 +2896,11 @@ namespace SQLite
 					}
 					if (isPK) {
 						id = p.GetValue (@object, null).ToString ();
-					}
 				}
+			}
+			}
 				
+			if (one2ManyProp != null) {
 				foreach (var p in childCollectionType.GetProperties()) {
 					var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
 #if !NETFX_CORE
@@ -2910,32 +2912,35 @@ namespace SQLite
 						childIdPropName = p.Name;
 					}				
 				}
+				
+				if(childIdPropName != string.Empty){
+					var q = string.Format ("select * from {0} where {1} = '{2}'",
+									                                 childCollectionType.Name,
+									                                 childIdPropName,
+									                                 id);
 
-				var q = string.Format ("select * from {0} where {1} = '{2}'",
-								                                 childCollectionType.Name,
-								                                 childIdPropName,
-								                                 id);
+					var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
 
-				var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
+					var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
+					Type myType;
+		    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
+		    		IList rList = (IList)Activator.CreateInstance(listType);
 
-				var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
-				Type myType;
-	    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
-	    		IList rList = (IList)Activator.CreateInstance(listType);
-
-				foreach (var e in qRes) {
-					var i = Activator.CreateInstance(childCollectionType);
-					foreach(var p in i.GetType().GetProperties()){
-						p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+					foreach (var e in qRes) {
+						var i = Activator.CreateInstance(childCollectionType);
+						foreach(var p in i.GetType().GetProperties()){
+							p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+						}
+						rList.Add(i);
 					}
-					rList.Add(i);
-				}
-				rProp.SetValue(@object,rList,null);
+					rProp.SetValue(@object,rList,null);
 
-				return @object;	
+					return @object;
+				}
+				return @object;
 			}
 			else{
-				return null;
+				return @object;
 			}
 		}
 	}
