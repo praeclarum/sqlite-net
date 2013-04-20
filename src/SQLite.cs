@@ -2051,12 +2051,12 @@ namespace SQLite
 			}
 			if (p.IsReferenced) {
 				decl += ("references " + p.ReferenceName + " ");
-			}
-			if (p.OnDeleteCascade) {
-				decl += "on delete cascade ";
-			}
-			if (p.OnUpdateCascade) {
-				decl += "on update cascade ";
+				if (p.OnDeleteCascade) {
+					decl += "on delete cascade ";
+				}
+				if (p.OnUpdateCascade) {
+					decl += "on update cascade ";
+				}
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
 				decl += "collate " + p.Collation + " ";
