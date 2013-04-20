@@ -19,6 +19,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+
+
+
 #if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
 #define USE_CSHARP_SQLITE
 #endif
@@ -27,6 +30,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Collections;
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
@@ -523,8 +527,10 @@ namespace SQLite
 
 			var cmd = NewCommand ();
 			cmd.CommandText = cmdText;
-			foreach (var o in ps) {
-				cmd.Bind (o);
+			if (ps != null) {
+				foreach (var o in ps) {
+					cmd.Bind (o);
+				}
 			}
 			return cmd;
 		}
@@ -1093,6 +1099,26 @@ namespace SQLite
 		/// </returns>
 		public int InsertOrReplace (object obj)
 		{
+			foreach (var p in obj.GetType().GetProperties()) {
+
+				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
+#if !NETFX_CORE
+				var isOne2Many = one2Many.Length > 0;
+#else
+				var isOne2Many = one2Many.Count() > 0;
+#endif
+				if (isOne2Many) {
+					var list = obj.GetType ().GetProperty (p.Name).GetValue (obj, null)
+						as IEnumerable<object>;
+					var t = new Thread(() => {
+						foreach(var o in list){
+							InsertOrReplace(o);
+						}
+					});
+					t.Start();
+					//TODO: complete one2many transaction
+				}
+			}
 			if (obj == null) {
 				return 0;
 			}
@@ -1472,6 +1498,12 @@ namespace SQLite
 	[AttributeUsage (AttributeTargets.Property)]
 	public class One2ManyAttribute : Attribute
 	{
+		public One2ManyAttribute (Type type)
+		{
+			Value = type;
+		}
+
+		public Type Value { get; set; }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
@@ -2834,11 +2866,75 @@ namespace SQLite
 		}
 
 		public T FirstOrDefault ()
+		{			
+			var query = Take (1);
+		  	return GetDependentObjects(query.ToList<T> ().FirstOrDefault ());			
+		}
+
+		private T GetDependentObjects<T> (T @object)
 		{
 			var query = Take (1);
-			return query.ToList<T>().FirstOrDefault ();
+			var t = typeof(T);
+			PropertyInfo one2ManyProp = null;
+			Type childCollectionType = null;
+			string childIdPropName = string.Empty;
+			string id = string.Empty;
+
+			foreach (var p in t.GetProperties()) {
+				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
+				var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
+#if !NETFX_CORE
+				var isOne2Many = one2Many.Length > 0;
+				var isPK = pk.Length > 0;
+#else
+				var isOne2Many = one2Many.Count() > 0;
+				var isPK = pk.Count() > 0;
+#endif
+				if (isOne2Many) {
+					childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
+					one2ManyProp = p;
+				}
+				if (isPK) {
+					id = p.GetValue (@object, null).ToString ();
+				}
+			}
+			
+			foreach (var p in childCollectionType.GetProperties()) {
+				var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+#if !NETFX_CORE
+				var isReferences = references.Length > 0;
+#else
+				var isReferences = references.Count() > 0;
+#endif
+				if (isReferences) {
+					childIdPropName = p.Name;
+				}				
+			}
+
+			var q = string.Format ("select * from {0} where {1} = '{2}'",
+							                                 childCollectionType.Name,
+							                                 childIdPropName,
+							                                 id);
+			var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
+			//TODO: вынести в метод
+
+			var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
+			Type myType;
+    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
+    		IList rList = (IList)Activator.CreateInstance(listType);
+
+			foreach (var e in qRes) {
+				var i = Activator.CreateInstance(childCollectionType);
+				foreach(var p in i.GetType().GetProperties()){
+					p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+				}
+				rList.Add(i);
+			}
+			rProp.SetValue(@object,rList,null);
+
+			return @object;	
 		}
-    }
+	}
 
 	public static class SQLite3
 	{
