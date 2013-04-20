@@ -2131,7 +2131,8 @@ namespace SQLite
 						cols [i].SetValue (obj, val);
  					}
 					OnInstanceCreated (obj);
-					yield return (T)obj;
+					var q = new TableQuery<T>(_conn);
+					yield return  q.GetDependentObjects((T)obj);
 				}
 			}
 			finally
@@ -2501,7 +2502,7 @@ namespace SQLite
 
 		public T ElementAt (int index)
 		{
-			return Skip (index).Take (1).First ();
+			return GetDependentObjects(Skip (index).Take (1).First ());
 		}
 
 		bool _deferred;
@@ -2849,9 +2850,9 @@ namespace SQLite
 		public IEnumerator<T> GetEnumerator ()
 		{
 			if (!_deferred)
-				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
+				return GenerateCommand ("*").ExecuteQuery<T> ().GetEnumerator ();
 
-			return GenerateCommand("*").ExecuteDeferredQuery<T>().GetEnumerator();
+			return GenerateCommand ("*").ExecuteDeferredQuery<T> ().GetEnumerator ();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
@@ -2871,7 +2872,7 @@ namespace SQLite
 		  	return GetDependentObjects(query.ToList<T> ().FirstOrDefault ());			
 		}
 
-		private T GetDependentObjects<T> (T @object)
+		public T GetDependentObjects<T> (T @object)
 		{			
 			var t = typeof(T);
 			PropertyInfo one2ManyProp = null;
