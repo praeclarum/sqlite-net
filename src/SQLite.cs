@@ -1269,7 +1269,7 @@ namespace SQLite
 	    /// <returns>
 	    /// The number of rows added to the table.
 	    /// </returns>
-	    public int Insert (object obj, string extra, Type objType, Queue<object> queue, int resultCount)
+	    private int Insert (object obj, string extra, Type objType, Queue<object> queue, int resultCount)
 		{
 			if (obj == null || objType == null) {
 				return 0;
