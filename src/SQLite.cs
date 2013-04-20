@@ -1186,6 +1186,15 @@ namespace SQLite
 			if (obj == null || objType == null) {
 				return 0;
 			}
+
+			if(HasOne2ManyAttribute(obj)){
+				Queue<object> queue = new Queue<object>();
+				foreach(object e in GetOne2ManyObjects(obj)){
+					queue.Enqueue(e);
+				}
+
+				Insert(obj,extra,objType,queue,0);
+			}
 			
             
 			var map = GetMapping (objType);
@@ -1241,6 +1250,89 @@ namespace SQLite
 			}
 			
 			return count;
+		}
+
+		  /// <summary>
+	    /// Recursively inserts the given object and it's dependent objects and retrieves its
+	    /// auto incremented primary key if it has one.
+	    /// </summary>
+	    /// <param name="obj">
+	    /// The object to insert.
+	    /// </param>
+	    /// <param name="extra">
+	    /// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+	    /// </param>
+	    /// <param name="objType">
+	    /// The type of object to insert.
+	    /// </param>
+	    /// <returns>
+	    /// The number of rows added to the table.
+	    /// </returns>
+	    public int Insert (object obj, string extra, Type objType, Queue<object> queue, int resultCount)
+		{
+			if (obj == null || objType == null) {
+				return 0;
+			}
+			
+            
+			var map = GetMapping (objType);
+
+#if NETFX_CORE
+            if (map.PK != null && map.PK.IsAutoGuid)
+            {
+                // no GetProperty so search our way up the inheritance chain till we find it
+                PropertyInfo prop;
+                while (objType != null)
+                {
+                    var info = objType.GetTypeInfo();
+                    prop = info.GetDeclaredProperty(map.PK.PropertyName);
+                    if (prop != null) 
+                    {
+                        if (prop.GetValue(obj, null).Equals(Guid.Empty))
+                        {
+                            prop.SetValue(obj, Guid.NewGuid(), null);
+                        }
+                        break; 
+                    }
+
+                    objType = info.BaseType;
+                }
+            }
+#else
+            if (map.PK != null && map.PK.IsAutoGuid) {
+                var prop = objType.GetProperty(map.PK.PropertyName);
+                if (prop != null) {
+                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
+                        prop.SetValue(obj, Guid.NewGuid(), null);
+                    }
+                }
+            }
+#endif
+
+
+			var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
+			
+			var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
+			var vals = new object[cols.Length];
+			for (var i = 0; i < vals.Length; i++) {
+				vals [i] = cols [i].GetValue (obj);
+			}
+			
+			var insertCmd = map.GetInsertCommand (this, extra);
+			resultCount = insertCmd.ExecuteNonQuery (vals);
+
+            if (map.HasAutoIncPK)
+            {
+				var id = SQLite3.LastInsertRowid (Handle);
+				map.SetAutoIncPK (obj, id);
+			}
+
+			if (queue.Count > 0) {
+				var o = queue.Dequeue();
+				Insert(o,extra,o.GetType(),queue,resultCount);
+			}
+			
+			return resultCount;
 		}
 
 		/// <summary>
@@ -1351,8 +1443,9 @@ namespace SQLite
 			), pk.Name);
 			resultCount += Execute (q, ps.ToArray ());
 
-			if (queue.Count > 1) {
-				Update(queue.Dequeue(),objType,queue,resultCount);
+			if (queue.Count > 0) {
+				var o = queue.Dequeue();
+				Update(o,o.GetType(),queue,resultCount);
 			}
 
 			return resultCount;
