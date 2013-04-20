@@ -1193,7 +1193,8 @@ namespace SQLite
 					queue.Enqueue(e);
 				}
 
-				Insert(obj,extra,objType,queue,0);
+				return Insert(obj,extra,objType,queue,0);
+
 			}
 			
             
@@ -1380,7 +1381,7 @@ namespace SQLite
 					queue.Enqueue(e);
 				}
 
-				Update(obj,objType,queue,0);
+				return Update(obj,objType,queue,0);
 			}
 			
 			var map = GetMapping (objType);
