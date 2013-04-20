@@ -1421,9 +1421,9 @@ namespace SQLite
 			}
 		}
 
-		private List<object> GetOne2ManyObjects(object @object)
+		private List<object> GetOne2ManyObjects (object @object)
 		{
-			List<object> result = new List<object>();
+			List<object> result = new List<object> ();
 
 			foreach (var p in @object.GetType().GetProperties()) {
 
@@ -1434,11 +1434,29 @@ namespace SQLite
 				var isOne2Many = one2Many.Count() > 0;
 #endif
 				if (isOne2Many) {
-					result = @object.GetType ().GetProperty (p.Name).GetValue (@object, null);
+					result.AddRange(@object.GetType ().GetProperty (p.Name).GetValue (@object, null) 
+					                as IEnumerable<object>);
 				}
 			}
 
 			return result;
+		}
+
+		private bool HasOne2ManyAttribute (object @object)
+		{
+			foreach (var p in @object.GetType().GetProperties()) {
+
+				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
+#if !NETFX_CORE
+				var isOne2Many = one2Many.Length > 0;
+#else
+				var isOne2Many = one2Many.Count() > 0;
+#endif
+
+				if(isOne2Many)
+					return isOne2Many;
+			}
+			return false;
 		}
 	}
 
