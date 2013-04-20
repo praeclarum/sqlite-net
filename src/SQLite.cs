@@ -2873,66 +2873,70 @@ namespace SQLite
 
 		private T GetDependentObjects<T> (T @object)
 		{
-			var query = Take (1);
-			var t = typeof(T);
-			PropertyInfo one2ManyProp = null;
-			Type childCollectionType = null;
-			string childIdPropName = string.Empty;
-			string id = string.Empty;
+			if (@object != null) {
+				var t = typeof(T);
+				PropertyInfo one2ManyProp = null;
+				Type childCollectionType = null;
+				string childIdPropName = string.Empty;
+				string id = string.Empty;
 
-			foreach (var p in t.GetProperties()) {
-				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
-				var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
+				foreach (var p in t.GetProperties()) {
+					var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
+					var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
 #if !NETFX_CORE
-				var isOne2Many = one2Many.Length > 0;
-				var isPK = pk.Length > 0;
+					var isOne2Many = one2Many.Length > 0;
+					var isPK = pk.Length > 0;
 #else
-				var isOne2Many = one2Many.Count() > 0;
-				var isPK = pk.Count() > 0;
+					var isOne2Many = one2Many.Count() > 0;
+					var isPK = pk.Count() > 0;
 #endif
-				if (isOne2Many) {
-					childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
-					one2ManyProp = p;
+					if (isOne2Many) {
+						childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
+						one2ManyProp = p;
+					}
+					if (isPK) {
+						id = p.GetValue (@object, null).ToString ();
+					}
 				}
-				if (isPK) {
-					id = p.GetValue (@object, null).ToString ();
-				}
-			}
-			
-			foreach (var p in childCollectionType.GetProperties()) {
-				var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+				
+				foreach (var p in childCollectionType.GetProperties()) {
+					var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
 #if !NETFX_CORE
-				var isReferences = references.Length > 0;
+					var isReferences = references.Length > 0;
 #else
-				var isReferences = references.Count() > 0;
+					var isReferences = references.Count() > 0;
 #endif
-				if (isReferences) {
-					childIdPropName = p.Name;
-				}				
-			}
-
-			var q = string.Format ("select * from {0} where {1} = '{2}'",
-							                                 childCollectionType.Name,
-							                                 childIdPropName,
-							                                 id);
-			var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
-			//TODO: вынести в метод
-
-			var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
-			Type myType;
-    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
-    		IList rList = (IList)Activator.CreateInstance(listType);
-
-			foreach (var e in qRes) {
-				var i = Activator.CreateInstance(childCollectionType);
-				foreach(var p in i.GetType().GetProperties()){
-					p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+					if (isReferences) {
+						childIdPropName = p.Name;
+					}				
 				}
-				rList.Add(i);
-			}
-			rProp.SetValue(@object,rList,null);
 
-			return @object;	
+				var q = string.Format ("select * from {0} where {1} = '{2}'",
+								                                 childCollectionType.Name,
+								                                 childIdPropName,
+								                                 id);
+
+				var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
+
+				var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
+				Type myType;
+	    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
+	    		IList rList = (IList)Activator.CreateInstance(listType);
+
+				foreach (var e in qRes) {
+					var i = Activator.CreateInstance(childCollectionType);
+					foreach(var p in i.GetType().GetProperties()){
+						p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+					}
+					rList.Add(i);
+				}
+				rProp.SetValue(@object,rList,null);
+
+				return @object;	
+			}
+			else{
+				return null;
+			}
 		}
 	}
 
