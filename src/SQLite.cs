@@ -1099,26 +1099,6 @@ namespace SQLite
 		/// </returns>
 		public int InsertOrReplace (object obj)
 		{
-			foreach (var p in obj.GetType().GetProperties()) {
-
-				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
-#if !NETFX_CORE
-				var isOne2Many = one2Many.Length > 0;
-#else
-				var isOne2Many = one2Many.Count() > 0;
-#endif
-				if (isOne2Many) {
-					var list = obj.GetType ().GetProperty (p.Name).GetValue (obj, null)
-						as IEnumerable<object>;
-					var t = new Thread(() => {
-						foreach(var o in list){
-							InsertOrReplace(o);
-						}
-					});
-					t.Start();
-					//TODO: complete one2many transaction
-				}
-			}
 			if (obj == null) {
 				return 0;
 			}
@@ -1439,6 +1419,26 @@ namespace SQLite
 					_open = false;
 				}
 			}
+		}
+
+		private List<object> GetOne2ManyObjects(object @object)
+		{
+			List<object> result = new List<object>();
+
+			foreach (var p in @object.GetType().GetProperties()) {
+
+				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
+#if !NETFX_CORE
+				var isOne2Many = one2Many.Length > 0;
+#else
+				var isOne2Many = one2Many.Count() > 0;
+#endif
+				if (isOne2Many) {
+					result = @object.GetType ().GetProperty (p.Name).GetValue (@object, null);
+				}
+			}
+
+			return result;
 		}
 	}
 
