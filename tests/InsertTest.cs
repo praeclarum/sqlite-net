@@ -51,6 +51,25 @@ namespace SQLite.Tests
 
         }
 
+		public class TestObjWithOne2Many
+		{
+			[PrimaryKey]
+			public int Id {get; set;}
+
+			[One2Many(typeof(TestDependentObj))]
+			public List<TestDependentObj> ObjList {get; set;}
+		}
+
+		public class TestDependentObj
+		{
+			[PrimaryKey]
+			public int Id {get; set;}
+			public string Text {get; set;}
+
+			[References(typeof(TestObjWithOne2Many))]
+			public int OwnerId {get; set;}
+		}
+
         public class OneColumnObj
         {
             [AutoIncrement, PrimaryKey]
@@ -72,6 +91,8 @@ namespace SQLite.Tests
                 CreateTable<TestObj2>();
                 CreateTable<OneColumnObj>();
 				CreateTable<UniqueObj>();
+				CreateTable<TestObjWithOne2Many>();
+				CreateTable<TestDependentObj>();
             }
         }
 		
@@ -79,6 +100,7 @@ namespace SQLite.Tests
         public void Setup()
         {
             _db = new TestDb(TestPath.GetTempFileName());
+			_db.SetForeignKeysPermissions(true);
         }
         [TearDown]
         public void TearDown()
@@ -258,6 +280,44 @@ namespace SQLite.Tests
 			var r = (from x in _db.Table<TestObj> () orderby x.Id select x).ToList ();
 			Assert.AreEqual (20, r.Count);
 			Assert.AreEqual ("Foo", r[4].Text);
+		}
+
+		[Test]
+		public void InsertObjWithOne2Many()
+		{
+			var ownerObj = new TestObjWithOne2Many {Id = 1};
+			var testObjects = Enumerable.Range(1,10)
+				.Select(i => new TestDependentObj {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
+			ownerObj.ObjList = testObjects;
+
+			_db.Insert(ownerObj);
+			var resultObj = _db.Table<TestObjWithOne2Many>().First();
+
+			Assert.AreNotEqual(null,resultObj);
+			Assert.AreEqual(10,resultObj.ObjList.Count);
+			Assert.AreEqual("Test1",resultObj.ObjList.First(x => x.Id == 1).Text);			
+		}
+
+		[Test]
+		public void InsertOrReplaceWithOne2Many()
+		{
+			var ownerObj = new TestObjWithOne2Many {Id = 1};
+			var testObjects = Enumerable.Range(1,10)
+				.Select(i => new TestDependentObj {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
+			ownerObj.ObjList = testObjects;
+
+			_db.InsertOrReplace(ownerObj);
+			var tmpObject = _db.Table<TestObjWithOne2Many>().First();
+			foreach(var o in tmpObject.ObjList)
+			{
+				o.Text += o.Id;
+			}
+			_db.InsertOrReplace(tmpObject);
+			var resultObjs = _db.Table<TestObjWithOne2Many>().ToList();
+
+			Assert.AreEqual(1, resultObjs.Count);
+			Assert.AreEqual(tmpObject.ObjList[0].Text, resultObjs[0].ObjList[0].Text);
+			Assert.AreNotEqual(ownerObj.ObjList[0].Text, resultObjs[0].ObjList[0].Text);
 		}
     }
 }
