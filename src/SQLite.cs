@@ -1826,9 +1826,6 @@ namespace SQLite
 				if (p.CanWrite && !ignore) {
 					if(!one2many)
 						cols.Add (new Column (p, createFlags));
-					else{
-					//TODO: logic of one2many relationship is here
-					}
 				}
 
 			}
@@ -1988,6 +1985,12 @@ namespace SQLite
                 Collation = Orm.Collation(prop);
 				IsReferenced = Orm.IsReferences(prop);
 
+				if(IsReferenced){
+					ReferenceName = Orm.GetReference(prop);
+					OnDeleteCascade = Orm.IsOnDeleteCascade(prop);
+					OnUpdateCascade = Orm.IsOnUpdateCascade(prop);
+				}
+
                 IsPK = Orm.IsPK(prop) ||
 					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
 					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
@@ -2007,10 +2010,6 @@ namespace SQLite
                 }
                 IsNullable = !IsPK;
                 MaxStringLength = Orm.MaxStringLength(prop);
-
-				ReferenceName = Orm.GetReference(prop);
-				OnUpdateCascade = Orm.IsOnUpdateCascade(prop);
-				OnDeleteCascade = Orm.IsOnUpdateCascade(prop);
 				IsFK = Orm.IsForeignKey(prop);
 
             }

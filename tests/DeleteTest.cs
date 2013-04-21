@@ -35,8 +35,8 @@ namespace SQLite.Tests
 		public class TestDependentObj
 		{
 			[PrimaryKey]
+			[AutoIncrement]
 			public int Id {get; set;}
-			public string Text {get; set;}
 
 			[References(typeof(TestObjWithOne2Many))]
 			[OnDeleteCascade]
@@ -44,6 +44,8 @@ namespace SQLite.Tests
 		}
 
 		const int Count = 100;
+		const int parentCount = 3;
+		const int childCount = 5;
 
 		SQLiteConnection CreateDb ()
 		{
@@ -58,19 +60,18 @@ namespace SQLite.Tests
 
 		SQLiteConnection CreateDbWithOne2Many ()
 		{
-			var db = new TestDb ();
+			var db = new TestDb ()
+				.SetForeignKeysPermissions(true);
 			db.CreateTable<TestObjWithOne2Many> ();
 			db.CreateTable<TestDependentObj> ();
-			var items = Enumerable.Range(1,3)
+			var items = Enumerable.Range(1,parentCount)
 							.Select(i => new TestObjWithOne2Many {Id = i, 
-																  ObjList = Enumerable.Range(1,5)
-																	.Select(x => new TestDependentObj{Id = (i*10) + x,
-																									  OwnerId = i,
-																									  Text = "Test" + ((int)(i*10) + x)})
+																  ObjList = Enumerable.Range(1,childCount)
+																	.Select(x => new TestDependentObj{OwnerId = i})
 																										.ToList()}).ToList();
 			db.InsertAll (items);
-			Assert.AreEqual (3, db.Table<TestObjWithOne2Many> ().Count ());
-			Assert.AreEqual (3 * 5 , db.Table<TestDependentObj> ().Count ());
+			Assert.AreEqual (parentCount, db.Table<TestObjWithOne2Many> ().Count ());
+			Assert.AreEqual (parentCount * childCount , db.Table<TestDependentObj> ().Count ());
 			return db;
 		}
 
@@ -116,6 +117,20 @@ namespace SQLite.Tests
 
 			Assert.AreEqual (Count, r);
 			Assert.AreEqual (0, db.Table<TestTable> ().Count ());
+		}
+
+		[Test]
+		public void DeleteEntityOneWithOnDeleteUpdate()
+		{
+			var db = CreateDbWithOne2Many();
+
+			var obj = db.Get<TestObjWithOne2Many>(1);
+			var r = db.Delete(obj);
+			var childObjects = db.Table<TestDependentObj>().Where(x => x.OwnerId == 1).ToList();
+
+			Assert.AreEqual(1, r);
+			Assert.AreEqual(parentCount - 1, db.Table<TestObjWithOne2Many>().Count());
+			Assert.AreEqual(0,childObjects.Count());
 		}
 	}
 }
