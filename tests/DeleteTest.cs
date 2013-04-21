@@ -120,7 +120,7 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void DeleteEntityOneWithOnDeleteUpdate()
+		public void DeleteEntityOneWithOnDeleteCascade()
 		{
 			var db = CreateDbWithOne2Many();
 
@@ -134,7 +134,7 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void DeleteAllWithOnDeleteUpdate()
+		public void DeleteAllWithOnDeleteCascade()
 		{
 			var db = CreateDbWithOne2Many();
 
