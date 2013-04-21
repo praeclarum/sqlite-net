@@ -132,6 +132,20 @@ namespace SQLite.Tests
 			Assert.AreEqual(parentCount - 1, db.Table<TestObjWithOne2Many>().Count());
 			Assert.AreEqual(0,childObjects.Count());
 		}
+
+		[Test]
+		public void DeleteAllWithOnDeleteUpdate()
+		{
+			var db = CreateDbWithOne2Many();
+
+			var r = db.DeleteAll<TestObjWithOne2Many>();
+
+			var childObjects = db.Table<TestDependentObj>().ToList();
+
+			Assert.AreEqual(parentCount, r);
+			Assert.AreEqual(0, db.Table<TestObjWithOne2Many>().Count());
+			Assert.AreEqual(0,childObjects.Count());
+		}
 	}
 }
 
