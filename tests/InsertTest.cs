@@ -319,5 +319,29 @@ namespace SQLite.Tests
 			Assert.AreEqual(tmpObject.ObjList[0].Text, resultObjs[0].ObjList[0].Text);
 			Assert.AreNotEqual(ownerObj.ObjList[0].Text, resultObjs[0].ObjList[0].Text);
 		}
+
+		[Test]
+		public void InsertAllWithOne2Many()
+		{
+			var ownerObjs = Enumerable.Range(1,3)
+				.Select(i => new TestObjWithOne2Many {Id = i, 
+													  ObjList = Enumerable.Range(1,5)
+														.Select(x => new TestDependentObj{Id = (i*10) + x,
+																						  OwnerId = i,
+																						  Text = "Test" + ((int)(i*10) + x)})
+																							.ToList()}).ToList();
+
+			_db.InsertAll(ownerObjs);
+
+			var resultObjs = _db.Table<TestObjWithOne2Many>().ToList();
+			var testObj1 = resultObjs.First(x => x.Id == 1);
+			var testObj2 = resultObjs.First(x => x.Id == 2);
+
+			Assert.AreEqual(3,resultObjs.Count);
+			Assert.AreEqual("Test11", testObj1.ObjList[0].Text);
+			Assert.AreEqual("Test12", testObj1.ObjList[1].Text);
+			Assert.AreEqual("Test21", testObj2.ObjList[0].Text);
+			Assert.AreEqual("Test22", testObj2.ObjList[1].Text);
+		}
     }
 }
