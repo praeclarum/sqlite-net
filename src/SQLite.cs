@@ -3082,7 +3082,7 @@ namespace SQLite
 				}
 				
 				if(childIdPropName != string.Empty){
-					var q = string.Format ("select * from {0} where {1} = '{2}'",
+					var q = string.Format ("select * from '{0}' where {1} = '{2}'",
 									                                 childCollectionType.Name,
 									                                 childIdPropName,
 									                                 id);

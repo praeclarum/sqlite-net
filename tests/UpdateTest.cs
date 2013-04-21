@@ -83,10 +83,10 @@ namespace SQLite.Tests
 			var q = string.Format("update {0} set Id = 10 where Id = {1}",map.TableName, ownerObjs[0].Id);
 			_db.Query(map,q,null);
 
-			var parents = _db.Table<TestObjWithOne2Many>().Where(x => x.Id == 10);
-			var childs = _db.Table<TestDependentObj>().Where(x => x.OwnerId == 10);
+			var parents = _db.Table<TestObjWithOne2Many>().Where(x => x.Id == 10).ToList();
+			var childs = _db.Table<TestDependentObj>().Where(x => x.OwnerId == 10).ToList();
 
-			Assert.AreEqual(3, parents.Count());
+			Assert.AreEqual(1, parents.Count());
 			Assert.AreEqual(5, childs.Count());		
 		}
 
