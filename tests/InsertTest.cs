@@ -54,15 +54,19 @@ namespace SQLite.Tests
 		public class TestObjWithOne2Many
 		{
 			[PrimaryKey]
+			[AutoIncrement]
 			public int Id {get; set;}
 
 			[One2Many(typeof(TestDependentObj))]
 			public List<TestDependentObj> ObjList {get; set;}
+
+			public string Text {get;set;}
 		}
 
 		public class TestDependentObj
 		{
 			[PrimaryKey]
+			[AutoIncrement]
 			public int Id {get; set;}
 			public string Text {get; set;}
 
@@ -301,17 +305,19 @@ namespace SQLite.Tests
 		[Test]
 		public void InsertOrReplaceWithOne2Many()
 		{
-			var ownerObj = new TestObjWithOne2Many {Id = 1};
+			var ownerObj = new TestObjWithOne2Many {Id = 1, Text = "Test1"};
 			var testObjects = Enumerable.Range(1,10)
 				.Select(i => new TestDependentObj {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
 			ownerObj.ObjList = testObjects;
 
 			_db.InsertOrReplace(ownerObj);
 			var tmpObject = _db.Table<TestObjWithOne2Many>().First();
-			foreach(var o in tmpObject.ObjList)
+			foreach(var o in ownerObj.ObjList)
 			{
 				o.Text += o.Id;
 			}
+			tmpObject.Text = "Test2";
+
 			_db.InsertOrReplace(tmpObject);
 			var resultObjs = _db.Table<TestObjWithOne2Many>().ToList();
 
@@ -329,6 +335,67 @@ namespace SQLite.Tests
 														.Select(x => new TestDependentObj{Id = (i*10) + x,
 																						  OwnerId = i,
 																						  Text = "Test" + ((int)(i*10) + x)})
+																							.ToList()}).ToList();
+
+			_db.InsertAll(ownerObjs);
+
+			var resultObjs = _db.Table<TestObjWithOne2Many>().ToList();
+			var testObj1 = resultObjs.First(x => x.Id == 1);
+			var testObj2 = resultObjs.First(x => x.Id == 2);
+
+			Assert.AreEqual(3,resultObjs.Count);
+			Assert.AreEqual("Test11", testObj1.ObjList[0].Text);
+			Assert.AreEqual("Test12", testObj1.ObjList[1].Text);
+			Assert.AreEqual("Test21", testObj2.ObjList[0].Text);
+			Assert.AreEqual("Test22", testObj2.ObjList[1].Text);
+		}
+
+		[Test]
+		public void InsertObjWithOwnerIdAutogetting()
+		{
+			var ownerObj = new TestObjWithOne2Many ();
+			var testObjects = Enumerable.Range(1,10)
+				.Select(i => new TestDependentObj {Text = "Test"+i}).ToList();
+			ownerObj.ObjList = testObjects;
+
+			_db.Insert(ownerObj);
+			var resultObj = _db.Table<TestObjWithOne2Many>().First();
+
+			Assert.AreNotEqual(null,resultObj);
+			Assert.AreEqual(10,resultObj.ObjList.Count);
+			Assert.AreEqual("Test1",resultObj.ObjList.First(x => x.Id == 1).Text);			
+		}
+
+		[Test]
+		public void InsertOrReplaceWithOwnerIdAutogetting()
+		{
+			var ownerObj = new TestObjWithOne2Many {Text = "Test1"};
+			var testObjects = Enumerable.Range(1,10)
+				.Select(i => new TestDependentObj {Text = "Test"+i}).ToList();
+			ownerObj.ObjList = testObjects;
+
+			_db.InsertOrReplace(ownerObj);
+			var tmpObject = _db.Table<TestObjWithOne2Many>().First();
+			foreach(var o in tmpObject.ObjList)
+			{
+				o.Text += o.Id;
+			}
+			tmpObject.Text = "Test2";
+
+			_db.InsertOrReplace(tmpObject);
+			var resultObjs = _db.Table<TestObjWithOne2Many>().ToList();
+
+			Assert.AreEqual(1, resultObjs.Count);
+			Assert.AreEqual(tmpObject.ObjList[0].Text, resultObjs[0].ObjList[0].Text);
+			Assert.AreNotEqual(ownerObj.ObjList[0].Text, resultObjs[0].ObjList[0].Text);
+		}
+
+		[Test]
+		public void InsertAllWithOwnerIdAutogetting()
+		{
+			var ownerObjs = Enumerable.Range(1,3)
+				.Select(i => new TestObjWithOne2Many {ObjList = Enumerable.Range(1,5)
+														.Select(x => new TestDependentObj{Text = "Test" + ((int)(i*10) + x)})
 																							.ToList()}).ToList();
 
 			_db.InsertAll(ownerObjs);

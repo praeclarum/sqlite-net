@@ -1190,7 +1190,7 @@ namespace SQLite
 			if(HasOne2ManyAttribute(obj)){
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2ManyObjects(obj)){
-					queue.Enqueue(this.SetOwnerId(obj,e));
+					queue.Enqueue(e);
 				}
 
 				return Insert(obj,extra,objType,queue,0);
@@ -1326,6 +1326,11 @@ namespace SQLite
             {
 				var id = SQLite3.LastInsertRowid (Handle);
 				map.SetAutoIncPK (obj, id);
+			}
+
+			foreach(var e in queue)
+			{
+				this.SetOwnerId(obj,e);
 			}
 
 			if (queue.Count > 0) {
@@ -1595,7 +1600,8 @@ namespace SQLite
 		private object SetOwnerId (object ownerObject, object childObject)
 		{
 			PropertyInfo ownerPrimaryKeyProp = null;
-			PropertyInfo childPrimaryKeyProp = null;
+			PropertyInfo childRerefencesProp = null;
+			PropertyInfo ownerOne2ManyProp = null;
 
 			foreach (var p in ownerObject.GetType().GetProperties()) {
 
@@ -1610,26 +1616,39 @@ namespace SQLite
 				}
 			}
 
-			foreach (var p in childObject.GetType().GetProperties()) {
+			foreach (var p in ownerObject.GetType().GetProperties()) {
 
-				var pk = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
 #if !NETFX_CORE
-				var isPk = pk.Length > 0;
+				var isOne2Many = one2Many.Length > 0;
 #else
-				var isPk = pk.Count() > 0;
+				var isOne2Many = one2Many.Count() > 0;
 #endif
-
-				if (isPk) {
-					if((pk[0] as ReferencesAttribute).ObjType != ownerObject.GetType())
-						return null;
-					childPrimaryKeyProp = p;
+				if (isOne2Many) {
+					ownerOne2ManyProp = p;
 				}
 			}
+
+			foreach (var p in childObject.GetType().GetProperties()) {
+
+				var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+#if !NETFX_CORE
+				var isReferences = references.Length > 0;
+#else
+				var isReferences = references.Count() > 0;
+#endif
+
+				if (isReferences) {
+					childRerefencesProp = p;
+				}
+			}
+			if(ownerOne2ManyProp == null)
+				return childObject;
 
 			var ownerKey = ownerObject.GetType().GetProperty(ownerPrimaryKeyProp.Name)
 				.GetValue(ownerObject,null);
 
-			childObject.GetType().GetProperty(childPrimaryKeyProp.Name)
+			childObject.GetType().GetProperty(childRerefencesProp.Name)
 				.SetValue(childObject,ownerKey,null);
 
 			return childObject;
