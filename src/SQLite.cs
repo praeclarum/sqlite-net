@@ -1190,7 +1190,7 @@ namespace SQLite
 			if(HasOne2ManyAttribute(obj)){
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2ManyObjects(obj)){
-					queue.Enqueue(e);
+					queue.Enqueue(this.SetOwnerId(obj,e));
 				}
 
 				return Insert(obj,extra,objType,queue,0);
@@ -1592,6 +1592,49 @@ namespace SQLite
 			return result;
 		}
 
+		private object SetOwnerId (object ownerObject, object childObject)
+		{
+			PropertyInfo ownerPrimaryKeyProp = null;
+			PropertyInfo childPrimaryKeyProp = null;
+
+			foreach (var p in ownerObject.GetType().GetProperties()) {
+
+				var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
+#if !NETFX_CORE
+				var isPk = pk.Length > 0;
+#else
+				var isPk = pk.Count() > 0;
+#endif
+				if (isPk) {
+					ownerPrimaryKeyProp = p;
+				}
+			}
+
+			foreach (var p in childObject.GetType().GetProperties()) {
+
+				var pk = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+#if !NETFX_CORE
+				var isPk = pk.Length > 0;
+#else
+				var isPk = pk.Count() > 0;
+#endif
+
+				if (isPk) {
+					if((pk[0] as ReferencesAttribute).ObjType != ownerObject.GetType())
+						return null;
+					childPrimaryKeyProp = p;
+				}
+			}
+
+			var ownerKey = ownerObject.GetType().GetProperty(ownerPrimaryKeyProp.Name)
+				.GetValue(ownerObject,null);
+
+			childObject.GetType().GetProperty(childPrimaryKeyProp.Name)
+				.SetValue(childObject,ownerKey,null);
+
+			return childObject;
+		}
+
 		private bool HasOne2ManyAttribute (object @object)
 		{
 			foreach (var p in @object.GetType().GetProperties()) {
@@ -1742,9 +1785,12 @@ namespace SQLite
 	{
 		public string Value { get; private set; }
 
-		public ReferencesAttribute (Type parentObject)
+		public Type ObjType { get; private set; }
+
+		public ReferencesAttribute (Type parentObjectType)
 		{
-			Value = SetReferenceName(parentObject);
+			Value = SetReferenceName(parentObjectType);
+			ObjType = parentObjectType;
 		}
 
 		private string SetReferenceName (Type t)
