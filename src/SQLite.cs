@@ -2262,7 +2262,7 @@ namespace SQLite
 				return ((ReferencesAttribute)attrs [0]).Value;
 #else
 			if (attrs.Count() > 0) {
-				return ((ForeingKeyAttribute)attrs.First()).Value;
+				return ((ReferencesAttribute)attrs.First()).Value;
 #endif
 			} else {
 				return null;
