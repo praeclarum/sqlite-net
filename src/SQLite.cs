@@ -1693,7 +1693,7 @@ namespace SQLite
 				}
 			}
 			if (relationshipDecl != string.Empty) {
-				relationshipDecl += ("\n," + relationshipDecl);
+				relationshipDecl = ("\n," + relationshipDecl);
 			}
 			return relationshipDecl;
 		}
