@@ -345,7 +345,7 @@ namespace SQLite
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
-			query += GetRelationshipColumnDecl(map);
+			query += GetRelationshipColumnsDecl(map);
 			query += ")";
 
 			var count = Execute (query);
@@ -1676,32 +1676,38 @@ namespace SQLite
 			return false;
 		}
 
-		private string GetRelationshipColumnDecl (TableMapping map)
+		private string GetRelationshipColumnsDecl (TableMapping map)
 		{
-			string relationshipDecl = string.Empty;
+			var fkColumns = map.Columns.Where (x => x.IsFK == true);
 
-			var fkColumn = map.Columns.FirstOrDefault (x => x.IsFK == true);
+			List<string> decls = new List<string> ();
 
-			if (fkColumn != null) {
-				if (fkColumn.IsFK) {
-					relationshipDecl += string.Format ("foreign key ({0}) ", fkColumn.Name);
-				}
-
-				if(fkColumn.IsReferenced){
-					relationshipDecl += string.Format ("references {0} ", fkColumn.ReferenceName);
-
-					if (fkColumn.OnDeleteCascade) {
-						relationshipDecl += "on delete cascade ";
+			foreach (var fkColumn in fkColumns) {
+				if (fkColumn != null) {
+					string relationshipDecl = string.Empty;
+					if (fkColumn.IsFK) {
+						relationshipDecl += string.Format ("foreign key ({0}) ", fkColumn.Name);
 					}
-					if (fkColumn.OnUpdateCascade) {
-						relationshipDecl += "on update cascade ";
+
+					if (fkColumn.IsReferenced) {
+						relationshipDecl += string.Format ("references {0} ", fkColumn.ReferenceName);
+
+						if (fkColumn.OnDeleteCascade) {
+							relationshipDecl += "on delete cascade ";
+						}
+						if (fkColumn.OnUpdateCascade) {
+							relationshipDecl += "on update cascade ";
+						}
 					}
+
+					decls.Add(relationshipDecl);
 				}
 			}
-			if (relationshipDecl != string.Empty) {
-				relationshipDecl = ("\n, " + relationshipDecl);
-			}
-			return relationshipDecl;
+
+			var result = string.Join(", \n", decls);
+			if(result != string.Empty)
+				result = ", \n" + result;
+			return result;
 		}
 	}
 
