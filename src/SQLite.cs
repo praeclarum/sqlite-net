@@ -345,7 +345,7 @@ namespace SQLite
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
-			query += GetRelationshipColumn(map);
+			query += GetRelationshipColumnDecl(map);
 			query += ")";
 
 			var count = Execute (query);
@@ -1676,7 +1676,7 @@ namespace SQLite
 			return false;
 		}
 
-		private string GetRelationshipColumn (TableMapping map)
+		private string GetRelationshipColumnDecl (TableMapping map)
 		{
 			string relationshipDecl = string.Empty;
 
