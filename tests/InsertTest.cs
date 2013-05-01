@@ -71,6 +71,9 @@ namespace SQLite.Tests
 			public string Text {get; set;}
 
 			[References(typeof(TestObjWithOne2Many))]
+			[ForeignKey]
+			[OnUpdateCascade]
+			[OnDeleteCascade]
 			public int OwnerId {get; set;}
 		}
 
