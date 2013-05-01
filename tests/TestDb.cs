@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 #if NETFX_CORE
 class DescriptionAttribute : Attribute
@@ -21,11 +22,45 @@ namespace SQLite.Tests
 
 		public uint TotalSales { get; set; }
 	}
+	public class ProductWithFK
+	{
+		[AutoIncrement, PrimaryKey]
+		public int Id { get; set; }
+		public string Name { get; set; }
+		public decimal Price { get; set; }
+		public uint TotalSales { get; set; }
+		[References(typeof(Order1WithO2M))]
+		[ForeignKey]
+		public int Owner1Id {get; set;}
+
+		[References(typeof(Order2WithO2M))]
+		[ForeignKey]
+		public int Owner2Id {get; set;}
+	}
+
 	public class Order
 	{
 		[AutoIncrement, PrimaryKey]
 		public int Id { get; set; }
 		public DateTime PlacedTime { get; set; }
+	}
+	public class Order1WithO2M
+	{
+		[AutoIncrement, PrimaryKey]
+		public int Id { get; set; }
+		public DateTime PlacedTime { get; set; }
+
+		[One2Many(typeof(ProductWithFK))]
+		public List<ProductWithFK> Products {get; set;}
+	}
+	public class Order2WithO2M
+	{
+		[AutoIncrement, PrimaryKey]
+		public int Id { get; set; }
+		public DateTime PlacedTime { get; set; }
+
+		[One2Many(typeof(ProductWithFK))]
+		public List<ProductWithFK> Products {get; set;}
 	}
 	public class OrderHistory {
 		[AutoIncrement, PrimaryKey]
