@@ -421,8 +421,16 @@ namespace SQLite.Tests
 			testObjects.Add(new TestDependentObj{Id = 11,OwnerId = 99});
 			ownerObj.ObjList = testObjects;
 
-			_db.Insert(ownerObj);
+			string exception = string.Empty;
+			try{
+				_db.Insert(ownerObj);
+			}
+			catch(SQLiteException ex){
+				exception = ex.Message;
+			}
 
+			Assert.AreNotEqual(string.Empty,exception);
+			Assert.AreEqual("Constraint", exception);
 		}
     }
 }
