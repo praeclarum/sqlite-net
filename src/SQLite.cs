@@ -2110,9 +2110,6 @@ namespace SQLite
 			if (!p.IsNullable) {
 				decl += "not null ";
 			}
-			if (p.IsFK) {
-				decl += "foreing key ";
-			}
 			if (p.IsReferenced) {
 				decl += ("references " + p.ReferenceName + " ");
 				if (p.OnDeleteCascade) {
