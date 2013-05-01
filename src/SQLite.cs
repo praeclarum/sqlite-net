@@ -1683,7 +1683,7 @@ namespace SQLite
 					relationshipDecl += string.Format("foreign key(\"{0}\") ",refColumn.Name);
 				}
 
-				relationshipDecl += string.Format("references (\"{0}\") ",refColumn.ReferenceName);
+				relationshipDecl += string.Format("references {0} ",refColumn.ReferenceName);
 
 				if(refColumn.OnDeleteCascade){
 					relationshipDecl += "on delete cascade ";
