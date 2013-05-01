@@ -1697,7 +1697,7 @@ namespace SQLite
 				}
 			}
 			if (relationshipDecl != string.Empty) {
-				relationshipDecl = ("\n," + relationshipDecl);
+				relationshipDecl = ("\n, " + relationshipDecl);
 			}
 			return relationshipDecl;
 		}
@@ -2140,6 +2140,17 @@ namespace SQLite
 			}
 			if (!p.IsNullable) {
 				decl += "not null ";
+			}
+			if (!p.IsFK) {
+				if (p.IsReferenced) {
+				decl += ("references " + p.ReferenceName + " ");
+				if (p.OnDeleteCascade) {
+					decl += "on delete cascade ";
+				}
+				if (p.OnUpdateCascade) {
+					decl += "on update cascade ";
+				}
+			}
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
 				decl += "collate " + p.Collation + " ";
