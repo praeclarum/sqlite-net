@@ -72,8 +72,6 @@ namespace SQLite.Tests
 
 			[References(typeof(TestObjWithOne2Many))]
 			[ForeignKey]
-			[OnUpdateCascade]
-			[OnDeleteCascade]
 			public int OwnerId {get; set;}
 		}
 
@@ -412,6 +410,19 @@ namespace SQLite.Tests
 			Assert.AreEqual("Test12", testObj1.ObjList[1].Text);
 			Assert.AreEqual("Test21", testObj2.ObjList[0].Text);
 			Assert.AreEqual("Test22", testObj2.ObjList[1].Text);
+		}
+
+		[Test]
+		public void ForeignKeyConstraintWhileInsertTest()
+		{
+			var ownerObj = new TestObjWithOne2Many {Id = 1, Text = "Test1"};
+			var testObjects = Enumerable.Range(1,10)
+				.Select(i => new TestDependentObj {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
+			testObjects.Add(new TestDependentObj{Id = 11,OwnerId = 99});
+			ownerObj.ObjList = testObjects;
+
+			_db.Insert(ownerObj);
+
 		}
     }
 }

@@ -1648,7 +1648,11 @@ namespace SQLite
 
 			var ownerKey = ownerObject.GetType().GetProperty(ownerPrimaryKeyProp.Name)
 				.GetValue(ownerObject,null);
-
+			var ownerId = childObject.GetType().GetProperty(childRerefencesProp.Name)
+				.GetValue(childObject,null);
+			if((int)ownerId != 0){
+				return childObject;
+			}
 			childObject.GetType().GetProperty(childRerefencesProp.Name)
 				.SetValue(childObject,ownerKey,null);
 
