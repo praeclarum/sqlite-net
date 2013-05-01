@@ -1680,20 +1680,22 @@ namespace SQLite
 		{
 			string relationshipDecl = string.Empty;
 
-			var refColumn = map.Columns.FirstOrDefault (x => x.IsReferenced == true);
+			var fkColumn = map.Columns.FirstOrDefault (x => x.IsFK == true);
 
-			if (refColumn != null) {
-				if (refColumn.IsFK) {
-					relationshipDecl += string.Format ("foreign key ({0}) ", refColumn.Name);
+			if (fkColumn != null) {
+				if (fkColumn.IsFK) {
+					relationshipDecl += string.Format ("foreign key ({0}) ", fkColumn.Name);
 				}
 
-				relationshipDecl += string.Format ("references {0} ", refColumn.ReferenceName);
+				if(fkColumn.IsReferenced){
+					relationshipDecl += string.Format ("references {0} ", fkColumn.ReferenceName);
 
-				if (refColumn.OnDeleteCascade) {
-					relationshipDecl += "on delete cascade ";
-				}
-				if (refColumn.OnUpdateCascade) {
-					relationshipDecl += "on update cascade ";
+					if (fkColumn.OnDeleteCascade) {
+						relationshipDecl += "on delete cascade ";
+					}
+					if (fkColumn.OnUpdateCascade) {
+						relationshipDecl += "on update cascade ";
+					}
 				}
 			}
 			if (relationshipDecl != string.Empty) {
