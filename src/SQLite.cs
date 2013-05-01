@@ -345,8 +345,9 @@ namespace SQLite
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
+			query += GetRelationshipColumn(map);
 			query += ")";
-			
+
 			var count = Execute (query);
 			
 			if (count == 0) { //Possible bug: This always seems to return 0?
@@ -1669,6 +1670,30 @@ namespace SQLite
 					return isOne2Many;
 			}
 			return false;
+		}
+
+		private string GetRelationshipColumn (TableMapping map)
+		{
+			string relationshipDecl = string.Empty;
+
+			var refColumn = map.Columns.FirstOrDefault (x => x.IsReferenced == true);
+
+			if(refColumn != null){
+				if(refColumn.IsFK){
+					relationshipDecl += string.Format("foreign key(\"{0}\") ",refColumn.Name);
+				}
+
+				relationshipDecl += string.Format("references (\"{0}\") ",refColumn.ReferenceName);
+
+				if(refColumn.OnDeleteCascade){
+					relationshipDecl += "on delete cascade ";
+				}
+				if(refColumn.OnUpdateCascade){
+					relationshipDecl += "on update cascade ";
+				}
+			}
+
+			return relationshipDecl;
 		}
 	}
 
