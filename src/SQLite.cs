@@ -251,14 +251,14 @@ namespace SQLite
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-        public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None, TableMapping.ColumnInfo columns = null)
 		{
 			if (_mappings == null) {
 				_mappings = new Dictionary<string, TableMapping> ();
 			}
 			TableMapping map;
 			if (!_mappings.TryGetValue (type.FullName, out map)) {
-				map = new TableMapping (type, createFlags);
+				map = new TableMapping (type, createFlags, columns);
 				_mappings [type.FullName] = map;
 			}
 			return map;
@@ -301,20 +301,45 @@ namespace SQLite
 
 			return Execute (query);
 		}
-		
+
+        /// <summary>
+        /// Executes a "create table if not exists" on the database. It also
+        /// creates any specified indexes on the columns of the table. It uses
+        /// a schema automatically generated from the specified type. You can
+        /// later access this schema by calling GetMapping.
+        /// </summary>
+        /// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param> 
+        /// <param name="colInfo">Explicit column definitions.</param>
+        /// <returns>
+        /// The number of entries added to the database schema.
+        /// </returns>
+        public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None, Action<TableMapping.ColumnInfoT<T>> columns = null)
+        {
+            TableMapping.ColumnInfoT<T> colInfo = null;
+            if(columns != null)
+            {
+                colInfo = new TableMapping.ColumnInfoT<T>();
+                columns(colInfo);
+            }
+
+            return CreateTable(typeof(T), createFlags, colInfo);
+        }
+
 		/// <summary>
 		/// Executes a "create table if not exists" on the database. It also
 		/// creates any specified indexes on the columns of the table. It uses
 		/// a schema automatically generated from the specified type. You can
 		/// later access this schema by calling GetMapping.
 		/// </summary>
+        /// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param> 
+        /// <param name="colInfo">Explicit column definitions.</param>
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None)
-		{
-			return CreateTable(typeof (T), createFlags);
-		}
+  //      public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None, TableMapping.ColumnInfo colInfo = null)
+		//{
+		//	return CreateTable(typeof (T), createFlags, colInfo);
+		//}
 
 		/// <summary>
 		/// Executes a "create table if not exists" on the database. It also
@@ -324,17 +349,20 @@ namespace SQLite
 		/// </summary>
 		/// <param name="ty">Type to reflect to a database table.</param>
         /// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
+        /// <param name="colInfo">Explicit column definitions.</param>
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-        public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
+        /// 
+
+        public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None, TableMapping.ColumnInfo colInfo = null)
 		{
 			if (_tables == null) {
 				_tables = new Dictionary<string, TableMapping> ();
 			}
 			TableMapping map;
 			if (!_tables.TryGetValue (ty.FullName, out map)) {
-				map = GetMapping (ty, createFlags);
+                map = GetMapping(ty, createFlags, colInfo);
 				_tables.Add (ty.FullName, map);
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
@@ -419,21 +447,7 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
         {
-            MemberExpression mx;
-            if (property.Body.NodeType == ExpressionType.Convert)
-            {
-                mx = ((UnaryExpression)property.Body).Operand as MemberExpression;
-            }
-            else
-            {
-                mx= (property.Body as MemberExpression);
-            }
-            var propertyInfo = mx.Member as PropertyInfo;
-            if (propertyInfo == null)
-            {
-                throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
-            }
-
+            var propertyInfo = Utilities.GetPropertyInfo(property);
             var propName = propertyInfo.Name;
 
             var map = GetMapping<T>();
@@ -1544,7 +1558,7 @@ namespace SQLite
 		Column[] _insertColumns;
 		Column[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None, TableMapping.ColumnInfo columns = null)
 		{
 			MappedType = type;
 
@@ -1564,12 +1578,20 @@ namespace SQLite
 						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
 						select p;
 #endif
-			var cols = new List<Column> ();
+			
+            var cols = new List<Column> ();
+
+//            do somethng with columns
+
 			foreach (var p in props) {
+                // check explict column info
+                Column expColumn = columns == null ? null : columns.Get(p);
+                var ignore = expColumn != null && expColumn.Ignore;
+
 #if !NETFX_CORE
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
+				ignore = ignore || p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
 #else
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
+				ignore = ignore || p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 #endif
                 if (!ignore && ((createFlags & CreateFlags.IgnoreUnknownTypes) == CreateFlags.IgnoreUnknownTypes))
                 {
@@ -1579,7 +1601,14 @@ namespace SQLite
                 }
 
 				if (p.CanWrite && !ignore) {
-					cols.Add (new Column (p, createFlags));
+                    if (expColumn == null)
+                    {
+                        cols.Add(new Column(p, createFlags));
+                    }
+                    else
+                    {
+                        cols.Add(expColumn);
+                    }
 				}
 			}
 			Columns = cols.ToArray ();
@@ -1710,6 +1739,7 @@ namespace SQLite
 
             public bool IsAutoInc { get; private set; }
             public bool IsAutoGuid { get; private set; }
+            public bool Ignore { get; private set; }
 
 			public bool IsPK { get; private set; }
 
@@ -1719,21 +1749,22 @@ namespace SQLite
 
 			public int MaxStringLength { get; private set; }
 
-            public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+            public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None, string columnName = null, bool? isNullable = null,
+                bool? isPK = null, bool? isAutoInc = null, int? maxStringLength = null, bool ignore = false)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
                 _prop = prop;
-                Name = colAttr == null ? prop.Name : colAttr.Name;
+                Name = columnName ?? (colAttr == null ? prop.Name : colAttr.Name);
                 //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
                 ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
                 Collation = Orm.Collation(prop);
 
-                IsPK = Orm.IsPK(prop) ||
+                IsPK = isPK ?? (Orm.IsPK(prop) ||
 					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
-					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
+					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0));
 
-                var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+                var isAuto = isAutoInc ?? Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
                 IsAutoGuid = isAuto && ColumnType == typeof(Guid);
                 IsAutoInc = isAuto && !IsAutoGuid;
 
@@ -1746,8 +1777,9 @@ namespace SQLite
                 {
                     Indices = new IndexedAttribute[] { new IndexedAttribute() };
                 }
-                IsNullable = !IsPK;
-                MaxStringLength = Orm.MaxStringLength(prop);
+                IsNullable = isNullable ?? !IsPK;
+                MaxStringLength = maxStringLength ?? Orm.MaxStringLength(prop);
+                Ignore = ignore;
             }
 
 			public void SetValue (object obj, object val)
@@ -1760,6 +1792,46 @@ namespace SQLite
 				return _prop.GetValue (obj, null);
 			}
 		}
+
+        public class ColumnInfo
+        {
+            protected List<Column> _Columns = new List<Column>();
+            protected CreateFlags _CreateFlags = CreateFlags.None;
+
+            public void Add(Column column)
+            {
+                _Columns.Add(column);
+            }
+
+            public Column Get(PropertyInfo info)
+            {
+                return _Columns.Where(c => c.PropertyName == info.Name).FirstOrDefault();
+            }
+
+            public void Add<T>(Expression<Func<T, object>> property,  string columnName = null, bool? isNullable = null,
+                bool? isPK = null, bool? isAutoInc = null, int? maxStringLength = null, bool ignore = false)
+            {
+                _Columns.Add(new Column(Utilities.GetPropertyInfo(property), _CreateFlags, columnName, isNullable, isPK, isAutoInc, maxStringLength, ignore));
+            }
+
+        }
+
+        public class ColumnInfoT<T> : ColumnInfo
+        {
+            public ColumnInfoT<T> Flags(CreateFlags createFlags)
+            {
+                _CreateFlags = createFlags;
+                return this;
+            }
+
+            public ColumnInfoT<T> AddColumn(Expression<Func<T, object>> property, string columnName = null, bool? isNullable = null,
+                bool? isPK = null, bool? isAutoInc = null, int? maxStringLength = null, bool ignore = false)
+            {
+                Add(property, columnName, isNullable, isPK, isAutoInc, maxStringLength, ignore);
+                return this;
+            }
+        }
+
 	}
 
 	public static class Orm
@@ -2736,6 +2808,27 @@ namespace SQLite
 		}
     }
 
+    public static class Utilities
+    {
+        public static PropertyInfo GetPropertyInfo<T>(Expression<Func<T, object>> property)
+        {
+            MemberExpression mx;
+            if (property.Body.NodeType == ExpressionType.Convert)
+            {
+                mx = ((UnaryExpression)property.Body).Operand as MemberExpression;
+            }
+            else
+            {
+                mx = (property.Body as MemberExpression);
+            }
+            var propertyInfo = mx.Member as PropertyInfo;
+            if (propertyInfo == null)
+            {
+                throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
+            }
+            return propertyInfo;
+        }
+    }
 	public static class SQLite3
 	{
 		public enum Result : int
