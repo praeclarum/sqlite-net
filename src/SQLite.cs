@@ -1280,7 +1280,17 @@ namespace SQLite
 			var vals = from c in cols
 				select c.GetValue (obj);
 			var ps = new List<object> (vals);
-			ps.Add (pk.GetValue (obj));
+
+			// Get the value for the primary key
+			object pkValue = pk.GetValue (obj);
+
+			// If the table has an auto-incrementing primary key, make sure we have a value set for it
+			if (map.HasAutoIncPK && (pkValue == null || pkValue.ToString() == "" || pkValue.ToString() == "0")) {
+				throw new NotSupportedException("Cannot update " + map.TableName + ": it has no value for auto-inc PK");
+			}
+
+			// Add the value to the list ready for creating the SQL query
+			ps.Add (pkValue);
 			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
 				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
 			return Execute (q, ps.ToArray ());
