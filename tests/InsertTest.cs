@@ -57,13 +57,29 @@ namespace SQLite.Tests
 			[AutoIncrement]
 			public int Id {get; set;}
 
-			[One2Many(typeof(TestDependentObj))]
-			public List<TestDependentObj> ObjList {get; set;}
+			[One2Many(typeof(TestDependentObj1))]
+			public List<TestDependentObj1> ObjList {get; set;}
+
+			[One2One(typeof(TestDependentObj1))]
+			public TestDependentObj1 Obj {get; set;}
 
 			public string Text {get;set;}
 		}
 
-		public class TestDependentObj
+		public class TestObjWithOne2One
+		{
+			[PrimaryKey]
+			[AutoIncrement]
+			public int Id {get; set;}
+
+
+			[One2One(typeof(TestDependentObj2))]
+			public TestDependentObj2 Obj {get; set;}
+
+			public string Text {get;set;}
+		}
+
+		public class TestDependentObj1
 		{
 			[PrimaryKey]
 			[AutoIncrement]
@@ -71,6 +87,18 @@ namespace SQLite.Tests
 			public string Text {get; set;}
 
 			[References(typeof(TestObjWithOne2Many))]
+			[ForeignKey]
+			public int OwnerId {get; set;}
+		}
+
+		public class TestDependentObj2
+		{
+			[PrimaryKey]
+			[AutoIncrement]
+			public int Id {get; set;}
+			public string Text {get; set;}
+
+			[References(typeof(TestObjWithOne2One))]
 			[ForeignKey]
 			public int OwnerId {get; set;}
 		}
@@ -97,7 +125,9 @@ namespace SQLite.Tests
                 CreateTable<OneColumnObj>();
 				CreateTable<UniqueObj>();
 				CreateTable<TestObjWithOne2Many>();
-				CreateTable<TestDependentObj>();
+				CreateTable<TestObjWithOne2One>();
+				CreateTable<TestDependentObj1>();
+				CreateTable<TestDependentObj2>();
             }
         }
 		
@@ -292,7 +322,7 @@ namespace SQLite.Tests
 		{
 			var ownerObj = new TestObjWithOne2Many {Id = 1};
 			var testObjects = Enumerable.Range(1,10)
-				.Select(i => new TestDependentObj {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
+				.Select(i => new TestDependentObj1 {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
 			ownerObj.ObjList = testObjects;
 
 			_db.Insert(ownerObj);
@@ -308,7 +338,7 @@ namespace SQLite.Tests
 		{
 			var ownerObj = new TestObjWithOne2Many {Id = 1, Text = "Test1"};
 			var testObjects = Enumerable.Range(1,10)
-				.Select(i => new TestDependentObj {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
+				.Select(i => new TestDependentObj1 {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
 			ownerObj.ObjList = testObjects;
 
 			_db.InsertOrReplace(ownerObj);
@@ -333,7 +363,7 @@ namespace SQLite.Tests
 			var ownerObjs = Enumerable.Range(1,3)
 				.Select(i => new TestObjWithOne2Many {Id = i, 
 													  ObjList = Enumerable.Range(1,5)
-														.Select(x => new TestDependentObj{Id = (i*10) + x,
+														.Select(x => new TestDependentObj1{Id = (i*10) + x,
 																						  OwnerId = i,
 																						  Text = "Test" + ((int)(i*10) + x)})
 																							.ToList()}).ToList();
@@ -356,7 +386,7 @@ namespace SQLite.Tests
 		{
 			var ownerObj = new TestObjWithOne2Many ();
 			var testObjects = Enumerable.Range(1,10)
-				.Select(i => new TestDependentObj {Text = "Test"+i}).ToList();
+				.Select(i => new TestDependentObj1 {Text = "Test"+i}).ToList();
 			ownerObj.ObjList = testObjects;
 
 			_db.Insert(ownerObj);
@@ -372,7 +402,7 @@ namespace SQLite.Tests
 		{
 			var ownerObj = new TestObjWithOne2Many {Text = "Test1"};
 			var testObjects = Enumerable.Range(1,10)
-				.Select(i => new TestDependentObj {Text = "Test"+i}).ToList();
+				.Select(i => new TestDependentObj1 {Text = "Test"+i}).ToList();
 			ownerObj.ObjList = testObjects;
 
 			_db.InsertOrReplace(ownerObj);
@@ -396,7 +426,7 @@ namespace SQLite.Tests
 		{
 			var ownerObjs = Enumerable.Range(1,3)
 				.Select(i => new TestObjWithOne2Many {ObjList = Enumerable.Range(1,5)
-														.Select(x => new TestDependentObj{Text = "Test" + ((int)(i*10) + x)})
+														.Select(x => new TestDependentObj1{Text = "Test" + ((int)(i*10) + x)})
 																							.ToList()}).ToList();
 
 			_db.InsertAll(ownerObjs);
@@ -417,8 +447,8 @@ namespace SQLite.Tests
 		{
 			var ownerObj = new TestObjWithOne2Many {Id = 1, Text = "Test1"};
 			var testObjects = Enumerable.Range(1,10)
-				.Select(i => new TestDependentObj {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
-			testObjects.Add(new TestDependentObj{Id = 11,OwnerId = 99});
+				.Select(i => new TestDependentObj1 {Id = i,OwnerId = ownerObj.Id, Text = "Test"+i}).ToList();
+			testObjects.Add(new TestDependentObj1{Id = 11,OwnerId = 99});
 			ownerObj.ObjList = testObjects;
 
 			string exception = string.Empty;
@@ -431,6 +461,27 @@ namespace SQLite.Tests
 
 			Assert.AreNotEqual(string.Empty,exception);
 			Assert.AreEqual("Constraint", exception);
+		}
+
+		
+		[Test]
+		public void InsertOrReplaceWithOne2One()
+		{
+			var ownerObj = new TestObjWithOne2One {Id = 1, Text = "Test1"};
+
+			ownerObj.Obj = new TestDependentObj2{Text = "DependentObj1", OwnerId = 1};
+
+			_db.InsertOrReplace(ownerObj);
+			var tmpObject = _db.Table<TestObjWithOne2One>().First();
+
+
+			tmpObject.Text = "Test2";
+
+			_db.InsertOrReplace(tmpObject);
+			var resultObjs = _db.Table<TestObjWithOne2One>().ToList();
+
+			Assert.AreEqual(1, resultObjs.Count);
+			Assert.AreEqual("Test2",resultObjs[0].Text);
 		}
     }
 }

@@ -1197,6 +1197,13 @@ namespace SQLite
 				return Insert(obj,extra,objType,queue,0);
 
 			}
+			else if(HasOne2OneAttribute(obj)){
+				Queue<object> queue = new Queue<object>();
+				queue.Enqueue(GetOne2OneObject(obj));
+
+				return Insert(obj,extra,objType,queue,0);
+
+			}
 			
             
 			var map = GetMapping (objType);
@@ -1386,6 +1393,12 @@ namespace SQLite
 				foreach(object e in GetOne2ManyObjects(obj)){
 					queue.Enqueue(e);
 				}
+
+				return Update(obj,objType,queue,0);
+			}
+			else if(HasOne2OneAttribute(obj)){
+				Queue<object> queue = new Queue<object>();
+				queue.Enqueue(GetOne2OneObject(obj));
 
 				return Update(obj,objType,queue,0);
 			}
@@ -1598,11 +1611,32 @@ namespace SQLite
 			return result;
 		}
 
+		private object GetOne2OneObject (object @object)
+		{
+			object result = null;
+
+			foreach (var p in @object.GetType().GetProperties()) {
+
+				var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
+#if !NETFX_CORE
+				var isOne2One = one2One.Length > 0;
+#else
+				var isOne2One = one2One.Count() > 0;
+#endif
+				if (isOne2One) {
+					result = @object.GetType ().GetProperty (p.Name).GetValue (@object, null);
+				}
+			}
+
+			return result;
+		}
+
 		private object SetOwnerId (object ownerObject, object childObject)
 		{
 			PropertyInfo ownerPrimaryKeyProp = null;
 			PropertyInfo childRerefencesProp = null;
 			PropertyInfo ownerOne2ManyProp = null;
+			PropertyInfo ownerOne2OneProp = null;
 
 			foreach (var p in ownerObject.GetType().GetProperties()) {
 
@@ -1630,6 +1664,19 @@ namespace SQLite
 				}
 			}
 
+			foreach (var p in ownerObject.GetType().GetProperties()) {
+
+				var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
+#if !NETFX_CORE
+				var isOne2One = one2One.Length > 0;
+#else
+				var isOne2One = one2One.Count() > 0;
+#endif
+				if (isOne2One) {
+					ownerOne2OneProp = p;
+				}
+			}
+
 			foreach (var p in childObject.GetType().GetProperties()) {
 
 				var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
@@ -1643,7 +1690,7 @@ namespace SQLite
 					childRerefencesProp = p;
 				}
 			}
-			if(ownerOne2ManyProp == null)
+			if(ownerOne2ManyProp == null && ownerOne2OneProp == null)
 				return childObject;
 
 			var ownerKey = ownerObject.GetType().GetProperty(ownerPrimaryKeyProp.Name)
@@ -1672,6 +1719,23 @@ namespace SQLite
 
 				if(isOne2Many)
 					return isOne2Many;
+			}
+			return false;
+		}
+
+		private bool HasOne2OneAttribute (object @object)
+		{
+			foreach (var p in @object.GetType().GetProperties()) {
+
+				var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
+#if !NETFX_CORE
+				var isOne2One = one2One.Length > 0;
+#else
+				var isOne2One = one2One.Count() > 0;
+#endif
+
+				if(isOne2One)
+					return isOne2One;
 			}
 			return false;
 		}
@@ -1768,6 +1832,17 @@ namespace SQLite
 	public class One2ManyAttribute : Attribute
 	{
 		public One2ManyAttribute (Type type)
+		{
+			Value = type;
+		}
+
+		public Type Value { get; set; }
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
+	public class One2OneAttribute : Attribute
+	{
+		public One2OneAttribute (Type type)
 		{
 			Value = type;
 		}
@@ -1923,12 +1998,14 @@ namespace SQLite
 #if !NETFX_CORE
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
 				var one2many = p.GetCustomAttributes (typeof(One2ManyAttribute), true).Length > 0;
+				var one2one = p.GetCustomAttributes (typeof(One2OneAttribute), true).Length > 0;
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 				var one2many = p.GetCustomAttributes (typeof(One2ManyAttribute), true).Count() > 0;
+				var one2one = p.GetCustomAttributes (typeof(One2OneAttribute), true).Count() > 0;
 #endif
 				if (p.CanWrite && !ignore) {
-					if(!one2many)
+					if(!one2many && !one2one)
 						cols.Add (new Column (p, createFlags));
 				}
 
@@ -3146,24 +3223,33 @@ namespace SQLite
 		{			
 			var t = typeof(T);
 			PropertyInfo one2ManyProp = null;
+			PropertyInfo one2OneProp = null;
 			Type childCollectionType = null;
+			Type childType = null;			
 			string childIdPropName = string.Empty;
 			string id = string.Empty;
 
 			if (@object != null) {
 				foreach (var p in t.GetProperties()) {
 					var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
+					var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
 					var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
 #if !NETFX_CORE
 					var isOne2Many = one2Many.Length > 0;
+					var isOne2One = one2One.Length > 0;
 					var isPK = pk.Length > 0;
 #else
 					var isOne2Many = one2Many.Count() > 0;
+					var isOne2One = one2One.Count() > 0;
 					var isPK = pk.Count() > 0;
 #endif
 					if (isOne2Many) {
 						childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
 						one2ManyProp = p;
+					}
+					if(isOne2One){
+						childType = (one2One [0] as One2OneAttribute).Value;
+						one2OneProp = p;
 					}
 					if (isPK) {
 						id = p.GetValue (@object, null).ToString ();
@@ -3193,7 +3279,6 @@ namespace SQLite
 					var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
 
 					var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
-					Type myType;
 		    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
 		    		IList rList = (IList)Activator.CreateInstance(listType);
 
@@ -3205,6 +3290,56 @@ namespace SQLite
 						rList.Add(i);
 					}
 					rProp.SetValue(@object,rList,null);
+
+					return @object;
+				}
+				return @object;
+			}
+			else if (one2OneProp != null){
+				return this.GetDependentObject<T>(@object,one2OneProp,childType,id);
+			}
+			else{
+				return @object;
+			}
+		}
+		
+		public T GetDependentObject<T> (T @object, PropertyInfo one2OneProp, Type childType,string id)
+		{
+
+			string childIdPropName = string.Empty;
+				
+			if (one2OneProp != null) {
+				foreach (var p in childType.GetProperties()) {
+					var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+#if !NETFX_CORE
+					var isReferences = references.Length > 0;
+#else
+					var isReferences = references.Count() > 0;
+#endif
+					if (isReferences) {
+						childIdPropName = p.Name;
+					}				
+				}
+				
+				if(childIdPropName != string.Empty){
+					var q = string.Format ("select * from '{0}' where {1} = '{2}'",
+									                                 childType.Name,
+									                                 childIdPropName,
+									                                 id);
+
+					var qRes = this.Connection.Query (new TableMapping (childType), q, null);
+
+					var rProp = @object.GetType ().GetProperty (one2OneProp.Name);
+		    		var obj = Activator.CreateInstance(childType);
+
+					foreach (var e in qRes) {
+						var i = Activator.CreateInstance(childType);
+						foreach(var p in i.GetType().GetProperties()){
+							p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+						}
+						obj = i;
+					}
+					rProp.SetValue(@object,obj,null);
 
 					return @object;
 				}
