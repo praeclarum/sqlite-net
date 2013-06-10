@@ -1343,7 +1343,8 @@ namespace SQLite
 
 			if (queue.Count > 0) {
 				var o = queue.Dequeue();
-				Insert(o,extra,o.GetType(),queue,resultCount);
+				if(o != null)
+					Insert(o,extra,o.GetType(),queue,resultCount);
 			}
 			
 			return resultCount;
@@ -1465,7 +1466,8 @@ namespace SQLite
 
 			if (queue.Count > 0) {
 				var o = queue.Dequeue();
-				Update(o,o.GetType(),queue,resultCount);
+				if(o != null)
+					Update(o,o.GetType(),queue,resultCount);
 			}
 
 			return resultCount;
@@ -1637,6 +1639,8 @@ namespace SQLite
 			PropertyInfo childRerefencesProp = null;
 			PropertyInfo ownerOne2ManyProp = null;
 			PropertyInfo ownerOne2OneProp = null;
+			if(childObject == null)
+				return null;
 
 			foreach (var p in ownerObject.GetType().GetProperties()) {
 
@@ -1837,6 +1841,11 @@ namespace SQLite
 		}
 
 		public Type Value { get; set; }
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
+	public class LazyAttribute : Attribute
+	{
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
@@ -3218,7 +3227,8 @@ namespace SQLite
 			var query = Take (1);
 		  	return GetDependentObjects(query.ToList<T> ().FirstOrDefault ());			
 		}
-
+		
+		//TODO: refactor this
 		public T GetDependentObjects<T> (T @object)
 		{			
 			var t = typeof(T);
@@ -3226,6 +3236,7 @@ namespace SQLite
 			PropertyInfo one2OneProp = null;
 			Type childCollectionType = null;
 			Type childType = null;			
+			bool lazyProp = false;
 			string childIdPropName = string.Empty;
 			string id = string.Empty;
 
@@ -3234,14 +3245,17 @@ namespace SQLite
 					var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
 					var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
 					var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
+					var lazy = p.GetCustomAttributes (typeof(LazyAttribute), true);
 #if !NETFX_CORE
 					var isOne2Many = one2Many.Length > 0;
 					var isOne2One = one2One.Length > 0;
 					var isPK = pk.Length > 0;
+					var isLazy = lazy.Length > 0;
 #else
 					var isOne2Many = one2Many.Count() > 0;
 					var isOne2One = one2One.Count() > 0;
 					var isPK = pk.Count() > 0;
+					var isLazy = Lazy.Count() > 0;
 #endif
 					if (isOne2Many) {
 						childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
@@ -3253,11 +3267,14 @@ namespace SQLite
 					}
 					if (isPK) {
 						id = p.GetValue (@object, null).ToString ();
-				}
+					}
+					if(isLazy){
+						lazyProp = isLazy;
+					}
 			}
 			}
 				
-			if (one2ManyProp != null) {
+			if (one2ManyProp != null && !lazyProp) {
 				foreach (var p in childCollectionType.GetProperties()) {
 					var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
 #if !NETFX_CORE
@@ -3295,7 +3312,7 @@ namespace SQLite
 				}
 				return @object;
 			}
-			else if (one2OneProp != null){
+			else if (one2OneProp != null && !lazyProp){
 				return this.GetDependentObject<T>(@object,one2OneProp,childType,id);
 			}
 			else{

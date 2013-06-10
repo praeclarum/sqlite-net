@@ -74,7 +74,11 @@ namespace SQLite.Tests
 
 
 			[One2One(typeof(TestDependentObj2))]
-			public TestDependentObj2 Obj {get; set;}
+			public TestDependentObj2 Obj1 {get; set;}
+
+			[One2One(typeof(TestDependentObj2))]
+			[Lazy]
+			public TestDependentObj2 Obj2 {get; set;}
 
 			public string Text {get;set;}
 		}
@@ -469,7 +473,7 @@ namespace SQLite.Tests
 		{
 			var ownerObj = new TestObjWithOne2One {Id = 1, Text = "Test1"};
 
-			ownerObj.Obj = new TestDependentObj2{Text = "DependentObj1", OwnerId = 1};
+			ownerObj.Obj1 = new TestDependentObj2{Text = "DependentObj1", OwnerId = 1};
 
 			_db.InsertOrReplace(ownerObj);
 			var tmpObject = _db.Table<TestObjWithOne2One>().First();
@@ -482,6 +486,21 @@ namespace SQLite.Tests
 
 			Assert.AreEqual(1, resultObjs.Count);
 			Assert.AreEqual("Test2",resultObjs[0].Text);
+		}
+
+		[Test]
+		public void LazyLoadTest()
+		{
+			var ownerObj = new TestObjWithOne2One {Id = 1, Text = "Test1"};
+
+			ownerObj.Obj1 = new TestDependentObj2{Text = "DependentObj1", OwnerId = 1};
+
+			_db.InsertOrReplace(ownerObj);
+
+			var resultObjs = _db.Table<TestObjWithOne2One>().ToList();
+
+			Assert.AreEqual(1, resultObjs.Count);
+			Assert.AreEqual(null,resultObjs[0].Obj1);
 		}
     }
 }
