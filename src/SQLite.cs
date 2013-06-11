@@ -3291,21 +3291,7 @@ namespace SQLite
 						}
 				
 						if(childIdPropName != string.Empty){
-							var qRes = GetObjects(childCollectionType,childIdPropName,id);
-							var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
-				    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
-				    		IList rList = (IList)Activator.CreateInstance(listType);
-
-							foreach (var e in qRes) {
-								var i = Activator.CreateInstance(childCollectionType);
-								foreach(var prop in i.GetType().GetProperties()){
-									prop.SetValue(i,e.GetType().GetProperty(prop.Name).GetValue(e,null),null);					
-								}
-								rList.Add(i);
-							}
-							rProp.SetValue(@object,rList,null);
-
-							return @object;
+							@object = SetChildCollectionToObject(@object,childCollectionType,one2ManyProp,childIdPropName,id);
 						}
 						return @object;
 					}
@@ -3370,6 +3356,25 @@ namespace SQLite
 				                                 id);
 
 			return this.Connection.Query (new TableMapping (childType), q, null);
+		}
+		
+		private T SetChildCollectionToObject<T>(T @object,Type childCollectionType, PropertyInfo one2ManyProp,string childIdPropName, string id)
+		{
+			var qRes = GetObjects(childCollectionType,childIdPropName,id);
+			var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
+    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
+    		IList rList = (IList)Activator.CreateInstance(listType);
+
+			foreach (var e in qRes) {
+				var i = Activator.CreateInstance(childCollectionType);
+				foreach(var prop in i.GetType().GetProperties()){
+					prop.SetValue(i,e.GetType().GetProperty(prop.Name).GetValue(e,null),null);					
+				}
+				rList.Add(i);
+			}
+			rProp.SetValue(@object,rList,null);
+
+			return @object;
 		}
 	}
 
