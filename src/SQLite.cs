@@ -3325,21 +3325,7 @@ namespace SQLite
 				}
 				
 				if(childIdPropName != string.Empty){
-					var qRes = GetObjects(childType,childIdPropName,id);
-
-					var rProp = @object.GetType ().GetProperty (one2OneProp.Name);
-		    		var obj = Activator.CreateInstance(childType);
-
-					foreach (var e in qRes) {
-						var i = Activator.CreateInstance(childType);
-						foreach(var p in i.GetType().GetProperties()){
-							p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
-						}
-						obj = i;
-					}
-					rProp.SetValue(@object,obj,null);
-
-					return @object;
+					@object = SetChildToObject(@object,childType,one2OneProp,childIdPropName,id);
 				}
 				return @object;
 			}
@@ -3373,6 +3359,25 @@ namespace SQLite
 				rList.Add(i);
 			}
 			rProp.SetValue(@object,rList,null);
+
+			return @object;
+		}
+		
+		private T SetChildToObject<T>(T @object,Type childType, PropertyInfo one2OneProp,string childIdPropName, string id)
+		{
+			var qRes = GetObjects(childType,childIdPropName,id);
+
+			var rProp = @object.GetType ().GetProperty (one2OneProp.Name);
+    		var obj = Activator.CreateInstance(childType);
+
+			foreach (var e in qRes) {
+				var i = Activator.CreateInstance(childType);
+				foreach(var p in i.GetType().GetProperties()){
+					p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+				}
+				obj = i;
+			}
+			rProp.SetValue(@object,obj,null);
 
 			return @object;
 		}
