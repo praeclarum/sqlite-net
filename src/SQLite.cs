@@ -3278,17 +3278,7 @@ namespace SQLite
 					}
 
 					if (one2ManyProp != null && !lazyProp) {
-						foreach (var prop in childCollectionType.GetProperties()) {
-							var references = prop.GetCustomAttributes (typeof(ReferencesAttribute), true);
-		#if !NETFX_CORE
-							var isReferences = references.Length > 0;
-		#else
-							var isReferences = references.Count() > 0;
-		#endif
-							if (isReferences) {
-								childIdPropName = prop.Name;
-							}				
-						}
+						childIdPropName = GetChildIdPropName(childCollectionType);
 				
 						if(childIdPropName != string.Empty){
 							@object = SetChildCollectionToObject(@object,childCollectionType,one2ManyProp,childIdPropName,id);
@@ -3308,21 +3298,10 @@ namespace SQLite
 		
 		public T GetDependentObject<T> (T @object, PropertyInfo one2OneProp, Type childType,string id)
 		{
-
 			string childIdPropName = string.Empty;
 				
 			if (one2OneProp != null) {
-				foreach (var p in childType.GetProperties()) {
-					var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
-#if !NETFX_CORE
-					var isReferences = references.Length > 0;
-#else
-					var isReferences = references.Count() > 0;
-#endif
-					if (isReferences) {
-						childIdPropName = p.Name;
-					}				
-				}
+				childIdPropName = GetChildIdPropName(childType);
 				
 				if(childIdPropName != string.Empty){
 					@object = SetChildToObject(@object,childType,one2OneProp,childIdPropName,id);
@@ -3380,6 +3359,22 @@ namespace SQLite
 			rProp.SetValue(@object,obj,null);
 
 			return @object;
+		}
+
+		private string GetChildIdPropName (Type childType)
+		{
+			foreach (var p in childType.GetProperties()) {
+				var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+#if !NETFX_CORE
+				var isReferences = references.Length > 0;
+#else
+				var isReferences = references.Count() > 0;
+#endif
+				if (isReferences) {
+					return p.Name;
+				}				
+			}
+			return string.Empty;
 		}
 	}
 
