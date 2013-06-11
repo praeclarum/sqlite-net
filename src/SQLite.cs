@@ -3261,32 +3261,27 @@ namespace SQLite
 					var isPK = pk.Count() > 0;
 					var isLazy = Lazy.Count() > 0;
 #endif
-					if (isOne2Many) {
-										//Расставить вызовы соответсвующиих функций за ифами. Проверку на ленивость вынести в топ
-						childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
-						one2ManyProp = p;
-					}
-					if(isOne2One){
-						childType = (one2One [0] as One2OneAttribute).Value;
-						one2OneProp = p;
-					}
+
 					if (isPK) {
 						id = p.GetValue (@object, null).ToString ();
 					}
-					if(isLazy){
-						lazyProp = isLazy;
-					}
-
-					if (one2ManyProp != null && !lazyProp) {
-						childIdPropName = GetChildIdPropName(childCollectionType);
+					if(!isLazy){
+						if (isOne2Many) {
+							childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
+							one2ManyProp = p;
+							childIdPropName = GetChildIdPropName(childCollectionType);
 				
-						if(childIdPropName != string.Empty){
-							@object = SetChildCollectionToObject(@object,childCollectionType,one2ManyProp,childIdPropName,id);
+							if(childIdPropName != string.Empty){
+								@object = SetChildCollectionToObject(@object,childCollectionType,one2ManyProp,childIdPropName,id);
 						}
 						return @object;
-					}
-					else if (one2OneProp != null && !lazyProp && one2OneProp.GetValue(@object,null) == null){
-						@object = this.GetDependentObject<T>(@object,one2OneProp,childType,id);
+						}
+						if(isOne2One){
+							childType = (one2One [0] as One2OneAttribute).Value;
+							one2OneProp = p;
+							if(one2OneProp.GetValue(@object,null) == null)
+								@object = this.GetDependentObject<T>(@object,one2OneProp,childType,id);
+						}
 					}
 				}
 			}
