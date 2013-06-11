@@ -78,7 +78,7 @@ namespace SQLite.Tests
 
 			[One2One(typeof(TestDependentObj2))]
 			[Lazy]
-			public TestDependentObj2 Obj2 {get; set;}
+			public TestDependentObj3 Obj2 {get; set;}
 
 			public string Text {get;set;}
 		}
@@ -96,6 +96,18 @@ namespace SQLite.Tests
 		}
 
 		public class TestDependentObj2
+		{
+			[PrimaryKey]
+			[AutoIncrement]
+			public int Id {get; set;}
+			public string Text {get; set;}
+
+			[References(typeof(TestObjWithOne2One))]
+			[ForeignKey]
+			public int OwnerId {get; set;}
+		}
+
+		public class TestDependentObj3
 		{
 			[PrimaryKey]
 			[AutoIncrement]
@@ -132,6 +144,7 @@ namespace SQLite.Tests
 				CreateTable<TestObjWithOne2One>();
 				CreateTable<TestDependentObj1>();
 				CreateTable<TestDependentObj2>();
+				CreateTable<TestDependentObj3>();
             }
         }
 		
@@ -493,14 +506,17 @@ namespace SQLite.Tests
 		{
 			var ownerObj = new TestObjWithOne2One {Id = 1, Text = "Test1"};
 
-			ownerObj.Obj1 = new TestDependentObj2{Text = "DependentObj1", OwnerId = 1};
+			ownerObj.Obj1 = new TestDependentObj2{Text = "Obj1", OwnerId = 1};
+			ownerObj.Obj2 = new TestDependentObj3{Text = "Obj2", OwnerId = 1};
 
 			_db.InsertOrReplace(ownerObj);
 
-			var resultObjs = _db.Table<TestObjWithOne2One>().ToList();
+			var resultObj = _db.Table<TestObjWithOne2One>().First(x => x.Id == 1);
+			var resultDependentObj = _db.Table<TestDependentObj3>().First(x => x.OwnerId == 1);
 
-			Assert.AreEqual(1, resultObjs.Count);
-			Assert.AreEqual(null,resultObjs[0].Obj1);
+			Assert.AreEqual("Obj1",resultObj.Obj1.Text);
+			Assert.AreEqual(null,resultObj.Obj2);
+			Assert.AreEqual("Obj2",resultDependentObj.Text);
 		}
     }
 }

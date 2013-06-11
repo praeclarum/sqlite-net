@@ -1199,7 +1199,9 @@ namespace SQLite
 			}
 			else if(HasOne2OneAttribute(obj)){
 				Queue<object> queue = new Queue<object>();
-				queue.Enqueue(GetOne2OneObject(obj));
+				foreach(object e in GetOne2OneObjects(obj)){
+					queue.Enqueue(e);
+				}
 
 				return Insert(obj,extra,objType,queue,0);
 
@@ -1399,7 +1401,9 @@ namespace SQLite
 			}
 			else if(HasOne2OneAttribute(obj)){
 				Queue<object> queue = new Queue<object>();
-				queue.Enqueue(GetOne2OneObject(obj));
+				foreach(object e in GetOne2OneObjects(obj)){
+					queue.Enqueue(e);
+				}
 
 				return Update(obj,objType,queue,0);
 			}
@@ -1613,9 +1617,9 @@ namespace SQLite
 			return result;
 		}
 
-		private object GetOne2OneObject (object @object)
+		private List<object> GetOne2OneObjects (object @object)
 		{
-			object result = null;
+			List<object> result = new List<object> ();
 
 			foreach (var p in @object.GetType().GetProperties()) {
 
@@ -1626,7 +1630,7 @@ namespace SQLite
 				var isOne2One = one2One.Count() > 0;
 #endif
 				if (isOne2One) {
-					result = @object.GetType ().GetProperty (p.Name).GetValue (@object, null);
+					result.Add(@object.GetType ().GetProperty (p.Name).GetValue (@object, null));
 				}
 			}
 
@@ -3258,6 +3262,7 @@ namespace SQLite
 					var isLazy = Lazy.Count() > 0;
 #endif
 					if (isOne2Many) {
+										//Расставить вызовы соответсвующиих функций за ифами. Проверку на ленивость вынести в топ
 						childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
 						one2ManyProp = p;
 					}
@@ -3271,53 +3276,48 @@ namespace SQLite
 					if(isLazy){
 						lazyProp = isLazy;
 					}
-			}
-			}
-				
-			if (one2ManyProp != null && !lazyProp) {
-				foreach (var p in childCollectionType.GetProperties()) {
-					var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
-#if !NETFX_CORE
-					var isReferences = references.Length > 0;
-#else
-					var isReferences = references.Count() > 0;
-#endif
-					if (isReferences) {
-						childIdPropName = p.Name;
-					}				
-				}
-				
-				if(childIdPropName != string.Empty){
-					var q = string.Format ("select * from '{0}' where {1} = '{2}'",
-									                                 childCollectionType.Name,
-									                                 childIdPropName,
-									                                 id);
 
-					var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
-
-					var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
-		    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
-		    		IList rList = (IList)Activator.CreateInstance(listType);
-
-					foreach (var e in qRes) {
-						var i = Activator.CreateInstance(childCollectionType);
-						foreach(var p in i.GetType().GetProperties()){
-							p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+					if (one2ManyProp != null && !lazyProp) {
+						foreach (var prop in childCollectionType.GetProperties()) {
+							var references = prop.GetCustomAttributes (typeof(ReferencesAttribute), true);
+		#if !NETFX_CORE
+							var isReferences = references.Length > 0;
+		#else
+							var isReferences = references.Count() > 0;
+		#endif
+							if (isReferences) {
+								childIdPropName = prop.Name;
+							}				
 						}
-						rList.Add(i);
-					}
-					rProp.SetValue(@object,rList,null);
+				
+						if(childIdPropName != string.Empty){
+							var qRes = GetObjects(childCollectionType,childIdPropName,id);
+							var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
+				    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
+				    		IList rList = (IList)Activator.CreateInstance(listType);
 
-					return @object;
+							foreach (var e in qRes) {
+								var i = Activator.CreateInstance(childCollectionType);
+								foreach(var prop in i.GetType().GetProperties()){
+									prop.SetValue(i,e.GetType().GetProperty(prop.Name).GetValue(e,null),null);					
+								}
+								rList.Add(i);
+							}
+							rProp.SetValue(@object,rList,null);
+
+							return @object;
+						}
+						return @object;
+					}
+					else if (one2OneProp != null && !lazyProp && one2OneProp.GetValue(@object,null) == null){
+						@object = this.GetDependentObject<T>(@object,one2OneProp,childType,id);
+					}
 				}
-				return @object;
-			}
-			else if (one2OneProp != null && !lazyProp){
-				return this.GetDependentObject<T>(@object,one2OneProp,childType,id);
 			}
 			else{
 				return @object;
 			}
+			return @object;
 		}
 		
 		public T GetDependentObject<T> (T @object, PropertyInfo one2OneProp, Type childType,string id)
@@ -3339,12 +3339,7 @@ namespace SQLite
 				}
 				
 				if(childIdPropName != string.Empty){
-					var q = string.Format ("select * from '{0}' where {1} = '{2}'",
-									                                 childType.Name,
-									                                 childIdPropName,
-									                                 id);
-
-					var qRes = this.Connection.Query (new TableMapping (childType), q, null);
+					var qRes = GetObjects(childType,childIdPropName,id);
 
 					var rProp = @object.GetType ().GetProperty (one2OneProp.Name);
 		    		var obj = Activator.CreateInstance(childType);
@@ -3365,6 +3360,16 @@ namespace SQLite
 			else{
 				return @object;
 			}
+		}
+		
+		private List<object> GetObjects (Type childType, string childIdPropName, string id)
+		{
+			var q = string.Format ("select * from '{0}' where {1} = '{2}'",
+				                                 childType.Name,
+				                                 childIdPropName,
+				                                 id);
+
+			return this.Connection.Query (new TableMapping (childType), q, null);
 		}
 	}
 
