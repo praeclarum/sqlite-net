@@ -2751,7 +2751,13 @@ namespace SQLite
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
-
+		
+		[DllImport("sqlite3", EntryPoint = "sqlite3_initialize", CallingConvention=CallingConvention.Cdecl)]
+		public static extern int Initialize();
+						
+		[DllImport("sqlite3", EntryPoint = "sqlite3_shutdown", CallingConvention=CallingConvention.Cdecl)]
+		public static extern int Shutdown();
+		
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
 
