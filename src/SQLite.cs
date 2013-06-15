@@ -424,7 +424,7 @@ namespace SQLite
             var sql = String.Format(sqlFormat, tableName, columnName, unique ? "unique" : "", indexName);
             return Execute(sql);
         }
-
+shu
         /// <summary>
         /// Creates an index for the specified table and column.
         /// </summary>
@@ -2907,10 +2907,10 @@ namespace SQLite
 		public static extern Result Close (IntPtr db);
 		
 		[DllImport("sqlite3", EntryPoint = "sqlite3_initialize", CallingConvention=CallingConvention.Cdecl)]
-		public static extern int Initialize();
+		public static extern Result Initialize();
 						
 		[DllImport("sqlite3", EntryPoint = "sqlite3_shutdown", CallingConvention=CallingConvention.Cdecl)]
-		public static extern int Shutdown();
+		public static extern Result Shutdown();
 		
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
