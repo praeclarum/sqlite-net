@@ -387,6 +387,7 @@ namespace SQLite
             const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
             var sql = String.Format(sqlFormat, tableName, columnName, unique ? "unique" : "", indexName);
             return Execute(sql);
+        }
         
         /// <summary>
         /// Creates an index for the specified table and column.
