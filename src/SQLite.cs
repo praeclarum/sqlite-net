@@ -1942,6 +1942,15 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
+	public class InitializedAttribute : BaseAttribute
+	{
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(InitializedAttribute), value);
+        }
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
 	public class OnUpdateCascadeAttribute : Attribute
 	{
 	}
@@ -3297,6 +3306,8 @@ namespace SQLite
 			bool lazyProp = false;
 			string childIdPropName = string.Empty;
 			string id = GetPrimaryKeyValue<T>(@object);
+		    var hasInitializedProperty = InitializedAttribute.IsDefined(@object);
+            var isInitialized = !hasInitializedProperty ? false : (bool)BaseAttribute.GetValueOfProperty<InitializedAttribute>(@object);
 
 			if (@object != null) {
 				foreach (var p in t.GetProperties()) {
@@ -3308,6 +3319,7 @@ namespace SQLite
 					var isOne2Many = one2Many.Length > 0;
 					var isOne2One = one2One.Length > 0;
 					var isLazy = lazy.Length > 0;
+                    
 #else
 					var isOne2Many = one2Many.Count() > 0;
 					var isOne2One = one2One.Count() > 0;
@@ -3328,7 +3340,7 @@ namespace SQLite
 						if(isOne2One){
 							childType = (one2One [0] as One2OneAttribute).Value;
 							one2OneProp = p;
-							if(one2OneProp.GetValue(@object,null) == null)
+							if(one2OneProp.GetValue(@object,null) == null || (hasInitializedProperty && !isInitialized))
 								@object = this.GetDependentObject<T>(@object,one2OneProp,childType,id);
 						}
 					}
