@@ -222,6 +222,11 @@ namespace SQLite
 			}
 		}
 
+        /// <summary>
+        /// Set the enforcement of foreign key contraints
+        /// </summary>
+        /// <param name="flag"><c>true</c> enforces contraints; otherwise contraints are not enforced.</param>
+        /// <returns></returns>
 		public SQLiteConnection SetForeignKeysPermissions(bool flag){
 			if(flag)
 				this.Execute("PRAGMA foreign_keys = ON;");
@@ -1188,7 +1193,7 @@ namespace SQLite
 				return 0;
 			}
 
-			if(HasOne2ManyAttribute(obj)){
+			if(One2ManyAttribute.IsDefined(obj)){
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2ManyObjects(obj)){
 					queue.Enqueue(e);
@@ -1197,7 +1202,7 @@ namespace SQLite
 				return Insert(obj,extra,objType,queue,0);
 
 			}
-			else if(HasOne2OneAttribute(obj)){
+			else if(One2OneAttribute.IsDefined(obj)){
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2OneObjects(obj)){
 					queue.Enqueue(e);
@@ -1391,7 +1396,7 @@ namespace SQLite
 				return 0;
 			}
 
-			if(HasOne2ManyAttribute(obj)){
+            if (One2ManyAttribute.IsDefined(obj)) {
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2ManyObjects(obj)){
 					queue.Enqueue(e);
@@ -1399,7 +1404,7 @@ namespace SQLite
 
 				return Update(obj,objType,queue,0);
 			}
-			else if(HasOne2OneAttribute(obj)){
+			else if(One2OneAttribute.IsDefined(obj)) {
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2OneObjects(obj)){
 					queue.Enqueue(e);
@@ -1712,41 +1717,7 @@ namespace SQLite
 				.SetValue(childObject,ownerKey,null);
 
 			return childObject;
-		}
-
-		private bool HasOne2ManyAttribute (object @object)
-		{
-			foreach (var p in @object.GetType().GetProperties()) {
-
-				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
-#if !NETFX_CORE
-				var isOne2Many = one2Many.Length > 0;
-#else
-				var isOne2Many = one2Many.Count() > 0;
-#endif
-
-				if(isOne2Many)
-					return isOne2Many;
-			}
-			return false;
-		}
-
-		private bool HasOne2OneAttribute (object @object)
-		{
-			foreach (var p in @object.GetType().GetProperties()) {
-
-				var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
-#if !NETFX_CORE
-				var isOne2One = one2One.Length > 0;
-#else
-				var isOne2One = one2One.Count() > 0;
-#endif
-
-				if(isOne2One)
-					return isOne2One;
-			}
-			return false;
-		}
+		}	
 
 		private string GetRelationshipColumnsDecl (TableMapping map)
 		{
@@ -1809,8 +1780,59 @@ namespace SQLite
 		}
 	}
 
+    public class BaseAttribute : Attribute
+    {
+        public static bool IsDefined(Type attributeType, Object instance)
+        {
+            if (instance == null)
+            {
+                return false;
+            }
+
+            return IsDefined(attributeType, instance.GetType());
+        }
+
+        public static bool IsDefined(Type attributeType, Type instanceType)
+        {
+            foreach (var p in instanceType.GetProperties())
+            {
+
+                var attributes = p.GetCustomAttributes(attributeType, true);
+#if !NETFX_CORE
+                var isDefined = attributes.Length > 0;
+#else
+				var isDefined = attributes.Count() > 0;
+#endif
+
+                if (isDefined)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static object GetValueOfProperty<TAttribute>(object instance) where TAttribute : Attribute
+        {
+            Type attributeType = typeof(TAttribute);                
+            foreach (var p in instance.GetType().GetProperties())
+            {
+                var attributes = p.GetCustomAttributes(attributeType, true);
+#if !NETFX_CORE
+                var isDefined = attributes.Length > 0;
+#else
+				var isDefined = attributes.Count() > 0;
+#endif
+
+                if (isDefined)
+                    return p.GetValue(instance, null);
+            }
+
+            return null;
+        }
+    }
+
     [AttributeUsage (AttributeTargets.Class)]
-	public class TableAttribute : Attribute
+	public class TableAttribute : BaseAttribute
 	{
 		public string Name { get; set; }
 
@@ -1818,10 +1840,15 @@ namespace SQLite
 		{
 			Name = name;
 		}
+
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(TableAttribute), value);
+        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class ColumnAttribute : Attribute
+	public class ColumnAttribute : BaseAttribute
 	{
 		public string Name { get; set; }
 
@@ -1829,15 +1856,24 @@ namespace SQLite
 		{
 			Name = name;
 		}
+
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(ColumnAttribute), value);
+        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class PrimaryKeyAttribute : Attribute
+    public class PrimaryKeyAttribute : BaseAttribute
 	{
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(PrimaryKeyAttribute), value);
+        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class One2ManyAttribute : Attribute
+    public class One2ManyAttribute : BaseAttribute
 	{
 		public One2ManyAttribute (Type type)
 		{
@@ -1845,15 +1881,24 @@ namespace SQLite
 		}
 
 		public Type Value { get; set; }
+
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(One2ManyAttribute), value);
+        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class LazyAttribute : Attribute
+    public class LazyAttribute : BaseAttribute
 	{
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(LazyAttribute), value);
+        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class One2OneAttribute : Attribute
+    public class One2OneAttribute : BaseAttribute
 	{
 		public One2OneAttribute (Type type)
 		{
@@ -1861,6 +1906,11 @@ namespace SQLite
 		}
 
 		public Type Value { get; set; }
+
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(One2OneAttribute), value);
+        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
@@ -1927,7 +1977,7 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class ReferencesAttribute : Attribute
+	public class ReferencesAttribute : BaseAttribute
 	{
 		public string Value { get; private set; }
 
@@ -1957,6 +2007,10 @@ namespace SQLite
 
 		}
 
+        public static bool IsDefined(object value)
+        {
+            return IsDefined(typeof(One2OneAttribute), value);
+        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
@@ -3233,7 +3287,7 @@ namespace SQLite
 		}
 		
 		//TODO: refactor this
-		public T GetDependentObjects<T> (T @object)
+		public T GetDependentObjects<T>(T @object)
 		{			
 			var t = typeof(T);
 			PropertyInfo one2ManyProp = null;
@@ -3242,7 +3296,7 @@ namespace SQLite
 			Type childType = null;			
 			bool lazyProp = false;
 			string childIdPropName = string.Empty;
-			string id = string.Empty;
+			string id = GetPrimaryKeyValue<T>(@object);
 
 			if (@object != null) {
 				foreach (var p in t.GetProperties()) {
@@ -3253,18 +3307,13 @@ namespace SQLite
 #if !NETFX_CORE
 					var isOne2Many = one2Many.Length > 0;
 					var isOne2One = one2One.Length > 0;
-					var isPK = pk.Length > 0;
 					var isLazy = lazy.Length > 0;
 #else
 					var isOne2Many = one2Many.Count() > 0;
 					var isOne2One = one2One.Count() > 0;
 					var isPK = pk.Count() > 0;
 					var isLazy = Lazy.Count() > 0;
-#endif
-
-					if (isPK) {
-						id = p.GetValue (@object, null).ToString ();
-					}
+#endif					
 					if(!isLazy){
 						if (isOne2Many) {
 							childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
@@ -3290,8 +3339,18 @@ namespace SQLite
 			}
 			return @object;
 		}
-		
-		public T GetDependentObject<T> (T @object, PropertyInfo one2OneProp, Type childType,string id)
+
+	    private static string GetPrimaryKeyValue<T>(object instance)
+	    {
+            if (!PrimaryKeyAttribute.IsDefined(instance))
+            {
+                return string.Empty;
+            }
+
+	        return BaseAttribute.GetValueOfProperty<PrimaryKeyAttribute>(instance).ToString();
+	    }
+
+	    public T GetDependentObject<T> (T @object, PropertyInfo one2OneProp, Type childType,string id)
 		{
 			string childIdPropName = string.Empty;
 				
