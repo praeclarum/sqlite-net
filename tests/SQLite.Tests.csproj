@@ -43,6 +43,7 @@
     <Compile Include="..\src\SQLite.cs" />
     <Compile Include="ByteArrayTest.cs" />
     <Compile Include="ExceptionAssert.cs" />
+    <Compile Include="GetTest.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
     <Compile Include="GuidTests.cs" />

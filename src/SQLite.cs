@@ -3400,17 +3400,8 @@ namespace SQLite
 		{
 			var qRes = GetObjects(childType,childIdPropName,id);
 
-			var rProp = @object.GetType ().GetProperty (one2OneProp.Name);
-    		var obj = Activator.CreateInstance(childType);
-
-			foreach (var e in qRes) {
-				var i = Activator.CreateInstance(childType);
-				foreach(var p in i.GetType().GetProperties()){
-					p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
-				}
-				obj = i;
-			}
-			rProp.SetValue(@object,obj,null);
+		    var rProp = @object.GetType().GetProperty(one2OneProp.Name);
+    		rProp.SetValue(@object,qRes.FirstOrDefault(),null);
 
 			return @object;
 		}
