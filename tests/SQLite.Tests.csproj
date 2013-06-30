@@ -38,10 +38,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
+    <Compile Include="AttributeTests.cs" />
     <Compile Include="BooleanTest.cs" />
     <Compile Include="..\src\SQLite.cs" />
     <Compile Include="ByteArrayTest.cs" />
     <Compile Include="ExceptionAssert.cs" />
+    <Compile Include="GetTest.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
     <Compile Include="GuidTests.cs" />
