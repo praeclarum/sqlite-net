@@ -44,20 +44,20 @@ namespace SQLite
 			return SQLiteConnectionPool.Shared.GetConnection (_connectionString);
 		}
 
-		public Task<CreateTablesResult> CreateTableAsync<T>(CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 		{
-			return CreateTablesAsync(createFlags, typeof(T));
+			return CreateTablesAsync (createFlags, typeof(T));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2>(CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 			where T2 : new ()
 		{
-			return CreateTablesAsync(createFlags, typeof(T), typeof(T2));
+			return CreateTablesAsync (createFlags, typeof (T), typeof (T2));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3>(CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 			where T2 : new ()
 			where T3 : new ()
@@ -65,7 +65,7 @@ namespace SQLite
 			return CreateTablesAsync (createFlags, typeof (T2), typeof (T3));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4>(CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 			where T2 : new ()
 			where T3 : new ()
@@ -74,14 +74,14 @@ namespace SQLite
 			return CreateTablesAsync (createFlags, typeof (T2), typeof (T3), typeof (T4));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5>(CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 			where T2 : new ()
 			where T3 : new ()
 			where T4 : new ()
 			where T5 : new ()
 		{
-			return CreateTablesAsync(createFlags, typeof(T), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
+			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
 		}
 
 		public Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, params Type[] types)
@@ -91,7 +91,7 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					foreach (Type type in types) {
-						int aResult = conn.CreateTable(type, createFlags);
+						int aResult = conn.CreateTable (type, createFlags);
 						result.Results[type] = aResult;
 					}
 				}
