@@ -65,6 +65,13 @@ namespace SQLite.Net
                 string msg = _sqlitePlatform.SQLiteApi.Errmsg16(_conn.Handle);
                 throw SQLiteException.New(r, msg);
             }
+            else if (r == Result.Constraint)
+            {
+                if (_sqlitePlatform.SQLiteApi.ExtendedErrCode(_conn.Handle) == ExtendedResult.ConstraintNotNull)
+                {
+                    throw NotNullConstraintViolationException.New(r, _sqlitePlatform.SQLiteApi.Errmsg16(_conn.Handle));
+                }
+            }
             throw SQLiteException.New(r, r.ToString());
         }
 

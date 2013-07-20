@@ -1276,7 +1276,19 @@ namespace SQLite.Net
             }
 
             PreparedSqlLiteInsertCommand insertCmd = map.GetInsertCommand(this, extra);
-            int count = insertCmd.ExecuteNonQuery(vals);
+            int count;
+            try
+            {
+                count = insertCmd.ExecuteNonQuery(vals);
+            }
+            catch (SQLiteException ex)
+            {
+                if (Platform.SQLiteApi.ExtendedErrCode(this.Handle) == ExtendedResult.ConstraintNotNull)
+                {
+                    throw NotNullConstraintViolationException.New(ex.Result, ex.Message, map, obj);
+                }
+                throw;
+            }
 
             if (map.HasAutoIncPK)
             {
@@ -1323,6 +1335,7 @@ namespace SQLite.Net
         /// </returns>
         public int Update(object obj, Type objType)
         {
+            int rowsAffected = 0;
             if (obj == null || objType == null)
             {
                 return 0;
@@ -1347,7 +1360,21 @@ namespace SQLite.Net
             string q = string.Format("update \"{0}\" set {1} where {2} = ? ", map.TableName,
                            string.Join(",", (from c in cols
                                               select "\"" + c.Name + "\" = ? ").ToArray()), pk.Name);
-            return Execute(q, ps.ToArray());
+            try
+            {
+                rowsAffected = Execute(q, ps.ToArray());
+            }
+            catch (SQLiteException ex)
+            {
+                if (ex.Result == Result.Constraint && Platform.SQLiteApi.ExtendedErrCode(Handle) == ExtendedResult.ConstraintNotNull)
+                {
+                    throw NotNullConstraintViolationException.New(ex, map, obj);
+                }
+
+                throw ex;
+            }
+
+            return rowsAffected;
         }
 
         /// <summary>
@@ -1483,7 +1510,7 @@ namespace SQLite.Net
             //			[Column ("type")]
             //			public string ColumnType { get; set; }
 
-            //			public int notnull { get; set; }
+            public int notnull { get; set; }
 
             //			public string dflt_value { get; set; }
 

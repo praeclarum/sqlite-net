@@ -62,11 +62,13 @@
     <Compile Include="..\GlobalAssemblyInfo.cs">
       <Link>Properties\GlobalAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Attributes\NotNullAttribute.cs" />
     <Compile Include="BaseTableQuery.cs" />
     <Compile Include="BlobSerializerDelegate.cs" />
     <Compile Include="CreateTablesResult.cs" />
     <Compile Include="Interop\ColType.cs" />
     <Compile Include="Interop\ConfigOption.cs" />
+    <Compile Include="Interop\ExtendedResult.cs" />
     <Compile Include="Interop\IDbHandle.cs" />
     <Compile Include="Interop\IReflectionService.cs" />
     <Compile Include="Interop\ISQLiteApi.cs" />
@@ -77,6 +79,7 @@
     <Compile Include="Interop\Result.cs" />
     <Compile Include="Interop\IDbStatement.cs" />
     <Compile Include="IBlobSerializer.cs" />
+    <Compile Include="NotNullConstraintViolationException.cs" />
     <Compile Include="Orm.cs" />
     <Compile Include="PreparedSqlLiteInsertCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

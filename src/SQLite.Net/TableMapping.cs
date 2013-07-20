@@ -228,7 +228,7 @@ namespace SQLite.Net
                 {
                     Indices = new[] { new IndexedAttribute() };
                 }
-                IsNullable = !IsPK;
+                IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
             }
 

@@ -90,6 +90,11 @@ namespace SQLite.Net
                 _sqlitePlatform.SQLiteApi.Reset(Statement);
                 throw SQLiteException.New(r, msg);
             }
+            else if (r == Result.Constraint && _sqlitePlatform.SQLiteApi.ExtendedErrCode(Connection.Handle) == ExtendedResult.ConstraintNotNull)
+            {
+                _sqlitePlatform.SQLiteApi.Reset(Statement);
+                throw NotNullConstraintViolationException.New(r, _sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle));
+            }
             _sqlitePlatform.SQLiteApi.Reset(Statement);
             throw SQLiteException.New(r, r.ToString());
         }

@@ -29,6 +29,10 @@ namespace SQLite.Net.Interop
 
         //        Result Open16(string filename, out IDbHandle db);
 
+        ExtendedResult ExtendedErrCode(IDbHandle db);
+
+        int LibVersionNumber();
+
         Result EnableLoadExtension(IDbHandle db, int onoff);
 
         Result Close(IDbHandle db);

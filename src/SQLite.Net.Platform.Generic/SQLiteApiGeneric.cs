@@ -14,6 +14,17 @@ namespace SQLite.Net.Platform.Generic
             return r;
         }
 
+        public ExtendedResult ExtendedErrCode(IDbHandle db)
+        {
+            var internalDbHandle = (DbHandle) db;
+            return SQLiteApiGenericInternal.sqlite3_extended_errcode(internalDbHandle.DbPtr);
+        }
+
+        public int LibVersionNumber()
+        {
+            return SQLiteApiGenericInternal.sqlite3_libversion_number();
+        }
+
         public Result EnableLoadExtension(IDbHandle db, int onoff)
         {
             var internalDbHandle = (DbHandle) db;
