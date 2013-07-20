@@ -62,6 +62,42 @@ namespace SQLite
 		}
 	}
 
+	public class NotNullConstraintViolationException : SQLiteException
+	{
+		public IEnumerable<TableMapping.Column> Columns { get; protected set; }
+
+		protected NotNullConstraintViolationException (SQLite3.Result r, string message)
+			: this (r, message, null, null)
+		{
+
+		}
+
+		protected NotNullConstraintViolationException (SQLite3.Result r, string message, TableMapping mapping, object obj)
+			: base (r, message)
+		{
+			if (mapping != null && obj != null) {
+				this.Columns = from c in mapping.Columns
+							   where c.IsNullable == false && c.GetValue (obj) == null
+							   select c;
+			}
+		}
+
+		public static new NotNullConstraintViolationException New (SQLite3.Result r, string message)
+		{
+			return new NotNullConstraintViolationException (r, message);
+		}
+
+		public static NotNullConstraintViolationException New (SQLite3.Result r, string message, TableMapping mapping, object obj)
+		{
+			return new NotNullConstraintViolationException (r, message, mapping, obj);
+		}
+
+		public static NotNullConstraintViolationException New (SQLiteException exception, TableMapping mapping, object obj)
+		{
+			return new NotNullConstraintViolationException (exception.Result, exception.Message, mapping, obj);
+		}
+	}
+
 	[Flags]
 	public enum SQLiteOpenFlags {
 		ReadOnly = 1, ReadWrite = 2, Create = 4,
@@ -442,7 +478,7 @@ namespace SQLite
 //			[Column ("type")]
 //			public string ColumnType { get; set; }
 
-//			public int notnull { get; set; }
+			public int notnull { get; set; }
 
 //			public string dflt_value { get; set; }
 
@@ -1216,7 +1252,18 @@ namespace SQLite
 			}
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
-			var count = insertCmd.ExecuteNonQuery (vals);
+			int count;
+
+			try {
+				count = insertCmd.ExecuteNonQuery (vals);
+			}
+			catch (SQLiteException ex) {
+
+				if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+					throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
+				}
+				throw;
+			}
 
             if (map.HasAutoIncPK)
             {
@@ -1262,6 +1309,7 @@ namespace SQLite
 		/// </returns>
 		public int Update (object obj, Type objType)
 		{
+			int rowsAffected = 0;
 			if (obj == null || objType == null) {
 				return 0;
 			}
@@ -1283,7 +1331,20 @@ namespace SQLite
 			ps.Add (pk.GetValue (obj));
 			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
 				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
-			return Execute (q, ps.ToArray ());
+
+			try {
+				rowsAffected = Execute (q, ps.ToArray ());
+			}
+			catch (SQLiteException ex) {
+
+				if (ex.Result == SQLite3.Result.Constraint && SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+					throw NotNullConstraintViolationException.New (ex, map, obj);
+				}
+
+				throw ex;
+			}
+
+			return rowsAffected;
 		}
 
 		/// <summary>
@@ -1518,6 +1579,11 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage (AttributeTargets.Property)]
+	public class NotNullAttribute : Attribute
+	{
+	}
+
 	public class TableMapping
 	{
 		public Type MappedType { get; private set; }
@@ -1729,7 +1795,7 @@ namespace SQLite
                 {
                     Indices = new IndexedAttribute[] { new IndexedAttribute() };
                 }
-                IsNullable = !IsPK;
+                IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
             }
 
@@ -1855,6 +1921,16 @@ namespace SQLite
 				return DefaultMaxStringLength;
 			}
 		}
+
+		public static bool IsMarkedNotNull(MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes (typeof (NotNullAttribute), true);
+#if !NETFX_CORE
+			return attrs.Length > 0;
+#else
+	return attrs.Count() > 0;
+#endif
+		}
 	}
 
 	public partial class SQLiteCommand
@@ -1887,9 +1963,14 @@ namespace SQLite
 			} else if (r == SQLite3.Result.Error) {
 				string msg = SQLite3.GetErrmsg (_conn.Handle);
 				throw SQLiteException.New (r, msg);
-			} else {
-				throw SQLiteException.New (r, r.ToString ());
 			}
+			else if (r == SQLite3.Result.Constraint) {
+				if (SQLite3.ExtendedErrCode (_conn.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+					throw NotNullConstraintViolationException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+				}
+			}
+
+			throw SQLiteException.New(r, r.ToString());
 		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> ()
@@ -2196,6 +2277,9 @@ namespace SQLite
 				string msg = SQLite3.GetErrmsg (Connection.Handle);
 				SQLite3.Reset (Statement);
 				throw SQLiteException.New (r, msg);
+			} else if (r == SQLite3.Result.Constraint && SQLite3.ExtendedErrCode (Connection.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+				SQLite3.Reset (Statement);
+				throw NotNullConstraintViolationException.New (r, SQLite3.GetErrmsg (Connection.Handle));
 			} else {
 				SQLite3.Reset (Statement);
 				throw SQLiteException.New (r, r.ToString ());
@@ -2722,9 +2806,61 @@ namespace SQLite
 			Format = 24,
 			Range = 25,
 			NonDBFile = 26,
+			Notice = 27,
+			Warning = 28,
 			Row = 100,
 			Done = 101
 		}
+
+		public enum ExtendedResult : int
+		{
+			IOErrorRead = (Result.IOError | (1 << 8)),
+			IOErrorShortRead = (Result.IOError | (2 << 8)),
+			IOErrorWrite = (Result.IOError | (3 << 8)),
+			IOErrorFsync = (Result.IOError | (4 << 8)),
+			IOErrorDirFSync = (Result.IOError | (5 << 8)),
+			IOErrorTruncate = (Result.IOError | (6 << 8)),
+			IOErrorFStat = (Result.IOError | (7 << 8)),
+			IOErrorUnlock = (Result.IOError | (8 << 8)),
+			IOErrorRdlock = (Result.IOError | (9 << 8)),
+			IOErrorDelete = (Result.IOError | (10 << 8)),
+			IOErrorBlocked = (Result.IOError | (11 << 8)),
+			IOErrorNoMem = (Result.IOError | (12 << 8)),
+			IOErrorAccess = (Result.IOError | (13 << 8)),
+			IOErrorCheckReservedLock = (Result.IOError | (14 << 8)),
+			IOErrorLock = (Result.IOError | (15 << 8)),
+			IOErrorClose = (Result.IOError | (16 << 8)),
+			IOErrorDirClose = (Result.IOError | (17 << 8)),
+			IOErrorSHMOpen = (Result.IOError | (18 << 8)),
+			IOErrorSHMSize = (Result.IOError | (19 << 8)),
+			IOErrorSHMLock = (Result.IOError | (20 << 8)),
+			IOErrorSHMMap = (Result.IOError | (21 << 8)),
+			IOErrorSeek = (Result.IOError | (22 << 8)),
+			IOErrorDeleteNoEnt = (Result.IOError | (23 << 8)),
+			IOErrorMMap = (Result.IOError | (24 << 8)),
+			LockedSharedcache = (Result.Locked | (1 << 8)),
+			BusyRecovery = (Result.Busy | (1 << 8)),
+			CannottOpenNoTempDir = (Result.CannotOpen | (1 << 8)),
+			CannotOpenIsDir = (Result.CannotOpen | (2 << 8)),
+			CannotOpenFullPath = (Result.CannotOpen | (3 << 8)),
+			CorruptVTab = (Result.Corrupt | (1 << 8)),
+			ReadonlyRecovery = (Result.ReadOnly | (1 << 8)),
+			ReadonlyCannotLock = (Result.ReadOnly | (2 << 8)),
+			ReadonlyRollback = (Result.ReadOnly | (3 << 8)),
+			AbortRollback = (Result.Abort | (2 << 8)),
+			ConstraintCheck = (Result.Constraint | (1 << 8)),
+			ConstraintCommitHook = (Result.Constraint | (2 << 8)),
+			ConstraintForeignKey = (Result.Constraint | (3 << 8)),
+			ConstraintFunction = (Result.Constraint | (4 << 8)),
+			ConstraintNotNull = (Result.Constraint | (5 << 8)),
+			ConstraintPrimaryKey = (Result.Constraint | (6 << 8)),
+			ConstraintTrigger = (Result.Constraint | (7 << 8)),
+			ConstraintUnique = (Result.Constraint | (8 << 8)),
+			ConstraintVTab = (Result.Constraint | (9 << 8)),
+			NoticeRecoverWAL = (Result.Notice | (1 << 8)),
+			NoticeRecoverRollback = (Result.Notice | (2 << 8))
+		}
+        
 
 		public enum ConfigOption : int
 		{
@@ -2868,6 +3004,12 @@ namespace SQLite
 				Marshal.Copy (ColumnBlob (stmt, index), result, 0, length);
 			return result;
 		}
+
+		[DllImport ("sqlite3", EntryPoint = "sqlite3_extended_errcode", CallingConvention = CallingConvention.Cdecl)]
+		public static extern ExtendedResult ExtendedErrCode (IntPtr db);
+
+		[DllImport ("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
+		public static extern int LibVersionNumber ();
 #else
         public static Result Open(string filename, out Sqlite3DatabaseHandle db)
         {
