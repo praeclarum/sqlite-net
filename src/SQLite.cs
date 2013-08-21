@@ -1700,7 +1700,7 @@ namespace SQLite
 
 			public bool IsNullable { get; private set; }
 
-			public int MaxStringLength { get; private set; }
+			public int? MaxStringLength { get; private set; }
 
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
@@ -1781,8 +1781,12 @@ namespace SQLite
 			} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 				return "float";
 			} else if (clrType == typeof(String)) {
-				int len = p.MaxStringLength;
-				return "varchar(" + len + ")";
+				int? len = p.MaxStringLength;
+
+				if (len.HasValue)
+					return "varchar(" + len.Value + ")";
+
+				return "varchar";
 			} else if (clrType == typeof(DateTime)) {
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
 #if !NETFX_CORE
@@ -1841,19 +1845,18 @@ namespace SQLite
 			return attrs.Cast<IndexedAttribute>();
 		}
 		
-		public static int MaxStringLength(PropertyInfo p)
+		public static int? MaxStringLength(PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
 #if !NETFX_CORE
-			if (attrs.Length > 0) {
+			if (attrs.Length > 0)
 				return ((MaxLengthAttribute)attrs [0]).Value;
 #else
-			if (attrs.Count() > 0) {
+			if (attrs.Count() > 0)
 				return ((MaxLengthAttribute)attrs.First()).Value;
 #endif
-			} else {
-				return DefaultMaxStringLength;
-			}
+
+			return null;
 		}
 	}
 
