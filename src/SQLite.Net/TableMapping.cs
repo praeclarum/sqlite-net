@@ -253,7 +253,7 @@ namespace SQLite.Net
 
             public bool IsNullable { get; private set; }
 
-            public int MaxStringLength { get; private set; }
+            public int? MaxStringLength { get; private set; }
 
             /// <summary>
             ///     Set column value.
