@@ -1761,7 +1761,7 @@ namespace SQLite
 			if (p.IsAutoInc) {
 				decl += "autoincrement ";
 			}
-			if (!p.IsNullable) {
+			if (!p.IsNullable && !(p.IsPK && p.IsAutoInc)) {
 				decl += "not null ";
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
