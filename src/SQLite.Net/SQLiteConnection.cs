@@ -352,11 +352,10 @@ namespace SQLite.Net
                 }
             }
 
-            foreach (string indexName in indexes.Keys)
+            foreach (var indexName in indexes.Keys)
             {
-                IndexInfo index = indexes[indexName];
-                string columns = String.Join("\",\"",
-                                     index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
+                var index = indexes[indexName];
+                var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
                 count += CreateIndex(indexName, index.TableName, columns, index.Unique);
             }
 
@@ -364,7 +363,21 @@ namespace SQLite.Net
         }
 
         /// <summary>
-        ///     Creates an index for the specified table and column.
+        /// Creates an index for the specified table and columns.
+        /// </summary>
+        /// <param name="indexName">Name of the index to create</param>
+        /// <param name="tableName">Name of the database table</param>
+        /// <param name="columnNames">An array of column names to index</param>
+        /// <param name="unique">Whether the index should be unique</param>
+        public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
+        {
+            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
+            var sql = String.Format(sqlFormat, tableName, string.Join("\", \"", columnNames), unique ? "unique" : "", indexName);
+            return Execute(sql);
+        }
+
+        /// <summary>
+        /// Creates an index for the specified table and column.
         /// </summary>
         /// <param name="indexName">Name of the index to create</param>
         /// <param name="tableName">Name of the database table</param>
@@ -372,21 +385,29 @@ namespace SQLite.Net
         /// <param name="unique">Whether the index should be unique</param>
         public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
         {
-            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
-            string sql = String.Format(sqlFormat, tableName, columnName, unique ? "unique" : "", indexName);
-            return Execute(sql);
+            return CreateIndex(indexName, tableName, new string[] { columnName }, unique);
         }
 
         /// <summary>
-        ///     Creates an index for the specified table and column.
+        /// Creates an index for the specified table and column.
         /// </summary>
         /// <param name="tableName">Name of the database table</param>
         /// <param name="columnName">Name of the column to index</param>
         /// <param name="unique">Whether the index should be unique</param>
         public int CreateIndex(string tableName, string columnName, bool unique = false)
         {
-            return CreateIndex(string.Concat(tableName, "_", columnName.Replace("\",\"", "_")), tableName, columnName,
-                unique);
+            return CreateIndex(tableName + "_" + columnName, tableName, columnName, unique);
+        }
+
+        /// <summary>
+        /// Creates an index for the specified table and columns.
+        /// </summary>
+        /// <param name="tableName">Name of the database table</param>
+        /// <param name="columnNames">An array of column names to index</param>
+        /// <param name="unique">Whether the index should be unique</param>
+        public int CreateIndex(string tableName, string[] columnNames, bool unique = false)
+        {
+            return CreateIndex(tableName + "_" + string.Join("_", columnNames), tableName, columnNames, unique);
         }
 
         /// <summary>
