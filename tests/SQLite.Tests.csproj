@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -9,38 +9,42 @@
     <OutputType>Library</OutputType>
     <RootNamespace>SQLite.Tests</RootNamespace>
     <AssemblyName>SQLite.Tests</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>False</Optimize>
     <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+    <ConsolePause>False</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>False</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+    <ConsolePause>False</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="nunit.framework, Version=2.4.8.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
     <Reference Include="System.Core" />
+    <Reference Include="nunit.framework, Version=2.6.0.12051, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="BooleanTest.cs" />
     <Compile Include="..\src\SQLite.cs" />
     <Compile Include="ByteArrayTest.cs" />
+    <Compile Include="ExceptionAssert.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
+    <Compile Include="GuidTests.cs" />
+    <Compile Include="CreateTableImplicitTest.cs" />
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />
@@ -51,5 +55,19 @@
     <Compile Include="InheritanceTest.cs" />
     <Compile Include="UnicodeTest.cs" />
     <Compile Include="UniqueTest.cs" />
+    <Compile Include="StringQueryTest.cs" />
+    <Compile Include="AsyncTests.cs" />
+    <Compile Include="..\src\SQLiteAsync.cs">
+      <Link>SQLiteAsync.cs</Link>
+    </Compile>
+    <Compile Include="MappingTest.cs" />
+    <Compile Include="DateTimeTest.cs" />
+    <Compile Include="TransactionTest.cs" />
+    <Compile Include="DeleteTest.cs" />
+    <Compile Include="ScalarTest.cs" />
+    <Compile Include="JoinTest.cs" />
+    <Compile Include="OpenTests.cs" />
+    <Compile Include="MigrationTest.cs" />
+    <Compile Include="EqualsTest.cs" />
   </ItemGroup>
 </Project>

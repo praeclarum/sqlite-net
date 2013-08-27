@@ -1,0 +1,80 @@
+76
+    [Flags]
+    public enum CreateFlags
+    {
+        None = 0,
+        ImplicitPK = 1,    // create a primary key for field called 'Id'
+        ImplicitIndex = 2, // create an index for fields ending in 'Id'
+        AllImplicit = 3,   // do both above
+
+        AutoIncPK = 4      // force PK field to be auto inc
+    }
+
+
+233
+        public TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None)
+        {
+            if (_mappings == null) {
+                _mappings = new Dictionary<string, TableMapping> ();
+            }
+            TableMapping map;
+            if (!_mappings.TryGetValue (type.FullName, out map)) {
+                map = new TableMapping (type, createFlags);
+                _mappings [type.FullName] = map;
+            }
+            return map;
+        }
+
+293
+        public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None)
+        {
+            return CreateTable(typeof (T), createFlags);
+        }
+
+308
+        public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
+        {
+            if (_tables == null) {
+                _tables = new Dictionary<string, TableMapping> ();
+            }
+            TableMapping map;
+            if (!_tables.TryGetValue (ty.FullName, out map)) {
+                map = GetMapping(ty, createFlags);
+
+
+1436
+        public TableMapping (Type type, CreateFlags createFlags = CreateFlags.None)
+
+1464
+                    cols.Add (new Column (p, createFlags));
+
+1603
+            public Column (PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+            {
+                var colAttr = (ColumnAttribute)prop.GetCustomAttributes (typeof(ColumnAttribute), true).FirstOrDefault ();
+
+                _prop = prop;
+                Name = colAttr == null ? prop.Name : colAttr.Name;
+                //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
+                ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                Collation = Orm.Collation (prop);
+                IsAutoInc = Orm.IsAutoInc (prop);
+                IsPK = Orm.IsPK (prop) || (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) && prop.Name == Orm.ImplicitPkName);
+
+                IsAutoInc = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+                Indices = Orm.GetIndices(prop);
+                if (!Indices.Any()
+                    && !IsPK
+                    && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
+                    && Name.EndsWith(Orm.ImplicitIndexSuffix)
+                    )
+                {
+                    Indices = new IndexedAttribute[] {new IndexedAttribute()};
+                }
+                IsNullable = !IsPK;
+                MaxStringLength = Orm.MaxStringLength (prop);
+            }
+
+1643
+        public const string ImplicitPkName = "Id";
+        public const string ImplicitIndexSuffix = "Id";

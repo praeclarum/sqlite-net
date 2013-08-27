@@ -5,7 +5,15 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
+using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#else
 using NUnit.Framework;
+#endif
+
 using System.Diagnostics;
 
 namespace SQLite.Tests
@@ -44,7 +52,7 @@ namespace SQLite.Tests
 				Order = i
 			};
 			var objs = cq.ToArray();
-			var db = new TestDb(Path.GetTempFileName());
+			var db = new TestDb(TestPath.GetTempFileName());
 						
 			var numIn = db.InsertAll(objs);			
 			Assert.AreEqual(numIn, n, "Num inserted must = num objects");

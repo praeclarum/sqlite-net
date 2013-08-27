@@ -5,7 +5,17 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+using System.Diagnostics;
+
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
+using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#else
 using NUnit.Framework;
+#endif
+
 
 namespace SQLite.Tests
 {    
@@ -46,7 +56,7 @@ namespace SQLite.Tests
         [Test]
         public void TestBoolean()
         {
-            var tmpFile = Path.GetTempFileName();
+            var tmpFile = TestPath.GetTempFileName();
             var db = new DbAcs(tmpFile);         
             db.buildTable();
             for (int i = 0; i < 10; i++)
@@ -56,13 +66,13 @@ namespace SQLite.Tests
             Assert.AreEqual(4, db.CountWithFlag(true));
             Assert.AreEqual(6, db.CountWithFlag(false));
 
-            Console.WriteLine("VO with true flag:");
+            Debug.WriteLine("VO with true flag:");
             foreach (var vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", true))
-                Console.WriteLine(vo.ToString());
+				Debug.WriteLine (vo.ToString ());
 
-            Console.WriteLine("VO with false flag:");
+			Debug.WriteLine ("VO with false flag:");
             foreach (var vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", false))
-                Console.WriteLine(vo.ToString());
+				Debug.WriteLine (vo.ToString ());
         }
     }
 }

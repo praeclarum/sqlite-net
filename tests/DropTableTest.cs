@@ -6,7 +6,15 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
+using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#else
 using NUnit.Framework;
+#endif
+
 
 namespace SQLite.Tests
 {
@@ -23,13 +31,13 @@ namespace SQLite.Tests
 		
 		public class TestDb : SQLiteConnection
 		{
-			public TestDb () : base(Path.GetTempFileName ())
+			public TestDb () : base(TestPath.GetTempFileName ())
 			{
 				Trace = true;
 			}
 		}
 		
-		[Test, ExpectedException (typeof (SQLiteException))]
+		[Test]
 		public void CreateInsertDrop ()
 		{
 			var db = new TestDb ();
@@ -47,7 +55,7 @@ namespace SQLite.Tests
 			
 			db.DropTable<Product> ();
 			
-			db.Table<Product> ().Count (); // Should throw
+			ExceptionAssert.Throws<SQLiteException>(() => db.Table<Product> ().Count ());
 		}
 	}
 }

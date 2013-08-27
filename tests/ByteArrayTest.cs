@@ -5,7 +5,15 @@ using System.Linq;
 using System.Text;
 using SQLite;
 
+#if NETFX_CORE
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
+using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
+using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
+#else
 using NUnit.Framework;
+#endif
+
 
 namespace SQLite.Tests
 {
@@ -22,7 +30,16 @@ namespace SQLite.Tests
 			public void AssertEquals(ByteArrayClass other)
 			{
 				Assert.AreEqual(other.ID, ID);
-				CollectionAssert.AreEqual(other.bytes, bytes);
+				if (other.bytes == null || bytes == null) {
+					Assert.IsNull (other.bytes);
+					Assert.IsNull (bytes);
+				}
+				else {
+					Assert.AreEqual(other.bytes.Length, bytes.Length);
+					for (var i = 0; i < bytes.Length; i++) {
+						Assert.AreEqual(other.bytes[i], bytes[i]);
+					}
+				}
 			}
 		}
 
@@ -41,7 +58,7 @@ namespace SQLite.Tests
 				new ByteArrayClass() { bytes = null } //Null should be supported
 			};
 
-			SQLiteConnection database = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert all of the ByteArrayClass
@@ -70,7 +87,7 @@ namespace SQLite.Tests
 
 			ByteArrayClass byteArray = new ByteArrayClass() { bytes = bytes };
 
-			SQLiteConnection database = new SQLiteConnection(Path.GetTempFileName());
+			SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert the ByteArrayClass

@@ -11,76 +11,49 @@ namespace Stocks.Touch
 {
 	public partial class StocksView : UIViewController
 	{
+		Database _db;
 		
-		public Database Db { get; private set; }
-		
-		#region Constructors
-
-		// The IntPtr and NSCoder constructors are required for controllers that need 
-		// to be able to be created from a xib rather than from managed code
-
-		public StocksView (IntPtr handle) : base(handle)
-		{
-			Initialize ();
-		}
-
-		[Export("initWithCoder:")]
-		public StocksView (NSCoder coder) : base(coder)
-		{
-			Initialize ();
-		}
-
 		public StocksView (Database db)
 		{
-			Db = db;
-			Initialize ();
+			_db = db;
+			
+			Title = "Symbols";
 		}
 
-		#endregion
-		
-		void Initialize ()
-		{
-			Title = "Stocks";
-		}
-		
 		public override void ViewDidLoad ()
 		{
-			var ds = new TickersSource (Db);
+			var ds = new SymbolsData (_db);
 			
-			NavigationItem.BackBarButtonItem = new UIBarButtonItem ("Stocks", UIBarButtonItemStyle.Plain, (s, e) => { });
-			NavigationItem.RightBarButtonItem = new UIBarButtonItem ("Add", UIBarButtonItemStyle.Plain, (s, e) => { 
-				var c = new AddStockView(Db);
-				c.Finished += delegate() {
-					ds.Refresh(table);
+			table.DataSource = ds;
+			table.SetEditing (true, false);
+			
+			NavigationItem.RightBarButtonItem = new UIBarButtonItem (UIBarButtonSystemItem.Add, delegate { 
+				var c = new AddStockView (_db);
+				c.Finished += delegate {
+					ds.Refresh ();
+					table.ReloadData ();
 				};
-				NavigationController.PresentModalViewController(c, true);
-				table.ReloadData();
+				var n = new UINavigationController (c);
+				NavigationController.PresentModalViewController(n, true);
 			});
-			NavigationItem.LeftBarButtonItem = new UIBarButtonItem ("Admin", UIBarButtonItemStyle.Plain, (s, e) => { 
-				var c = new SQLiteAdmin(Db);
+			NavigationItem.LeftBarButtonItem = new UIBarButtonItem ("Admin", UIBarButtonItemStyle.Plain, delegate { 
+				var c = new SQLiteAdmin(_db);
 				NavigationController.PushViewController(c.NewTablesViewController(), true);
 			});
-
-			table.DataSource = ds;
-			table.SetEditing (true, true);
 		}
-
 		
-		#region Table Controller
-
-		public class TickersSource : UITableViewDataSource
+		public class SymbolsData : UITableViewDataSource
 		{			
 			List<Stock> rows;
 			Database _db;
 			
-			public TickersSource(Database db) {
+			public SymbolsData(Database db) {
 				_db = db;
 				rows = _db.QueryAllStocks().ToList();
 			}
 			
-			public void Refresh(UITableView table) {
+			public void Refresh () {
 				rows = _db.QueryAllStocks().ToList();
-				table.ReloadData();
 			}
 			
 			public override void MoveRow (UITableView tableView, NSIndexPath sourceIndexPath, NSIndexPath destinationIndexPath)				
@@ -123,14 +96,12 @@ namespace Stocks.Touch
 					cell = new UITableViewCell (UITableViewCellStyle.Subtitle, "cell");
 				}
 				cell.ShowsReorderControl = true;
-				cell.TextLabel.Text = rows[indexPath.Row].ToString();
-				cell.DetailTextLabel.Text = ("row " + indexPath.Row);
+				var stock = rows[indexPath.Row];
+				var val = _db.QueryLatestValuation (stock);
+				cell.TextLabel.Text = stock.Symbol;
+				cell.DetailTextLabel.Text = val != null ? val.Price.ToString () : "?";
 				return cell;
 			}
 		}
-#endregion
-
-
-
 	}
 }
