@@ -69,5 +69,9 @@
     <Compile Include="OpenTests.cs" />
     <Compile Include="MigrationTest.cs" />
     <Compile Include="EqualsTest.cs" />
+    <Compile Include="..\src\sguid.cs">
+      <Link>Sguid.cs</Link>
+    </Compile>
+    <Compile Include="SguidTests.cs" />
   </ItemGroup>
 </Project>

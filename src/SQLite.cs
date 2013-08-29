@@ -1198,10 +1198,12 @@ namespace SQLite
 #else
             if (map.PK != null && map.PK.IsAutoGuid) {
                 var prop = objType.GetProperty(map.PK.PropertyName);
-                if (prop != null) {
-                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
-                        prop.SetValue(obj, Guid.NewGuid(), null);
-                    }
+                if (prop != null) { // TODO: expand prop
+					if (prop.PropertyType == typeof(Guid) && ((Guid)prop.GetValue(obj, null)).Equals(Guid.Empty)) {
+                        	prop.SetValue(obj, Guid.NewGuid(), null);
+                    } else if (prop.PropertyType == typeof(Sguid) && ((Sguid)prop.GetValue(obj, null)).Equals(Sguid.Empty)){
+						prop.SetValue(obj, Sguid.NewGuid(), null);
+					}
                 }
             }
 #endif
@@ -1717,7 +1719,7 @@ namespace SQLite
 					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
                 var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
-                IsAutoGuid = isAuto && ColumnType == typeof(Guid);
+                IsAutoGuid = isAuto && (ColumnType == typeof(Guid) || ColumnType == typeof(Sguid));
                 IsAutoInc = isAuto && !IsAutoGuid;
 
                 Indices = Orm.GetIndices(prop);
@@ -1793,8 +1795,10 @@ namespace SQLite
 				return "integer";
 			} else if (clrType == typeof(byte[])) {
 				return "blob";
-            } else if (clrType == typeof(Guid)) {
-                return "varchar(36)";
+			} else if (clrType == typeof(Guid)) {
+				return "varchar(36)";
+			} else if (clrType == typeof(Sguid)) {
+				return "varchar(22)";
             } else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -2064,20 +2068,21 @@ namespace SQLite
 				} else if (value is DateTime) {
 					if (storeDateTimeAsTicks) {
 						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
-					}
-					else {
+					} else {
 						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
 					}
 #if !NETFX_CORE
-				} else if (value.GetType().IsEnum) {
+				} else if (value.GetType ().IsEnum) {
 #else
 				} else if (value.GetType().GetTypeInfo().IsEnum) {
 #endif
 					SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
-                } else if (value is byte[]){
-                    SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
-                } else if (value is Guid) {
-                    SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
+				} else if (value is byte[]) {
+					SQLite3.BindBlob (stmt, index, (byte[])value, ((byte[])value).Length, NegativePointer);
+				} else if (value is Guid) {
+					SQLite3.BindText (stmt, index, ((Guid)value).ToString (), 72, NegativePointer);
+				} else if (value is Sguid) {
+					SQLite3.BindText (stmt, index, ((Sguid)value).ToString (), 44, NegativePointer);
                 } else {
                     throw new NotSupportedException("Cannot store type: " + value.GetType());
                 }
@@ -2111,8 +2116,7 @@ namespace SQLite
 				} else if (clrType == typeof(DateTime)) {
 					if (_conn.StoreDateTimeAsTicks) {
 						return new DateTime (SQLite3.ColumnInt64 (stmt, index));
-					}
-					else {
+					} else {
 						var text = SQLite3.ColumnString (stmt, index);
 						return DateTime.Parse (text);
 					}
@@ -2139,8 +2143,11 @@ namespace SQLite
 				} else if (clrType == typeof(byte[])) {
 					return SQLite3.ColumnByteArray (stmt, index);
 				} else if (clrType == typeof(Guid)) {
-                  var text = SQLite3.ColumnString(stmt, index);
-                  return new Guid(text);
+					var text = SQLite3.ColumnString (stmt, index);
+					return new Guid (text);
+				} else if (clrType == typeof(Sguid)) {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new Sguid (text);
                 } else{
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
