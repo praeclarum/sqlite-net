@@ -1185,10 +1185,13 @@ namespace SQLite
                     prop = info.GetDeclaredProperty(map.PK.PropertyName);
                     if (prop != null) 
                     {
-                        if (prop.GetValue(obj, null).Equals(Guid.Empty))
-                        {
-                            prop.SetValue(obj, Guid.NewGuid(), null);
-                        }
+						if (prop.PropertyType == typeof(Guid) && ((Guid)prop.GetValue(obj, null)).Equals(Guid.Empty)) {
+							prop.SetValue(obj, Guid.NewGuid(), null);
+#if SQL_LITE_SUPPORT_SGUID
+						} else if (prop.PropertyType == typeof(Sguid) && ((Sguid)prop.GetValue(obj, null)).Equals(Sguid.Empty)){
+							prop.SetValue(obj, Sguid.NewGuid(), null);
+#endif
+						}
                         break; 
                     }
 
@@ -1201,8 +1204,10 @@ namespace SQLite
                 if (prop != null) { // TODO: expand prop
 					if (prop.PropertyType == typeof(Guid) && ((Guid)prop.GetValue(obj, null)).Equals(Guid.Empty)) {
                         	prop.SetValue(obj, Guid.NewGuid(), null);
+#if SQL_LITE_SUPPORT_SGUID
                     } else if (prop.PropertyType == typeof(Sguid) && ((Sguid)prop.GetValue(obj, null)).Equals(Sguid.Empty)){
 						prop.SetValue(obj, Sguid.NewGuid(), null);
+#endif
 					}
                 }
             }
@@ -1719,7 +1724,11 @@ namespace SQLite
 					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
                 var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+#if SQL_LITE_SUPPORT_SGUID
                 IsAutoGuid = isAuto && (ColumnType == typeof(Guid) || ColumnType == typeof(Sguid));
+#else
+				IsAutoGuid = isAuto && (ColumnType == typeof(Guid));
+#endif
                 IsAutoInc = isAuto && !IsAutoGuid;
 
                 Indices = Orm.GetIndices(prop);
@@ -1797,8 +1806,10 @@ namespace SQLite
 				return "blob";
 			} else if (clrType == typeof(Guid)) {
 				return "varchar(36)";
+#if SQL_LITE_SUPPORT_SGUID
 			} else if (clrType == typeof(Sguid)) {
 				return "varchar(22)";
+#endif
             } else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -2081,8 +2092,10 @@ namespace SQLite
 					SQLite3.BindBlob (stmt, index, (byte[])value, ((byte[])value).Length, NegativePointer);
 				} else if (value is Guid) {
 					SQLite3.BindText (stmt, index, ((Guid)value).ToString (), 72, NegativePointer);
+#if SQL_LITE_SUPPORT_SGUID
 				} else if (value is Sguid) {
 					SQLite3.BindText (stmt, index, ((Sguid)value).ToString (), 44, NegativePointer);
+#endif
                 } else {
                     throw new NotSupportedException("Cannot store type: " + value.GetType());
                 }
@@ -2145,9 +2158,11 @@ namespace SQLite
 				} else if (clrType == typeof(Guid)) {
 					var text = SQLite3.ColumnString (stmt, index);
 					return new Guid (text);
+#if SQL_LITE_SUPPORT_SGUID
 				} else if (clrType == typeof(Sguid)) {
 					var text = SQLite3.ColumnString (stmt, index);
 					return new Sguid (text);
+#endif
                 } else{
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
