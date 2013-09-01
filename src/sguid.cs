@@ -89,7 +89,14 @@ namespace SQLite
 		/// <param name="obj">The object to compare</param>
 		/// <returns></returns>
 		public override bool Equals(object obj) {
-			return _guid.Equals (obj);
+			if (obj is Sguid)
+				return _guid.Equals(((Sguid)obj)._guid);
+			else if (obj is Guid)
+				return _guid.Equals((Guid)obj);
+			else if (obj is string)
+				return _guid.Equals(new Sguid((string)obj)._guid);
+			else
+			    return false;
 		}
 
 		#endregion
