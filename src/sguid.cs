@@ -119,7 +119,7 @@ namespace SQLite
 		/// Initialises a new instance of the Sguid class
 		/// </summary>
 		/// <returns></returns>
-		public static Sguid NewGuid() {
+		public static Sguid NewSguid() {
 			return new Sguid(Guid.NewGuid());
 		}
 

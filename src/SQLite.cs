@@ -1189,7 +1189,7 @@ namespace SQLite
 							prop.SetValue(obj, Guid.NewGuid(), null);
 #if SQL_LITE_SUPPORT_SGUID
 						} else if (prop.PropertyType == typeof(Sguid) && ((Sguid)prop.GetValue(obj, null)).Equals(Sguid.Empty)){
-							prop.SetValue(obj, Sguid.NewGuid(), null);
+							prop.SetValue(obj, Sguid.NewSguid(), null);
 #endif
 						}
                         break; 
@@ -1206,7 +1206,7 @@ namespace SQLite
                         	prop.SetValue(obj, Guid.NewGuid(), null);
 #if SQL_LITE_SUPPORT_SGUID
                     } else if (prop.PropertyType == typeof(Sguid) && ((Sguid)prop.GetValue(obj, null)).Equals(Sguid.Empty)){
-						prop.SetValue(obj, Sguid.NewGuid(), null);
+						prop.SetValue(obj, Sguid.NewSguid(), null);
 #endif
 					}
                 }
