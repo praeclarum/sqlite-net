@@ -13,6 +13,7 @@ using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAtt
 using NUnit.Framework;
 #endif
 
+#if SQL_LITE_SUPPORT_SGUID
 
 namespace SQLite.Tests {
     [TestFixture]
@@ -82,8 +83,7 @@ namespace SQLite.Tests {
         }
 
         [Test]
-        public void AutoGuid_HasSguid()
-        {
+        public void AutoGuid_HasSguid() {
             var db = new SQLiteConnection(TestPath.GetTempFileName());
             db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
 
@@ -102,8 +102,7 @@ namespace SQLite.Tests {
         }
 
         [Test]
-        public void AutoGuid_EmptySguid()
-        {
+        public void AutoGuid_EmptySguid() {
             var db = new SQLiteConnection(TestPath.GetTempFileName());
             db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
 
@@ -130,5 +129,19 @@ namespace SQLite.Tests {
 
             db.Close();
         }
+
+		[Test]
+		public void SguidEquality(){
+			var g = "36473164-C9E4-4CDF-B266-A0B287C85623";
+			object guid = new Guid(g);
+			var sguid = new Sguid ((Guid)guid);
+			var sguid1 = new Sguid (g);
+			Assert.AreEqual (sguid, sguid1);
+			Assert.AreEqual (sguid, g);
+			Assert.AreEqual (sguid, guid);
+			Assert.AreEqual (sguid, sguid.ToString ());
+		}
     }
 }
+
+#endif
