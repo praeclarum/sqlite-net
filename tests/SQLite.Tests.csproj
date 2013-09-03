@@ -31,9 +31,9 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="nunit.framework, Version=2.6.0.12051, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
-      <Private>False</Private>
-    </Reference>
+     <Reference Include="nunit.framework, Version=2.6.0.12051, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+       <Private>False</Private>
+     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -69,5 +69,9 @@
     <Compile Include="OpenTests.cs" />
     <Compile Include="MigrationTest.cs" />
     <Compile Include="EqualsTest.cs" />
+    <Compile Include="..\src\sguid.cs">
+      <Link>Sguid.cs</Link>
+    </Compile>
+    <Compile Include="SguidTests.cs" />
   </ItemGroup>
 </Project>
