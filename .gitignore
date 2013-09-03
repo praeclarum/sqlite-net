@@ -9,3 +9,17 @@ bin
 test-results
 TestResults
 *.nupkg
+packages/NUnit.2.6.2/lib/nunit.framework.dll
+packages/NUnit.2.6.2/lib/nunit.framework.xml
+packages/NUnit.2.6.2/license.txt
+packages/NUnit.2.6.2/NUnit.2.6.2.nuspec
+packages/NUnitTestAdapter.0.96.0/lib/nunit.core.dll
+packages/NUnitTestAdapter.0.96.0/lib/nunit.core.interfaces.dll
+packages/NUnitTestAdapter.0.96.0/lib/nunit.util.dll
+packages/NUnitTestAdapter.0.96.0/lib/NUnit.VisualStudio.TestAdapter.dll
+packages/NUnitTestAdapter.0.96.0/NUnitTestAdapter.0.96.0.nuspec
+packages/NUnitTestAdapter.0.96.0/tools/install.ps1
+packages/repositories.config
+SQLite3-64.dll
+sqlite3.dll
+tests/packages.config
