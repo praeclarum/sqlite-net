@@ -1794,7 +1794,11 @@ namespace SQLite
 			} else if (clrType == typeof(byte[])) {
 				return "blob";
             } else if (clrType == typeof(Guid)) {
+#if SQL_LITE_SHORT_GUID
+				return "varchar(22)";
+#else
                 return "varchar(36)";
+#endif
             } else {
 				throw new NotSupportedException ("Don't know about " + clrType);
 			}
@@ -2077,7 +2081,11 @@ namespace SQLite
                 } else if (value is byte[]){
                     SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
                 } else if (value is Guid) {
+#if SQL_LITE_SHORT_GUID
+					SQLite3.BindText(stmt, index, Encode((Guid)value), 44, NegativePointer);
+#else
                     SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
+#endif
                 } else {
                     throw new NotSupportedException("Cannot store type: " + value.GetType());
                 }
@@ -2140,12 +2148,32 @@ namespace SQLite
 					return SQLite3.ColumnByteArray (stmt, index);
 				} else if (clrType == typeof(Guid)) {
                   var text = SQLite3.ColumnString(stmt, index);
-                  return new Guid(text);
+#if SQL_LITE_SHORT_GUID
+                  return Decode(text);
+#else
+				  return new Guid(text);
+#endif
                 } else{
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
 			}
 		}
+
+#if SQL_LITE_SHORT_GUID
+		public static string Encode(Guid guid) {
+			return Convert.ToBase64String(guid.ToByteArray())
+				.Replace("/", "_")
+				.Replace("+", "-")
+				.Substring(0, 22);
+		}
+
+		public static Guid Decode(string value) {
+			value = value
+					.Replace("_", "/")
+					.Replace("-", "+");
+			return new Guid(Convert.FromBase64String(value + "=="));
+		}
+#endif
 	}
 
 	/// <summary>
