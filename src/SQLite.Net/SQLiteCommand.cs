@@ -333,6 +333,10 @@ namespace SQLite.Net
                         isqLite3Api.BindText16(stmt, index, ((DateTime)value).ToString("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
                     }
                 }
+                else if (value is DateTimeOffset)
+                {
+                    isqLite3Api.BindInt64(stmt, index, ((DateTimeOffset) value).UtcTicks);
+                }
                 else if (value is ISerializable<DateTime>)
                 {
                     if (storeDateTimeAsTicks)
@@ -445,6 +449,10 @@ namespace SQLite.Net
                     return new DateTime(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index));
                 }
                 return DateTime.Parse(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index));
+            }
+            if (clrType == typeof (DateTimeOffset))
+            {
+                return new DateTimeOffset(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index), TimeSpan.Zero);
             }
             if (interfaces.Contains(typeof(ISerializable<DateTime>)))
             {

@@ -104,6 +104,10 @@ namespace SQLite.Net
             {
                 return storeDateTimeAsTicks ? "bigint" : "datetime";
             }
+            if (clrType == typeof(DateTimeOffset))
+            {
+                return "bigint";
+            }
             if (clrType.GetTypeInfo().IsEnum)
             {
                 return "integer";
