@@ -208,6 +208,54 @@ namespace SQLite
 			});
 		}
 
+        public Task<int> InsertOrReplaceAsync(object item)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                SQLiteConnectionWithLock conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrReplace(item);
+                }
+            });
+        }
+
+        public Task<int> InsertOrIgnoreAsync(object item)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                SQLiteConnectionWithLock conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrIgnore(item);
+                }
+            });
+        }
+
+        public Task<int> InsertOrReplaceAllAsync(IEnumerable items)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrReplaceAll(items);
+                }
+            });
+        }
+
+        public Task<int> InsertOrIgnoreAllAsync(IEnumerable items)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrIgnoreAll(items);
+                }
+            });
+        }
+
         [Obsolete("Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead.")]
 		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action)
 		{
