@@ -9,3 +9,4 @@ bin
 test-results
 TestResults
 *.nupkg
+/packages
