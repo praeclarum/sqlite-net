@@ -41,32 +41,32 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncTableQuery.cs" />
-    <Compile Include="AutoIncrementAttribute.cs" />
     <Compile Include="BaseTableQuery.cs" />
-    <Compile Include="CollationAttribute.cs" />
-    <Compile Include="ColumnAttribute.cs" />
-    <Compile Include="CreateFlags.cs" />
     <Compile Include="CreateTablesResult.cs" />
-    <Compile Include="IgnoreAttribute.cs" />
-    <Compile Include="IndexedAttribute.cs" />
-    <Compile Include="MaxLengthAttribute.cs" />
     <Compile Include="Orm.cs" />
     <Compile Include="PreparedSqlLiteInsertCommand.cs" />
-    <Compile Include="PrimaryKeyAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SQLite3.cs" />
+    <Compile Include="Attributes\AutoIncrementAttribute.cs" />
+    <Compile Include="Attributes\CollationAttribute.cs" />
+    <Compile Include="Attributes\ColumnAttribute.cs" />
+    <Compile Include="Interop\CreateFlags.cs" />
+    <Compile Include="Attributes\IgnoreAttribute.cs" />
+    <Compile Include="Attributes\IndexedAttribute.cs" />
+    <Compile Include="Attributes\MaxLengthAttribute.cs" />
+    <Compile Include="Attributes\PrimaryKeyAttribute.cs" />
+    <Compile Include="SQLiteException.cs" />
+    <Compile Include="Interop\SQLite3.cs" />
     <Compile Include="SQLiteAsyncConnection.cs" />
     <Compile Include="SQLiteCommand.cs" />
     <Compile Include="SQLiteConnection.cs" />
     <Compile Include="SQLiteConnectionPool.cs" />
     <Compile Include="SQLiteConnectionString.cs" />
     <Compile Include="SQLiteConnectionWithLock.cs" />
-    <Compile Include="SQLiteException.cs" />
-    <Compile Include="SQLiteOpenFlags.cs" />
-    <Compile Include="TableAttribute.cs" />
     <Compile Include="TableMapping.cs" />
     <Compile Include="TableQuery.cs" />
-    <Compile Include="UniqueAttribute.cs" />
+    <Compile Include="Interop\SQLiteOpenFlags.cs" />
+    <Compile Include="Attributes\TableAttribute.cs" />
+    <Compile Include="Attributes\UniqueAttribute.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
