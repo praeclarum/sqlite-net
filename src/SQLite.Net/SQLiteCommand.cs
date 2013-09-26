@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2012 Krueger Systems, Inc.
+// Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +27,9 @@
 
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Community.CsharpSqlite.Sqlite3.sqlite3;
-using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 #elif USE_WP8_NATIVE_SQLITE
 using Sqlite3 = Sqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Sqlite.Database;
-using Sqlite3Statement = Sqlite.Statement;
 #else
-using Sqlite3DatabaseHandle = System.IntPtr;
-using Sqlite3Statement = System.IntPtr;
 #endif
 
 using System;
@@ -203,19 +198,19 @@ namespace SQLite
             return string.Join (Environment.NewLine, parts);
         }
 
-        Sqlite3Statement Prepare()
+        ISqlite3Statement Prepare()
         {
             var stmt = SQLite3.Prepare2 (_conn.Handle, CommandText);
             BindAll (stmt);
             return stmt;
         }
 
-        void Finalize(Sqlite3Statement stmt)
+        void Finalize(ISqlite3Statement stmt)
         {
             SQLite3.Finalize (stmt);
         }
 
-        void BindAll(Sqlite3Statement stmt)
+        void BindAll(ISqlite3Statement stmt)
         {
             int nextIdx = 1;
             foreach (var b in _bindings) {
@@ -231,7 +226,7 @@ namespace SQLite
 
         internal static IntPtr NegativePointer = new IntPtr (-1);
 
-        internal static void BindParameter(Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
+        internal static void BindParameter(ISqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
         {
             if (value == null) {
                 SQLite3.BindNull (stmt, index);
@@ -280,7 +275,7 @@ namespace SQLite
             public int Index { get; set; }
         }
 
-        object ReadCol(Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
+        object ReadCol(ISqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
         {
             if (type == SQLite3.ColType.Null) {
                 return null;

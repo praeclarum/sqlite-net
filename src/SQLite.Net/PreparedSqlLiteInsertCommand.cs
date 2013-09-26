@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2012 Krueger Systems, Inc.
+// Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +27,9 @@
 
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Community.CsharpSqlite.Sqlite3.sqlite3;
-using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 #elif USE_WP8_NATIVE_SQLITE
 using Sqlite3 = Sqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Sqlite.Database;
-using Sqlite3Statement = Sqlite.Statement;
 #else
-using Sqlite3DatabaseHandle = System.IntPtr;
-using Sqlite3Statement = System.IntPtr;
 #endif
 
 using System;
@@ -53,8 +48,8 @@ namespace SQLite
 
         public string CommandText { get; set; }
 
-        protected Sqlite3Statement Statement { get; set; }
-        internal static readonly Sqlite3Statement NullStatement = default(Sqlite3Statement);
+        protected ISqlite3Statement Statement { get; set; }
+        internal static readonly ISqlite3Statement NullStatement = default(ISqlite3Statement);
 
         internal PreparedSqlLiteInsertCommand (SQLiteConnection conn)
         {
@@ -96,7 +91,7 @@ namespace SQLite
             }
         }
 
-        protected virtual Sqlite3Statement Prepare()
+        protected virtual ISqlite3Statement Prepare()
         {
             var stmt = SQLite3.Prepare2 (Connection.Handle, CommandText);
             return stmt;

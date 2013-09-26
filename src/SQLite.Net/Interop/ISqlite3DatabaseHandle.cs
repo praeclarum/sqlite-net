@@ -1,5 +1,4 @@
-//
-// Copyright (c) 2012 Krueger Systems, Inc.
+﻿//
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,42 +20,10 @@
 // THE SOFTWARE.
 //
 
-#if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
-#define USE_CSHARP_SQLITE
-#endif
-
-#if USE_CSHARP_SQLITE
-using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-#elif USE_WP8_NATIVE_SQLITE
-using Sqlite3 = Sqlite.Sqlite3;
-#else
-#endif
-
 namespace SQLite
 {
-    /// <summary>
-    /// Represents a parsed connection string.
-    /// </summary>
-    class SQLiteConnectionString
+    public interface ISqlite3DatabaseHandle
     {
-        public string ConnectionString { get; private set; }
-        public string DatabasePath { get; private set; }
-        public bool StoreDateTimeAsTicks { get; private set; }
-
-#if NETFX_CORE
-		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
-#endif
-
-        public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
-        {
-            ConnectionString = databasePath;
-            StoreDateTimeAsTicks = storeDateTimeAsTicks;
-
-#if NETFX_CORE
-			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, databasePath);
-#else
-            DatabasePath = databasePath;
-#endif
-        }
+         
     }
 }

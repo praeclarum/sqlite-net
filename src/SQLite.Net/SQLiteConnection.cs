@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2012 Krueger Systems, Inc.
+// Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +27,9 @@
 
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Community.CsharpSqlite.Sqlite3.sqlite3;
-using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 #elif USE_WP8_NATIVE_SQLITE
 using Sqlite3 = Sqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Sqlite.Database;
-using Sqlite3Statement = Sqlite.Statement;
 #else
-using Sqlite3DatabaseHandle = System.IntPtr;
-using Sqlite3Statement = System.IntPtr;
 #endif
 
 using System;
@@ -62,8 +57,8 @@ namespace SQLite
         private int _transactionDepth = 0;
         private Random _rand = new Random ();
 
-        public Sqlite3DatabaseHandle Handle { get; private set; }
-        internal static readonly Sqlite3DatabaseHandle NullHandle = default(Sqlite3DatabaseHandle);
+        public ISqlite3DatabaseHandle Handle { get; private set; }
+        internal static readonly ISqlite3DatabaseHandle NullHandle = default(ISqlite3DatabaseHandle);
 
         public string DatabasePath { get; private set; }
 
@@ -113,7 +108,7 @@ namespace SQLite
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
 #endif
 
-            Sqlite3DatabaseHandle handle;
+            ISqlite3DatabaseHandle handle;
 
 #if SILVERLIGHT || USE_CSHARP_SQLITE
             var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
