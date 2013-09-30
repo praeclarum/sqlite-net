@@ -24,21 +24,21 @@ using System;
 
 namespace SQLite.Net.Attributes
 {
-    [AttributeUsage (AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property)]
     public class IndexedAttribute : Attribute
     {
-        public string Name { get; set; }
-        public int Order { get; set; }
-        public virtual bool Unique { get; set; }
-		
         public IndexedAttribute()
         {
         }
-		
+
         public IndexedAttribute(string name, int order)
         {
             Name = name;
             Order = order;
         }
+
+        public string Name { get; set; }
+        public int Order { get; set; }
+        public virtual bool Unique { get; set; }
     }
 }

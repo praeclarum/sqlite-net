@@ -9,38 +9,38 @@ namespace SQLite.Net.Platform.Win32
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zvfs)
         {
             IntPtr dbPtr;
-            var r = SQliteApiWin32Internal.sqlite3_open_v2(filename, out dbPtr, flags, zvfs);
+            Result r = SQliteApiWin32Internal.sqlite3_open_v2(filename, out dbPtr, flags, zvfs);
             db = new DbHandle(dbPtr);
             return r;
         }
 
         public Result EnableLoadExtension(IDbHandle db, int onoff)
         {
-            var internalDbHandle = (DbHandle)db;
+            var internalDbHandle = (DbHandle) db;
             return SQliteApiWin32Internal.sqlite3_enable_load_extension(internalDbHandle.DbPtr, onoff);
         }
 
         public Result Close(IDbHandle db)
         {
-            var internalDbHandle = (DbHandle)db;
+            var internalDbHandle = (DbHandle) db;
             return SQliteApiWin32Internal.sqlite3_close(internalDbHandle.DbPtr);
         }
 
         public Result BusyTimeout(IDbHandle db, int milliseconds)
         {
-            var internalDbHandle = (DbHandle)db;
+            var internalDbHandle = (DbHandle) db;
             return SQliteApiWin32Internal.sqlite3_busy_timeout(internalDbHandle.DbPtr, milliseconds);
         }
 
         public int Changes(IDbHandle db)
         {
-            var internalDbHandle = (DbHandle)db;
+            var internalDbHandle = (DbHandle) db;
             return SQliteApiWin32Internal.sqlite3_changes(internalDbHandle.DbPtr);
         }
 
         public IDbStatement Prepare2(IDbHandle db, string query)
         {
-            var internalDbHandle = (DbHandle)db;
+            var internalDbHandle = (DbHandle) db;
             IntPtr stmt;
             Result r = SQliteApiWin32Internal.sqlite3_prepare_v2(internalDbHandle.DbPtr, query, query.Length, out stmt, IntPtr.Zero);
             if (r != Result.OK)
@@ -70,7 +70,7 @@ namespace SQLite.Net.Platform.Win32
 
         public long LastInsertRowid(IDbHandle db)
         {
-            var internalDbHandle = (DbHandle)db;
+            var internalDbHandle = (DbHandle) db;
             return SQliteApiWin32Internal.sqlite3_last_insert_rowid(internalDbHandle.DbPtr);
         }
 
@@ -182,35 +182,34 @@ namespace SQLite.Net.Platform.Win32
             return SQliteApiWin32Internal.ColumnByteArray(internalStmt.StmtPtr, index);
         }
 
-        private struct DbStatement : IDbStatement
-        {
-            internal IntPtr StmtPtr { get; set; }
-
-            public DbStatement(IntPtr stmtPtr) : this()
-            {
-                StmtPtr = stmtPtr;
-            }
-
-            public bool Equals(IDbStatement other)
-            {
-                return other is DbStatement && StmtPtr == ((DbStatement)other).StmtPtr;
-            }
-        }
-
         private struct DbHandle : IDbHandle
         {
-            internal IntPtr DbPtr { get; set; }
-
             public DbHandle(IntPtr dbPtr) : this()
             {
                 DbPtr = dbPtr;
             }
 
+            internal IntPtr DbPtr { get; set; }
+
             public bool Equals(IDbHandle other)
             {
-                return other is DbHandle && DbPtr == ((DbHandle)other).DbPtr;
+                return other is DbHandle && DbPtr == ((DbHandle) other).DbPtr;
+            }
+        }
+
+        private struct DbStatement : IDbStatement
+        {
+            public DbStatement(IntPtr stmtPtr) : this()
+            {
+                StmtPtr = stmtPtr;
+            }
+
+            internal IntPtr StmtPtr { get; set; }
+
+            public bool Equals(IDbStatement other)
+            {
+                return other is DbStatement && StmtPtr == ((DbStatement) other).StmtPtr;
             }
         }
     }
-
 }

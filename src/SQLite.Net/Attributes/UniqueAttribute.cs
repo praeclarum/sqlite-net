@@ -24,12 +24,16 @@ using System;
 
 namespace SQLite.Net.Attributes
 {
-    [AttributeUsage (AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property)]
     public class UniqueAttribute : IndexedAttribute
     {
-        public override bool Unique {
+        public override bool Unique
+        {
             get { return true; }
-            set { /* throw?  */ }
+            set
+            {
+                /* throw?  */
+            }
         }
     }
 }

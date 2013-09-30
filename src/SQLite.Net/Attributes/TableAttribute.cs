@@ -24,14 +24,14 @@ using System;
 
 namespace SQLite.Net.Attributes
 {
-    [AttributeUsage (AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class)]
     public class TableAttribute : Attribute
     {
-        public string Name { get; set; }
-
-        public TableAttribute (string name)
+        public TableAttribute(string name)
         {
             Name = name;
         }
+
+        public string Name { get; set; }
     }
 }

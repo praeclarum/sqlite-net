@@ -75,7 +75,8 @@ namespace SQLite.Net
             {
                 for (int i = 0; i < source.Length; i++)
                 {
-                    SQLiteCommand.BindParameter(_sqlitePlatform.SQLiteApi, Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks);
+                    SQLiteCommand.BindParameter(_sqlitePlatform.SQLiteApi, Statement, i + 1, source[i],
+                        Connection.StoreDateTimeAsTicks);
                 }
             }
             r = _sqlitePlatform.SQLiteApi.Step(Statement);
@@ -98,7 +99,7 @@ namespace SQLite.Net
 
         protected virtual IDbStatement Prepare()
         {
-            var stmt = _sqlitePlatform.SQLiteApi.Prepare2(Connection.Handle, CommandText);
+            IDbStatement stmt = _sqlitePlatform.SQLiteApi.Prepare2(Connection.Handle, CommandText);
             return stmt;
         }
 

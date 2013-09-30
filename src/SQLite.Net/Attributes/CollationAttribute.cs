@@ -24,14 +24,14 @@ using System;
 
 namespace SQLite.Net.Attributes
 {
-    [AttributeUsage (AttributeTargets.Property)]
-    public class CollationAttribute: Attribute
+    [AttributeUsage(AttributeTargets.Property)]
+    public class CollationAttribute : Attribute
     {
-        public string Value { get; private set; }
-
-        public CollationAttribute (string collation)
+        public CollationAttribute(string collation)
         {
             Value = collation;
         }
+
+        public string Value { get; private set; }
     }
 }

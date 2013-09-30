@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using SQLite.Net.Interop;
+﻿using SQLite.Net.Interop;
 
 namespace SQLite.Net.Silverlight
 {

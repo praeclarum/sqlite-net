@@ -4,34 +4,35 @@ using SQLite.Net.Interop;
 
 namespace SQLite.Net.Platform.Win32
 {
-    static class SQliteApiWin32Internal
+    internal static class SQliteApiWin32Internal
     {
-        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
-        static extern IntPtr LoadLibrary(string lpFileName);
-
         static SQliteApiWin32Internal()
         {
             // load native library
             int ptrSize = Marshal.SizeOf(typeof (IntPtr));
             if (ptrSize == 8)
             {
-                var ret = LoadLibrary(@"x64\SQLite.Interop.dll");
+                IntPtr ret = LoadLibrary(@"x64\SQLite.Interop.dll");
                 if (ret == IntPtr.Zero)
                     throw new Exception("Failed to load native sqlite library");
             }
             else if (ptrSize == 4)
             {
-                var ret = LoadLibrary(@"x86\SQLite.Interop.dll");
+                IntPtr ret = LoadLibrary(@"x86\SQLite.Interop.dll");
                 if (ret == IntPtr.Zero)
                     throw new Exception("Failed to load native sqlite library");
             }
         }
 
+        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr LoadLibrary(string lpFileName);
+
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_open", CallingConvention = CallingConvention.Cdecl)]
         public static extern Result sqlite3_open([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db);
 
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern Result sqlite3_open([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db, int flags,
+        public static extern Result sqlite3_open([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db,
+            int flags,
             IntPtr zvfs);
 
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
@@ -51,14 +52,17 @@ namespace SQLite.Net.Platform.Win32
             CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         public static extern int sqlite3_win32_set_directory(uint directoryType, string directoryPath);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_busy_timeout", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_busy_timeout",
+            CallingConvention = CallingConvention.Cdecl)]
         public static extern Result sqlite3_busy_timeout(IntPtr db, int milliseconds);
 
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_changes", CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_changes(IntPtr db);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern Result sqlite3_prepare_v2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes,
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)
+        ]
+        public static extern Result sqlite3_prepare_v2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql,
+            int numBytes,
             out IntPtr stmt, IntPtr pzTail);
 
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_step", CallingConvention = CallingConvention.Cdecl)]
@@ -87,22 +91,26 @@ namespace SQLite.Net.Platform.Win32
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_bind_int", CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_bind_int(IntPtr stmt, int index, int val);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_bind_int64", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_bind_int64", CallingConvention = CallingConvention.Cdecl)
+        ]
         public static extern int sqlite3_bind_int64(IntPtr stmt, int index, long val);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_bind_double", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_bind_double", CallingConvention = CallingConvention.Cdecl
+            )]
         public static extern int sqlite3_bind_double(IntPtr stmt, int index, double val);
 
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_bind_text16", CallingConvention = CallingConvention.Cdecl,
             CharSet = CharSet.Unicode)]
-        public static extern int sqlite3_bind_text16(IntPtr stmt, int index, [MarshalAs(UnmanagedType.LPWStr)] string val,
+        public static extern int sqlite3_bind_text16(IntPtr stmt, int index,
+            [MarshalAs(UnmanagedType.LPWStr)] string val,
             int n,
             IntPtr free);
 
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_bind_blob", CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_bind_blob(IntPtr stmt, int index, byte[] val, int n, IntPtr free);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_count", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_count",
+            CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_column_count(IntPtr stmt);
 
         //        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_name", CallingConvention = CallingConvention.Cdecl)]
@@ -119,28 +127,36 @@ namespace SQLite.Net.Platform.Win32
             return Marshal.PtrToStringUni(sqlite3_column_name16(stmt, index));
         }
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_type", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_type", CallingConvention = CallingConvention.Cdecl
+            )]
         public static extern ColType sqlite3_column_type(IntPtr stmt, int index);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_int", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_int", CallingConvention = CallingConvention.Cdecl)
+        ]
         public static extern int sqlite3_column_int(IntPtr stmt, int index);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_int64", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_int64",
+            CallingConvention = CallingConvention.Cdecl)]
         public static extern long sqlite3_column_int64(IntPtr stmt, int index);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_double", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_double",
+            CallingConvention = CallingConvention.Cdecl)]
         public static extern double sqlite3_column_double(IntPtr stmt, int index);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_text16", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_text16",
+            CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr sqlite3_column_text16(IntPtr stmt, int index);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_blob", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_blob", CallingConvention = CallingConvention.Cdecl
+            )]
         public static extern byte[] ColumnBlob(IntPtr stmt, int index);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_blob", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_blob", CallingConvention = CallingConvention.Cdecl
+            )]
         public static extern IntPtr sqlite3_column_blob(IntPtr stmt, int index);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_bytes", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_bytes",
+            CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_column_bytes(IntPtr stmt, int index);
 
         public static byte[] ColumnByteArray(IntPtr stmt, int index)
@@ -155,7 +171,8 @@ namespace SQLite.Net.Platform.Win32
         [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
         public static extern Result sqlite3_open_v2(byte[] filename, out IntPtr db, int flags, IntPtr zvfs);
 
-        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_name16", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("SQLite.Interop.dll", EntryPoint = "sqlite3_column_name16",
+            CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr sqlite3_column_name16(IntPtr stmt, int index);
     }
 }

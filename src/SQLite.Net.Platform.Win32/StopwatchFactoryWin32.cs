@@ -5,6 +5,11 @@ namespace SQLite.Net.Platform.Win32
 {
     public class StopwatchFactoryWin32 : IStopwatchFactory
     {
+        public IStopwatch Create()
+        {
+            return new StopwatchWin32();
+        }
+
         private class StopwatchWin32 : IStopwatch
         {
             private readonly Stopwatch _stopWatch;
@@ -13,6 +18,7 @@ namespace SQLite.Net.Platform.Win32
             {
                 _stopWatch = new Stopwatch();
             }
+
             public void Stop()
             {
                 _stopWatch.Stop();
@@ -32,10 +38,6 @@ namespace SQLite.Net.Platform.Win32
             {
                 get { return _stopWatch.ElapsedMilliseconds; }
             }
-        }
-        public IStopwatch Create()
-        {
-            return new StopwatchWin32();
         }
     }
 }

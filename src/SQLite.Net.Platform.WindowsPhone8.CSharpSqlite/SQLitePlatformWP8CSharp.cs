@@ -6,7 +6,7 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
     {
         public SQLitePlatformWP8CSharp()
         {
-            var api  = new SQLiteApiWP8();
+            var api = new SQLiteApiWP8();
 
 //            api.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
 

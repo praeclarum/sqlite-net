@@ -24,7 +24,7 @@ using System;
 
 namespace SQLite.Net.Attributes
 {
-    [AttributeUsage (AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property)]
     public class IgnoreAttribute : Attribute
     {
     }

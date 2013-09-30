@@ -24,16 +24,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using SQLite.Net.Interop;
 
 namespace SQLite.Net.Async
 {
     public class SQLiteAsyncConnection
     {
-        private readonly SQLiteConnectionPool _sqLiteConnectionPool;
         private readonly SQLiteConnectionString _connectionString;
+        private readonly SQLiteConnectionPool _sqLiteConnectionPool;
 
-        public SQLiteAsyncConnection(SQLiteConnectionPool sqLiteConnectionPool, string databasePath, bool storeDateTimeAsTicks = false)
+        public SQLiteAsyncConnection(SQLiteConnectionPool sqLiteConnectionPool, string databasePath,
+            bool storeDateTimeAsTicks = false)
         {
             _sqLiteConnectionPool = sqLiteConnectionPool;
             if (databasePath == null) throw new ArgumentNullException("databasePath");

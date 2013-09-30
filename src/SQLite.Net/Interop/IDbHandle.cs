@@ -24,6 +24,5 @@ namespace SQLite.Net.Interop
 {
     public interface IDbHandle
     {
-         
     }
 }

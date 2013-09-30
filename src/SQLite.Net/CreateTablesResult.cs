@@ -26,11 +26,11 @@ namespace SQLite.Net
 {
     public class CreateTablesResult
     {
-        public Dictionary<Type, int> Results { get; private set; }
-
-        internal CreateTablesResult ()
+        internal CreateTablesResult()
         {
-            this.Results = new Dictionary<Type, int> ();
+            Results = new Dictionary<Type, int>();
         }
+
+        public Dictionary<Type, int> Results { get; private set; }
     }
 }

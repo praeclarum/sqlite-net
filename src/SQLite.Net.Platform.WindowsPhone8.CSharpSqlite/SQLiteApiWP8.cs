@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Community.CsharpSqlite;
 using SQLite.Net.Interop;
 
@@ -6,19 +7,11 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
 {
     public class SQLiteApiWP8 : ISQLiteApi
     {
-        public Result Open(string filename, out IDbHandle db)
-        {
-            Sqlite3.sqlite3 internalDbHandle = null;
-            var ret = (Result) Sqlite3.sqlite3_open(filename, ref internalDbHandle);
-            db = new DbHandle(internalDbHandle);
-            return ret;
-        }
-
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zVfs)
         {
-            var dbFileName = System.Text.Encoding.UTF8.GetString(filename, 0, filename.Length);
+            string dbFileName = Encoding.UTF8.GetString(filename, 0, filename.Length);
             Sqlite3.sqlite3 internalDbHandle = null;
-            var ret = (Result)Sqlite3.sqlite3_open_v2(dbFileName, ref internalDbHandle, flags, null);
+            var ret = (Result) Sqlite3.sqlite3_open_v2(dbFileName, ref internalDbHandle, flags, null);
             db = new DbHandle(internalDbHandle);
             return ret;
         }
@@ -70,123 +63,111 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
 
         public Result Reset(IDbStatement stmt)
         {
-            var dbStatement = (DbStatement)stmt;
-            return (Result)Sqlite3.sqlite3_reset(dbStatement.InternalStmt);
+            var dbStatement = (DbStatement) stmt;
+            return (Result) Sqlite3.sqlite3_reset(dbStatement.InternalStmt);
         }
 
         public Result Finalize(IDbStatement stmt)
         {
-            var dbStatement = (DbStatement)stmt;
-            var internalStmt = dbStatement.InternalStmt;
-            return (Result)Sqlite3.sqlite3_finalize(ref internalStmt);
+            var dbStatement = (DbStatement) stmt;
+            Sqlite3.Vdbe internalStmt = dbStatement.InternalStmt;
+            return (Result) Sqlite3.sqlite3_finalize(ref internalStmt);
         }
 
         public long LastInsertRowid(IDbHandle db)
         {
-            var dbHandle = (DbHandle)db;
+            var dbHandle = (DbHandle) db;
             return Sqlite3.sqlite3_last_insert_rowid(dbHandle.InternalDbHandle);
         }
 
         public string Errmsg16(IDbHandle db)
         {
-            var dbHandle = (DbHandle)db;
-            return Sqlite3.sqlite3_errmsg(dbHandle.InternalDbHandle);
-        }
-
-        public string GetErrmsg(IDbHandle db)
-        {
-            var dbHandle = (DbHandle)db;
+            var dbHandle = (DbHandle) db;
             return Sqlite3.sqlite3_errmsg(dbHandle.InternalDbHandle);
         }
 
         public int BindParameterIndex(IDbStatement stmt, string name)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_bind_parameter_index(dbStatement.InternalStmt, name);
         }
 
         public int BindNull(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_bind_null(dbStatement.InternalStmt, index);
         }
 
         public int BindInt(IDbStatement stmt, int index, int val)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_bind_int(dbStatement.InternalStmt, index, val);
         }
 
         public int BindInt64(IDbStatement stmt, int index, long val)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_bind_int64(dbStatement.InternalStmt, index, val);
         }
 
         public int BindDouble(IDbStatement stmt, int index, double val)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_bind_double(dbStatement.InternalStmt, index, val);
         }
 
         public int BindText16(IDbStatement stmt, int index, string val, int n, IntPtr free)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_bind_text(dbStatement.InternalStmt, index, val, n, null);
         }
 
         public int BindBlob(IDbStatement stmt, int index, byte[] val, int n, IntPtr free)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_bind_blob(dbStatement.InternalStmt, index, val, n, null);
         }
 
         public int ColumnCount(IDbStatement stmt)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_count(dbStatement.InternalStmt);
         }
 
         public string ColumnName16(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_name(dbStatement.InternalStmt, index);
         }
 
         public ColType ColumnType(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
-            return (ColType)Sqlite3.sqlite3_column_type(dbStatement.InternalStmt, index);
+            var dbStatement = (DbStatement) stmt;
+            return (ColType) Sqlite3.sqlite3_column_type(dbStatement.InternalStmt, index);
         }
 
         public int ColumnInt(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_int(dbStatement.InternalStmt, index);
         }
 
         public long ColumnInt64(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_int64(dbStatement.InternalStmt, index);
         }
 
         public double ColumnDouble(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_double(dbStatement.InternalStmt, index);
         }
 
         public int ColumnBytes(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_bytes(dbStatement.InternalStmt, index);
-        }
-
-        public string ColumnString(IDbStatement stmt, int index)
-        {
-            var dbStatement = (DbStatement)stmt;
-            return Sqlite3.sqlite3_column_text(dbStatement.InternalStmt, index);
         }
 
         public byte[] ColumnByteArray(IDbStatement stmt, int index)
@@ -194,28 +175,48 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
             return ColumnBlob(stmt, index);
         }
 
-        public string ColumnName(IDbStatement stmt, int index)
-        {
-            var dbStatement = (DbStatement)stmt;
-            return Sqlite3.sqlite3_column_name(dbStatement.InternalStmt, index);
-        }
-
-        public string ColumnText(IDbStatement stmt, int index)
-        {
-            var dbStatement = (DbStatement)stmt;
-            return Sqlite3.sqlite3_column_text(dbStatement.InternalStmt, index);
-        }
-
         public string ColumnText16(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_text(dbStatement.InternalStmt, index);
         }
 
         public byte[] ColumnBlob(IDbStatement stmt, int index)
         {
-            var dbStatement = (DbStatement)stmt;
+            var dbStatement = (DbStatement) stmt;
             return Sqlite3.sqlite3_column_blob(dbStatement.InternalStmt, index);
+        }
+
+        public Result Open(string filename, out IDbHandle db)
+        {
+            Sqlite3.sqlite3 internalDbHandle = null;
+            var ret = (Result) Sqlite3.sqlite3_open(filename, ref internalDbHandle);
+            db = new DbHandle(internalDbHandle);
+            return ret;
+        }
+
+        public string GetErrmsg(IDbHandle db)
+        {
+            var dbHandle = (DbHandle) db;
+            return Sqlite3.sqlite3_errmsg(dbHandle.InternalDbHandle);
+        }
+
+        public string ColumnString(IDbStatement stmt, int index)
+        {
+            var dbStatement = (DbStatement) stmt;
+            return Sqlite3.sqlite3_column_text(dbStatement.InternalStmt, index);
+        }
+
+        public string ColumnName(IDbStatement stmt, int index)
+        {
+            var dbStatement = (DbStatement) stmt;
+            return Sqlite3.sqlite3_column_name(dbStatement.InternalStmt, index);
+        }
+
+        public string ColumnText(IDbStatement stmt, int index)
+        {
+            var dbStatement = (DbStatement) stmt;
+            return Sqlite3.sqlite3_column_text(dbStatement.InternalStmt, index);
         }
 
         private struct DbHandle : IDbHandle
@@ -226,9 +227,10 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
             }
 
             public Sqlite3.sqlite3 InternalDbHandle { get; set; }
+
             public bool Equals(IDbHandle other)
             {
-                return other is DbHandle && InternalDbHandle == ((DbHandle)other).InternalDbHandle;
+                return other is DbHandle && InternalDbHandle == ((DbHandle) other).InternalDbHandle;
             }
         }
 
@@ -244,9 +246,8 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
 
             public bool Equals(IDbStatement other)
             {
-                return (other is DbStatement) && ((DbStatement)other).InternalStmt == InternalStmt;
+                return (other is DbStatement) && ((DbStatement) other).InternalStmt == InternalStmt;
             }
         }
     }
-
 }
