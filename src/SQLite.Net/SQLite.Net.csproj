@@ -43,9 +43,9 @@
     <Compile Include="AsyncTableQuery.cs" />
     <Compile Include="BaseTableQuery.cs" />
     <Compile Include="CreateTablesResult.cs" />
-    <Compile Include="Interop\ISqlite3DatabaseHandle.cs" />
+    <Compile Include="Interop\IDbHandle.cs" />
     <Compile Include="Interop\SQLite3Native.cs" />
-    <Compile Include="Interop\ISqlite3Statement.cs" />
+    <Compile Include="Interop\IDbStatement.cs" />
     <Compile Include="Orm.cs" />
     <Compile Include="PreparedSqlLiteInsertCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

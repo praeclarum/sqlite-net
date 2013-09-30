@@ -91,7 +91,7 @@ namespace SQLite
             }
         }
 
-        internal struct Sqlite3StatementInternal : ISqlite3Statement
+        internal struct Sqlite3StatementInternal : IDbStatement
         {
             public IntPtr Handle { get; set; }
 
@@ -113,7 +113,7 @@ namespace SQLite
             }
         }
 
-        internal struct Sqlite3StatementInternal : ISqlite3Statement
+        internal struct Sqlite3StatementInternal : IDbStatement
         {
             public Sqlite.Statement Handle { get; set; }
 
@@ -135,7 +135,7 @@ namespace SQLite
             }
         }
 
-        internal struct Sqlite3StatementInternal : ISqlite3Statement
+        internal struct Sqlite3StatementInternal : IDbStatement
         {
             public Sqlite3.Vdbe Handle { get; set; }
 
@@ -214,7 +214,7 @@ namespace SQLite
             return Sqlite3Native.Changes(internalDbHandle.Handle);
         }
 
-        public static Result Prepare2(IDbHandle db, string sql, int numBytes, out ISqlite3Statement stmt, IntPtr pzTail)
+        public static Result Prepare2(IDbHandle db, string sql, int numBytes, out IDbStatement stmt, IntPtr pzTail)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal) db;
             IntPtr stmtPtr;
@@ -223,9 +223,9 @@ namespace SQLite
             return r;
         }
 
-        public static ISqlite3Statement Prepare2(IDbHandle db, string query)
+        public static IDbStatement Prepare2(IDbHandle db, string query)
         {
-            ISqlite3Statement stmt;
+            IDbStatement stmt;
             var r = Prepare2 (db, query, query.Length, out stmt, IntPtr.Zero);
             if (r != Result.OK) {
                 throw SQLiteException.New (r, GetErrmsg (db));
@@ -233,19 +233,19 @@ namespace SQLite
             return stmt;
         }
 
-        public static Result Step(ISqlite3Statement stmt)
+        public static Result Step(IDbStatement stmt)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.Step(internalStmt.Handle);
         }
 
-        public static Result Reset(ISqlite3Statement stmt)
+        public static Result Reset(IDbStatement stmt)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.Reset(internalStmt.Handle);
         }
 
-        public static Result Finalize(ISqlite3Statement stmt)
+        public static Result Finalize(IDbStatement stmt)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.Finalize(internalStmt.Handle);
@@ -268,125 +268,125 @@ namespace SQLite
             return Marshal.PtrToStringUni (Errmsg (db));
         }
 
-        public static int BindParameterIndex(ISqlite3Statement stmt, string name)
+        public static int BindParameterIndex(IDbStatement stmt, string name)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.BindParameterIndex(internalStmt.Handle, name);
         }
 
-        public static int BindNull(ISqlite3Statement stmt, int index)
+        public static int BindNull(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.BindNull(internalStmt.Handle,index);
         }
 
-        public static int BindInt(ISqlite3Statement stmt, int index, int val)
+        public static int BindInt(IDbStatement stmt, int index, int val)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.BindInt(internalStmt.Handle, index, val);
         }
 
-        public static int BindInt64(ISqlite3Statement stmt, int index, long val)
+        public static int BindInt64(IDbStatement stmt, int index, long val)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.BindInt64(internalStmt.Handle, index, val);
         }
 
-        public static int BindDouble(ISqlite3Statement stmt, int index, double val)
+        public static int BindDouble(IDbStatement stmt, int index, double val)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.BindDouble(internalStmt.Handle, index, val);
         }
 
-        public static int BindText(ISqlite3Statement stmt, int index, string val, int n, IntPtr free)
+        public static int BindText(IDbStatement stmt, int index, string val, int n, IntPtr free)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.BindText(internalStmt.Handle, index, val, n, free);
         }
 
-        public static int BindBlob(ISqlite3Statement stmt, int index, byte[] val, int n, IntPtr free)
+        public static int BindBlob(IDbStatement stmt, int index, byte[] val, int n, IntPtr free)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.BindBlob(internalStmt.Handle, index, val, n, free);
         }
 
-        public static int ColumnCount(ISqlite3Statement stmt)
+        public static int ColumnCount(IDbStatement stmt)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnCount(internalStmt.Handle);
         }
 
-        public static IntPtr ColumnName(ISqlite3Statement stmt, int index)
+        public static IntPtr ColumnName(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnName(internalStmt.Handle, index);
         }
 
-        static IntPtr ColumnName16Internal(ISqlite3Statement stmt, int index)
+        static IntPtr ColumnName16Internal(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnName16Internal(internalStmt.Handle, index);
         }
 
-        public static string ColumnName16(ISqlite3Statement stmt, int index)
+        public static string ColumnName16(IDbStatement stmt, int index)
         {
             return Marshal.PtrToStringUni(ColumnName16Internal(stmt, index));
         }
 
-        public static ColType ColumnType(ISqlite3Statement stmt, int index)
+        public static ColType ColumnType(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnType(internalStmt.Handle, index);
         }
 
-        public static int ColumnInt(ISqlite3Statement stmt, int index)
+        public static int ColumnInt(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnInt(internalStmt.Handle, index);
         }
 
-        public static long ColumnInt64(ISqlite3Statement stmt, int index)
+        public static long ColumnInt64(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnInt64(internalStmt.Handle, index);
         }
 
-        public static double ColumnDouble(ISqlite3Statement stmt, int index)
+        public static double ColumnDouble(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnDouble(internalStmt.Handle, index);
         }
 
-        public static IntPtr ColumnText(ISqlite3Statement stmt, int index)
+        public static IntPtr ColumnText(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnText(internalStmt.Handle, index);
         }
 
-        public static IntPtr ColumnText16(ISqlite3Statement stmt, int index)
+        public static IntPtr ColumnText16(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnText16(internalStmt.Handle, index);
         }
 
-        public static IntPtr ColumnBlob(ISqlite3Statement stmt, int index)
+        public static IntPtr ColumnBlob(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnBlob(internalStmt.Handle, index);
         }
 
-        public static int ColumnBytes(ISqlite3Statement stmt, int index)
+        public static int ColumnBytes(IDbStatement stmt, int index)
         {
             var internalStmt = (Sqlite3StatementInternal)stmt;
             return Sqlite3Native.ColumnBytes(internalStmt.Handle, index);
         }
 
-        public static string ColumnString(ISqlite3Statement stmt, int index)
+        public static string ColumnString(IDbStatement stmt, int index)
         {
             return Marshal.PtrToStringUni (SQLite3.ColumnText16 (stmt, index));
         }
 
-        public static byte[] ColumnByteArray(ISqlite3Statement stmt, int index)
+        public static byte[] ColumnByteArray(IDbStatement stmt, int index)
         {
             int length = ColumnBytes (stmt, index);
             var result = new byte[length];
@@ -440,7 +440,7 @@ namespace SQLite
 			return Sqlite3.sqlite3_changes(internalDbHandle.Handle);
 		}
 
-		public static ISqlite3Statement Prepare2(IDbHandle db, string query)
+		public static IDbStatement Prepare2(IDbHandle db, string query)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
 #if USE_WP8_NATIVE_SQLITE
@@ -457,19 +457,19 @@ namespace SQLite
 		    return new Sqlite3StatementInternal(stmt);
 		}
 
-		public static Result Step(ISqlite3Statement stmt)
+		public static Result Step(IDbStatement stmt)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
             return (Result)Sqlite3.sqlite3_step(internalStmtHandle.Handle);
 		}
 
-		public static Result Reset(ISqlite3Statement stmt)
+		public static Result Reset(IDbStatement stmt)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return (Result)Sqlite3.sqlite3_reset(internalStmtHandle.Handle);
 		}
 
-		public static Result Finalize(ISqlite3Statement stmt)
+		public static Result Finalize(IDbStatement stmt)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return (Result)Sqlite3.sqlite3_finalize(internalStmtHandle.Handle);
@@ -487,37 +487,37 @@ namespace SQLite
 			return Sqlite3.sqlite3_errmsg(internalDbHandle.Handle);
 		}
 
-		public static int BindParameterIndex(ISqlite3Statement stmt, string name)
+		public static int BindParameterIndex(IDbStatement stmt, string name)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_bind_parameter_index(internalStmtHandle.Handle, name);
 		}
 
-		public static int BindNull(ISqlite3Statement stmt, int index)
+		public static int BindNull(IDbStatement stmt, int index)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_bind_null(internalStmtHandle.Handle, index);
 		}
 
-		public static int BindInt(ISqlite3Statement stmt, int index, int val)
+		public static int BindInt(IDbStatement stmt, int index, int val)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_bind_int(internalStmtHandle.Handle, index, val);
 		}
 
-		public static int BindInt64(ISqlite3Statement stmt, int index, long val)
+		public static int BindInt64(IDbStatement stmt, int index, long val)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_bind_int64(internalStmtHandle.Handle, index, val);
 		}
 
-		public static int BindDouble(ISqlite3Statement stmt, int index, double val)
+		public static int BindDouble(IDbStatement stmt, int index, double val)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_bind_double(internalStmtHandle.Handle, index, val);
 		}
 
-		public static int BindText(ISqlite3Statement stmt, int index, string val, int n, IntPtr free)
+		public static int BindText(IDbStatement stmt, int index, string val, int n, IntPtr free)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 #if USE_WP8_NATIVE_SQLITE
@@ -527,7 +527,7 @@ namespace SQLite
 #endif
 		}
 
-		public static int BindBlob(ISqlite3Statement stmt, int index, byte[] val, int n, IntPtr free)
+		public static int BindBlob(IDbStatement stmt, int index, byte[] val, int n, IntPtr free)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 #if USE_WP8_NATIVE_SQLITE
@@ -537,79 +537,79 @@ namespace SQLite
 #endif
 		}
 
-		public static int ColumnCount(ISqlite3Statement stmt)
+		public static int ColumnCount(IDbStatement stmt)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_count(internalStmtHandle.Handle);
 		}
 
-		public static string ColumnName(ISqlite3Statement stmt, int index)
+		public static string ColumnName(IDbStatement stmt, int index)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_name(internalStmtHandle.Handle, index);
 		}
 
-		public static string ColumnName16(ISqlite3Statement stmt, int index)
+		public static string ColumnName16(IDbStatement stmt, int index)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_name(internalStmtHandle.Handle, index);
 		}
 
-		public static ColType ColumnType(ISqlite3Statement stmt, int index)
+		public static ColType ColumnType(IDbStatement stmt, int index)
         {
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return (ColType)Sqlite3.sqlite3_column_type(internalStmtHandle.Handle, index);
 		}
 
-		public static int ColumnInt(ISqlite3Statement stmt, int index)
+		public static int ColumnInt(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_int(internalStmtHandle.Handle, index);
 		}
 
-		public static long ColumnInt64(ISqlite3Statement stmt, int index)
+		public static long ColumnInt64(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_int64(internalStmtHandle.Handle, index);
 		}
 
-		public static double ColumnDouble(ISqlite3Statement stmt, int index)
+		public static double ColumnDouble(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_double(internalStmtHandle.Handle, index);
 		}
 
-		public static string ColumnText(ISqlite3Statement stmt, int index)
+		public static string ColumnText(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_text(internalStmtHandle.Handle, index);
 		}
 
-		public static string ColumnText16(ISqlite3Statement stmt, int index)
+		public static string ColumnText16(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_text(internalStmtHandle.Handle, index);
 		}
 
-		public static byte[] ColumnBlob(ISqlite3Statement stmt, int index)
+		public static byte[] ColumnBlob(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_blob(internalStmtHandle.Handle, index);
 		}
 
-		public static int ColumnBytes(ISqlite3Statement stmt, int index)
+		public static int ColumnBytes(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_bytes(internalStmtHandle.Handle, index);
 		}
 
-		public static string ColumnString(ISqlite3Statement stmt, int index)
+		public static string ColumnString(IDbStatement stmt, int index)
 		{
             var internalStmtHandle = (Sqlite3StatementInternal)stmt;
 			return Sqlite3.sqlite3_column_text(internalStmtHandle.Handle, index);
 		}
 
-		public static byte[] ColumnByteArray(ISqlite3Statement stmt, int index)
+		public static byte[] ColumnByteArray(IDbStatement stmt, int index)
 		{
 			return ColumnBlob(stmt, index);
 		}

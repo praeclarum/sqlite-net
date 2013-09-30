@@ -198,19 +198,19 @@ namespace SQLite
             return string.Join (Environment.NewLine, parts);
         }
 
-        ISqlite3Statement Prepare()
+        IDbStatement Prepare()
         {
             var stmt = SQLite3.Prepare2 (_conn.Handle, CommandText);
             BindAll (stmt);
             return stmt;
         }
 
-        void Finalize(ISqlite3Statement stmt)
+        void Finalize(IDbStatement stmt)
         {
             SQLite3.Finalize (stmt);
         }
 
-        void BindAll(ISqlite3Statement stmt)
+        void BindAll(IDbStatement stmt)
         {
             int nextIdx = 1;
             foreach (var b in _bindings) {
@@ -226,7 +226,7 @@ namespace SQLite
 
         internal static IntPtr NegativePointer = new IntPtr (-1);
 
-        internal static void BindParameter(ISqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
+        internal static void BindParameter(IDbStatement stmt, int index, object value, bool storeDateTimeAsTicks)
         {
             if (value == null) {
                 SQLite3.BindNull (stmt, index);
@@ -275,7 +275,7 @@ namespace SQLite
             public int Index { get; set; }
         }
 
-        object ReadCol(ISqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
+        object ReadCol(IDbStatement stmt, int index, SQLite3.ColType type, Type clrType)
         {
             if (type == SQLite3.ColType.Null) {
                 return null;

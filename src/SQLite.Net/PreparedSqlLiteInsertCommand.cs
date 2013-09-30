@@ -48,8 +48,8 @@ namespace SQLite
 
         public string CommandText { get; set; }
 
-        protected ISqlite3Statement Statement { get; set; }
-        internal static readonly ISqlite3Statement NullStatement = default(ISqlite3Statement);
+        protected IDbStatement Statement { get; set; }
+        internal static readonly IDbStatement NullStatement = default(IDbStatement);
 
         internal PreparedSqlLiteInsertCommand (SQLiteConnection conn)
         {
@@ -91,7 +91,7 @@ namespace SQLite
             }
         }
 
-        protected virtual ISqlite3Statement Prepare()
+        protected virtual IDbStatement Prepare()
         {
             var stmt = SQLite3.Prepare2 (Connection.Handle, CommandText);
             return stmt;

@@ -22,7 +22,7 @@
 
 namespace SQLite
 {
-    public interface ISqlite3Statement
+    public interface IDbStatement
     {
          
     }
