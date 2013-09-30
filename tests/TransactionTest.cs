@@ -1,16 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SQLite.Net.Attributes;
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TearDown = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestCleanupAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
 using NUnit.Framework;
-#endif
+using SQLite.Net;
+using SQLite.Net.Attributes;
+using SQLite.Net.Platform.Win32;
 
 namespace SQLite.Net.Tests
 {
@@ -37,7 +31,8 @@ namespace SQLite.Net.Tests
 
 		public class TestDb : SQLiteConnection
 		{
-			public TestDb(String path) : base(path)
+            public TestDb(String path)
+                : base(new SQLitePlatformWin32(), path)
 			{
 				CreateTable<TestObj>();
 			}

@@ -21,17 +21,6 @@
 // THE SOFTWARE.
 //
 
-#if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
-#define USE_CSHARP_SQLITE
-#endif
-
-#if USE_CSHARP_SQLITE
-using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-#elif USE_WP8_NATIVE_SQLITE
-using Sqlite3 = Sqlite.Sqlite3;
-#else
-#endif
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -80,11 +69,7 @@ namespace SQLite.Net
                 return "varchar(" + len + ")";
             } else if (clrType == typeof(DateTime)) {
                 return storeDateTimeAsTicks ? "bigint" : "datetime";
-#if !NETFX_CORE
             } else if (clrType.IsEnum) {
-#else
-			} else if (clrType.GetTypeInfo().IsEnum) {
-#endif
                 return "integer";
             } else if (clrType == typeof(byte[])) {
                 return "blob";
@@ -98,23 +83,14 @@ namespace SQLite.Net
         public static bool IsPK (MemberInfo p)
         {
             var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-#if !NETFX_CORE
             return attrs.Length > 0;
-#else
-			return attrs.Count() > 0;
-#endif
         }
 
         public static string Collation (MemberInfo p)
         {
             var attrs = p.GetCustomAttributes (typeof(CollationAttribute), true);
-#if !NETFX_CORE
             if (attrs.Length > 0) {
                 return ((CollationAttribute)attrs [0]).Value;
-#else
-			if (attrs.Count() > 0) {
-                return ((CollationAttribute)attrs.First()).Value;
-#endif
             } else {
                 return string.Empty;
             }
@@ -123,11 +99,7 @@ namespace SQLite.Net
         public static bool IsAutoInc (MemberInfo p)
         {
             var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
-#if !NETFX_CORE
             return attrs.Length > 0;
-#else
-			return attrs.Count() > 0;
-#endif
         }
 
         public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
@@ -139,13 +111,8 @@ namespace SQLite.Net
         public static int MaxStringLength(PropertyInfo p)
         {
             var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
-#if !NETFX_CORE
             if (attrs.Length > 0) {
                 return ((MaxLengthAttribute)attrs [0]).Value;
-#else
-			if (attrs.Count() > 0) {
-				return ((MaxLengthAttribute)attrs.First()).Value;
-#endif
             } else {
                 return DefaultMaxStringLength;
             }

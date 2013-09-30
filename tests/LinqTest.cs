@@ -1,15 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using SQLite.Net.Attributes;
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
+using System.Linq;
 using NUnit.Framework;
-#endif
+using SQLite.Net.Attributes;
 
 namespace SQLite.Net.Tests
 {

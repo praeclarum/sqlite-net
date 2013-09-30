@@ -1,20 +1,10 @@
 using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SQLite;
-
 using System.Diagnostics;
-using SQLite.Net.Attributes;
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
 using NUnit.Framework;
-#endif
+using SQLite.Net;
+using SQLite.Net.Attributes;
+using SQLite.Net.Interop;
+using SQLite.Net.Platform.Win32;
 
 
 namespace SQLite.Net.Tests
@@ -34,11 +24,13 @@ namespace SQLite.Net.Tests
                 return string.Format("VO:: ID:{0} Flag:{1} Text:{2}", ID, Flag, Text);
             }
         }
+
         public class DbAcs : SQLiteConnection
         {
-            public DbAcs(String path)
-                : base(path)
+            public DbAcs(ISQLitePlatform sqlitePlatform, String path)
+                : base(sqlitePlatform, path)
             {
+                Trace = true;
             }
 
             public void buildTable()
@@ -56,8 +48,9 @@ namespace SQLite.Net.Tests
         [Test]
         public void TestBoolean()
         {
+            var sqlite3Platform = new SQLitePlatformWin32();
             var tmpFile = TestPath.GetTempFileName();
-            var db = new DbAcs(tmpFile);         
+            var db = new DbAcs(sqlite3Platform, tmpFile);         
             db.buildTable();
             for (int i = 0; i < 10; i++)
                 db.Insert(new VO() { Flag = (i % 3 == 0), Text = String.Format("VO{0}", i) });                

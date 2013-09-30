@@ -1,20 +1,9 @@
-using System;
-using System.IO;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using SQLite;
-using SQLite.Net.Attributes;
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
 using NUnit.Framework;
-#endif
-
-using System.Diagnostics;
+using SQLite.Net;
+using SQLite.Net.Attributes;
+using SQLite.Net.Interop;
+using SQLite.Net.Platform.Win32;
 
 namespace SQLite.Net.Tests
 {    
@@ -36,8 +25,8 @@ namespace SQLite.Net.Tests
 		
         public class TestDb : SQLiteConnection
         {
-            public TestDb(String path)
-                : base(path)
+            public TestDb(ISQLitePlatform sqlitePlatform, string path)
+                : base(sqlitePlatform, path)
             {
 				CreateTable<TestObj>();
             }
@@ -51,8 +40,8 @@ namespace SQLite.Net.Tests
 					select new TestObj() {
 				Name = i.ToString()
 			};
-			
-			var db = new TestDb(TestPath.GetTempFileName());
+
+            var db = new TestDb(new SQLitePlatformWin32(), TestPath.GetTempFileName());
 			
 			db.InsertAll(cq);
 			
@@ -76,7 +65,7 @@ namespace SQLite.Net.Tests
 				Name = i.ToString()
 			};
 			
-			var db = new TestDb(TestPath.GetTempFileName());
+			var db = new TestDb(new SQLitePlatformWin32(), TestPath.GetTempFileName());
 			
 			db.InsertAll(cq);
 			
@@ -90,7 +79,7 @@ namespace SQLite.Net.Tests
 			var more = (from o in db.Table<TestObj>() where moreq.Contains(o.Name) select o).ToList();
 			Assert.AreEqual(2, more.Count);
 			
-			// https://github.com/praeclarum/sqlite-net/issues/28
+			// https://github.com/praeclarum/SQLite.Net/issues/28
 			var moreq2 = moreq.ToList ();
 			var more2 = (from o in db.Table<TestObj>() where moreq2.Contains(o.Name) select o).ToList();
 			Assert.AreEqual(2, more2.Count);			

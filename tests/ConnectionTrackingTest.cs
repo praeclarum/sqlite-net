@@ -1,22 +1,12 @@
 
-using System;
-using System.IO;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using SQLite;
-
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SetUp = Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
-#else
+using SQLite.Net.Attributes;
+using SQLite.Net.Interop;
+using SQLite.Net.Platform.Win32;
 using NUnit.Framework;
-#endif
 
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {
 	[TestFixture]
 	public class ConnectionTrackingTest
@@ -47,8 +37,9 @@ namespace SQLite.Tests
 		}
 
 		public class TestDb : SQLiteConnection
-		{
-			public TestDb () : base(TestPath.GetTempFileName ())
+        {
+            public TestDb(ISQLitePlatform sqlitePlatform)
+                : base(sqlitePlatform, TestPath.GetTempFileName())
 			{
 				CreateTable<Product> ();
 				CreateTable<OrderLine> ();
@@ -59,7 +50,7 @@ namespace SQLite.Tests
 		[Test]
 		public void CreateThem ()
 		{
-			var db = new TestDb ();
+			var db = new TestDb (new SQLitePlatformWin32());
 			
 			var foo = new Product { Name = "Foo", Price = 10.0m };
 			var bar = new Product { Name = "Bar", Price = 0.10m };

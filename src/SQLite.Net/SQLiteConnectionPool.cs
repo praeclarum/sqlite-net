@@ -21,65 +21,32 @@
 // THE SOFTWARE.
 //
 
-#if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
-#define USE_CSHARP_SQLITE
-#endif
-
-#if USE_CSHARP_SQLITE
-using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-#elif USE_WP8_NATIVE_SQLITE
-using Sqlite3 = Sqlite.Sqlite3;
-#else
-#endif
-
 using System.Collections.Generic;
+using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {
-    class SQLiteConnectionPool
+    public class SQLiteConnectionPool
     {
-        class Entry
+        private readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry>();
+        private readonly object _entriesLock = new object();
+        private readonly ISQLitePlatform _sqlitePlatform;
+
+        public SQLiteConnectionPool(ISQLitePlatform sqlitePlatform)
         {
-            public SQLiteConnectionString ConnectionString { get; private set; }
-            public SQLiteConnectionWithLock Connection { get; private set; }
-
-            public Entry (SQLiteConnectionString connectionString)
-            {
-                ConnectionString = connectionString;
-                Connection = new SQLiteConnectionWithLock (connectionString);
-            }
-
-            public void OnApplicationSuspended ()
-            {
-                Connection.Dispose ();
-                Connection = null;
-            }
+            _sqlitePlatform = sqlitePlatform;
         }
 
-        readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry> ();
-        readonly object _entriesLock = new object ();
-
-        static readonly SQLiteConnectionPool _shared = new SQLiteConnectionPool ();
-
-        /// <summary>
-        /// Gets the singleton instance of the connection tool.
-        /// </summary>
-        public static SQLiteConnectionPool Shared
+        public SQLiteConnectionWithLock GetConnection(SQLiteConnectionString connectionString)
         {
-            get
+            lock (_entriesLock)
             {
-                return _shared;
-            }
-        }
-
-        public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString)
-        {
-            lock (_entriesLock) {
                 Entry entry;
                 string key = connectionString.ConnectionString;
 
-                if (!_entries.TryGetValue (key, out entry)) {
-                    entry = new Entry (connectionString);
+                if (!_entries.TryGetValue(key, out entry))
+                {
+                    entry = new Entry(_sqlitePlatform, connectionString);
                     _entries[key] = entry;
                 }
 
@@ -88,25 +55,45 @@ namespace SQLite.Net
         }
 
         /// <summary>
-        /// Closes all connections managed by this pool.
+        ///     Closes all connections managed by this pool.
         /// </summary>
-        public void Reset ()
+        public void Reset()
         {
-            lock (_entriesLock) {
-                foreach (var entry in _entries.Values) {
-                    entry.OnApplicationSuspended ();
+            lock (_entriesLock)
+            {
+                foreach (Entry entry in _entries.Values)
+                {
+                    entry.OnApplicationSuspended();
                 }
-                _entries.Clear ();
+                _entries.Clear();
             }
         }
 
         /// <summary>
-        /// Call this method when the application is suspended.
+        ///     Call this method when the application is suspended.
         /// </summary>
         /// <remarks>Behaviour here is to close any open connections.</remarks>
-        public void ApplicationSuspended ()
+        public void ApplicationSuspended()
         {
-            Reset ();
+            Reset();
+        }
+
+        private class Entry
+        {
+            public Entry(ISQLitePlatform sqlitePlatform, SQLiteConnectionString connectionString)
+            {
+                ConnectionString = connectionString;
+                Connection = new SQLiteConnectionWithLock(sqlitePlatform, connectionString);
+            }
+
+            public SQLiteConnectionString ConnectionString { get; private set; }
+            public SQLiteConnectionWithLock Connection { get; private set; }
+
+            public void OnApplicationSuspended()
+            {
+                Connection.Dispose();
+                Connection = null;
+            }
         }
     }
 }

@@ -1,18 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SQLite;
-using SQLite.Net.Attributes;
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
+﻿using System.Linq;
 using NUnit.Framework;
-#endif
+using SQLite.Net;
+using SQLite.Net.Attributes;
+using SQLite.Net.Platform.Win32;
 
 
 namespace SQLite.Net.Tests
@@ -20,7 +10,9 @@ namespace SQLite.Net.Tests
 	[TestFixture]
 	public class ByteArrayTest
 	{
-		public class ByteArrayClass
+	    private SQLitePlatformWin32 _sqlite3Platform;
+
+	    public class ByteArrayClass
 		{
 			[PrimaryKey, AutoIncrement]
 			public int ID { get; set; }
@@ -43,7 +35,13 @@ namespace SQLite.Net.Tests
 			}
 		}
 
-		[Test]
+	    [SetUp]
+	    public void SetUp()
+        {
+            _sqlite3Platform = new SQLitePlatformWin32();
+	    }
+
+	    [Test]
 		[Description("Create objects with various byte arrays and check they can be stored and retrieved correctly")]
 		public void ByteArrays()
 		{
@@ -58,7 +56,7 @@ namespace SQLite.Net.Tests
 				new ByteArrayClass() { bytes = null } //Null should be supported
 			};
 
-			SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
+            SQLiteConnection database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert all of the ByteArrayClass
@@ -87,7 +85,7 @@ namespace SQLite.Net.Tests
 
 			ByteArrayClass byteArray = new ByteArrayClass() { bytes = bytes };
 
-			SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
+			SQLiteConnection database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
 			database.CreateTable<ByteArrayClass>();
 
 			//Insert the ByteArrayClass

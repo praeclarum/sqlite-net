@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2012 Krueger Systems, Inc.
+// Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,7 +19,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-//
 
 using System;
 using System.Collections.Generic;
@@ -31,6 +31,7 @@ namespace SQLite.Net
 {
     public class TableMapping
     {
+        private readonly ISQLitePlatform _sqlitePlatform;
         public Type MappedType { get; private set; }
 
         public string TableName { get; private set; }
@@ -45,33 +46,21 @@ namespace SQLite.Net
         Column[] _insertColumns;
         Column[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping(ISQLitePlatform platformImplementation, Type type, CreateFlags createFlags = CreateFlags.None)
         {
+            _sqlitePlatform = platformImplementation;
             MappedType = type;
 
-#if NETFX_CORE
-			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
-                .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
-#else
             var tableAttr = (TableAttribute)type.GetCustomAttributes (typeof (TableAttribute), true).FirstOrDefault ();
-#endif
 
             TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
 
-#if !NETFX_CORE
-            var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
-#else
-			var props = from p in MappedType.GetRuntimeProperties()
-						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
-						select p;
-#endif
+            var props = _sqlitePlatform.ReflectionService.GetPublicInstanceProperties(MappedType);
+
             var cols = new List<Column> ();
             foreach (var p in props) {
-#if !NETFX_CORE
                 var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
-#else
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
-#endif
+
                 if (p.CanWrite && !ignore) {
                     cols.Add (new Column (p, createFlags));
                 }
@@ -176,8 +165,8 @@ namespace SQLite.Net
                         select "?").ToArray()), extra);
                 
             }
-			
-            var insertCommand = new PreparedSqlLiteInsertCommand(conn);
+
+            var insertCommand = new PreparedSqlLiteInsertCommand(_sqlitePlatform, conn);
             insertCommand.CommandText = insertSql;
             return insertCommand;
         }

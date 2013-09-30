@@ -1,14 +1,8 @@
 using System;
 using System.IO;
-#if NETFX_CORE
-class DescriptionAttribute : Attribute
-{
-	public DescriptionAttribute (string desc)
-	{
-	}
-}
-#endif
+using SQLite.Net;
 using SQLite.Net.Attributes;
+using SQLite.Net.Platform.Win32;
 
 namespace SQLite.Net.Tests
 {
@@ -53,7 +47,7 @@ namespace SQLite.Net.Tests
 
 	public class TestDb : SQLiteConnection
 	{
-		public TestDb (bool storeDateTimeAsTicks = false) : base (TestPath.GetTempFileName (), storeDateTimeAsTicks)
+		public TestDb (bool storeDateTimeAsTicks = false) : base (new SQLitePlatformWin32(), TestPath.GetTempFileName (), storeDateTimeAsTicks)
 		{
 			Trace = true;
 		}
@@ -63,12 +57,7 @@ namespace SQLite.Net.Tests
 	{
 		public static string GetTempFileName ()
 		{
-#if NETFX_CORE
-			var name = Guid.NewGuid () + ".sqlite";
-			return Path.Combine (Windows.Storage.ApplicationData.Current.LocalFolder.Path, name);
-#else
 			return Path.GetTempFileName ();
-#endif
 		}
 	}
 }

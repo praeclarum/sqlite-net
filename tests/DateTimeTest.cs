@@ -1,14 +1,8 @@
 using System;
+using NUnit.Framework;
 using SQLite.Net.Async;
 using SQLite.Net.Attributes;
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
-using NUnit.Framework;
-#endif
+using SQLite.Net.Platform.Win32;
 
 namespace SQLite.Net.Tests
 {
@@ -42,14 +36,14 @@ namespace SQLite.Net.Tests
 		[Test]
 		public void AsyncAsTicks ()
 		{
-			var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), true);
+			var db = new SQLiteAsyncConnection (new SQLiteConnectionPool(new SQLitePlatformWin32()), TestPath.GetTempFileName (), true);
 			TestAsyncDateTime (db);
 		}
 
 		[Test]
 		public void AsyncAsString ()
 		{
-			var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), false);
+            var db = new SQLiteAsyncConnection(new SQLiteConnectionPool(new SQLitePlatformWin32()), TestPath.GetTempFileName(), false);
 			TestAsyncDateTime (db);
 		}
 

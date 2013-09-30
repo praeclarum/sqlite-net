@@ -1,5 +1,6 @@
 //
 // Copyright (c) 2012 Krueger Systems, Inc.
+// Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,40 +19,40 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-//
 
 using System;
 using System.Threading;
+using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {
-    class SQLiteConnectionWithLock : SQLiteConnection
+    public class SQLiteConnectionWithLock : SQLiteConnection
     {
-        readonly object _lockPoint = new object ();
+        private readonly object _lockPoint = new object();
 
-        public SQLiteConnectionWithLock (SQLiteConnectionString connectionString)
-            : base (connectionString.DatabasePath, connectionString.StoreDateTimeAsTicks)
+        public SQLiteConnectionWithLock(ISQLitePlatform sqlitePlatform, SQLiteConnectionString connectionString)
+            : base(sqlitePlatform, connectionString.DatabasePath, connectionString.StoreDateTimeAsTicks)
         {
         }
 
-        public IDisposable Lock ()
+        public IDisposable Lock()
         {
-            return new LockWrapper (_lockPoint);
+            return new LockWrapper(_lockPoint);
         }
 
         private class LockWrapper : IDisposable
         {
-            object _lockPoint;
+            private readonly object _lockPoint;
 
-            public LockWrapper (object lockPoint)
+            public LockWrapper(object lockPoint)
             {
                 _lockPoint = lockPoint;
-                Monitor.Enter (_lockPoint);
+                Monitor.Enter(_lockPoint);
             }
 
-            public void Dispose ()
+            public void Dispose()
             {
-                Monitor.Exit (_lockPoint);
+                Monitor.Exit(_lockPoint);
             }
         }
     }

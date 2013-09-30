@@ -19,29 +19,19 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-//
-
-#if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
-#define USE_CSHARP_SQLITE
-#endif
-
-#if USE_CSHARP_SQLITE
-using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-#elif USE_WP8_NATIVE_SQLITE
-using Sqlite3 = Sqlite.Sqlite3;
-#else
-#endif
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
+using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {
     public class TableQuery<T> : BaseTableQuery, IEnumerable<T>
     {
+        private readonly ISQLitePlatform _sqlitePlatform;
         public SQLiteConnection Connection { get; private set; }
 
         public TableMapping Table { get; private set; }
@@ -59,21 +49,23 @@ namespace SQLite.Net
 				
         Expression _selector;
 
-        TableQuery (SQLiteConnection conn, TableMapping table)
+        TableQuery(ISQLitePlatform platformImplementation, SQLiteConnection conn, TableMapping table)
         {
+            _sqlitePlatform = platformImplementation;
             Connection = conn;
             Table = table;
         }
 
-        public TableQuery (SQLiteConnection conn)
+        public TableQuery (ISQLitePlatform platformImplementation, SQLiteConnection conn)
         {
+            _sqlitePlatform = platformImplementation;
             Connection = conn;
             Table = Connection.GetMapping (typeof(T));
         }
 
         public TableQuery<U> Clone<U> ()
         {
-            var q = new TableQuery<U> (Connection, Table);
+            var q = new TableQuery<U> (_sqlitePlatform, Connection, Table);
             q._where = _where;
             q._deferred = _deferred;
             if (_orderBys != null) {
@@ -188,7 +180,7 @@ namespace SQLite.Net
             Expression<Func<TInner, TKey>> innerKeySelector,
             Expression<Func<T, TInner, TResult>> resultSelector)
         {
-            var q = new TableQuery<TResult> (Connection, Connection.GetMapping (typeof (TResult))) {
+            var q = new TableQuery<TResult> (_sqlitePlatform, Connection, Connection.GetMapping (typeof (TResult))) {
                 _joinOuter = this,
                 _joinOuterKeySelector = outerKeySelector,
                 _joinInner = inner,
@@ -342,33 +334,7 @@ namespace SQLite.Net
                     //
                     // Get the member value
                     //
-                    object val = null;
-					
-#if !NETFX_CORE
-                    if (mem.Member.MemberType == MemberTypes.Property) {
-#else
-					if (mem.Member is PropertyInfo) {
-#endif
-                        var m = (PropertyInfo)mem.Member;
-                        val = m.GetValue (obj, null);
-#if !NETFX_CORE
-                    } else if (mem.Member.MemberType == MemberTypes.Field) {
-#else
-					} else if (mem.Member is FieldInfo) {
-#endif
-#if SILVERLIGHT
-						val = Expression.Lambda (expr).Compile ().DynamicInvoke ();
-#else
-                        var m = (FieldInfo)mem.Member;
-                        val = m.GetValue (obj);
-#endif
-                    } else {
-#if !NETFX_CORE
-                        throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType);
-#else
-						throw new NotSupportedException ("MemberExpr: " + mem.Member.DeclaringType);
-#endif
-                    }
+                    object val = _sqlitePlatform.ReflectionService.GetMemberValue(obj, expr, mem.Member);
 					
                     //
                     // Work special magic for enumerables
@@ -401,15 +367,15 @@ namespace SQLite.Net
             throw new NotSupportedException ("Cannot compile: " + expr.NodeType.ToString ());
         }
 
-        static object ConvertTo (object obj, Type t)
+        object ConvertTo (object obj, Type t)
         {
             Type nut = Nullable.GetUnderlyingType(t);
 			
             if (nut != null) {
                 if (obj == null) return null;				
-                return Convert.ChangeType (obj, nut);
+                return Convert.ChangeType (obj, nut, CultureInfo.CurrentCulture);
             } else {
-                return Convert.ChangeType (obj, t);
+                return Convert.ChangeType(obj, t, CultureInfo.CurrentCulture);
             }
         }
 

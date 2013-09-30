@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
+using NUnit.Framework;
+using SQLite.Net;
 using SQLite.Net.Async;
 using SQLite.Net.Attributes;
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
-using NUnit.Framework;
-#endif
+using SQLite.Net.Platform.Win32;
 
 namespace SQLite.Net.Tests
 {
@@ -108,7 +102,7 @@ namespace SQLite.Net.Tests
 			conn.CreateTableAsync<Customer> ().Wait ();
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+			using (SQLiteConnection check = new SQLiteConnection (_sqlite3Platform, path)) {
 				// run it - if it's missing we'll get a failure...
 				check.Execute ("select * from Customer");
 			}
@@ -121,32 +115,37 @@ namespace SQLite.Net.Tests
 		}
 		
 		string _path;
-		string _connectionString;
-		
-		[SetUp]
+        private SQLiteConnectionString _connectionParameters;
+	    private SQLitePlatformWin32 _sqlite3Platform;
+	    private SQLiteConnectionPool _sqliteConnectionPool;
+
+        [TestFixtureSetUp]
+        public void TestFixtureSetUp()
+	    {
+		    _sqlite3Platform = new SQLitePlatformWin32();
+	        _sqliteConnectionPool = new SQLiteConnectionPool(_sqlite3Platform);
+	    }
+
+	    [SetUp]
 		public void SetUp()
 		{
-			SQLiteConnectionPool.Shared.Reset ();
-#if NETFX_CORE
-			_connectionString = DatabaseName;
-			_path = Path.Combine (Windows.Storage.ApplicationData.Current.LocalFolder.Path, DatabaseName);
-			try {
-				var f = Windows.Storage.StorageFile.GetFileFromPathAsync (_path).AsTask ().Result;
-				f.DeleteAsync ().AsTask ().Wait ();
-			}
-			catch (Exception) {
-			}
-#else
-			_connectionString = Path.Combine (Path.GetTempPath (), DatabaseName);
-			_path = _connectionString;
-			System.IO.File.Delete (_path);
-#endif
+            if (_sqliteConnectionPool != null)
+            {
+                _sqliteConnectionPool.Reset();
+            }
+            _path = Path.Combine(Path.GetTempPath(), DatabaseName);
+            // delete old db file
+            File.Delete(_path);
+
+            _connectionParameters = new SQLiteConnectionString(_path, false);
+            _sqliteConnectionPool = new SQLiteConnectionPool(_sqlite3Platform);
 		}
 		
 		SQLiteAsyncConnection GetConnection (ref string path)
 		{
 			path = _path;
-			return new SQLiteAsyncConnection (_connectionString);
+		    return new SQLiteAsyncConnection(_sqliteConnectionPool, _connectionParameters.DatabasePath,
+		        _connectionParameters.StoreDateTimeAsTicks);
 		}
 
 		[Test]
@@ -160,7 +159,7 @@ namespace SQLite.Net.Tests
 			conn.DropTableAsync<Customer> ().Wait ();
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+			using (SQLiteConnection check = new SQLiteConnection (_sqlite3Platform, path)) {
 				// load it back and check - should be missing
 				var command = check.CreateCommand ("select name from sqlite_master where type='table' and name='customer'");
 				Assert.IsNull (command.ExecuteScalar<string> ());
@@ -195,7 +194,8 @@ namespace SQLite.Net.Tests
 			Assert.AreNotEqual (0, customer.Id);
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+            using (SQLiteConnection check = new SQLiteConnection(_sqlite3Platform, path))
+            {
 				// load it back...
 				Customer loaded = check.Get<Customer> (customer.Id);
 				Assert.AreEqual (loaded.Id, customer.Id);
@@ -224,7 +224,8 @@ namespace SQLite.Net.Tests
 			conn.UpdateAsync (customer).Wait ();
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+            using (SQLiteConnection check = new SQLiteConnection(_sqlite3Platform, path))
+            {
 				// load it back - should be changed...
 				Customer loaded = check.Get<Customer> (customer.Id);
 				Assert.AreEqual (newEmail, loaded.Email);
@@ -249,7 +250,8 @@ namespace SQLite.Net.Tests
 			conn.DeleteAsync (customer).Wait ();
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+            using (SQLiteConnection check = new SQLiteConnection(_sqlite3Platform, path))
+            {
 				// load it back - should be null...
 				var loaded = check.Table<Customer> ().Where (v => v.Id == customer.Id).ToList ();
 				Assert.AreEqual (0, loaded.Count);
@@ -444,7 +446,8 @@ namespace SQLite.Net.Tests
 				"foo", "bar", email).Wait ();
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+            using (SQLiteConnection check = new SQLiteConnection(_sqlite3Platform, path))
+            {
 				// load it back - should be null...
 				var result = check.Table<Customer> ().Where (v => v.Email == email);
 				Assert.IsNotNull (result);
@@ -473,7 +476,8 @@ namespace SQLite.Net.Tests
 			conn.InsertAllAsync (customers).Wait ();
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+            using (SQLiteConnection check = new SQLiteConnection(_sqlite3Platform, path))
+            {
 				for (int index = 0; index < customers.Count; index++) {
 					// load it back and check...
 					Customer loaded = check.Get<Customer> (customers[index].Id);
@@ -509,7 +513,8 @@ namespace SQLite.Net.Tests
 
 			// check...
 			Assert.IsTrue(transactionCompleted);
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
+            using (SQLiteConnection check = new SQLiteConnection(_sqlite3Platform, path))
+            {
 				// load it back and check - should be deleted...
 				var loaded = check.Table<Customer> ().Where (v => v.Id == customer.Id).ToList ();
 				Assert.AreEqual (0, loaded.Count);

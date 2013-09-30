@@ -21,20 +21,10 @@
 // THE SOFTWARE.
 //
 
-#if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
-#define USE_CSHARP_SQLITE
-#endif
-
-#if USE_CSHARP_SQLITE
-using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-#elif USE_WP8_NATIVE_SQLITE
-using Sqlite3 = Sqlite.Sqlite3;
-#else
-#endif
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -49,11 +39,12 @@ namespace SQLite.Net
     /// </summary>
     public partial class SQLiteConnection : IDisposable
     {
+        private readonly ISQLitePlatform _sqlitePlatform;
         private bool _open;
         private TimeSpan _busyTimeout;
         private Dictionary<string, TableMapping> _mappings = null;
         private Dictionary<string, TableMapping> _tables = null;
-        private System.Diagnostics.Stopwatch _sw;
+        private IStopwatch _sw;
         private long _elapsedMilliseconds = 0;
 
         private int _transactionDepth = 0;
@@ -73,6 +64,7 @@ namespace SQLite.Net
         /// <summary>
         /// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
         /// </summary>
+        /// <param name="sqlitePlatform"></param>
         /// <param name="databasePath">
         /// Specifies the path to the database file.
         /// </param>
@@ -82,14 +74,16 @@ namespace SQLite.Net
         /// only here for backwards compatibility. There is a *significant* speed advantage, with no
         /// down sides, when setting storeDateTimeAsTicks = true.
         /// </param>
-        public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false)
-            : this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, bool storeDateTimeAsTicks = false)
+            : this(sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
         {
         }
+
 
         /// <summary>
         /// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
         /// </summary>
+        /// <param name="sqlitePlatform"></param>
         /// <param name="databasePath">
         /// Specifies the path to the database file.
         /// </param>
@@ -99,31 +93,21 @@ namespace SQLite.Net
         /// only here for backwards compatibility. There is a *significant* speed advantage, with no
         /// down sides, when setting storeDateTimeAsTicks = true.
         /// </param>
-        public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
+        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
         {
+            _sqlitePlatform = sqlitePlatform;
+
             if (string.IsNullOrEmpty (databasePath))
                 throw new ArgumentException ("Must be specified", "databasePath");
 
             DatabasePath = databasePath;
 
-#if NETFX_CORE
-			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
-#endif
-
             IDbHandle handle;
-
-#if SILVERLIGHT || USE_CSHARP_SQLITE
-            var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
-#else
-            // open using the byte[]
-            // in the case where the path may include Unicode
-            // force open to using UTF-8 using sqlite3_open_v2
-            var databasePathAsBytes = GetNullTerminatedUtf8 (DatabasePath);
-            var r = SQLite3.Open (databasePathAsBytes, out handle, (int) openFlags, IntPtr.Zero);
-#endif
+            var databasePathAsBytes = GetNullTerminatedUtf8(DatabasePath);
+            var r = _sqlitePlatform.SQLiteApi.Open(databasePathAsBytes, out handle, (int)openFlags, IntPtr.Zero);
 
             Handle = handle;
-            if (r != SQLite3.Result.OK) {
+            if (r != Result.OK) {
                 throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
             }
             _open = true;
@@ -143,9 +127,9 @@ namespace SQLite.Net
 
         public void EnableLoadExtension(int onoff)
         {
-            SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
-            if (r != SQLite3.Result.OK) {
-                string msg = SQLite3.GetErrmsg (Handle);
+            Result r = _sqlitePlatform.SQLiteApi.EnableLoadExtension(Handle, onoff);
+            if (r != Result.OK) {
+                string msg = _sqlitePlatform.SQLiteApi.Errmsg16(Handle);
                 throw SQLiteException.New (r, msg);
             }
         }
@@ -162,6 +146,7 @@ namespace SQLite.Net
         /// Used to list some code that we want the MonoTouch linker
         /// to see, but that we never want to actually execute.
         /// </summary>
+// ReSharper disable once UnassignedField.Compiler
         static bool _preserveDuringLinkMagic;
 
         /// <summary>
@@ -173,7 +158,7 @@ namespace SQLite.Net
             set {
                 _busyTimeout = value;
                 if (Handle != NullHandle) {
-                    SQLite3.BusyTimeout (Handle, (int)_busyTimeout.TotalMilliseconds);
+                    _sqlitePlatform.SQLiteApi.BusyTimeout (Handle, (int)_busyTimeout.TotalMilliseconds);
                 }
             }
         }
@@ -208,7 +193,7 @@ namespace SQLite.Net
             }
             TableMapping map;
             if (!_mappings.TryGetValue (type.FullName, out map)) {
-                map = new TableMapping (type, createFlags);
+                map = new TableMapping (_sqlitePlatform, type, createFlags);
                 _mappings [type.FullName] = map;
             }
             return map;
@@ -450,7 +435,7 @@ namespace SQLite.Net
         /// <seealso cref="SQLiteCommand.OnInstanceCreated"/>
         protected virtual SQLiteCommand NewCommand ()
         {
-            return new SQLiteCommand (this);
+            return new SQLiteCommand (_sqlitePlatform, this);
         }
 
         /// <summary>
@@ -469,7 +454,7 @@ namespace SQLite.Net
         public SQLiteCommand CreateCommand (string cmdText, params object[] ps)
         {
             if (!_open)
-                throw SQLiteException.New (SQLite3.Result.Error, "Cannot create commands from unopened database");
+                throw SQLiteException.New (Result.Error, "Cannot create commands from unopened database");
 
             var cmd = NewCommand ();
             cmd.CommandText = cmdText;
@@ -502,7 +487,7 @@ namespace SQLite.Net
 			
             if (TimeExecution) {
                 if (_sw == null) {
-                    _sw = new Stopwatch ();
+                    _sw = _sqlitePlatform.StopwatchFactory.Create();
                 }
                 _sw.Reset ();
                 _sw.Start ();
@@ -525,7 +510,7 @@ namespace SQLite.Net
 			
             if (TimeExecution) {
                 if (_sw == null) {
-                    _sw = new Stopwatch ();
+                    _sw = _sqlitePlatform.StopwatchFactory.Create();
                 }
                 _sw.Reset ();
                 _sw.Start ();
@@ -649,7 +634,7 @@ namespace SQLite.Net
         /// </returns>
         public TableQuery<T> Table<T> () where T : new()
         {
-            return new TableQuery<T> (this);
+            return new TableQuery<T> (_sqlitePlatform, this);
         }
 
         /// <summary>
@@ -769,11 +754,11 @@ namespace SQLite.Net
                         //    by explicitly issuing a ROLLBACK command.
                         // TODO: This rollback failsafe should be localized to all throw sites.
                         switch (sqlExp.Result) {
-                            case SQLite3.Result.IOError:
-                            case SQLite3.Result.Full:
-                            case SQLite3.Result.Busy:
-                            case SQLite3.Result.NoMem:
-                            case SQLite3.Result.Interrupt:
+                            case Result.IOError:
+                            case Result.Full:
+                            case Result.Busy:
+                            case Result.NoMem:
+                            case Result.Interrupt:
                                 RollbackTo (null, true);
                                 break;
                         }
@@ -814,11 +799,11 @@ namespace SQLite.Net
                     //    by explicitly issuing a ROLLBACK command.
                     // TODO: This rollback failsafe should be localized to all throw sites.
                     switch (sqlExp.Result) {
-                        case SQLite3.Result.IOError:
-                        case SQLite3.Result.Full:
-                        case SQLite3.Result.Busy:
-                        case SQLite3.Result.NoMem:
-                        case SQLite3.Result.Interrupt:
+                        case Result.IOError:
+                        case Result.Full:
+                        case Result.Busy:
+                        case Result.NoMem:
+                        case Result.Interrupt:
                             RollbackTo (null, true);
                             break;
                     }
@@ -894,14 +879,9 @@ namespace SQLite.Net
                 int depth;
                 if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
                     // TODO: Mild race here, but inescapable without locking almost everywhere.
-                    if (0 <= depth && depth < _transactionDepth) {
-#if NETFX_CORE
-                        Volatile.Write (ref _transactionDepth, depth);
-#elif SILVERLIGHT
-						_transactionDepth = depth;
-#else
-                        Thread.VolatileWrite (ref _transactionDepth, depth);
-#endif
+                    if (0 <= depth && depth < _transactionDepth)
+                    {
+                        _sqlitePlatform.VolatileService.Write(ref _transactionDepth, depth);
                         Execute (cmd + savepoint);
                         return;
                     }
@@ -1134,28 +1114,6 @@ namespace SQLite.Net
             
             var map = GetMapping (objType);
 
-#if NETFX_CORE
-            if (map.PK != null && map.PK.IsAutoGuid)
-            {
-                // no GetProperty so search our way up the inheritance chain till we find it
-                PropertyInfo prop;
-                while (objType != null)
-                {
-                    var info = objType.GetTypeInfo();
-                    prop = info.GetDeclaredProperty(map.PK.PropertyName);
-                    if (prop != null) 
-                    {
-                        if (prop.GetValue(obj, null).Equals(Guid.Empty))
-                        {
-                            prop.SetValue(obj, Guid.NewGuid(), null);
-                        }
-                        break; 
-                    }
-
-                    objType = info.BaseType;
-                }
-            }
-#else
             if (map.PK != null && map.PK.IsAutoGuid) {
                 var prop = objType.GetProperty(map.PK.PropertyName);
                 if (prop != null) {
@@ -1164,9 +1122,7 @@ namespace SQLite.Net
                     }
                 }
             }
-#endif
-
-
+            
             var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 			
             var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
@@ -1180,7 +1136,7 @@ namespace SQLite.Net
 
             if (map.HasAutoIncPK)
             {
-                var id = SQLite3.LastInsertRowid (Handle);
+                var id = _sqlitePlatform.SQLiteApi.LastInsertRowid (Handle);
                 map.SetAutoIncPK (obj, id);
             }
 			
@@ -1352,9 +1308,9 @@ namespace SQLite.Net
                             sqlInsertCommand.Dispose();
                         }
                     }
-                    var r = SQLite3.Close (Handle);
-                    if (r != SQLite3.Result.OK) {
-                        string msg = SQLite3.GetErrmsg (Handle);
+                    var r = _sqlitePlatform.SQLiteApi.Close (Handle);
+                    if (r != Result.OK) {
+                        string msg = _sqlitePlatform.SQLiteApi.Errmsg16 (Handle);
                         throw SQLiteException.New (r, msg);
                     }
                 }
