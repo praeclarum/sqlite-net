@@ -34,6 +34,7 @@ using Sqlite3 = Sqlite.Sqlite3;
 
 using System;
 using System.Diagnostics;
+using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {

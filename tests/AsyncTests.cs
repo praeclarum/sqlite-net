@@ -126,7 +126,7 @@ namespace SQLite.Net.Tests
 		[SetUp]
 		public void SetUp()
 		{
-			SQLite.SQLiteConnectionPool.Shared.Reset ();
+			SQLiteConnectionPool.Shared.Reset ();
 #if NETFX_CORE
 			_connectionString = DatabaseName;
 			_path = Path.Combine (Windows.Storage.ApplicationData.Current.LocalFolder.Path, DatabaseName);

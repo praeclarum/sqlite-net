@@ -70,6 +70,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\src\SQLite.Net.Async\SQLite.Net.Async.csproj">
+      <Project>{3AB34E91-8E1A-442F-8E66-2494B371A890}</Project>
+      <Name>SQLite.Net.Async</Name>
+    </ProjectReference>
     <ProjectReference Include="..\src\SQLite.Net\SQLite.Net.csproj">
       <Project>{4971D437-0694-4297-A8CC-146CE08C3BD9}</Project>
       <Name>SQLite.Net</Name>

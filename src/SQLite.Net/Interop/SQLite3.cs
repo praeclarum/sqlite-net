@@ -25,6 +25,7 @@
 #define USE_CSHARP_SQLITE
 #endif
 
+using SQLite.Net.Interop;
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
 #elif USE_WP8_NATIVE_SQLITE
@@ -36,7 +37,7 @@ using SQLite.Net.Interop;
 using System;
 using System.Runtime.InteropServices;
 
-namespace SQLite.Net
+namespace SQLite.Net.Interop
 {
     public static class SQLite3
     {

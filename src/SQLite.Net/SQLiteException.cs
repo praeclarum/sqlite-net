@@ -58,6 +58,7 @@ using Sqlite3 = Sqlite.Sqlite3;
 #endif
 
 using System;
+using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {

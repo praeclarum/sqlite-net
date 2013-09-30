@@ -1,4 +1,5 @@
 ﻿
+
 //
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -21,7 +22,7 @@
 // THE SOFTWARE.
 //
 
-namespace SQLite.Net
+namespace SQLite.Net.Interop
 {
     public interface IDbStatement
     {
