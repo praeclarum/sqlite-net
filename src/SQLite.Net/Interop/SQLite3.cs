@@ -81,7 +81,7 @@ namespace SQLite
         }
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE
-        internal struct Sqlite3DatabaseInternal : ISqlite3DatabaseHandle
+        internal struct Sqlite3DatabaseInternal : IDbHandle
         {
             public IntPtr Handle { get; set; }
 
@@ -102,7 +102,7 @@ namespace SQLite
             }
         }
 #elif USE_WP8_NATIVE_SQLITE        
-        internal struct Sqlite3DatabaseInternal : ISqlite3DatabaseHandle
+        internal struct Sqlite3DatabaseInternal : IDbHandle
         {
             public Sqlite.Database Handle { get; set; }
 
@@ -124,7 +124,7 @@ namespace SQLite
             }
         }
 #elif USE_CSHARP_SQLITE
-        internal struct Sqlite3DatabaseInternal : ISqlite3DatabaseHandle
+        internal struct Sqlite3DatabaseInternal : IDbHandle
         {
             public Sqlite3.sqlite3 Handle { get; set; }
 
@@ -148,7 +148,7 @@ namespace SQLite
 #endif
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE
-        public static Result Open(string filename, out ISqlite3DatabaseHandle db)
+        public static Result Open(string filename, out IDbHandle db)
         {
             IntPtr dbPtr;
             var r = Sqlite3Native.Open(filename, out dbPtr);
@@ -156,7 +156,7 @@ namespace SQLite
             return r;
         }
 
-        public static Result Open(string filename, out ISqlite3DatabaseHandle db, int flags, IntPtr zvfs)
+        public static Result Open(string filename, out IDbHandle db, int flags, IntPtr zvfs)
         {
             IntPtr dbPtr;
             var r = Sqlite3Native.Open(filename, out dbPtr, flags, zvfs);
@@ -164,7 +164,7 @@ namespace SQLite
             return r;
         }
 
-        public static Result Open(byte[] filename, out ISqlite3DatabaseHandle db, int flags, IntPtr zvfs)
+        public static Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zvfs)
         {
             IntPtr dbPtr;
             var r = Sqlite3Native.Open(filename, out dbPtr, flags, zvfs);
@@ -172,7 +172,7 @@ namespace SQLite
             return r;
         }
 
-        public static Result Open16(string filename, out ISqlite3DatabaseHandle db)
+        public static Result Open16(string filename, out IDbHandle db)
         {
             IntPtr dbPtr;
             var r = Sqlite3Native.Open(filename, out dbPtr);
@@ -180,13 +180,13 @@ namespace SQLite
             return r;
         }
 
-        public static Result EnableLoadExtension(ISqlite3DatabaseHandle db, int onoff)
+        public static Result EnableLoadExtension(IDbHandle db, int onoff)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return Sqlite3Native.EnableLoadExtension(internalDbHandle.Handle, onoff);
         }
 
-        public static Result Close(ISqlite3DatabaseHandle db)
+        public static Result Close(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return Sqlite3Native.Close(internalDbHandle.Handle);
@@ -202,19 +202,19 @@ namespace SQLite
             return Sqlite3Native.SetDirectory(directoryType, directoryPath);
         }
 
-        public static Result BusyTimeout(ISqlite3DatabaseHandle db, int milliseconds)
+        public static Result BusyTimeout(IDbHandle db, int milliseconds)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return Sqlite3Native.BusyTimeout(internalDbHandle.Handle, milliseconds);
         }
 
-        public static int Changes(ISqlite3DatabaseHandle db)
+        public static int Changes(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return Sqlite3Native.Changes(internalDbHandle.Handle);
         }
 
-        public static Result Prepare2(ISqlite3DatabaseHandle db, string sql, int numBytes, out ISqlite3Statement stmt, IntPtr pzTail)
+        public static Result Prepare2(IDbHandle db, string sql, int numBytes, out ISqlite3Statement stmt, IntPtr pzTail)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal) db;
             IntPtr stmtPtr;
@@ -223,7 +223,7 @@ namespace SQLite
             return r;
         }
 
-        public static ISqlite3Statement Prepare2(ISqlite3DatabaseHandle db, string query)
+        public static ISqlite3Statement Prepare2(IDbHandle db, string query)
         {
             ISqlite3Statement stmt;
             var r = Prepare2 (db, query, query.Length, out stmt, IntPtr.Zero);
@@ -251,19 +251,19 @@ namespace SQLite
             return Sqlite3Native.Finalize(internalStmt.Handle);
         }
 
-        public static long LastInsertRowid(ISqlite3DatabaseHandle db)
+        public static long LastInsertRowid(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return Sqlite3Native.LastInsertRowid(internalDbHandle.Handle);
         }
 
-        public static IntPtr Errmsg(ISqlite3DatabaseHandle db)
+        public static IntPtr Errmsg(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return Sqlite3Native.Errmsg(internalDbHandle.Handle);
         }
 
-        public static string GetErrmsg(ISqlite3DatabaseHandle db)
+        public static string GetErrmsg(IDbHandle db)
         {
             return Marshal.PtrToStringUni (Errmsg (db));
         }
@@ -396,7 +396,7 @@ namespace SQLite
         }
 #else
 
-        public static Result Open(string filename, out ISqlite3DatabaseHandle db)
+        public static Result Open(string filename, out IDbHandle db)
         {
 #if USE_WP8_NATIVE_SQLITE
             Sqlite.Database internalDbHandle;
@@ -409,7 +409,7 @@ namespace SQLite
             return r;
         }
 
-        public static Result Open(string filename, out ISqlite3DatabaseHandle db, int flags, IntPtr zVfs)
+        public static Result Open(string filename, out IDbHandle db, int flags, IntPtr zVfs)
         {
 #if USE_WP8_NATIVE_SQLITE
             Sqlite.Database internalDbHandle;
@@ -422,25 +422,25 @@ namespace SQLite
             return r;
 		}
 
-		public static Result Close(ISqlite3DatabaseHandle db)
+		public static Result Close(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return (Result)Sqlite3.sqlite3_close(internalDbHandle.Handle);
 		}
 
-		public static Result BusyTimeout(ISqlite3DatabaseHandle db, int milliseconds)
+		public static Result BusyTimeout(IDbHandle db, int milliseconds)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
             return (Result)Sqlite3.sqlite3_busy_timeout(internalDbHandle.Handle, milliseconds);
 		}
 
-		public static int Changes(ISqlite3DatabaseHandle db)
+		public static int Changes(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
 			return Sqlite3.sqlite3_changes(internalDbHandle.Handle);
 		}
 
-		public static ISqlite3Statement Prepare2(ISqlite3DatabaseHandle db, string query)
+		public static ISqlite3Statement Prepare2(IDbHandle db, string query)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
 #if USE_WP8_NATIVE_SQLITE
@@ -475,13 +475,13 @@ namespace SQLite
 			return (Result)Sqlite3.sqlite3_finalize(internalStmtHandle.Handle);
 		}
 
-		public static long LastInsertRowid(ISqlite3DatabaseHandle db)
+		public static long LastInsertRowid(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
 			return Sqlite3.sqlite3_last_insert_rowid(internalDbHandle.Handle);
 		}
 
-		public static string GetErrmsg(ISqlite3DatabaseHandle db)
+		public static string GetErrmsg(IDbHandle db)
         {
             var internalDbHandle = (Sqlite3DatabaseInternal)db;
 			return Sqlite3.sqlite3_errmsg(internalDbHandle.Handle);

@@ -57,8 +57,8 @@ namespace SQLite
         private int _transactionDepth = 0;
         private Random _rand = new Random ();
 
-        public ISqlite3DatabaseHandle Handle { get; private set; }
-        internal static readonly ISqlite3DatabaseHandle NullHandle = default(ISqlite3DatabaseHandle);
+        public IDbHandle Handle { get; private set; }
+        internal static readonly IDbHandle NullHandle = default(IDbHandle);
 
         public string DatabasePath { get; private set; }
 
@@ -108,7 +108,7 @@ namespace SQLite
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
 #endif
 
-            ISqlite3DatabaseHandle handle;
+            IDbHandle handle;
 
 #if SILVERLIGHT || USE_CSHARP_SQLITE
             var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
