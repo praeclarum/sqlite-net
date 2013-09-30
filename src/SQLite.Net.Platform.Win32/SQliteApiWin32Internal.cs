@@ -4,9 +4,9 @@ using SQLite.Net.Interop;
 
 namespace SQLite.Net.Platform.Win32
 {
-    internal static class SQliteApiWin32Internal
+    internal static class SQLiteApiWin32Internal
     {
-        static SQliteApiWin32Internal()
+        static SQLiteApiWin32Internal()
         {
             // load native library
             int ptrSize = Marshal.SizeOf(typeof (IntPtr));
