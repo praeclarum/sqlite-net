@@ -1,3 +1,9 @@
+# Fork
+
+This is a fork of the original sqlite-net library, which aims to improve the code quality by using modern technologies such as PCL (portable class library).
+
+The project will avoid the use of #if-based conditional code and use platform-specific code injection instead.
+
 
 # sqlite-net
 
