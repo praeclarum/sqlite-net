@@ -40,6 +40,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using SQLite.Net.Interop;
+using SQLite.Net.Attributes;
 
 namespace SQLite.Net
 {

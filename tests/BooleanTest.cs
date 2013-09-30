@@ -6,7 +6,7 @@ using System.Text;
 using SQLite;
 
 using System.Diagnostics;
-
+using SQLite.Net.Attributes;
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;

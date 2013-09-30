@@ -22,7 +22,7 @@
 
 using System;
 
-namespace SQLite.Net
+namespace SQLite.Net.Attributes
 {
     [AttributeUsage (AttributeTargets.Property)]
     public class PrimaryKeyAttribute : Attribute

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-
 #if NETFX_CORE
 class DescriptionAttribute : Attribute
 {
@@ -9,6 +8,7 @@ class DescriptionAttribute : Attribute
 	}
 }
 #endif
+using SQLite.Net.Attributes;
 
 namespace SQLite.Net.Tests
 {
