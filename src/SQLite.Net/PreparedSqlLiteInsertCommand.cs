@@ -35,7 +35,7 @@ using Sqlite3 = Sqlite.Sqlite3;
 using System;
 using System.Diagnostics;
 
-namespace SQLite
+namespace SQLite.Net
 {
     /// <summary>
     /// Since the insert never changed, we only need to prepare once.

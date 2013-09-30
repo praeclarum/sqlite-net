@@ -10,7 +10,7 @@ class DescriptionAttribute : Attribute
 }
 #endif
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {
 	public class Product
 	{

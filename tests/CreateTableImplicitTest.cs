@@ -12,7 +12,7 @@ using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAtt
 using NUnit.Framework;
 #endif
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {
     [TestFixture]
     public class CreateTableImplicitTest

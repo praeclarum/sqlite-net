@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace SQLite
+namespace SQLite.Net
 {
 	public partial class SQLiteAsyncConnection
 	{

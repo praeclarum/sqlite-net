@@ -34,7 +34,7 @@ using Sqlite3 = Sqlite.Sqlite3;
 
 using System.Collections.Generic;
 
-namespace SQLite
+namespace SQLite.Net
 {
     class SQLiteConnectionPool
     {

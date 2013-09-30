@@ -37,7 +37,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace SQLite
+namespace SQLite.Net
 {
     public partial class SQLiteCommand
     {

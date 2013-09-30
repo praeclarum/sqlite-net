@@ -40,7 +40,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 
-namespace SQLite
+namespace SQLite.Net
 {
     /// <summary>
     /// Represents an open connection to a SQLite database.

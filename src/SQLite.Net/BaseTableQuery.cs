@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-namespace SQLite
+namespace SQLite.Net
 {
     public abstract class BaseTableQuery
     {

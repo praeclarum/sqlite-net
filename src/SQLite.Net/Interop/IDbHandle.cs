@@ -1,4 +1,5 @@
-﻿//
+﻿namespace SQLite.Net
+//
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,7 +21,7 @@
 // THE SOFTWARE.
 //
 
-namespace SQLite
+namespace SQLite.Net
 {
     public interface IDbHandle
     {

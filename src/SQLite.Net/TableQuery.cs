@@ -38,7 +38,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace SQLite
+namespace SQLite.Net
 {
     public class TableQuery<T> : BaseTableQuery, IEnumerable<T>
     {

@@ -26,7 +26,7 @@ using System.Runtime.InteropServices;
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE
 
-namespace SQLite.Net.Interop
+namespace SQLite.Net.Net.Interop
 {
     public static class Sqlite3Native
     {

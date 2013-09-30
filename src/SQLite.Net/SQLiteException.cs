@@ -59,7 +59,7 @@ using Sqlite3 = Sqlite.Sqlite3;
 
 using System;
 
-namespace SQLite
+namespace SQLite.Net
 {
 	public class SQLiteException : Exception
 	{

@@ -26,7 +26,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace SQLite
+namespace SQLite.Net
 {
     public class AsyncTableQuery<T>
         where T : new ()

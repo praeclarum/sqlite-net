@@ -32,7 +32,7 @@ using Sqlite3 = Sqlite.Sqlite3;
 #else
 #endif
 
-namespace SQLite
+namespace SQLite.Net
 {
     /// <summary>
     /// Represents a parsed connection string.

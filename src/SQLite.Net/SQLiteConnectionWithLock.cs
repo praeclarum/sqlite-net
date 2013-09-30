@@ -23,7 +23,7 @@
 using System;
 using System.Threading;
 
-namespace SQLite
+namespace SQLite.Net
 {
     class SQLiteConnectionWithLock : SQLiteConnection
     {

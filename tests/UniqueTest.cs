@@ -12,7 +12,7 @@ using NUnit.Framework;
 #endif
 
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {
 	[TestFixture]
 	public class UniqueIndexTest

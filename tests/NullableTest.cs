@@ -15,7 +15,7 @@ using NUnit.Framework;
 
 using System.IO;
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {
 	[TestFixture]
 	public class NullableTest

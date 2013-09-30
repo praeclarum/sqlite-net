@@ -22,7 +22,7 @@
 
 using System;
 
-namespace SQLite
+namespace SQLite.Net
 {
     [AttributeUsage (AttributeTargets.Property)]
     public class MaxLengthAttribute : Attribute

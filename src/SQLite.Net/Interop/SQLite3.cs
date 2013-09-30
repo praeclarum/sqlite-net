@@ -36,7 +36,7 @@ using SQLite.Net.Interop;
 using System;
 using System.Runtime.InteropServices;
 
-namespace SQLite
+namespace SQLite.Net
 {
     public static class SQLite3
     {

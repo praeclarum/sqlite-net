@@ -18,7 +18,7 @@ using NUnit.Framework;
 
 using System.Diagnostics;
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {    
     [TestFixture]
     public class InsertTest

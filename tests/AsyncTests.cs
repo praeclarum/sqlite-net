@@ -15,7 +15,7 @@ using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAtt
 using NUnit.Framework;
 #endif
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {
 	// @mbrit - 2012-05-14 - NOTE - the lack of async use in this class is because the VS11 test runner falsely
 	// reports any failing test as succeeding if marked as async. Should be fixed in the "June 2012" drop...

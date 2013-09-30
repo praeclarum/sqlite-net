@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using NUnit.Framework;
 #endif
 
-namespace SQLite.Tests
+namespace SQLite.Net.Tests
 {
 	public class ExceptionAssert
 	{

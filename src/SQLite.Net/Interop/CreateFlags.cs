@@ -22,7 +22,7 @@
 
 using System;
 
-namespace SQLite
+namespace SQLite.Net
 {
     [Flags]
     public enum CreateFlags
