@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4971D437-0694-4297-A8CC-146CE08C3BD9}</ProjectGuid>
+    <ProjectGuid>{3AB34E91-8E1A-442F-8E66-2494B371A890}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SQLite.Net</RootNamespace>
-    <AssemblyName>SQLite.Net</AssemblyName>
+    <RootNamespace>SQLite.Net.Async</RootNamespace>
+    <AssemblyName>SQLite.Net.Async</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -40,34 +40,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BaseTableQuery.cs" />
-    <Compile Include="CreateTablesResult.cs" />
-    <Compile Include="Interop\IDbHandle.cs" />
-    <Compile Include="Interop\SQLite3Native.cs" />
-    <Compile Include="Interop\IDbStatement.cs" />
-    <Compile Include="Orm.cs" />
-    <Compile Include="PreparedSqlLiteInsertCommand.cs" />
+    <Compile Include="AsyncTableQuery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Attributes\AutoIncrementAttribute.cs" />
-    <Compile Include="Attributes\CollationAttribute.cs" />
-    <Compile Include="Attributes\ColumnAttribute.cs" />
-    <Compile Include="Interop\CreateFlags.cs" />
-    <Compile Include="Attributes\IgnoreAttribute.cs" />
-    <Compile Include="Attributes\IndexedAttribute.cs" />
-    <Compile Include="Attributes\MaxLengthAttribute.cs" />
-    <Compile Include="Attributes\PrimaryKeyAttribute.cs" />
-    <Compile Include="SQLiteException.cs" />
-    <Compile Include="Interop\SQLite3.cs" />
-    <Compile Include="SQLiteCommand.cs" />
-    <Compile Include="SQLiteConnection.cs" />
-    <Compile Include="SQLiteConnectionPool.cs" />
-    <Compile Include="SQLiteConnectionString.cs" />
-    <Compile Include="SQLiteConnectionWithLock.cs" />
-    <Compile Include="TableMapping.cs" />
-    <Compile Include="TableQuery.cs" />
-    <Compile Include="Interop\SQLiteOpenFlags.cs" />
-    <Compile Include="Attributes\TableAttribute.cs" />
-    <Compile Include="Attributes\UniqueAttribute.cs" />
+    <Compile Include="SQLiteAsyncConnection.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLite.Net\SQLite.Net.csproj">
+      <Project>{4971D437-0694-4297-A8CC-146CE08C3BD9}</Project>
+      <Name>SQLite.Net</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

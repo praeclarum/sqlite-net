@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net", "src\SQLite.Net\SQLite.Net.csproj", "{4971D437-0694-4297-A8CC-146CE08C3BD9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Tests", "tests\SQLite.Net.Tests.csproj", "{9A22AD2D-9DF8-4036-A64B-47ED35524EBC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Async", "src\SQLite.Net.Async\SQLite.Net.Async.csproj", "{3AB34E91-8E1A-442F-8E66-2494B371A890}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +22,10 @@ Global
 		{9A22AD2D-9DF8-4036-A64B-47ED35524EBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A22AD2D-9DF8-4036-A64B-47ED35524EBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A22AD2D-9DF8-4036-A64B-47ED35524EBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AB34E91-8E1A-442F-8E66-2494B371A890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AB34E91-8E1A-442F-8E66-2494B371A890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AB34E91-8E1A-442F-8E66-2494B371A890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AB34E91-8E1A-442F-8E66-2494B371A890}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
