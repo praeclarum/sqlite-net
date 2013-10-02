@@ -73,8 +73,7 @@ namespace SQLite.Net.Tests
         private SQLiteAsyncConnection GetConnection(ref string path)
         {
             path = _path;
-            return new SQLiteAsyncConnection(_sqliteConnectionPool, _connectionParameters.DatabasePath,
-                _connectionParameters.StoreDateTimeAsTicks);
+            return new SQLiteAsyncConnection(()=>_sqliteConnectionPool.GetConnection(_connectionParameters));
         }
 
         private Customer CreateCustomer()

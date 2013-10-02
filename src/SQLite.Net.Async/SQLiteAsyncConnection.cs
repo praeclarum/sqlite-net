@@ -29,20 +29,16 @@ namespace SQLite.Net.Async
 {
     public class SQLiteAsyncConnection
     {
-        private readonly SQLiteConnectionString _connectionString;
-        private readonly SQLiteConnectionPool _sqLiteConnectionPool;
+        private readonly Func<SQLiteConnectionWithLock> _sqliteConnectionFunc;
 
-        public SQLiteAsyncConnection(SQLiteConnectionPool sqLiteConnectionPool, string databasePath,
-            bool storeDateTimeAsTicks = false)
+        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc)
         {
-            _sqLiteConnectionPool = sqLiteConnectionPool;
-            if (databasePath == null) throw new ArgumentNullException("databasePath");
-            _connectionString = new SQLiteConnectionString(databasePath, storeDateTimeAsTicks);
+            _sqliteConnectionFunc = sqliteConnectionFunc;
         }
 
         private SQLiteConnectionWithLock GetConnection()
         {
-            return _sqLiteConnectionPool.GetConnection(_connectionString);
+            return _sqliteConnectionFunc();
         }
 
         public Task<CreateTablesResult> CreateTableAsync<T>()
