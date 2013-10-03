@@ -30,46 +30,48 @@ namespace SQLite.Net.Async
         where T : new()
     {
         private readonly TableQuery<T> _innerQuery;
+        private readonly TaskFactory _taskFactory;
 
-        public AsyncTableQuery(TableQuery<T> innerQuery)
+        public AsyncTableQuery(TableQuery<T> innerQuery, TaskFactory taskFactory)
         {
             if (innerQuery == null) throw new ArgumentNullException("innerQuery");
             _innerQuery = innerQuery;
+            _taskFactory = taskFactory;
         }
 
         public AsyncTableQuery<T> Where(Expression<Func<T, bool>> predExpr)
         {
             if (predExpr == null) throw new ArgumentNullException("predExpr");
-            return new AsyncTableQuery<T>(_innerQuery.Where(predExpr));
+            return new AsyncTableQuery<T>(_innerQuery.Where(predExpr), _taskFactory);
         }
 
         public AsyncTableQuery<T> Skip(int n)
         {
-            return new AsyncTableQuery<T>(_innerQuery.Skip(n));
+            return new AsyncTableQuery<T>(_innerQuery.Skip(n), _taskFactory);
         }
 
         public AsyncTableQuery<T> Take(int n)
         {
-            return new AsyncTableQuery<T>(_innerQuery.Take(n));
+            return new AsyncTableQuery<T>(_innerQuery.Take(n), _taskFactory);
         }
 
         public AsyncTableQuery<T> OrderBy<U>(Expression<Func<T, U>> orderExpr)
         {
             if (orderExpr == null) throw new ArgumentNullException("orderExpr");
-            return new AsyncTableQuery<T>(_innerQuery.OrderBy(orderExpr));
+            return new AsyncTableQuery<T>(_innerQuery.OrderBy(orderExpr), _taskFactory);
         }
 
         public AsyncTableQuery<T> OrderByDescending<U>(Expression<Func<T, U>> orderExpr)
         {
             if (orderExpr == null) throw new ArgumentNullException("orderExpr");
-            return new AsyncTableQuery<T>(_innerQuery.OrderByDescending(orderExpr));
+            return new AsyncTableQuery<T>(_innerQuery.OrderByDescending(orderExpr), _taskFactory);
         }
 
         public Task<List<T>> ToListAsync()
         {
-            return Task.Factory.StartNew(() =>
+            return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ToList();
                 }
@@ -78,9 +80,9 @@ namespace SQLite.Net.Async
 
         public Task<int> CountAsync()
         {
-            return Task.Factory.StartNew(() =>
+            return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.Count();
                 }
@@ -89,9 +91,9 @@ namespace SQLite.Net.Async
 
         public Task<T> ElementAtAsync(int index)
         {
-            return Task.Factory.StartNew(() =>
+            return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ElementAt(index);
                 }
@@ -100,9 +102,9 @@ namespace SQLite.Net.Async
 
         public Task<T> FirstAsync()
         {
-            return Task<T>.Factory.StartNew(() =>
+            return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.First();
                 }
@@ -111,9 +113,9 @@ namespace SQLite.Net.Async
 
         public Task<T> FirstOrDefaultAsync()
         {
-            return Task<T>.Factory.StartNew(() =>
+            return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.FirstOrDefault();
                 }
