@@ -255,9 +255,38 @@ namespace SQLite.Net
 
             public int MaxStringLength { get; private set; }
 
+            /// <summary>
+            /// Set column value.
+            /// </summary>
+            /// <param name="obj"></param>
+            /// <param name="val"></param>
+            /// <remarks>
+            /// Copied from: http://code.google.com/p/sqlite-net/issues/detail?id=47
+            /// </remarks>
             public void SetValue(object obj, object val)
             {
-                _prop.SetValue(obj, val, null);
+                Type propType = _prop.PropertyType;
+                if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    Type[] typeCol = propType.GetGenericArguments();
+                    if (typeCol.Length > 0)
+                    {
+                        Type nullableType = typeCol[0];
+                        if (nullableType.BaseType == typeof(Enum))
+                        {
+                            object result = val == null ? null : Enum.Parse(nullableType, val.ToString(), false);
+                            _prop.SetValue(obj, result, null);
+                        }
+                        else
+                        {
+                            _prop.SetValue(obj, val, null);
+                        }
+                    }
+                }
+                else
+                {
+                    _prop.SetValue(obj, val, null);
+                }
             }
 
             public object GetValue(object obj)
