@@ -25,6 +25,9 @@ sqlite-net was designed as a quick and convenient database layer. Its design fol
 
 * Not an ADO.NET implementation. This is not a full SQLite driver. If you need that, use [Mono.Data.SQLite](http://www.mono-project.com/SQLite) or [csharp-sqlite](http://code.google.com/p/csharp-sqlite/).
 
+## License
+This projected is licensed under the terms of the MIT license.
+See LICENSE.TXT
 
 ## Meta
 
