@@ -1,17 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.20827.3
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2012
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{59584026-7610-4CD5-A74E-D2B0A2E1CE87}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0C4021EF-617B-4620-ADD3-A702B4F9FA86}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net", "src\SQLite.Net\SQLite.Net.csproj", "{4971D437-0694-4297-A8CC-146CE08C3BD9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Tests", "tests\SQLite.Net.Tests.csproj", "{9A22AD2D-9DF8-4036-A64B-47ED35524EBC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Async", "src\SQLite.Net.Async\SQLite.Net.Async.csproj", "{3AB34E91-8E1A-442F-8E66-2494B371A890}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{59584026-7610-4CD5-A74E-D2B0A2E1CE87}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0C4021EF-617B-4620-ADD3-A702B4F9FA86}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Platform.Win32", "src\SQLite.Net.Platform.Win32\SQLite.Net.Platform.Win32.csproj", "{03799AD1-9FCF-48CB-8E6E-B233DF583B10}"
 EndProject
@@ -28,6 +26,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Platform.XamarinIOS", "src\SQLite.Net.Platform.XamarinIOS\SQLite.Net.Platform.XamarinIOS.csproj", "{6377929D-6253-450D-BF4B-3E8ECE2564F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Platform.XamarinAndroid", "src\SQLite.Net.Platform.XamarinAndroid\SQLite.Net.Platform.XamarinAndroid.csproj", "{219700F0-5444-4250-87D6-0551B39CA402}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Platform.WindowsPhone71", "src\SQLite.Net.Platform.WindowsPhone71\SQLite.Net.Platform.WindowsPhone71.csproj", "{60C7FE20-0404-47CD-BCA0-10E0E7383E33}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -169,12 +169,21 @@ Global
 		{219700F0-5444-4250-87D6-0551B39CA402}.Release|ARM.ActiveCfg = Release|Any CPU
 		{219700F0-5444-4250-87D6-0551B39CA402}.Release|x64.ActiveCfg = Release|Any CPU
 		{219700F0-5444-4250-87D6-0551B39CA402}.Release|x86.ActiveCfg = Release|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|ARM.ActiveCfg = Release|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|x64.ActiveCfg = Release|Any CPU
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{9A22AD2D-9DF8-4036-A64B-47ED35524EBC} = {0C4021EF-617B-4620-ADD3-A702B4F9FA86}
 		{03799AD1-9FCF-48CB-8E6E-B233DF583B10} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
 		{6891E212-AEEE-4763-AC6F-BD7213C13890} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
 		{3890B56D-EAE8-4A12-A98F-F2637A71F6C0} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
@@ -183,6 +192,8 @@ Global
 		{90E22561-0D77-4981-B1EA-F588E96FB27F} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
 		{6377929D-6253-450D-BF4B-3E8ECE2564F7} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
 		{219700F0-5444-4250-87D6-0551B39CA402} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
+		{60C7FE20-0404-47CD-BCA0-10E0E7383E33} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
+		{9A22AD2D-9DF8-4036-A64B-47ED35524EBC} = {0C4021EF-617B-4620-ADD3-A702B4F9FA86}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = tests\SQLite.Tests.csproj
