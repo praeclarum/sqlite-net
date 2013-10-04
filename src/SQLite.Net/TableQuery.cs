@@ -455,6 +455,7 @@ namespace SQLite.Net
         /// <summary>
         ///     Compiles a BinaryExpression where one of the parameters is null.
         /// </summary>
+        /// <param name="expression"></param>
         /// <param name="parameter">The non-null parameter</param>
         private string CompileNullBinaryExpression(BinaryExpression expression, CompileResult parameter)
         {

@@ -98,6 +98,7 @@ namespace SQLite.Net
         /// <param name="databasePath">
         ///     Specifies the path to the database file.
         /// </param>
+        /// <param name="openFlags"></param>
         /// <param name="storeDateTimeAsTicks">
         ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
         ///     absolutely do want to store them as Ticks in all new projects. The default of false is
@@ -373,7 +374,7 @@ namespace SQLite.Net
 
         /// <summary>
         ///     Creates an index for the specified object property.
-        ///     e.g. CreateIndex<Client>(c => c.Name);
+        ///     e.g. CreateIndex{Client}(c => c.Name);
         /// </summary>
         /// <typeparam name="T">Type to reflect to a database table.</typeparam>
         /// <param name="property">Property to index</param>
@@ -460,14 +461,14 @@ namespace SQLite.Net
         /// <returns>
         ///     A <see cref="SQLiteCommand" />
         /// </returns>
-        public SQLiteCommand CreateCommand(string cmdText, params object[] ps)
+        public SQLiteCommand CreateCommand(string cmdText, params object[] args)
         {
             if (!_open)
                 throw SQLiteException.New(Result.Error, "Cannot create commands from unopened database");
 
             SQLiteCommand cmd = NewCommand();
             cmd.CommandText = cmdText;
-            foreach (object o in ps)
+            foreach (object o in args)
             {
                 cmd.Bind(o);
             }
@@ -868,6 +869,7 @@ namespace SQLite.Net
         /// <summary>
         ///     Rolls back the transaction that was begun by <see cref="BeginTransaction" />.
         /// </summary>
+        /// <param name="savepoint">the savepoint name/key</param>
         /// <param name="noThrow">true to avoid throwing exceptions, false otherwise</param>
         private void RollbackTo(string savepoint, bool noThrow)
         {
@@ -947,14 +949,14 @@ namespace SQLite.Net
 
         /// <summary>
         ///     Executes
-        ///     <param name="action">
+        ///     <paramref name="action"/>
         ///         within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
         ///         exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
         ///         is rethrown.
         /// </summary>
         /// <param name="action">
         ///     The <see cref="Action" /> to perform within a transaction.
-        ///     <param name="action">
+        ///     <paramref name="action"/>
         ///         can contain any number
         ///         of operations on the connection but should never call <see cref="BeginTransaction" /> or
         ///         <see cref="Commit" />.
