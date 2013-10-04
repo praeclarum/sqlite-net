@@ -435,7 +435,7 @@ namespace SQLite.Net
                     //
                     // Work special magic for enumerables
                     //
-                    if (val != null && val is IEnumerable && !(val is string))
+                    if (val != null && val is System.Collections.IEnumerable && !(val is string) && !(val is System.Collections.Generic.IEnumerable<byte>))
                     {
                         var sb = new StringBuilder();
                         sb.Append("(");
