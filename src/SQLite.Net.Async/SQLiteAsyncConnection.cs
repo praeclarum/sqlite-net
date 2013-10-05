@@ -367,6 +367,22 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
+        public Task<int> UpdateAllAsync(IEnumerable items)
+        {
+            if (items == null)
+            {
+                throw new ArgumentNullException("items");
+            }
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.UpdateAll(items);
+                }
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
+
         [Obsolete(
             "Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead."
             )]
