@@ -79,9 +79,9 @@ namespace SQLite.Net
             return GetEnumerator();
         }
 
-        public TableQuery<U> Clone<U>()
+        public TableQuery<T> Clone()
         {
-            var q = new TableQuery<U>(_sqlitePlatform, Connection, Table);
+            var q = new TableQuery<T>(_sqlitePlatform, Connection, Table);
             q._where = _where;
             q._deferred = _deferred;
             if (_orderBys != null)
@@ -105,7 +105,7 @@ namespace SQLite.Net
             {
                 var lambda = (LambdaExpression) predExpr;
                 Expression pred = lambda.Body;
-                TableQuery<T> q = Clone<T>();
+                TableQuery<T> q = Clone();
                 q.AddWhere(pred);
                 return q;
             }
@@ -117,14 +117,14 @@ namespace SQLite.Net
 
         public TableQuery<T> Take(int n)
         {
-            TableQuery<T> q = Clone<T>();
+            TableQuery<T> q = Clone();
             q._limit = n;
             return q;
         }
 
         public TableQuery<T> Skip(int n)
         {
-            TableQuery<T> q = Clone<T>();
+            TableQuery<T> q = Clone();
             q._offset = n;
             return q;
         }
@@ -136,22 +136,22 @@ namespace SQLite.Net
 
         public TableQuery<T> Deferred()
         {
-            TableQuery<T> q = Clone<T>();
+            TableQuery<T> q = Clone();
             q._deferred = true;
             return q;
         }
 
-        public TableQuery<T> OrderBy<U>(Expression<Func<T, U>> orderExpr)
+        public TableQuery<T> OrderBy<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
-            return AddOrderBy<U>(orderExpr, true);
+            return AddOrderBy(orderExpr, true);
         }
 
-        public TableQuery<T> OrderByDescending<U>(Expression<Func<T, U>> orderExpr)
+        public TableQuery<T> OrderByDescending<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
-            return AddOrderBy<U>(orderExpr, false);
+            return AddOrderBy(orderExpr, false);
         }
 
-        private TableQuery<T> AddOrderBy<U>(Expression<Func<T, U>> orderExpr, bool asc)
+        private TableQuery<T> AddOrderBy<TValue>(Expression<Func<T, TValue>> orderExpr, bool asc)
         {
             if (orderExpr.NodeType == ExpressionType.Lambda)
             {
@@ -171,7 +171,7 @@ namespace SQLite.Net
 
                 if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter))
                 {
-                    TableQuery<T> q = Clone<T>();
+                    TableQuery<T> q = Clone();
                     if (q._orderBys == null)
                     {
                         q._orderBys = new List<Ordering>();
@@ -223,9 +223,9 @@ namespace SQLite.Net
             return q;
         }
 
-        public TableQuery<TResult> Select<TResult>(Expression<Func<T, TResult>> selector)
+        public TableQuery<T> Select<TResult>(Expression<Func<T, TResult>> selector)
         {
-            TableQuery<TResult> q = Clone<TResult>();
+            TableQuery<T> q = Clone();
             q._selector = selector;
             return q;
         }

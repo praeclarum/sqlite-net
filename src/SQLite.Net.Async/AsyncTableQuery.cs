@@ -55,13 +55,13 @@ namespace SQLite.Net.Async
             return new AsyncTableQuery<T>(_innerQuery.Take(n), _taskFactory);
         }
 
-        public AsyncTableQuery<T> OrderBy<U>(Expression<Func<T, U>> orderExpr)
+        public AsyncTableQuery<T> OrderBy<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
             if (orderExpr == null) throw new ArgumentNullException("orderExpr");
             return new AsyncTableQuery<T>(_innerQuery.OrderBy(orderExpr), _taskFactory);
         }
 
-        public AsyncTableQuery<T> OrderByDescending<U>(Expression<Func<T, U>> orderExpr)
+        public AsyncTableQuery<T> OrderByDescending<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
             if (orderExpr == null) throw new ArgumentNullException("orderExpr");
             return new AsyncTableQuery<T>(_innerQuery.OrderByDescending(orderExpr), _taskFactory);
