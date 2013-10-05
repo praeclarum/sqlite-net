@@ -46,8 +46,14 @@ namespace SQLite.Net.Tests
             var db = new TestDb();
             db.CreateTable<Foo>();
 
-            db.Insert(new Foo {Bar = 42});
-            db.Insert(new Foo {Bar = 69});
+            db.Insert(new Foo
+            {
+                Bar = 42
+            });
+            db.Insert(new Foo
+            {
+                Bar = 69
+            });
 
             Foo found42 = db.Table<Foo>().Where(f => f.Bar == 42).FirstOrDefault();
             Assert.IsNotNull(found42);

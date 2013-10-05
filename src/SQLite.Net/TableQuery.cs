@@ -288,7 +288,10 @@ namespace SQLite.Net
                     text = CompileNullBinaryExpression(bin, leftr);
                 else
                     text = "(" + leftr.CommandText + " " + GetSqlName(bin) + " " + rightr.CommandText + ")";
-                return new CompileResult {CommandText = text};
+                return new CompileResult
+                {
+                    CommandText = text
+                };
             }
             else if (expr.NodeType == ExpressionType.Call)
             {
@@ -343,7 +346,10 @@ namespace SQLite.Net
                     sqlCall = call.Method.Name.ToLower() + "(" +
                               string.Join(",", args.Select(a => a.CommandText).ToArray()) + ")";
                 }
-                return new CompileResult {CommandText = sqlCall};
+                return new CompileResult
+                {
+                    CommandText = sqlCall
+                };
             }
             else if (expr.NodeType == ExpressionType.Constant)
             {
@@ -377,7 +383,10 @@ namespace SQLite.Net
                     // Need to translate it if that column name is mapped
                     //
                     string columnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name;
-                    return new CompileResult {CommandText = "\"" + columnName + "\""};
+                    return new CompileResult
+                    {
+                        CommandText = "\"" + columnName + "\""
+                    };
                 }
                 else
                 {

@@ -113,7 +113,10 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertAllFailureInsideTransaction()
         {
-            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj {Id = i}).ToList();
+            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj
+            {
+                Id = i
+            }).ToList();
             testObjects[testObjects.Count - 1].Id = 1; // causes the insert to fail because of duplicate key
 
             ExceptionAssert.Throws<SQLiteException>(() => _db.RunInTransaction(() => { _db.InsertAll(testObjects); }));
@@ -124,7 +127,10 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertAllFailureOutsideTransaction()
         {
-            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj {Id = i}).ToList();
+            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj
+            {
+                Id = i
+            }).ToList();
             testObjects[testObjects.Count - 1].Id = 1; // causes the insert to fail because of duplicate key
 
             ExceptionAssert.Throws<SQLiteException>(() => _db.InsertAll(testObjects));
@@ -135,7 +141,10 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertAllSuccessInsideTransaction()
         {
-            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj {Id = i}).ToList();
+            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj
+            {
+                Id = i
+            }).ToList();
 
             _db.RunInTransaction(() => { _db.InsertAll(testObjects); });
 
@@ -145,7 +154,10 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertAllSuccessOutsideTransaction()
         {
-            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj {Id = i}).ToList();
+            List<UniqueObj> testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj
+            {
+                Id = i
+            }).ToList();
 
             _db.InsertAll(testObjects);
 
@@ -165,8 +177,14 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertIntoTwoTables()
         {
-            var obj1 = new TestObj {Text = "GLaDOS loves testing!"};
-            var obj2 = new TestObj2 {Text = "Keep testing, just keep testing"};
+            var obj1 = new TestObj
+            {
+                Text = "GLaDOS loves testing!"
+            };
+            var obj2 = new TestObj2
+            {
+                Text = "Keep testing, just keep testing"
+            };
 
             int numIn1 = _db.Insert(obj1);
             Assert.AreEqual(1, numIn1);
@@ -185,11 +203,19 @@ namespace SQLite.Net.Tests
         public void InsertOrReplace()
         {
             _db.Trace = true;
-            _db.InsertAll(from i in Enumerable.Range(1, 20) select new TestObj {Text = "#" + i});
+            _db.InsertAll(from i in Enumerable.Range(1, 20)
+                select new TestObj
+                {
+                    Text = "#" + i
+                });
 
             Assert.AreEqual(20, _db.Table<TestObj>().Count());
 
-            var t = new TestObj {Id = 5, Text = "Foo",};
+            var t = new TestObj
+            {
+                Id = 5,
+                Text = "Foo",
+            };
             _db.InsertOrReplace(t);
 
             List<TestObj> r = (from x in _db.Table<TestObj>() orderby x.Id select x).ToList();
@@ -200,8 +226,14 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertTwoTimes()
         {
-            var obj1 = new TestObj {Text = "GLaDOS loves testing!"};
-            var obj2 = new TestObj {Text = "Keep testing, just keep testing"};
+            var obj1 = new TestObj
+            {
+                Text = "GLaDOS loves testing!"
+            };
+            var obj2 = new TestObj
+            {
+                Text = "Keep testing, just keep testing"
+            };
 
 
             int numIn1 = _db.Insert(obj1);
@@ -218,9 +250,21 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertWithExtra()
         {
-            var obj1 = new TestObj2 {Id = 1, Text = "GLaDOS loves testing!"};
-            var obj2 = new TestObj2 {Id = 1, Text = "Keep testing, just keep testing"};
-            var obj3 = new TestObj2 {Id = 1, Text = "Done testing"};
+            var obj1 = new TestObj2
+            {
+                Id = 1,
+                Text = "GLaDOS loves testing!"
+            };
+            var obj2 = new TestObj2
+            {
+                Id = 1,
+                Text = "Keep testing, just keep testing"
+            };
+            var obj3 = new TestObj2
+            {
+                Id = 1,
+                Text = "Done testing"
+            };
 
             _db.Insert(obj1);
 

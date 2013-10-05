@@ -49,13 +49,34 @@ namespace SQLite.Net.Tests
             //Byte Arrays for comparisson
             ByteArrayClass[] byteArrays =
             {
-                new ByteArrayClass {bytes = new byte[] {1, 2, 3, 4, 250, 252, 253, 254, 255}}, //Range check
-                new ByteArrayClass {bytes = new byte[] {0}}, //null bytes need to be handled correctly
-                new ByteArrayClass {bytes = new byte[] {0, 0}},
-                new ByteArrayClass {bytes = new byte[] {0, 1, 0}},
-                new ByteArrayClass {bytes = new byte[] {1, 0, 1}},
-                new ByteArrayClass {bytes = new byte[] {}}, //Empty byte array should stay empty (and not become null)
-                new ByteArrayClass {bytes = null} //Null should be supported
+                new ByteArrayClass
+                {
+                    bytes = new byte[] {1, 2, 3, 4, 250, 252, 253, 254, 255}
+                }, //Range check
+                new ByteArrayClass
+                {
+                    bytes = new byte[] {0}
+                }, //null bytes need to be handled correctly
+                new ByteArrayClass
+                {
+                    bytes = new byte[] {0, 0}
+                },
+                new ByteArrayClass
+                {
+                    bytes = new byte[] {0, 1, 0}
+                },
+                new ByteArrayClass
+                {
+                    bytes = new byte[] {1, 0, 1}
+                },
+                new ByteArrayClass
+                {
+                    bytes = new byte[] {}
+                }, //Empty byte array should stay empty (and not become null)
+                new ByteArrayClass
+                {
+                    bytes = null
+                } //Null should be supported
             };
 
             var database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
@@ -85,7 +106,10 @@ namespace SQLite.Net.Tests
             for (int i = 0; i < byteArraySize; i++)
                 bytes[i] = (byte) (i%256);
 
-            var byteArray = new ByteArrayClass {bytes = bytes};
+            var byteArray = new ByteArrayClass
+            {
+                bytes = bytes
+            };
 
             var database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
             database.CreateTable<ByteArrayClass>();

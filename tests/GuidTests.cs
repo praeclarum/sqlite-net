@@ -42,8 +42,14 @@ namespace SQLite.Net.Tests
             var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
             var guid2 = new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6");
 
-            var obj1 = new TestObj {Text = "First Guid Object"};
-            var obj2 = new TestObj {Text = "Second Guid Object"};
+            var obj1 = new TestObj
+            {
+                Text = "First Guid Object"
+            };
+            var obj2 = new TestObj
+            {
+                Text = "Second Guid Object"
+            };
 
             Assert.AreEqual(Guid.Empty, obj1.Id);
             Assert.AreEqual(Guid.Empty, obj2.Id);
@@ -66,8 +72,16 @@ namespace SQLite.Net.Tests
             var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
             var guid2 = new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6");
 
-            var obj1 = new TestObj {Id = guid1, Text = "First Guid Object"};
-            var obj2 = new TestObj {Id = guid2, Text = "Second Guid Object"};
+            var obj1 = new TestObj
+            {
+                Id = guid1,
+                Text = "First Guid Object"
+            };
+            var obj2 = new TestObj
+            {
+                Id = guid2,
+                Text = "Second Guid Object"
+            };
 
             int numIn1 = db.Insert(obj1);
             int numIn2 = db.Insert(obj2);
@@ -82,8 +96,16 @@ namespace SQLite.Net.Tests
         {
             var db = new TestDb(TestPath.GetTempFileName());
 
-            var obj1 = new TestObj {Id = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623"), Text = "First Guid Object"};
-            var obj2 = new TestObj {Id = new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6"), Text = "Second Guid Object"};
+            var obj1 = new TestObj
+            {
+                Id = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623"),
+                Text = "First Guid Object"
+            };
+            var obj2 = new TestObj
+            {
+                Id = new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6"),
+                Text = "Second Guid Object"
+            };
 
             int numIn1 = db.Insert(obj1);
             int numIn2 = db.Insert(obj2);

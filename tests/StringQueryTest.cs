@@ -15,9 +15,18 @@ namespace SQLite.Net.Tests
 
             var prods = new[]
             {
-                new Product {Name = "Foo"},
-                new Product {Name = "Bar"},
-                new Product {Name = "Foobar"}
+                new Product
+                {
+                    Name = "Foo"
+                },
+                new Product
+                {
+                    Name = "Bar"
+                },
+                new Product
+                {
+                    Name = "Foobar"
+                }
             };
 
             db.InsertAll(prods);

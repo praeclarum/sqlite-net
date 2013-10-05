@@ -23,7 +23,10 @@ namespace SQLite.Net.Tests
         [Test]
         public void UpperAndLowerColumnNames()
         {
-            using (var db = new TestDb(true) {Trace = true})
+            using (var db = new TestDb(true)
+            {
+                Trace = true
+            })
             {
                 db.CreateTable<LowerId>();
                 db.CreateTable<UpperId>();

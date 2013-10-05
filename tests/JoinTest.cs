@@ -15,13 +15,28 @@ namespace SQLite.Net.Tests
             _db.CreateTable<Order>();
             _db.CreateTable<OrderLine>();
 
-            var p1 = new Product {Name = "One",};
-            var p2 = new Product {Name = "Two",};
-            var p3 = new Product {Name = "Three",};
+            var p1 = new Product
+            {
+                Name = "One",
+            };
+            var p2 = new Product
+            {
+                Name = "Two",
+            };
+            var p3 = new Product
+            {
+                Name = "Three",
+            };
             _db.InsertAll(new[] {p1, p2, p3});
 
-            var o1 = new Order {PlacedTime = DateTime.Now,};
-            var o2 = new Order {PlacedTime = DateTime.Now,};
+            var o1 = new Order
+            {
+                PlacedTime = DateTime.Now,
+            };
+            var o2 = new Order
+            {
+                PlacedTime = DateTime.Now,
+            };
             _db.InsertAll(new[] {o1, o2});
 
             _db.InsertAll(new[]
@@ -59,7 +74,12 @@ namespace SQLite.Net.Tests
             var q = from ol in _db.Table<OrderLine>()
                 join o in _db.Table<Order>() on ol.OrderId equals o.Id
                 where o.Id == 1
-                select new {o.Id, ol.ProductId, ol.Quantity};
+                select new
+                {
+                    o.Id,
+                    ol.ProductId,
+                    ol.Quantity
+                };
 
             var r = q.ToList();
 
@@ -72,7 +92,12 @@ namespace SQLite.Net.Tests
             var q = from ol in _db.Table<OrderLine>()
                 where ol.OrderId == 1
                 join o in _db.Table<Order>() on ol.OrderId equals o.Id
-                select new {o.Id, ol.ProductId, ol.Quantity};
+                select new
+                {
+                    o.Id,
+                    ol.ProductId,
+                    ol.Quantity
+                };
 
             var r = q.ToList();
 

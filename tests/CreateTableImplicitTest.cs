@@ -28,7 +28,12 @@ namespace SQLite.Net.Tests
         {
             for (int i = 1; i <= 10; i++)
             {
-                var na = new NoAttributes {Id = i, AColumn = i.ToString(), IndexedId = 0};
+                var na = new NoAttributes
+                {
+                    Id = i,
+                    AColumn = i.ToString(),
+                    IndexedId = 0
+                };
                 db.Insert(na);
             }
             var item = db.Get<NoAttributes>(2);

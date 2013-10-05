@@ -23,7 +23,10 @@ namespace SQLite.Net.Tests
             var db = new TestDb();
             db.CreateTable<TestTable>();
             IEnumerable<TestTable> items = from i in Enumerable.Range(0, Count)
-                select new TestTable {Datum = 1000 + i};
+                select new TestTable
+                {
+                    Datum = 1000 + i
+                };
             db.InsertAll(items);
             Assert.AreEqual(Count, db.Table<TestTable>().Count());
             return db;

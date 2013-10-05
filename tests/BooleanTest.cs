@@ -52,7 +52,11 @@ namespace SQLite.Net.Tests
             var db = new DbAcs(sqlite3Platform, tmpFile);
             db.buildTable();
             for (int i = 0; i < 10; i++)
-                db.Insert(new VO {Flag = (i%3 == 0), Text = String.Format("VO{0}", i)});
+                db.Insert(new VO
+                {
+                    Flag = (i%3 == 0),
+                    Text = String.Format("VO{0}", i)
+                });
 
             // count vo which flag is true            
             Assert.AreEqual(4, db.CountWithFlag(true));

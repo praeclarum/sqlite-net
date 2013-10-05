@@ -75,10 +75,22 @@ namespace SQLite.Net.Tests
             var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
             db.CreateTable<NullableFloatClass>();
 
-            var withNull = new NullableFloatClass {NullableFloat = null};
-            var with0 = new NullableFloatClass {NullableFloat = 0};
-            var with1 = new NullableFloatClass {NullableFloat = 1};
-            var withMinus1 = new NullableFloatClass {NullableFloat = -1};
+            var withNull = new NullableFloatClass
+            {
+                NullableFloat = null
+            };
+            var with0 = new NullableFloatClass
+            {
+                NullableFloat = 0
+            };
+            var with1 = new NullableFloatClass
+            {
+                NullableFloat = 1
+            };
+            var withMinus1 = new NullableFloatClass
+            {
+                NullableFloat = -1
+            };
 
             db.Insert(withNull);
             db.Insert(with0);
@@ -102,10 +114,22 @@ namespace SQLite.Net.Tests
             var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
             db.CreateTable<NullableIntClass>();
 
-            var withNull = new NullableIntClass {NullableInt = null};
-            var with0 = new NullableIntClass {NullableInt = 0};
-            var with1 = new NullableIntClass {NullableInt = 1};
-            var withMinus1 = new NullableIntClass {NullableInt = -1};
+            var withNull = new NullableIntClass
+            {
+                NullableInt = null
+            };
+            var with0 = new NullableIntClass
+            {
+                NullableInt = 0
+            };
+            var with1 = new NullableIntClass
+            {
+                NullableInt = 1
+            };
+            var withMinus1 = new NullableIntClass
+            {
+                NullableInt = -1
+            };
 
             db.Insert(withNull);
             db.Insert(with0);
@@ -128,9 +152,18 @@ namespace SQLite.Net.Tests
             var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
             db.CreateTable<StringClass>();
 
-            var withNull = new StringClass {StringData = null};
-            var withEmpty = new StringClass {StringData = ""};
-            var withData = new StringClass {StringData = "data"};
+            var withNull = new StringClass
+            {
+                StringData = null
+            };
+            var withEmpty = new StringClass
+            {
+                StringData = ""
+            };
+            var withData = new StringClass
+            {
+                StringData = "data"
+            };
 
             db.Insert(withNull);
             db.Insert(withEmpty);
@@ -151,9 +184,18 @@ namespace SQLite.Net.Tests
             var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
             db.CreateTable<StringClass>();
 
-            var withNull = new StringClass {StringData = null};
-            var withEmpty = new StringClass {StringData = ""};
-            var withData = new StringClass {StringData = "data"};
+            var withNull = new StringClass
+            {
+                StringData = null
+            };
+            var withEmpty = new StringClass
+            {
+                StringData = ""
+            };
+            var withData = new StringClass
+            {
+                StringData = "data"
+            };
 
             db.Insert(withNull);
             db.Insert(withEmpty);
@@ -172,9 +214,18 @@ namespace SQLite.Net.Tests
             var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
             db.CreateTable<StringClass>();
 
-            var withNull = new StringClass {StringData = null};
-            var withEmpty = new StringClass {StringData = ""};
-            var withData = new StringClass {StringData = "data"};
+            var withNull = new StringClass
+            {
+                StringData = null
+            };
+            var withEmpty = new StringClass
+            {
+                StringData = ""
+            };
+            var withData = new StringClass
+            {
+                StringData = "data"
+            };
 
             db.Insert(withNull);
             db.Insert(withEmpty);
@@ -192,10 +243,22 @@ namespace SQLite.Net.Tests
             var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
             db.CreateTable<NullableIntClass>();
 
-            var withNull = new NullableIntClass {NullableInt = null};
-            var with0 = new NullableIntClass {NullableInt = 0};
-            var with1 = new NullableIntClass {NullableInt = 1};
-            var withMinus1 = new NullableIntClass {NullableInt = -1};
+            var withNull = new NullableIntClass
+            {
+                NullableInt = null
+            };
+            var with0 = new NullableIntClass
+            {
+                NullableInt = 0
+            };
+            var with1 = new NullableIntClass
+            {
+                NullableInt = 1
+            };
+            var withMinus1 = new NullableIntClass
+            {
+                NullableInt = -1
+            };
 
             db.Insert(withNull);
             db.Insert(with0);
@@ -218,10 +281,22 @@ namespace SQLite.Net.Tests
             var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
             db.CreateTable<NullableIntClass>();
 
-            var withNull = new NullableIntClass {NullableInt = null};
-            var with0 = new NullableIntClass {NullableInt = 0};
-            var with1 = new NullableIntClass {NullableInt = 1};
-            var withMinus1 = new NullableIntClass {NullableInt = -1};
+            var withNull = new NullableIntClass
+            {
+                NullableInt = null
+            };
+            var with0 = new NullableIntClass
+            {
+                NullableInt = 0
+            };
+            var with1 = new NullableIntClass
+            {
+                NullableInt = 1
+            };
+            var withMinus1 = new NullableIntClass
+            {
+                NullableInt = -1
+            };
 
             db.Insert(withNull);
             db.Insert(with0);
