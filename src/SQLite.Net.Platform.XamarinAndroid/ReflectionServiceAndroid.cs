@@ -17,12 +17,12 @@ namespace SQLite.Net.Platform.XamarinAndroid
         {
             if (member.MemberType == MemberTypes.Property)
             {
-                var m = (PropertyInfo)member;
+                var m = (PropertyInfo) member;
                 return m.GetValue(obj, null);
             }
             if (member.MemberType == MemberTypes.Field)
             {
-                var m = (FieldInfo)member;
+                var m = (FieldInfo) member;
                 return m.GetValue(obj);
             }
             throw new NotSupportedException("MemberExpr: " + member.MemberType);

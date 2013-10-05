@@ -949,18 +949,18 @@ namespace SQLite.Net
 
         /// <summary>
         ///     Executes
-        ///     <paramref name="action"/>
-        ///         within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
-        ///         exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
-        ///         is rethrown.
+        ///     <paramref name="action" />
+        ///     within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
+        ///     exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
+        ///     is rethrown.
         /// </summary>
         /// <param name="action">
         ///     The <see cref="Action" /> to perform within a transaction.
-        ///     <paramref name="action"/>
-        ///         can contain any number
-        ///         of operations on the connection but should never call <see cref="BeginTransaction" /> or
-        ///         <see cref="Commit" />.
-        ///     </param>
+        ///     <paramref name="action" />
+        ///     can contain any number
+        ///     of operations on the connection but should never call <see cref="BeginTransaction" /> or
+        ///     <see cref="Commit" />.
+        /// </param>
         public void RunInTransaction(Action action)
         {
             try

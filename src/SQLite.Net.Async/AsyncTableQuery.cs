@@ -71,7 +71,7 @@ namespace SQLite.Net.Async
         {
             return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ToList();
                 }
@@ -82,7 +82,7 @@ namespace SQLite.Net.Async
         {
             return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.Count();
                 }
@@ -93,7 +93,7 @@ namespace SQLite.Net.Async
         {
             return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ElementAt(index);
                 }
@@ -104,7 +104,7 @@ namespace SQLite.Net.Async
         {
             return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.First();
                 }
@@ -115,7 +115,7 @@ namespace SQLite.Net.Async
         {
             return _taskFactory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.FirstOrDefault();
                 }
