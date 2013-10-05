@@ -207,6 +207,16 @@ namespace SQLite
 				}
 			});
 		}
+		
+		public Task<int> UpdateAllAsync (IEnumerable items)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.UpdateAll (items);
+				}
+			});
+		}
 
         [Obsolete("Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead.")]
 		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action)
