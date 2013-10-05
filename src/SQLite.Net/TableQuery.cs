@@ -69,7 +69,9 @@ namespace SQLite.Net
         public IEnumerator<T> GetEnumerator()
         {
             if (!_deferred)
+            {
                 return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
+            }
 
             return GenerateCommand("*").ExecuteDeferredQuery<T>().GetEnumerator();
         }
@@ -283,11 +285,17 @@ namespace SQLite.Net
                 //If either side is a parameter and is null, then handle the other side specially (for "is null"/"is not null")
                 string text;
                 if (leftr.CommandText == "?" && leftr.Value == null)
+                {
                     text = CompileNullBinaryExpression(bin, rightr);
+                }
                 else if (rightr.CommandText == "?" && rightr.Value == null)
+                {
                     text = CompileNullBinaryExpression(bin, leftr);
+                }
                 else
+                {
                     text = "(" + leftr.CommandText + " " + GetSqlName(bin) + " " + rightr.CommandText + ")";
+                }
                 return new CompileResult
                 {
                     CommandText = text
@@ -452,7 +460,10 @@ namespace SQLite.Net
 
             if (nut != null)
             {
-                if (obj == null) return null;
+                if (obj == null)
+                {
+                    return null;
+                }
                 return Convert.ChangeType(obj, nut, CultureInfo.CurrentCulture);
             }
             else
@@ -469,19 +480,27 @@ namespace SQLite.Net
         private string CompileNullBinaryExpression(BinaryExpression expression, CompileResult parameter)
         {
             if (expression.NodeType == ExpressionType.Equal)
+            {
                 return "(" + parameter.CommandText + " is ?)";
+            }
             else if (expression.NodeType == ExpressionType.NotEqual)
+            {
                 return "(" + parameter.CommandText + " is not ?)";
+            }
             else
+            {
                 throw new NotSupportedException("Cannot compile Null-BinaryExpression with type " +
                                                 expression.NodeType.ToString());
+            }
         }
 
         private string GetSqlName(Expression expr)
         {
             ExpressionType n = expr.NodeType;
             if (n == ExpressionType.GreaterThan)
+            {
                 return ">";
+            }
             else if (n == ExpressionType.GreaterThanOrEqual)
             {
                 return ">=";

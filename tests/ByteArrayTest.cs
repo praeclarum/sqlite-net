@@ -84,7 +84,9 @@ namespace SQLite.Net.Tests
 
             //Insert all of the ByteArrayClass
             foreach (ByteArrayClass b in byteArrays)
+            {
                 database.Insert(b);
+            }
 
             //Get them back out
             ByteArrayClass[] fetchedByteArrays = database.Table<ByteArrayClass>().OrderBy(x => x.ID).ToArray();
@@ -104,7 +106,9 @@ namespace SQLite.Net.Tests
             const int byteArraySize = 1024*1024;
             var bytes = new byte[byteArraySize];
             for (int i = 0; i < byteArraySize; i++)
+            {
                 bytes[i] = (byte) (i%256);
+            }
 
             var byteArray = new ByteArrayClass
             {

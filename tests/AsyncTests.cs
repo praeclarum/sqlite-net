@@ -278,7 +278,9 @@ namespace SQLite.Net.Tests
 
             // create...
             for (int index = 0; index < 10; index++)
+            {
                 conn.InsertAsync(CreateCustomer()).Wait();
+            }
 
             // query...
             AsyncTableQuery<Customer> query = conn.Table<Customer>().OrderBy(v => v.Email);
@@ -299,7 +301,9 @@ namespace SQLite.Net.Tests
 
             // create...
             for (int index = 0; index < 10; index++)
+            {
                 conn.InsertAsync(CreateCustomer()).Wait();
+            }
 
             // query...
             AsyncTableQuery<Customer> query = conn.Table<Customer>().OrderByDescending(v => v.Email);
@@ -320,7 +324,9 @@ namespace SQLite.Net.Tests
 
             // create...
             for (int index = 0; index < 10; index++)
+            {
                 conn.InsertAsync(CreateCustomer()).Wait();
+            }
 
             // load...
             AsyncTableQuery<Customer> query = conn.Table<Customer>();

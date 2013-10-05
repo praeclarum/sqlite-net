@@ -34,14 +34,20 @@ namespace SQLite.Net.Async
 
         public AsyncTableQuery(TableQuery<T> innerQuery, TaskFactory taskFactory)
         {
-            if (innerQuery == null) throw new ArgumentNullException("innerQuery");
+            if (innerQuery == null)
+            {
+                throw new ArgumentNullException("innerQuery");
+            }
             _innerQuery = innerQuery;
             _taskFactory = taskFactory;
         }
 
         public AsyncTableQuery<T> Where(Expression<Func<T, bool>> predExpr)
         {
-            if (predExpr == null) throw new ArgumentNullException("predExpr");
+            if (predExpr == null)
+            {
+                throw new ArgumentNullException("predExpr");
+            }
             return new AsyncTableQuery<T>(_innerQuery.Where(predExpr), _taskFactory);
         }
 
@@ -57,13 +63,19 @@ namespace SQLite.Net.Async
 
         public AsyncTableQuery<T> OrderBy<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
-            if (orderExpr == null) throw new ArgumentNullException("orderExpr");
+            if (orderExpr == null)
+            {
+                throw new ArgumentNullException("orderExpr");
+            }
             return new AsyncTableQuery<T>(_innerQuery.OrderBy(orderExpr), _taskFactory);
         }
 
         public AsyncTableQuery<T> OrderByDescending<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
-            if (orderExpr == null) throw new ArgumentNullException("orderExpr");
+            if (orderExpr == null)
+            {
+                throw new ArgumentNullException("orderExpr");
+            }
             return new AsyncTableQuery<T>(_innerQuery.OrderByDescending(orderExpr), _taskFactory);
         }
 

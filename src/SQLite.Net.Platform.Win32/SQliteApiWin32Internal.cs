@@ -14,13 +14,17 @@ namespace SQLite.Net.Platform.Win32
             {
                 IntPtr ret = LoadLibrary(@"x64\SQLite.Interop.dll");
                 if (ret == IntPtr.Zero)
+                {
                     throw new Exception("Failed to load native sqlite library");
+                }
             }
             else if (ptrSize == 4)
             {
                 IntPtr ret = LoadLibrary(@"x86\SQLite.Interop.dll");
                 if (ret == IntPtr.Zero)
+                {
                     throw new Exception("Failed to load native sqlite library");
+                }
             }
         }
 
@@ -164,7 +168,9 @@ namespace SQLite.Net.Platform.Win32
             int length = sqlite3_column_bytes(stmt, index);
             var result = new byte[length];
             if (length > 0)
+            {
                 Marshal.Copy(sqlite3_column_blob(stmt, index), result, 0, length);
+            }
             return result;
         }
 

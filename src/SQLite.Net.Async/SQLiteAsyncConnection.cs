@@ -100,7 +100,10 @@ namespace SQLite.Net.Async
 
         public Task<CreateTablesResult> CreateTablesAsync(params Type[] types)
         {
-            if (types == null) throw new ArgumentNullException("types");
+            if (types == null)
+            {
+                throw new ArgumentNullException("types");
+            }
             return _taskFactory.StartNew(() =>
             {
                 var result = new CreateTablesResult();
@@ -132,7 +135,10 @@ namespace SQLite.Net.Async
 
         public Task<int> InsertAsync(object item)
         {
-            if (item == null) throw new ArgumentNullException("item");
+            if (item == null)
+            {
+                throw new ArgumentNullException("item");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -145,7 +151,10 @@ namespace SQLite.Net.Async
 
         public Task<int> UpdateAsync(object item)
         {
-            if (item == null) throw new ArgumentNullException("item");
+            if (item == null)
+            {
+                throw new ArgumentNullException("item");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -158,7 +167,10 @@ namespace SQLite.Net.Async
 
         public Task<int> DeleteAsync(object item)
         {
-            if (item == null) throw new ArgumentNullException("item");
+            if (item == null)
+            {
+                throw new ArgumentNullException("item");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -183,7 +195,10 @@ namespace SQLite.Net.Async
 
         public Task<int> DeleteAsync<T>(object pk)
         {
-            if (pk == null) throw new ArgumentNullException("pk");
+            if (pk == null)
+            {
+                throw new ArgumentNullException("pk");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -197,7 +212,10 @@ namespace SQLite.Net.Async
         public Task<T> GetAsync<T>(object pk)
             where T : new()
         {
-            if (pk == null) throw new ArgumentNullException("pk");
+            if (pk == null)
+            {
+                throw new ArgumentNullException("pk");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -211,7 +229,10 @@ namespace SQLite.Net.Async
         public Task<T> FindAsync<T>(object pk)
             where T : new()
         {
-            if (pk == null) throw new ArgumentNullException("pk");
+            if (pk == null)
+            {
+                throw new ArgumentNullException("pk");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -225,7 +246,10 @@ namespace SQLite.Net.Async
         public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate)
             where T : new()
         {
-            if (predicate == null) throw new ArgumentNullException("predicate");
+            if (predicate == null)
+            {
+                throw new ArgumentNullException("predicate");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -239,7 +263,10 @@ namespace SQLite.Net.Async
         public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate)
             where T : new()
         {
-            if (predicate == null) throw new ArgumentNullException("predicate");
+            if (predicate == null)
+            {
+                throw new ArgumentNullException("predicate");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -252,8 +279,14 @@ namespace SQLite.Net.Async
 
         public Task<int> ExecuteAsync(string query, params object[] args)
         {
-            if (query == null) throw new ArgumentNullException("query");
-            if (args == null) throw new ArgumentNullException("args");
+            if (query == null)
+            {
+                throw new ArgumentNullException("query");
+            }
+            if (args == null)
+            {
+                throw new ArgumentNullException("args");
+            }
             return _taskFactory.StartNew(() =>
 
             {
@@ -267,7 +300,10 @@ namespace SQLite.Net.Async
 
         public Task<int> InsertAllAsync(IEnumerable items)
         {
-            if (items == null) throw new ArgumentNullException("items");
+            if (items == null)
+            {
+                throw new ArgumentNullException("items");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -283,7 +319,10 @@ namespace SQLite.Net.Async
             )]
         public Task RunInTransactionAsync(Action<SQLiteAsyncConnection> action)
         {
-            if (action == null) throw new ArgumentNullException("action");
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -306,7 +345,10 @@ namespace SQLite.Net.Async
 
         public Task RunInTransactionAsync(Action<SQLiteConnection> action)
         {
-            if (action == null) throw new ArgumentNullException("action");
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -340,8 +382,14 @@ namespace SQLite.Net.Async
 
         public Task<T> ExecuteScalarAsync<T>(string sql, params object[] args)
         {
-            if (sql == null) throw new ArgumentNullException("sql");
-            if (args == null) throw new ArgumentNullException("args");
+            if (sql == null)
+            {
+                throw new ArgumentNullException("sql");
+            }
+            if (args == null)
+            {
+                throw new ArgumentNullException("args");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -356,8 +404,14 @@ namespace SQLite.Net.Async
         public Task<List<T>> QueryAsync<T>(string sql, params object[] args)
             where T : new()
         {
-            if (sql == null) throw new ArgumentNullException("sql");
-            if (args == null) throw new ArgumentNullException("args");
+            if (sql == null)
+            {
+                throw new ArgumentNullException("sql");
+            }
+            if (args == null)
+            {
+                throw new ArgumentNullException("args");
+            }
             return _taskFactory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();

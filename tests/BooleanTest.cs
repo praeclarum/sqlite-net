@@ -52,11 +52,13 @@ namespace SQLite.Net.Tests
             var db = new DbAcs(sqlite3Platform, tmpFile);
             db.buildTable();
             for (int i = 0; i < 10; i++)
+            {
                 db.Insert(new VO
                 {
                     Flag = (i%3 == 0),
                     Text = String.Format("VO{0}", i)
                 });
+            }
 
             // count vo which flag is true            
             Assert.AreEqual(4, db.CountWithFlag(true));
@@ -64,11 +66,15 @@ namespace SQLite.Net.Tests
 
             Debug.WriteLine("VO with true flag:");
             foreach (VO vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", true))
+            {
                 Debug.WriteLine(vo.ToString());
+            }
 
             Debug.WriteLine("VO with false flag:");
             foreach (VO vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", false))
+            {
                 Debug.WriteLine(vo.ToString());
+            }
         }
     }
 }

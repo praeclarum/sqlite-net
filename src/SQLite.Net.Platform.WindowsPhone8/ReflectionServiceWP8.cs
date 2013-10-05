@@ -11,7 +11,10 @@ namespace SQLite.Net.Platform.WindowsPhone8
     {
         public IEnumerable<PropertyInfo> GetPublicInstanceProperties(Type mappedType)
         {
-            if (mappedType == null) throw new ArgumentNullException("mappedType");
+            if (mappedType == null)
+            {
+                throw new ArgumentNullException("mappedType");
+            }
             return from p in mappedType.GetRuntimeProperties()
                 where
                     ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) ||

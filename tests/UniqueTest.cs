@@ -51,7 +51,9 @@ namespace SQLite.Net.Tests
             params string[] columns)
         {
             if (columns == null)
+            {
                 throw new Exception("Don't!");
+            }
             IndexInfo idx = indexes.SingleOrDefault(i => i.name == iname);
             Assert.IsNotNull(idx, String.Format("Index {0} not found", iname));
             Assert.AreEqual(idx.unique, unique,

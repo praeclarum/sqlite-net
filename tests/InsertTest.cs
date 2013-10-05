@@ -20,7 +20,10 @@ namespace SQLite.Net.Tests
         [TearDown]
         public void TearDown()
         {
-            if (_db != null) _db.Close();
+            if (_db != null)
+            {
+                _db.Close();
+            }
         }
 
         private TestDb _db;

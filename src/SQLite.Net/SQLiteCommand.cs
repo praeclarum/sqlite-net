@@ -125,7 +125,9 @@ namespace SQLite.Net
                     for (int i = 0; i < cols.Length; i++)
                     {
                         if (cols[i] == null)
+                        {
                             continue;
+                        }
                         ColType colType = _sqlitePlatform.SQLiteApi.ColumnType(stmt, i);
                         object val = ReadCol(stmt, i, colType, cols[i].ColumnType);
                         cols[i].SetValue(obj, val);

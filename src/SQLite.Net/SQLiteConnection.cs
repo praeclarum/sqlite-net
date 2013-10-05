@@ -111,7 +111,9 @@ namespace SQLite.Net
             _sqlitePlatform = sqlitePlatform;
 
             if (string.IsNullOrEmpty(databasePath))
+            {
                 throw new ArgumentException("Must be specified", "databasePath");
+            }
 
             DatabasePath = databasePath;
 
@@ -324,8 +326,10 @@ namespace SQLite.Net
                     }
 
                     if (i.Unique != iinfo.Unique)
+                    {
                         throw new Exception(
                             "All the columns in an index must have the same value for their Unique property");
+                    }
 
                     iinfo.Columns.Add(new IndexedColumn
                     {
@@ -423,7 +427,9 @@ namespace SQLite.Net
                 {
                     found = (string.Compare(p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0);
                     if (found)
+                    {
                         break;
+                    }
                 }
                 if (!found)
                 {
@@ -464,7 +470,9 @@ namespace SQLite.Net
         public SQLiteCommand CreateCommand(string cmdText, params object[] args)
         {
             if (!_open)
+            {
                 throw SQLiteException.New(Result.Error, "Cannot create commands from unopened database");
+            }
 
             SQLiteCommand cmd = NewCommand();
             cmd.CommandText = cmdText;
@@ -892,7 +900,9 @@ namespace SQLite.Net
             catch (SQLiteException)
             {
                 if (!noThrow)
+                {
                     throw;
+                }
             }
             // No need to rollback if there are no transactions open.
         }
