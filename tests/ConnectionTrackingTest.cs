@@ -6,6 +6,7 @@ using SQLite.Net.Platform.Win32;
 
 namespace SQLite.Net.Tests
 {
+    [NUnit.Framework.Ignore("This test class/file was not included in the original project and is broken")]
     [TestFixture]
     public class ConnectionTrackingTest
     {
