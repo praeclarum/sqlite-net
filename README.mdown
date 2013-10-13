@@ -1,15 +1,15 @@
 # Fork
 
-This is a fork of the original sqlite-net library, which aims to improve the code quality by using modern technologies such as PCL (portable class library).
+This is a fork of the original sqlite-net library (https://github.com/praeclarum/sqlite-net), which aims to improve the code quality by using modern technologies such as PCL (portable class library).
 
 The project will avoid the use of #if-based conditional code and use platform-specific code injection instead.
 
 
-# sqlite-net
+# SQLite.Net
 
-sqlite-net is an open source, minimal library to allow .NET and Mono applications to store data in [http://www.sqlite.org SQLite 3 databases]. It is written in C# and is meant to be simply compiled in with your projects. It was first designed to work with [MonoTouch](http://xamarin.com) on the iPhone, but has grown up to work on all the platforms (Mono for Android, .NET, Silverlight, WP7, WinRT, Azure, etc.).
+SQLite.Net is an open source, minimal library to allow .NET and Mono applications to store data in [http://www.sqlite.org SQLite 3 databases]. It is written in C# and is meant to be simply compiled in with your projects. It was first designed to work with [MonoTouch](http://xamarin.com) on the iPhone, but has grown up to work on all the platforms (Mono for Android, .NET, Silverlight, WP7, WinRT, Azure, etc.).
 
-sqlite-net was designed as a quick and convenient database layer. Its design follows from these *goals*:
+SQLite.Net was designed as a quick and convenient database layer. Its design follows from these *goals*:
 
 * Very easy to integrate with existing projects and with MonoTouch projects.
   
@@ -31,12 +31,12 @@ See LICENSE.TXT
 
 ## Meta
 
-This is an open source project that welcomes contributions/suggestions/bug reports from those who use it. If you have any ideas on how to improve the library, please [post an issue here on github](https://github.com/praeclarum/sqlite-net/issues). Please check out the [How to Contribute](https://github.com/praeclarum/sqlite-net/wiki/How-to-Contribute).
+This is an open source project that welcomes contributions/suggestions/bug reports from those who use it. If you have any ideas on how to improve the library, please [post an issue here on github](https://github.com/praeclarum/SQLite.Net/issues). Please check out the [How to Contribute](https://github.com/praeclarum/SQLite.Net/wiki/How-to-Contribute).
 
 
 # Example Time!
 
-Please consult the Wiki for, ahem, [complete documentation](https://github.com/praeclarum/sqlite-net/wiki).
+Please consult the Wiki for, ahem, [complete documentation](https://github.com/praeclarum/SQLite.Net/wiki).
 
 The library contains simple attributes that you can use to control the construction of tables. In a simple stock program, you might use:
 
@@ -166,7 +166,7 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 
 ## Special note on use within Windows Store Apps (Windows 8/WinRT)
 
-sqlite-net is fully compliant with WinRT Metro-style apps and will pass Microsoft Store validation.
+SQLite.Net is fully compliant with WinRT Metro-style apps and will pass Microsoft Store validation.
 
 Please note:
 
