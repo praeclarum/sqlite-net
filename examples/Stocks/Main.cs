@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Path = System.IO.Path;
 
-using SQLite;
 
 namespace Stocks.CommandLine
 {
@@ -56,7 +55,7 @@ namespace Stocks.CommandLine
 		void DisplayBanner ()
 		{
 			Console.WriteLine ("Stocks - a demo of sqlite-net");
-			Console.WriteLine ("Using " + _db.Database);
+			Console.WriteLine ("Using " + _db.DatabasePath);
 			Console.WriteLine ();
 		}
 

@@ -29,6 +29,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Platform.Xamarin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Platform.WindowsPhone71", "src\SQLite.Net.Platform.WindowsPhone71\SQLite.Net.Platform.WindowsPhone71.csproj", "{60C7FE20-0404-47CD-BCA0-10E0E7383E33}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{49C7015B-F41A-47A6-8200-B925902E74E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stocks", "examples\Stocks\Stocks.csproj", "{9E5D6B89-B69B-486B-9F7B-406BE8690589}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -179,6 +183,16 @@ Global
 		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|ARM.ActiveCfg = Release|Any CPU
 		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|x64.ActiveCfg = Release|Any CPU
 		{60C7FE20-0404-47CD-BCA0-10E0E7383E33}.Release|x86.ActiveCfg = Release|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Release|ARM.ActiveCfg = Release|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Release|x64.ActiveCfg = Release|Any CPU
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -194,6 +208,7 @@ Global
 		{219700F0-5444-4250-87D6-0551B39CA402} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
 		{60C7FE20-0404-47CD-BCA0-10E0E7383E33} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
 		{9A22AD2D-9DF8-4036-A64B-47ED35524EBC} = {0C4021EF-617B-4620-ADD3-A702B4F9FA86}
+		{9E5D6B89-B69B-486B-9F7B-406BE8690589} = {49C7015B-F41A-47A6-8200-B925902E74E9}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = tests\SQLite.Tests.csproj
