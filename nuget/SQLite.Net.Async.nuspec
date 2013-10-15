@@ -16,12 +16,9 @@ v1.0.7: Update with commits through 06-FEB-2013.</releaseNotes>
         <tags>sqlite pcl sql database async monotouch ios monodroid android win32 metro winrt</tags>
 		<dependencies>
 		  <dependency id="SQLite.Net-PCL" />
-		  <dependency id="Microsoft.Bcl" />
-		  <dependency id="Microsoft.Bcl.Async" />
-		  <dependency id="Microsoft.Bcl.Build" />
 		</dependencies>
     </metadata>
     <files>
-        <file src="SQLite.Net.Async\SQLite.Net.Async.dll" target="lib\portable-net4+sl4+wp71+win8+monotouch+monoandroid\SQLite.Net.Async.dll" />
+        <file src="SQLite.Net.Async\SQLite.Net.Async.dll" target="lib\portable-net4+sl5+wp8+win8+monotouch+monoAndroid\SQLite.Net.Async.dll" />
     </files>
 </package>

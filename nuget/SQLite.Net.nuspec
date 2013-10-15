@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net-PCL</id>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
         <title>SQLite.Net PCL</title>
         <authors>Øystein Krog,Frank Krueger,Tim Heuer</authors>
         <owners>Øystein Krog</owners>
@@ -16,6 +16,6 @@ v1.0.7: Update with commits through 06-FEB-2013.</releaseNotes>
         <tags>sqlite pcl sql database monotouch ios monodroid android win32 metro winrt</tags>
     </metadata>
     <files>
-        <file src="SQLite.Net\SQLite.Net.dll" target="lib\portable-net4+sl4+wp7+win8+monotouch+monodroid\SQLite.Net.dll" />
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\portable-net4+sl4+wp7+win8+monotouch+MonoAndroid\SQLite.Net.dll" />
     </files>
 </package>
