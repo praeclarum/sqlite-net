@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net.Platform.XamarinIOS</id>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
         <title>SQLite.Net PCL - XamarinIOS Platform</title>
         <authors>Øystein Krog,Frank Krueger,Tim Heuer</authors>
         <owners>Øystein Krog</owners>
