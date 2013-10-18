@@ -155,7 +155,7 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 		});
 
 
-## Special note on use within WinRT/Windows 8/Metro Style/whatevr
+## Special note on use within Windows Store Apps (Windows 8/WinRT)
 
 sqlite-net is fully compliant with WinRT Metro-style apps and will pass Microsoft Store validation.
 
@@ -163,10 +163,6 @@ Please note:
 
 * Database files will always be created in the path returned by `Windows.Storage.ApplicationData.Current.LocalFolder.Path`.
 
-* You will need a copy of sqlite3.dll that has been compiled against SQLite.org's WinRT branch. Although this isn't in mainstream
-support, it is expected to be. You can find more information on that and download a properly compiled sqlite3.dll from
-[https://github.com/mbrit/sqlite-metrostyle].
-
-* We supply a [WinRT/Windows 8 sqlite3.dll](https://github.com/praeclarum/sqlite-net/tree/master/lib/metro)
+* You will need a copy of sqlite3.dll for your app as well.  You can get this from sqlite.org with an installer to the SQLite for Windows Runtime SDK.
 
  
