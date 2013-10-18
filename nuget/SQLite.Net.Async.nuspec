@@ -9,14 +9,17 @@
         <licenseUrl>https://raw.github.com/oysteinkrog/SQLite.Net-PCL/master/LICENSE.txt</licenseUrl>
         <projectUrl>https://github.com/oysteinkrog/SQLite.Net-PCL</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases. It is written in C# 3.0 and is meant to be simply compiled in with your projects. It was first designed to work with MonoTouch on the iPhone, but should work in any other CLI environment.</description>
-        <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
+        <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases. 
+This is a fork of the original sqlite-net project, which aims to cleanup/improve the code and deliver the package as PCL assemblies with some additional platform-specific implementations.
+This package is compatible with the following .net platforms: net4+sl5+wp8+win8+monotouch+monoAndroid</description>
+        <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.
+This package provides Async extensions to the core SQLite.Net package.</summary>
         <releaseNotes>v2.0.0: Initial release of new PCL version.
 v1.0.7: Update with commits through 06-FEB-2013.</releaseNotes>
         <tags>sqlite pcl sql database async monotouch ios monodroid android win32 metro winrt</tags>
-		<dependencies>
-		  <dependency id="SQLite.Net-PCL" />
-		</dependencies>
+        <dependencies>
+            <dependency id="SQLite.Net-PCL" />
+        </dependencies>
     </metadata>
     <files>
         <file src="SQLite.Net.Async\SQLite.Net.Async.dll" target="lib\portable-net4+sl5+wp8+win8+monotouch+monoAndroid\SQLite.Net.Async.dll" />
