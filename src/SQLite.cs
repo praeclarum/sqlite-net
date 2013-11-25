@@ -1710,18 +1710,18 @@ namespace SQLite
 				.GetValue(ownerObject,null);
 			var ownerId = childObject.GetType().GetProperty(childRerefencesProp.Name)
 				.GetValue(childObject,null);
-            if (ownerId != null)
-            {
-                //ownerId is not necessarily an integer (ie. a GUID)
-                var stringOwnerId = ownerId.ToString();
-                if (
-                    !string.IsNullOrEmpty(stringOwnerId)
-                    && !stringOwnerId.Equals("0")
-                    )
-                {
-                    return childObject;
-                }
-            }
+			if (ownerId != null)
+			{
+				//ownerId is not necessarily an integer (ie. a GUID)
+				var stringOwnerId = ownerId.ToString();
+				if (
+					!string.IsNullOrEmpty(stringOwnerId)
+					&& !stringOwnerId.Equals("0")
+					)
+				{
+					return childObject;
+				}
+			}
 			childObject.GetType().GetProperty(childRerefencesProp.Name)
 				.SetValue(childObject,ownerKey,null);
 
@@ -3799,10 +3799,10 @@ namespace SQLite
 		{
 			return ColumnBlob(stmt, index);
 		}
-        public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
-        {
-            return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
-        }
+		public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
+		{
+				return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
+		}
 #endif
 
 		public enum ColType : int
