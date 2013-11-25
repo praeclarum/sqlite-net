@@ -1710,9 +1710,18 @@ namespace SQLite
 				.GetValue(ownerObject,null);
 			var ownerId = childObject.GetType().GetProperty(childRerefencesProp.Name)
 				.GetValue(childObject,null);
-			if((int)ownerId != 0){
-				return childObject;
-			}
+            if (ownerId != null)
+            {
+                //ownerId is not necessarily an integer (ie. a GUID)
+                var stringOwnerId = ownerId.ToString();
+                if (
+                    !string.IsNullOrEmpty(stringOwnerId)
+                    && !stringOwnerId.Equals("0")
+                    )
+                {
+                    return childObject;
+                }
+            }
 			childObject.GetType().GetProperty(childRerefencesProp.Name)
 				.SetValue(childObject,ownerKey,null);
 
