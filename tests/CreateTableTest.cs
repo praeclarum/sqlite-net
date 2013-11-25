@@ -95,5 +95,16 @@ namespace SQLite.Tests
 				}
 			}
 		}
+
+		[Test]
+		public void CreateTableWithForeignKeys()
+		{
+			var db = new TestDb();
+			db.SetForeignKeysPermissions(true);
+
+			db.CreateTable<Order1WithO2M>();
+			db.CreateTable<Order2WithO2M>();
+			db.CreateTable<ProductWithFK>();
+		}
     }
 }

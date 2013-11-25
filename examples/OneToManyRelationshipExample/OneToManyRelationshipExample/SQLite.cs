@@ -222,11 +222,6 @@ namespace SQLite
 			}
 		}
 
-        /// <summary>
-        /// Set the enforcement of foreign key contraints
-        /// </summary>
-        /// <param name="flag"><c>true</c> enforces contraints; otherwise contraints are not enforced.</param>
-        /// <returns></returns>
 		public SQLiteConnection SetForeignKeysPermissions(bool flag){
 			if(flag)
 				this.Execute("PRAGMA foreign_keys = ON;");
@@ -350,9 +345,8 @@ namespace SQLite
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
-			query += GetRelationshipColumnsDecl(map);
 			query += ")";
-
+			
 			var count = Execute (query);
 			
 			if (count == 0) { //Possible bug: This always seems to return 0?
@@ -1193,18 +1187,9 @@ namespace SQLite
 				return 0;
 			}
 
-			if(One2ManyAttribute.IsDefined(obj)){
+			if(HasOne2ManyAttribute(obj)){
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2ManyObjects(obj)){
-					queue.Enqueue(e);
-				}
-
-				return Insert(obj,extra,objType,queue,0);
-
-			}
-			else if(One2OneAttribute.IsDefined(obj)){
-				Queue<object> queue = new Queue<object>();
-				foreach(object e in GetOne2OneObjects(obj)){
 					queue.Enqueue(e);
 				}
 
@@ -1343,15 +1328,9 @@ namespace SQLite
 				map.SetAutoIncPK (obj, id);
 			}
 
-			foreach(var e in queue)
-			{
-				this.SetOwnerId(obj,e);
-			}
-
 			if (queue.Count > 0) {
 				var o = queue.Dequeue();
-				if(o != null)
-					Insert(o,extra,o.GetType(),queue,resultCount);
+				Insert(o,extra,o.GetType(),queue,resultCount);
 			}
 			
 			return resultCount;
@@ -1396,17 +1375,9 @@ namespace SQLite
 				return 0;
 			}
 
-            if (One2ManyAttribute.IsDefined(obj)) {
+			if(HasOne2ManyAttribute(obj)){
 				Queue<object> queue = new Queue<object>();
 				foreach(object e in GetOne2ManyObjects(obj)){
-					queue.Enqueue(e);
-				}
-
-				return Update(obj,objType,queue,0);
-			}
-			else if(One2OneAttribute.IsDefined(obj)) {
-				Queue<object> queue = new Queue<object>();
-				foreach(object e in GetOne2OneObjects(obj)){
 					queue.Enqueue(e);
 				}
 
@@ -1475,8 +1446,7 @@ namespace SQLite
 
 			if (queue.Count > 0) {
 				var o = queue.Dequeue();
-				if(o != null)
-					Update(o,o.GetType(),queue,resultCount);
+				Update(o,o.GetType(),queue,resultCount);
 			}
 
 			return resultCount;
@@ -1622,49 +1592,9 @@ namespace SQLite
 			return result;
 		}
 
-		private List<object> GetOne2OneObjects (object @object)
+		private bool HasOne2ManyAttribute (object @object)
 		{
-			List<object> result = new List<object> ();
-
 			foreach (var p in @object.GetType().GetProperties()) {
-
-				var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
-#if !NETFX_CORE
-				var isOne2One = one2One.Length > 0;
-#else
-				var isOne2One = one2One.Count() > 0;
-#endif
-				if (isOne2One) {
-					result.Add(@object.GetType ().GetProperty (p.Name).GetValue (@object, null));
-				}
-			}
-
-			return result;
-		}
-
-		private object SetOwnerId (object ownerObject, object childObject)
-		{
-			PropertyInfo ownerPrimaryKeyProp = null;
-			PropertyInfo childRerefencesProp = null;
-			PropertyInfo ownerOne2ManyProp = null;
-			PropertyInfo ownerOne2OneProp = null;
-			if(childObject == null)
-				return null;
-
-			foreach (var p in ownerObject.GetType().GetProperties()) {
-
-				var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-#if !NETFX_CORE
-				var isPk = pk.Length > 0;
-#else
-				var isPk = pk.Count() > 0;
-#endif
-				if (isPk) {
-					ownerPrimaryKeyProp = p;
-				}
-			}
-
-			foreach (var p in ownerObject.GetType().GetProperties()) {
 
 				var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
 #if !NETFX_CORE
@@ -1672,94 +1602,11 @@ namespace SQLite
 #else
 				var isOne2Many = one2Many.Count() > 0;
 #endif
-				if (isOne2Many) {
-					ownerOne2ManyProp = p;
-				}
+
+				if(isOne2Many)
+					return isOne2Many;
 			}
-
-			foreach (var p in ownerObject.GetType().GetProperties()) {
-
-				var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
-#if !NETFX_CORE
-				var isOne2One = one2One.Length > 0;
-#else
-				var isOne2One = one2One.Count() > 0;
-#endif
-				if (isOne2One) {
-					ownerOne2OneProp = p;
-				}
-			}
-
-			foreach (var p in childObject.GetType().GetProperties()) {
-
-				var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
-#if !NETFX_CORE
-				var isReferences = references.Length > 0;
-#else
-				var isReferences = references.Count() > 0;
-#endif
-
-				if (isReferences) {
-					childRerefencesProp = p;
-				}
-			}
-			if(ownerOne2ManyProp == null && ownerOne2OneProp == null)
-				return childObject;
-
-			var ownerKey = ownerObject.GetType().GetProperty(ownerPrimaryKeyProp.Name)
-				.GetValue(ownerObject,null);
-			var ownerId = childObject.GetType().GetProperty(childRerefencesProp.Name)
-				.GetValue(childObject,null);
-			if (ownerId != null)
-			{
-				//ownerId is not necessarily an integer (ie. a GUID)
-				var stringOwnerId = ownerId.ToString();
-				if (
-					!string.IsNullOrEmpty(stringOwnerId)
-					&& !stringOwnerId.Equals("0")
-					)
-				{
-					return childObject;
-				}
-			}
-			childObject.GetType().GetProperty(childRerefencesProp.Name)
-				.SetValue(childObject,ownerKey,null);
-
-			return childObject;
-		}	
-
-		private string GetRelationshipColumnsDecl (TableMapping map)
-		{
-			var fkColumns = map.Columns.Where (x => x.IsFK == true);
-
-			List<string> decls = new List<string> ();
-
-			foreach (var fkColumn in fkColumns) {
-				if (fkColumn != null) {
-					string relationshipDecl = string.Empty;
-					if (fkColumn.IsFK) {
-						relationshipDecl += string.Format ("foreign key ({0}) ", fkColumn.Name);
-					}
-
-					if (fkColumn.IsReferenced) {
-						relationshipDecl += string.Format ("references {0} ", fkColumn.ReferenceName);
-
-						if (fkColumn.OnDeleteCascade) {
-							relationshipDecl += "on delete cascade ";
-						}
-						if (fkColumn.OnUpdateCascade) {
-							relationshipDecl += "on update cascade ";
-						}
-					}
-
-					decls.Add(relationshipDecl);
-				}
-			}
-
-			var result = string.Join(", \n", decls);
-			if(result != string.Empty)
-				result = ", \n" + result;
-			return result;
+			return false;
 		}
 	}
 
@@ -1789,59 +1636,8 @@ namespace SQLite
 		}
 	}
 
-    public class BaseAttribute : Attribute
-    {
-        public static bool IsDefined(Type attributeType, Object instance)
-        {
-            if (instance == null)
-            {
-                return false;
-            }
-
-            return IsDefined(attributeType, instance.GetType());
-        }
-
-        public static bool IsDefined(Type attributeType, Type instanceType)
-        {
-            foreach (var p in instanceType.GetProperties())
-            {
-
-                var attributes = p.GetCustomAttributes(attributeType, true);
-#if !NETFX_CORE
-                var isDefined = attributes.Length > 0;
-#else
-				var isDefined = attributes.Count() > 0;
-#endif
-
-                if (isDefined)
-                    return true;
-            }
-
-            return false;
-        }
-
-        public static object GetValueOfProperty<TAttribute>(object instance) where TAttribute : Attribute
-        {
-            Type attributeType = typeof(TAttribute);                
-            foreach (var p in instance.GetType().GetProperties())
-            {
-                var attributes = p.GetCustomAttributes(attributeType, true);
-#if !NETFX_CORE
-                var isDefined = attributes.Length > 0;
-#else
-				var isDefined = attributes.Count() > 0;
-#endif
-
-                if (isDefined)
-                    return p.GetValue(instance, null);
-            }
-
-            return null;
-        }
-    }
-
     [AttributeUsage (AttributeTargets.Class)]
-	public class TableAttribute : BaseAttribute
+	public class TableAttribute : Attribute
 	{
 		public string Name { get; set; }
 
@@ -1849,15 +1645,10 @@ namespace SQLite
 		{
 			Name = name;
 		}
-
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(TableAttribute), value);
-        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class ColumnAttribute : BaseAttribute
+	public class ColumnAttribute : Attribute
 	{
 		public string Name { get; set; }
 
@@ -1865,24 +1656,15 @@ namespace SQLite
 		{
 			Name = name;
 		}
-
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(ColumnAttribute), value);
-        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-    public class PrimaryKeyAttribute : BaseAttribute
+	public class PrimaryKeyAttribute : Attribute
 	{
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(PrimaryKeyAttribute), value);
-        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-    public class One2ManyAttribute : BaseAttribute
+	public class One2ManyAttribute : Attribute
 	{
 		public One2ManyAttribute (Type type)
 		{
@@ -1890,36 +1672,6 @@ namespace SQLite
 		}
 
 		public Type Value { get; set; }
-
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(One2ManyAttribute), value);
-        }
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-    public class LazyAttribute : BaseAttribute
-	{
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(LazyAttribute), value);
-        }
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-    public class One2OneAttribute : BaseAttribute
-	{
-		public One2OneAttribute (Type type)
-		{
-			Value = type;
-		}
-
-		public Type Value { get; set; }
-
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(One2OneAttribute), value);
-        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
@@ -1948,15 +1700,6 @@ namespace SQLite
 	[AttributeUsage (AttributeTargets.Property)]
 	public class IgnoreAttribute : Attribute
 	{
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class InitializedAttribute : BaseAttribute
-	{
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(InitializedAttribute), value);
-        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
@@ -1995,16 +1738,13 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class ReferencesAttribute : BaseAttribute
+	public class ReferencesAttribute : Attribute
 	{
 		public string Value { get; private set; }
 
-		public Type ObjType { get; private set; }
-
-		public ReferencesAttribute (Type parentObjectType)
+		public ReferencesAttribute (Type parentObject)
 		{
-			Value = SetReferenceName(parentObjectType);
-			ObjType = parentObjectType;
+			Value = SetReferenceName(parentObject);
 		}
 
 		private string SetReferenceName (Type t)
@@ -2025,10 +1765,6 @@ namespace SQLite
 
 		}
 
-        public static bool IsDefined(object value)
-        {
-            return IsDefined(typeof(One2OneAttribute), value);
-        }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
@@ -2083,14 +1819,12 @@ namespace SQLite
 #if !NETFX_CORE
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
 				var one2many = p.GetCustomAttributes (typeof(One2ManyAttribute), true).Length > 0;
-				var one2one = p.GetCustomAttributes (typeof(One2OneAttribute), true).Length > 0;
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 				var one2many = p.GetCustomAttributes (typeof(One2ManyAttribute), true).Count() > 0;
-				var one2one = p.GetCustomAttributes (typeof(One2OneAttribute), true).Count() > 0;
 #endif
 				if (p.CanWrite && !ignore) {
-					if(!one2many && !one2one)
+					if(!one2many)
 						cols.Add (new Column (p, createFlags));
 				}
 
@@ -2311,8 +2045,10 @@ namespace SQLite
 			if (!p.IsNullable) {
 				decl += "not null ";
 			}
-			if (!p.IsFK) {
-				if (p.IsReferenced) {
+			if (p.IsFK) {
+				decl += "foreing key ";
+			}
+			if (p.IsReferenced) {
 				decl += ("references " + p.ReferenceName + " ");
 				if (p.OnDeleteCascade) {
 					decl += "on delete cascade ";
@@ -2320,7 +2056,6 @@ namespace SQLite
 				if (p.OnUpdateCascade) {
 					decl += "on update cascade ";
 				}
-			}
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
 				decl += "collate " + p.Collation + " ";
@@ -2462,7 +2197,7 @@ namespace SQLite
 				return ((ReferencesAttribute)attrs [0]).Value;
 #else
 			if (attrs.Count() > 0) {
-				return ((ReferencesAttribute)attrs.First()).Value;
+				return ((ForeingKeyAttribute)attrs.First()).Value;
 #endif
 			} else {
 				return null;
@@ -3303,144 +3038,78 @@ namespace SQLite
 			var query = Take (1);
 		  	return GetDependentObjects(query.ToList<T> ().FirstOrDefault ());			
 		}
-		
-		//TODO: refactor this
-		public T GetDependentObjects<T>(T @object)
+
+		public T GetDependentObjects<T> (T @object)
 		{			
 			var t = typeof(T);
 			PropertyInfo one2ManyProp = null;
-			PropertyInfo one2OneProp = null;
 			Type childCollectionType = null;
-			Type childType = null;			
-			bool lazyProp = false;
 			string childIdPropName = string.Empty;
-			string id = GetPrimaryKeyValue<T>(@object);
-		    var hasInitializedProperty = InitializedAttribute.IsDefined(@object);
-            var isInitialized = !hasInitializedProperty ? false : (bool)BaseAttribute.GetValueOfProperty<InitializedAttribute>(@object);
+			string id = string.Empty;
 
 			if (@object != null) {
 				foreach (var p in t.GetProperties()) {
 					var one2Many = p.GetCustomAttributes (typeof(One2ManyAttribute), true);
-					var one2One = p.GetCustomAttributes (typeof(One2OneAttribute), true);
 					var pk = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-					var lazy = p.GetCustomAttributes (typeof(LazyAttribute), true);
 #if !NETFX_CORE
 					var isOne2Many = one2Many.Length > 0;
-					var isOne2One = one2One.Length > 0;
-					var isLazy = lazy.Length > 0;
-                    
+					var isPK = pk.Length > 0;
 #else
 					var isOne2Many = one2Many.Count() > 0;
-					var isOne2One = one2One.Count() > 0;
 					var isPK = pk.Count() > 0;
-					var isLazy = Lazy.Count() > 0;
-#endif					
-					if(!isLazy){
-						if (isOne2Many) {
-							childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
-							one2ManyProp = p;
-							childIdPropName = GetChildIdPropName(childCollectionType);
-				
-							if(childIdPropName != string.Empty){
-								@object = SetChildCollectionToObject(@object,childCollectionType,one2ManyProp,childIdPropName,id);
-						}
-						return @object;
-						}
-						if(isOne2One){
-							childType = (one2One [0] as One2OneAttribute).Value;
-							one2OneProp = p;
-							if(one2OneProp.GetValue(@object,null) == null || (hasInitializedProperty && !isInitialized))
-								@object = this.GetDependentObject<T>(@object,one2OneProp,childType,id);
-						}
+#endif
+					if (isOne2Many) {
+						childCollectionType = (one2Many [0] as One2ManyAttribute).Value;
+						one2ManyProp = p;
 					}
+					if (isPK) {
+						id = p.GetValue (@object, null).ToString ();
 				}
 			}
-			else{
-				return @object;
 			}
-			return @object;
-		}
-
-	    private static string GetPrimaryKeyValue<T>(object instance)
-	    {
-            if (!PrimaryKeyAttribute.IsDefined(instance))
-            {
-                return string.Empty;
-            }
-
-	        return BaseAttribute.GetValueOfProperty<PrimaryKeyAttribute>(instance).ToString();
-	    }
-
-	    public T GetDependentObject<T> (T @object, PropertyInfo one2OneProp, Type childType,string id)
-		{
-			string childIdPropName = string.Empty;
 				
-			if (one2OneProp != null) {
-				childIdPropName = GetChildIdPropName(childType);
+			if (one2ManyProp != null) {
+				foreach (var p in childCollectionType.GetProperties()) {
+					var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
+#if !NETFX_CORE
+					var isReferences = references.Length > 0;
+#else
+					var isReferences = references.Count() > 0;
+#endif
+					if (isReferences) {
+						childIdPropName = p.Name;
+					}				
+				}
 				
 				if(childIdPropName != string.Empty){
-					@object = SetChildToObject(@object,childType,one2OneProp,childIdPropName,id);
+					var q = string.Format ("select * from '{0}' where {1} = '{2}'",
+									                                 childCollectionType.Name,
+									                                 childIdPropName,
+									                                 id);
+
+					var qRes = this.Connection.Query (new TableMapping (childCollectionType), q, null);
+
+					var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
+					Type myType;
+		    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
+		    		IList rList = (IList)Activator.CreateInstance(listType);
+
+					foreach (var e in qRes) {
+						var i = Activator.CreateInstance(childCollectionType);
+						foreach(var p in i.GetType().GetProperties()){
+							p.SetValue(i,e.GetType().GetProperty(p.Name).GetValue(e,null),null);					
+						}
+						rList.Add(i);
+					}
+					rProp.SetValue(@object,rList,null);
+
+					return @object;
 				}
 				return @object;
 			}
 			else{
 				return @object;
 			}
-		}
-		
-		private List<object> GetObjects (Type childType, string childIdPropName, string id)
-		{
-			var q = string.Format ("select * from '{0}' where {1} = '{2}'",
-				                                 childType.Name,
-				                                 childIdPropName,
-				                                 id);
-
-			return this.Connection.Query (new TableMapping (childType), q, null);
-		}
-		
-		private T SetChildCollectionToObject<T>(T @object,Type childCollectionType, PropertyInfo one2ManyProp,string childIdPropName, string id)
-		{
-			var qRes = GetObjects(childCollectionType,childIdPropName,id);
-			var rProp = @object.GetType ().GetProperty (one2ManyProp.Name);
-    		Type listType = typeof(List<>).MakeGenericType(childCollectionType);
-    		IList rList = (IList)Activator.CreateInstance(listType);
-
-			foreach (var e in qRes) {
-				var i = Activator.CreateInstance(childCollectionType);
-				foreach(var prop in i.GetType().GetProperties()){
-					prop.SetValue(i,e.GetType().GetProperty(prop.Name).GetValue(e,null),null);					
-				}
-				rList.Add(i);
-			}
-			rProp.SetValue(@object,rList,null);
-
-			return @object;
-		}
-		
-		private T SetChildToObject<T>(T @object,Type childType, PropertyInfo one2OneProp,string childIdPropName, string id)
-		{
-			var qRes = GetObjects(childType,childIdPropName,id);
-
-		    var rProp = @object.GetType().GetProperty(one2OneProp.Name);
-    		rProp.SetValue(@object,qRes.FirstOrDefault(),null);
-
-			return @object;
-		}
-
-		private string GetChildIdPropName (Type childType)
-		{
-			foreach (var p in childType.GetProperties()) {
-				var references = p.GetCustomAttributes (typeof(ReferencesAttribute), true);
-#if !NETFX_CORE
-				var isReferences = references.Length > 0;
-#else
-				var isReferences = references.Count() > 0;
-#endif
-				if (isReferences) {
-					return p.Name;
-				}				
-			}
-			return string.Empty;
 		}
 	}
 
@@ -3798,10 +3467,6 @@ namespace SQLite
 		public static byte[] ColumnByteArray(Sqlite3Statement stmt, int index)
 		{
 			return ColumnBlob(stmt, index);
-		}
-		public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
-		{
-				return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
 		}
 #endif
 
