@@ -368,26 +368,12 @@ namespace SQLite
 
 			foreach (var indexName in indexes.Keys) {
 				var index = indexes[indexName];
-				var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
+				var columns = String.Join("\",\"", index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
                 count += CreateIndex(indexName, index.TableName, columns, index.Unique);
 			}
 			
 			return count;
 		}
-
-        /// <summary>
-        /// Creates an index for the specified table and columns.
-        /// </summary>
-        /// <param name="indexName">Name of the index to create</param>
-        /// <param name="tableName">Name of the database table</param>
-        /// <param name="columnNames">An array of column names to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
-        {
-            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
-            var sql = String.Format(sqlFormat, tableName, string.Join ("\", \"", columnNames), unique ? "unique" : "", indexName);
-            return Execute(sql);
-        }
 
         /// <summary>
         /// Creates an index for the specified table and column.
@@ -398,7 +384,9 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
         {
-            return CreateIndex(indexName, tableName, new string[] { columnName }, unique);
+            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
+            var sql = String.Format(sqlFormat, tableName, columnName, unique ? "unique" : "", indexName);
+            return Execute(sql);
         }
 
         /// <summary>
@@ -409,18 +397,7 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public int CreateIndex(string tableName, string columnName, bool unique = false)
         {
-            return CreateIndex(tableName + "_" + columnName, tableName, columnName, unique);
-        }
-
-        /// <summary>
-        /// Creates an index for the specified table and columns.
-        /// </summary>
-        /// <param name="tableName">Name of the database table</param>
-        /// <param name="columnNames">An array of column names to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string tableName, string[] columnNames, bool unique = false)
-        {
-            return CreateIndex(tableName + "_" + string.Join ("_", columnNames), tableName, columnNames, unique);
+            return CreateIndex(string.Concat(tableName, "_", columnName.Replace("\",\"", "_")), tableName, columnName, unique);
         }
 
         /// <summary>
@@ -1723,7 +1700,7 @@ namespace SQLite
 
 			public bool IsNullable { get; private set; }
 
-			public int? MaxStringLength { get; private set; }
+			public int MaxStringLength { get; private set; }
 
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
@@ -1784,7 +1761,7 @@ namespace SQLite
 			if (p.IsAutoInc) {
 				decl += "autoincrement ";
 			}
-			if (!p.IsNullable && !(p.IsPK && p.IsAutoInc)) {
+			if (!p.IsNullable) {
 				decl += "not null ";
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
@@ -1804,16 +1781,12 @@ namespace SQLite
 			} else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
 				return "float";
 			} else if (clrType == typeof(String)) {
-				int? len = p.MaxStringLength;
-
-				if (len.HasValue)
-					return "varchar(" + len.Value + ")";
-
-				return "varchar";
+				int len = p.MaxStringLength;
+				return "varchar(" + len + ")";
+			} else if (clrType == typeof(TimeSpan)) {
+				return "bigint";
 			} else if (clrType == typeof(DateTime)) {
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
-			} else if (clrType == typeof(DateTimeOffset)) {
-				return "bigint";
 #if !NETFX_CORE
 			} else if (clrType.IsEnum) {
 #else
@@ -1870,18 +1843,19 @@ namespace SQLite
 			return attrs.Cast<IndexedAttribute>();
 		}
 		
-		public static int? MaxStringLength(PropertyInfo p)
+		public static int MaxStringLength(PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
 #if !NETFX_CORE
-			if (attrs.Length > 0)
+			if (attrs.Length > 0) {
 				return ((MaxLengthAttribute)attrs [0]).Value;
 #else
-			if (attrs.Count() > 0)
+			if (attrs.Count() > 0) {
 				return ((MaxLengthAttribute)attrs.First()).Value;
 #endif
-
-			return null;
+			} else {
+				return DefaultMaxStringLength;
+			}
 		}
 	}
 
@@ -2089,6 +2063,8 @@ namespace SQLite
 					SQLite3.BindInt64 (stmt, index, Convert.ToInt64 (value));
 				} else if (value is Single || value is Double || value is Decimal) {
 					SQLite3.BindDouble (stmt, index, Convert.ToDouble (value));
+				} else if (value is TimeSpan) {
+					SQLite3.BindInt64(stmt, index, ((TimeSpan)value).Ticks);
 				} else if (value is DateTime) {
 					if (storeDateTimeAsTicks) {
 						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
@@ -2096,8 +2072,6 @@ namespace SQLite
 					else {
 						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
 					}
-				} else if (value is DateTimeOffset) {
-					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
 #if !NETFX_CORE
 				} else if (value.GetType().IsEnum) {
 #else
@@ -2138,6 +2112,8 @@ namespace SQLite
 					return SQLite3.ColumnDouble (stmt, index);
 				} else if (clrType == typeof(float)) {
 					return (float)SQLite3.ColumnDouble (stmt, index);
+				} else if (clrType == typeof(TimeSpan)) {
+					return new TimeSpan(SQLite3.ColumnInt64(stmt, index));
 				} else if (clrType == typeof(DateTime)) {
 					if (_conn.StoreDateTimeAsTicks) {
 						return new DateTime (SQLite3.ColumnInt64 (stmt, index));
@@ -2146,8 +2122,6 @@ namespace SQLite
 						var text = SQLite3.ColumnString (stmt, index);
 						return DateTime.Parse (text);
 					}
-				} else if (clrType == typeof(DateTimeOffset)) {
-					return new DateTimeOffset(SQLite3.ColumnInt64 (stmt, index),TimeSpan.Zero);
 #if !NETFX_CORE
 				} else if (clrType.IsEnum) {
 #else
@@ -2606,7 +2580,7 @@ namespace SQLite
 					//
 					// Work special magic for enumerables
 					//
-					if (val != null && val is System.Collections.IEnumerable && !(val is string) && !(val is System.Collections.Generic.IEnumerable<byte>)) {
+					if (val != null && val is System.Collections.IEnumerable && !(val is string)) {
 						var sb = new System.Text.StringBuilder();
 						sb.Append("(");
 						var head = "";
