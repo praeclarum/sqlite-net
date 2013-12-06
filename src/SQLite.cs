@@ -2889,6 +2889,11 @@ namespace SQLite
 #endif
 		}
 
+    public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
+    {
+      return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
+    }
+
 		public static Result Close(Sqlite3DatabaseHandle db)
 		{
 			return (Result)Sqlite3.sqlite3_close(db);
