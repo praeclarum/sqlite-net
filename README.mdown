@@ -4,6 +4,18 @@ This is a fork of the original sqlite-net library (https://github.com/praeclarum
 
 The project will avoid the use of #if-based conditional code and use platform-specific code injection instead.
 
+# API Changes
+
+As part of the cleanup there are now some API changes.
+For the most part I hope these are self-explanatory, but here is a list of major changes:
+
+1. You now have to pass in an implementation of ISQlitePlatform in the SQLiteConnectionWithLock and SQLiteConnection constructors.
+I provide ready-made implementations of this class for some platforms, e.g. Xamarin.iOS (SQLitePlatformIOS) and Win32 (SQLitePlatformWin32), there are nugets for easy access to these implementations.
+
+2. The SQLiteAsyncConnection class now takes a Func<SQLiteConnectionWithLock> in the constructor instead of a path.
+This is done because the async classes are now just meant to be wrappers around the normal sqlite connection.
+To use SQLiteAsyncConnection just create an instance of a SQLiteConnectionWithLock and pass in that through a func, e.g.:
+new SQLiteAsyncConnection(()=>_sqliteConnectionWithLock);
 
 # SQLite.Net
 
