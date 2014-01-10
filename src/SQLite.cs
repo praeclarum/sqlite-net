@@ -201,10 +201,13 @@ namespace SQLite
 		/// <summary>
 		/// Used to list some code that we want the MonoTouch linker
 		/// to see, but that we never want to actually execute.
-		/// </summary>
-		static bool _preserveDuringLinkMagic;
+    /// </summary>
+// DTB 2013/12/31: Disabling error to squelch noise from dependency
+#pragma warning disable 0649
+    static bool _preserveDuringLinkMagic;
+#pragma warning restore 0649
 
-		/// <summary>
+    /// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
 		/// The handler will sleep multiple times until a total time of <see cref="BusyTimeout"/> has accumulated.
 		/// </summary>
