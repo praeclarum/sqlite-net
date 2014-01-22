@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SQLite.Net.Async
@@ -30,16 +31,24 @@ namespace SQLite.Net.Async
         where T : new()
     {
         private readonly TableQuery<T> _innerQuery;
-        private readonly TaskFactory _taskFactory;
+        private readonly TaskScheduler _taskScheduler;
+        private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.DenyChildAttach;
 
-        public AsyncTableQuery(TableQuery<T> innerQuery, TaskFactory taskFactory)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="innerQuery"></param>
+        /// <param name="taskScheduler">If null this parameter will be TaskScheduler.Default (evaluated when used in each method, not in ctor)</param>
+        /// <param name="taskCreationOptions">Defaults to DenyChildAttach</param>
+        public AsyncTableQuery(TableQuery<T> innerQuery, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.DenyChildAttach)
         {
             if (innerQuery == null)
             {
                 throw new ArgumentNullException("innerQuery");
             }
             _innerQuery = innerQuery;
-            _taskFactory = taskFactory;
+            _taskScheduler = taskScheduler;
+            _taskCreationOptions = taskCreationOptions;
         }
 
         public AsyncTableQuery<T> Where(Expression<Func<T, bool>> predExpr)
@@ -48,17 +57,17 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("predExpr");
             }
-            return new AsyncTableQuery<T>(_innerQuery.Where(predExpr), _taskFactory);
+            return new AsyncTableQuery<T>(_innerQuery.Where(predExpr), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
         }
 
         public AsyncTableQuery<T> Skip(int n)
         {
-            return new AsyncTableQuery<T>(_innerQuery.Skip(n), _taskFactory);
+            return new AsyncTableQuery<T>(_innerQuery.Skip(n), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
         }
 
         public AsyncTableQuery<T> Take(int n)
         {
-            return new AsyncTableQuery<T>(_innerQuery.Take(n), _taskFactory);
+            return new AsyncTableQuery<T>(_innerQuery.Take(n), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
         }
 
         public AsyncTableQuery<T> OrderBy<TValue>(Expression<Func<T, TValue>> orderExpr)
@@ -67,7 +76,7 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("orderExpr");
             }
-            return new AsyncTableQuery<T>(_innerQuery.OrderBy(orderExpr), _taskFactory);
+            return new AsyncTableQuery<T>(_innerQuery.OrderBy(orderExpr), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
         }
 
         public AsyncTableQuery<T> OrderByDescending<TValue>(Expression<Func<T, TValue>> orderExpr)
@@ -76,62 +85,62 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("orderExpr");
             }
-            return new AsyncTableQuery<T>(_innerQuery.OrderByDescending(orderExpr), _taskFactory);
+            return new AsyncTableQuery<T>(_innerQuery.OrderByDescending(orderExpr), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
         }
 
         public Task<List<T>> ToListAsync()
         {
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ToList();
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> CountAsync()
         {
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.Count();
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> ElementAtAsync(int index)
         {
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ElementAt(index);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> FirstAsync()
         {
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.First();
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> FirstOrDefaultAsync()
         {
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
-                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
                     return _innerQuery.FirstOrDefault();
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
     }
 }
