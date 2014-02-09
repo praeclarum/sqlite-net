@@ -18,6 +18,8 @@
     <ValidateXaml>true</ValidateXaml>
     <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
     <ThrowErrorsInValidation>true</ThrowErrorsInValidation>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -88,6 +90,8 @@
     </Compile>
     <Compile Include="ReflectionServiceWP8.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SQLiteApiWP8.cs" />
+    <Compile Include="SQLitePlatformWP8.cs" />
     <Compile Include="StopwatchFactoryWP8.cs" />
     <Compile Include="VolatileServiceWP8.cs" />
   </ItemGroup>
@@ -96,10 +100,15 @@
       <Project>{ABF3D656-3D1C-45D1-B6FD-41B088E5A533}</Project>
       <Name>SQLite.Net</Name>
     </ProjectReference>
+    <Reference Include="Sqlite">
+      <HintPath>..\..\packages\sqlite-net-wp8.3.8.3\lib\windowsphone8\Sqlite.winmd</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />
   <ProjectExtensions />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Import Project="..\..\packages\sqlite-net-wp8.3.8.3\build\windowsphone8\sqlite-net-wp8.targets" Condition="Exists('..\..\packages\sqlite-net-wp8.3.8.3\build\windowsphone8\sqlite-net-wp8.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

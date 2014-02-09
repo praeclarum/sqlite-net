@@ -1,23 +1,16 @@
-﻿using Sqlite;
-using SQLite.Net;
-using SQLite.Net.Interop;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Text;
-using System.Threading.Tasks;
-using Sqlite3 = Sqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Sqlite.Database;
-using Sqlite3Statement = Sqlite.Statement;
+using Sqlite;
+using SQLite.Net.Interop;
 
-namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
+namespace SQLite.Net.Platform.WindowsPhone8
 {
     public class SQLiteApiWP8 : ISQLiteApi
     {
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zVfs)
         {
             string dbFileName = Encoding.UTF8.GetString(filename, 0, filename.Length);
-            Sqlite3DatabaseHandle internalDbHandle = null;
+            Database internalDbHandle = null;
             var ret = (Result)Sqlite3.sqlite3_open_v2(dbFileName, out internalDbHandle, flags, "");
             db = new DbHandle(internalDbHandle);
             return ret;
@@ -51,7 +44,7 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
         public IDbStatement Prepare2(IDbHandle db, string query)
         {
             var dbHandle = (DbHandle)db;
-            var stmt = default(Sqlite3Statement);
+            var stmt = default(Statement);
 
             int r = Sqlite3.sqlite3_prepare_v2(dbHandle.InternalDbHandle, query, out stmt);
 
@@ -77,7 +70,7 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
         public Result Finalize(IDbStatement stmt)
         {
             var dbStatement = (DbStatement)stmt;
-            Sqlite3Statement internalStmt = dbStatement.InternalStmt;
+            Statement internalStmt = dbStatement.InternalStmt;
             return (Result)Sqlite3.sqlite3_finalize(internalStmt);
         }
 
@@ -196,7 +189,7 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
 
         public Result Open(string filename, out IDbHandle db)
         {
-            Sqlite3DatabaseHandle internalDbHandle = null;
+            Database internalDbHandle = null;
             var ret = (Result)Sqlite3.sqlite3_open(filename, out internalDbHandle);
             db = new DbHandle(internalDbHandle);
             return ret;
@@ -228,13 +221,13 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
 
         private struct DbHandle : IDbHandle
         {
-            public DbHandle(Sqlite3DatabaseHandle internalDbHandle)
+            public DbHandle(Database internalDbHandle)
                 : this()
             {
                 InternalDbHandle = internalDbHandle;
             }
 
-            public Sqlite3DatabaseHandle InternalDbHandle { get; set; }
+            public Database InternalDbHandle { get; set; }
 
             public bool Equals(IDbHandle other)
             {
@@ -244,13 +237,13 @@ namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
 
         private struct DbStatement : IDbStatement
         {
-            public DbStatement(Sqlite3Statement internalStmt)
+            public DbStatement(Statement internalStmt)
                 : this()
             {
                 InternalStmt = internalStmt;
             }
 
-            internal Sqlite3Statement InternalStmt { get; set; }
+            internal Statement InternalStmt { get; set; }
 
             public bool Equals(IDbStatement other)
             {

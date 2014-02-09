@@ -1,10 +1,10 @@
 ﻿using SQLite.Net.Interop;
 
-namespace SQLite.Net.Platform.WindowsPhone8.CSharpSqlite
+namespace SQLite.Net.Platform.WindowsPhone8
 {
-    public class SQLitePlatformWP8CSharp : ISQLitePlatform
+    public class SQLitePlatformWP8 : ISQLitePlatform
     {
-        public SQLitePlatformWP8CSharp()
+        public SQLitePlatformWP8()
         {
             var api = new SQLiteApiWP8();
 
