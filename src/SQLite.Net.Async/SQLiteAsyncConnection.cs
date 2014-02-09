@@ -23,6 +23,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SQLite.Net.Async
@@ -30,27 +31,20 @@ namespace SQLite.Net.Async
     public class SQLiteAsyncConnection
     {
         private readonly Func<SQLiteConnectionWithLock> _sqliteConnectionFunc;
-        private readonly TaskFactory _taskFactory;
+        private readonly TaskScheduler _taskScheduler;
+        private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.DenyChildAttach;
 
         /// <summary>
-        /// Create a new async connection, will use TaskScheduler.Default
+        /// Create a new async connection
         /// </summary>
         /// <param name="sqliteConnectionFunc"></param>
-        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc)
+        /// <param name="taskScheduler">If null this parameter will be TaskScheduler.Default (evaluated when used in each method, not in ctor)</param>
+        /// <param name="taskCreationOptions">Defaults to DenyChildAttach</param>
+        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.DenyChildAttach)
         {
             _sqliteConnectionFunc = sqliteConnectionFunc;
-            _taskFactory = new TaskFactory(TaskScheduler.Default);
-        }
-
-        /// <summary>
-        /// Create a new async connection with a specific TaskScheduler 
-        /// </summary>
-        /// <param name="sqliteConnectionFunc"></param>
-        /// <param name="taskScheduler"></param>
-        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc, TaskScheduler taskScheduler)
-        {
-            _sqliteConnectionFunc = sqliteConnectionFunc;;
-            _taskFactory = new TaskFactory(taskScheduler ?? TaskScheduler.Default);
+            _taskCreationOptions = taskCreationOptions;
+            _taskScheduler = taskScheduler;
         }
 
         private SQLiteConnectionWithLock GetConnection()
@@ -61,14 +55,14 @@ namespace SQLite.Net.Async
         public Task<CreateTablesResult> CreateTableAsync<T>()
             where T : new()
         {
-            return CreateTablesAsync(typeof (T));
+            return CreateTablesAsync(typeof(T));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2>()
             where T : new()
             where T2 : new()
         {
-            return CreateTablesAsync(typeof (T), typeof (T2));
+            return CreateTablesAsync(typeof(T), typeof(T2));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3>()
@@ -76,7 +70,7 @@ namespace SQLite.Net.Async
             where T2 : new()
             where T3 : new()
         {
-            return CreateTablesAsync(typeof (T), typeof (T2), typeof (T3));
+            return CreateTablesAsync(typeof(T), typeof(T2), typeof(T3));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4>()
@@ -85,7 +79,7 @@ namespace SQLite.Net.Async
             where T3 : new()
             where T4 : new()
         {
-            return CreateTablesAsync(typeof (T), typeof (T2), typeof (T3), typeof (T4));
+            return CreateTablesAsync(typeof(T), typeof(T2), typeof(T3), typeof(T4));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5>()
@@ -95,7 +89,17 @@ namespace SQLite.Net.Async
             where T4 : new()
             where T5 : new()
         {
-            return CreateTablesAsync(typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
+            return CreateTablesAsync(typeof(T), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
+        }
+
+        public class CreateTablesResult
+        {
+            public Dictionary<Type, int> Results { get; private set; }
+
+            internal CreateTablesResult()
+            {
+                this.Results = new Dictionary<Type, int>();
+            }
         }
 
         public Task<CreateTablesResult> CreateTablesAsync(params Type[] types)
@@ -104,7 +108,7 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("types");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 var result = new CreateTablesResult();
                 SQLiteConnectionWithLock conn = GetConnection();
@@ -117,20 +121,20 @@ namespace SQLite.Net.Async
                     }
                 }
                 return result;
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> DropTableAsync<T>()
             where T : new()
         {
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.DropTable<T>();
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> InsertAsync(object item)
@@ -139,14 +143,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("item");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Insert(item);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> UpdateAsync(object item)
@@ -155,14 +159,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("item");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Update(item);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> DeleteAsync(object item)
@@ -171,26 +175,26 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("item");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Delete(item);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> DeleteAllAsync<T>()
         {
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.DeleteAll<T>();
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> DeleteAsync<T>(object pk)
@@ -199,14 +203,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("pk");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Delete<T>(pk);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> GetAsync<T>(object pk)
@@ -216,14 +220,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("pk");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Get<T>(pk);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> FindAsync<T>(object pk)
@@ -233,14 +237,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("pk");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Find<T>(pk);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate)
@@ -250,14 +254,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("predicate");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Get(predicate);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler);
         }
 
         public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate)
@@ -267,14 +271,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("predicate");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Find(predicate);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> ExecuteAsync(string query, params object[] args)
@@ -287,15 +291,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("args");
             }
-            return _taskFactory.StartNew(() =>
-
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Execute(query, args);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> InsertAllAsync(IEnumerable items)
@@ -304,14 +307,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("items");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.InsertAll(items);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         [Obsolete(
@@ -323,7 +326,7 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("action");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
@@ -340,7 +343,7 @@ namespace SQLite.Net.Async
                         throw;
                     }
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task RunInTransactionAsync(Action<SQLiteConnection> action)
@@ -349,7 +352,7 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("action");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
@@ -366,7 +369,7 @@ namespace SQLite.Net.Async
                         throw;
                     }
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public AsyncTableQuery<T> Table<T>()
@@ -377,7 +380,7 @@ namespace SQLite.Net.Async
             // until the query is performed. The Async methods are on the query iteself.
             //
             SQLiteConnectionWithLock conn = GetConnection();
-            return new AsyncTableQuery<T>(conn.Table<T>(), _taskFactory);
+            return new AsyncTableQuery<T>(conn.Table<T>(), _taskScheduler, _taskCreationOptions);
         }
 
         public Task<T> ExecuteScalarAsync<T>(string sql, params object[] args)
@@ -390,7 +393,7 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("args");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
@@ -398,7 +401,7 @@ namespace SQLite.Net.Async
                     SQLiteCommand command = conn.CreateCommand(sql, args);
                     return command.ExecuteScalar<T>();
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<List<T>> QueryAsync<T>(string sql, params object[] args)
@@ -412,14 +415,14 @@ namespace SQLite.Net.Async
             {
                 throw new ArgumentNullException("args");
             }
-            return _taskFactory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
             {
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Query<T>(sql, args);
                 }
-            });
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
     }
 }
