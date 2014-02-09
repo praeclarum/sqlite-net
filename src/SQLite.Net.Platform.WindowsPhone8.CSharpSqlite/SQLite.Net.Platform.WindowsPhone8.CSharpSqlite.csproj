@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\packages\sqlite-net-wp8.3.8.3\build\windowsphone8\sqlite-net-wp8.props" Condition="Exists('..\..\packages\sqlite-net-wp8.3.8.3\build\windowsphone8\sqlite-net-wp8.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -103,11 +104,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Community.CsharpSqlite.SqlLiteClient.WP7">
-      <HintPath>..\..\packages\wp7sqlite.0.1.1\lib\sl4-windowsphone71\Community.CsharpSqlite.SqlLiteClient.WP7.dll</HintPath>
-    </Reference>
-    <Reference Include="Community.CsharpSqlite.WP7">
-      <HintPath>..\..\packages\wp7sqlite.0.1.1\lib\sl4-windowsphone71\Community.CsharpSqlite.WP7.dll</HintPath>
+    <Reference Include="Sqlite">
+      <HintPath>..\..\packages\sqlite-net-wp8.3.8.3\lib\windowsphone8\Sqlite.winmd</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -117,6 +115,7 @@
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />
   <ProjectExtensions />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Import Project="..\..\packages\sqlite-net-wp8.3.8.3\build\windowsphone8\sqlite-net-wp8.targets" Condition="Exists('..\..\packages\sqlite-net-wp8.3.8.3\build\windowsphone8\sqlite-net-wp8.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

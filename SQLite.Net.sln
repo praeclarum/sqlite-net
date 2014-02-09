@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.20827.3
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{59584026-7610-4CD5-A74E-D2B0A2E1CE87}"
 EndProject
@@ -134,8 +134,8 @@ Global
 		{741521F8-F9D8-40F4-A5D4-AED4E26841ED}.Release|x64.ActiveCfg = Release|Any CPU
 		{741521F8-F9D8-40F4-A5D4-AED4E26841ED}.Release|x86.ActiveCfg = Release|x86
 		{741521F8-F9D8-40F4-A5D4-AED4E26841ED}.Release|x86.Build.0 = Release|x86
-		{BC4BFEB2-05EE-4EAD-BC41-023BFB79F187}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BC4BFEB2-05EE-4EAD-BC41-023BFB79F187}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC4BFEB2-05EE-4EAD-BC41-023BFB79F187}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{BC4BFEB2-05EE-4EAD-BC41-023BFB79F187}.Debug|Any CPU.Build.0 = Debug|x86
 		{BC4BFEB2-05EE-4EAD-BC41-023BFB79F187}.Debug|ARM.ActiveCfg = Debug|ARM
 		{BC4BFEB2-05EE-4EAD-BC41-023BFB79F187}.Debug|ARM.Build.0 = Debug|ARM
 		{BC4BFEB2-05EE-4EAD-BC41-023BFB79F187}.Debug|x64.ActiveCfg = Debug|Any CPU
