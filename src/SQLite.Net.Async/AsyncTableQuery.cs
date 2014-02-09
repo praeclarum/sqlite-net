@@ -32,7 +32,7 @@ namespace SQLite.Net.Async
     {
         private readonly TableQuery<T> _innerQuery;
         private readonly TaskScheduler _taskScheduler;
-        private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.DenyChildAttach;
+        private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.None;
 
         /// <summary>
         /// 
@@ -40,7 +40,7 @@ namespace SQLite.Net.Async
         /// <param name="innerQuery"></param>
         /// <param name="taskScheduler">If null this parameter will be TaskScheduler.Default (evaluated when used in each method, not in ctor)</param>
         /// <param name="taskCreationOptions">Defaults to DenyChildAttach</param>
-        public AsyncTableQuery(TableQuery<T> innerQuery, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.DenyChildAttach)
+        public AsyncTableQuery(TableQuery<T> innerQuery, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.None)
         {
             if (innerQuery == null)
             {

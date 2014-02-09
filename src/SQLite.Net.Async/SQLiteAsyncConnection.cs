@@ -32,7 +32,7 @@ namespace SQLite.Net.Async
     {
         private readonly Func<SQLiteConnectionWithLock> _sqliteConnectionFunc;
         private readonly TaskScheduler _taskScheduler;
-        private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.DenyChildAttach;
+        private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.None;
 
         /// <summary>
         /// Create a new async connection
@@ -40,7 +40,7 @@ namespace SQLite.Net.Async
         /// <param name="sqliteConnectionFunc"></param>
         /// <param name="taskScheduler">If null this parameter will be TaskScheduler.Default (evaluated when used in each method, not in ctor)</param>
         /// <param name="taskCreationOptions">Defaults to DenyChildAttach</param>
-        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.DenyChildAttach)
+        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.None)
         {
             _sqliteConnectionFunc = sqliteConnectionFunc;
             _taskCreationOptions = taskCreationOptions;
