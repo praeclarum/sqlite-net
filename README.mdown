@@ -4,18 +4,39 @@ This is a fork of the original sqlite-net library (https://github.com/praeclarum
 
 The project will avoid the use of #if-based conditional code and use platform-specific code injection instead.
 
+I welcome pull requests, but keep in mind that this library is in heavy use and all changes must be:
+- Backwards-compatible (don't change database defaults).
+- Well tested (please add unit tests).
+
 # API Changes
 
 As part of the cleanup there are now some API changes.
-For the most part I hope these are self-explanatory, but here is a list of major changes:
 
-1. You now have to pass in an implementation of ISQlitePlatform in the SQLiteConnectionWithLock and SQLiteConnection constructors.
-I provide ready-made implementations of this class for some platforms, e.g. Xamarin.iOS (SQLitePlatformIOS) and Win32 (SQLitePlatformWin32), there are nugets for easy access to these implementations.
+For the most part I hope these are self-explanatory, but here is a non-exhaustive list of changes.
 
-2. The SQLiteAsyncConnection class now takes a Func<SQLiteConnectionWithLock> in the constructor instead of a path.
+## SQLiteConnection
+You now have to pass in an implementation of ISQlitePlatform in the SQLiteConnectionWithLock and SQLiteConnection constructors.
+
+I provide ready-made implementations of this class, please see use one(or more) of these [nugets](https://www.nuget.org/profiles/oystein.krog/).
+
+At the moment these platforms have nugets available:
+- Win32 (works on both x86 and x64 automatically) (very well tested)
+- XamarinIOS (very well tested)
+- XamarinAndroid (not very well tested, please let me know how this works for you).
+- WindowsPhone8 (not tested, please let me know if this works for you)
+
+In addition these platforms have implementations available in source:
+- WindowsRT (not tested, please help develop this)
+
+## SQliteAsyncConnection
+The SQLiteAsyncConnection class now takes a Func<SQLiteConnectionWithLock> in the constructor instead of a path.
 This is done because the async classes are now just meant to be wrappers around the normal sqlite connection.
+
 To use SQLiteAsyncConnection just create an instance of a SQLiteConnectionWithLock and pass in that through a func, e.g.:
 new SQLiteAsyncConnection(()=>_sqliteConnectionWithLock);
+
+Please be aware that the Task.Run pattern used in SQLiteAsyncConnection can be considered an anti-pattern (libraries should not provide async methods unless they are truly async).
+This class is maintained for backwards compatability and for use-cases where async-isolation is handy.
 
 # SQLite.Net
 
@@ -80,7 +101,7 @@ Both APIs are explained in the two sections below.
 
 Once you have defined your entity, you can automatically generate tables in your database by calling `CreateTable`:
 
-    var db = new SQLiteConnection("foofoo");
+    var db = new SQLiteConnection(sqlitePlatform, "foofoo");
     db.CreateTable<Stock>();
     db.CreateTable<Valuation>();
 
@@ -97,7 +118,7 @@ Similar methods exist for `Update` and `Delete`.
 
 The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
 
-		var conn = new SQLiteConnection("foofoo");
+		var conn = new SQLiteConnection(sqlitePlatform, "foofoo");
 		var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
 		foreach (var stock in query)
@@ -130,7 +151,7 @@ will work for you.
 
 Once you have defined your entity, you can automatically generate tables by calling `CreateTableAsync`:
 
-	var conn = new SQLiteAsyncConnection("foofoo");
+	var conn = new SQLiteAsyncConnection(()=>sqliteConnection, "foofoo");
 	conn.CreateTableAsync<Stock>().ContinueWith((results) =>
 	{
 		Debug.WriteLine("Table created!");
@@ -143,7 +164,7 @@ You can insert rows in the database using `Insert`. If the table contains an aut
 			Symbol = "AAPL"
 		};
 
-		var conn = new SQLiteAsyncConnection("foofoo");
+		var conn = new SQLiteAsyncConnection(()=>sqliteConnection, "foofoo");
 		conn.InsertAsync(stock).ContinueWith((t) =>
 		{
 			Debug.WriteLine("New customer ID: {0}", stock.Id);
@@ -155,7 +176,7 @@ Querying for data is most straightforwardly done using the `Table` method. This 
 you can add predictates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special 
 retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
 
-		var conn = new SQLiteAsyncConnection("foofoo");
+		var conn = new SQLiteAsyncConnection(()=>sqliteConnection, "foofoo");
 		var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 			
 		query.ToListAsync().ContinueWith((t) =>
@@ -176,14 +197,3 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 		});
 
 
-## Special note on use within Windows Store Apps (Windows 8/WinRT)
-
-SQLite.Net is fully compliant with WinRT Metro-style apps and will pass Microsoft Store validation.
-
-Please note:
-
-* Database files will always be created in the path returned by `Windows.Storage.ApplicationData.Current.LocalFolder.Path`.
-
-* You will need a copy of sqlite3.dll for your app as well.  You can get this from sqlite.org with an installer to the SQLite for Windows Runtime SDK.
-
- 
