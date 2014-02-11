@@ -1857,6 +1857,8 @@ namespace SQLite
                 return "bigint";
 			} else if (clrType == typeof(DateTime)) {
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
+			} else if (clrType == typeof(DateTimeOffset)) {
+				return "bigint";
 #if !NETFX_CORE
 			} else if (clrType.IsEnum) {
 #else
@@ -2156,6 +2158,8 @@ namespace SQLite
 					else {
 						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
 					}
+				} else if (value is DateTimeOffset) {
+					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
 #if !NETFX_CORE
 				} else if (value.GetType().IsEnum) {
 #else
@@ -2206,6 +2210,8 @@ namespace SQLite
 						var text = SQLite3.ColumnString (stmt, index);
 						return DateTime.Parse (text);
 					}
+				} else if (clrType == typeof(DateTimeOffset)) {
+					return new DateTimeOffset(SQLite3.ColumnInt64 (stmt, index),TimeSpan.Zero);
 #if !NETFX_CORE
 				} else if (clrType.IsEnum) {
 #else
