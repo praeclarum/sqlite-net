@@ -2347,6 +2347,16 @@ namespace SQLite
 			return AddOrderBy<U> (orderExpr, false);
 		}
 
+		public TableQuery<T> ThenBy<U>(Expression<Func<T, U>> orderExpr)
+		{
+			return AddOrderBy<U>(orderExpr, true);
+		}
+
+		public TableQuery<T> ThenByDescending<U>(Expression<Func<T, U>> orderExpr)
+		{
+			return AddOrderBy<U>(orderExpr, false);
+		}
+
 		private TableQuery<T> AddOrderBy<U> (Expression<Func<T, U>> orderExpr, bool asc)
 		{
 			if (orderExpr.NodeType == ExpressionType.Lambda) {
