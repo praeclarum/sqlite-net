@@ -114,7 +114,8 @@ namespace SQLite.Tests
 				}
 				catch (SQLiteException ex) {
 					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-						Assert.Inconclusive ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+						Inconclusive ();
+						return;
 					}
 				}
 			}
@@ -144,7 +145,8 @@ namespace SQLite.Tests
 				}
 				catch (SQLiteException ex) {
 					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-						Assert.Inconclusive ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+						Inconclusive ();
+						return;
 					}
 				}
 			}
@@ -171,7 +173,8 @@ namespace SQLite.Tests
 				}
 				catch (SQLiteException ex) {
 					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-						Assert.Inconclusive ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+						Inconclusive ();
+						return;
 					}
 				}
 				Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
@@ -206,7 +209,8 @@ namespace SQLite.Tests
 					}
 					catch (SQLiteException ex) {
 						if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-							Assert.Inconclusive ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+							Inconclusive ();
+							return;
 						}
 					}
 					catch (Exception ex) {
@@ -234,7 +238,8 @@ namespace SQLite.Tests
 					}
 					catch (SQLiteException ex) {
 						if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-							Assert.Inconclusive ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+							Inconclusive ();
+							return;
 						}
 					}
 					catch (Exception ex) {
@@ -265,7 +270,8 @@ namespace SQLite.Tests
 				}
 				catch (SQLiteException ex) {
 					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-						Assert.Inconclusive ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+						Inconclusive ();
+						return;
 					}
 				}
 				catch (Exception ex) {
@@ -299,7 +305,8 @@ namespace SQLite.Tests
 				}
 				catch (SQLiteException ex) {
 					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-						Assert.Inconclusive ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+						Inconclusive ();
+						return;
 					}
 				}
 				catch (Exception ex) {
@@ -307,6 +314,11 @@ namespace SQLite.Tests
 				}
 			}
 			Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
+		}
+
+		void Inconclusive ()
+		{
+			Console.WriteLine ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
 		}
 
 	}

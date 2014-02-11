@@ -45,7 +45,7 @@ namespace SQLite.Tests
             Assert.AreEqual(2, item.Id);
         }
 
-        [Test]
+		[Test, ExpectedException (typeof(AssertionException))]
         public void WithoutImplicitMapping ()
         {
             var db = new TestDb ();
@@ -60,7 +60,7 @@ namespace SQLite.Tests
             Assert.AreEqual("IndexedId", column.Name);
             Assert.IsFalse(column.Indices.Any());
 
-            Assert.Throws(typeof(AssertionException), () => CheckPK(db));
+            CheckPK(db);
         }
 
         [Test]
