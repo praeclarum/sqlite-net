@@ -69,7 +69,7 @@ This is an open source project that welcomes contributions/suggestions/bug repor
 
 # Example Time!
 
-Please consult the Wiki for, ahem, [complete documentation](https://github.com/praeclarum/SQLite.Net/wiki).
+Please consult the source code (see unit tests) for more examples.
 
 The library contains simple attributes that you can use to control the construction of tables. In a simple stock program, you might use:
 
