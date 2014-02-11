@@ -58,7 +58,12 @@ namespace SQLite.Tests
 			for (var i = 0; i < n; i++) {
 				var ii = i;
 
-				var th = new Thread ((ThreadStart)delegate {
+#if NETFX_CORE
+                Task.Run (
+#else
+				var th = new Thread ((ThreadStart)
+#endif
+                delegate {
 					try {
 						var conn = GetConnection ();
 						var obj = new Customer {
@@ -88,7 +93,9 @@ namespace SQLite.Tests
 					}
 				});
 
+#if !NETFX_CORE
 				th.Start ();
+#endif
 			}
 			doneEvent.WaitOne ();
 			
