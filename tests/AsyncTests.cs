@@ -56,11 +56,13 @@ namespace SQLite.Tests
 			var n = 500;
 			var errors = new List<string> ();
 			for (var i = 0; i < n; i++) {
-				Task.Factory.StartNew (delegate {
+				var ii = i;
+
+				var th = new Thread ((ThreadStart)delegate {
 					try {
 						var conn = GetConnection ();
 						var obj = new Customer {
-							FirstName = i.ToString (),
+							FirstName = ii.ToString (),
 						};
 						conn.InsertAsync (obj).Wait ();
 						if (obj.Id == 0) {
@@ -85,6 +87,8 @@ namespace SQLite.Tests
 						doneEvent.Set();
 					}
 				});
+
+				th.Start ();
 			}
 			doneEvent.WaitOne ();
 			
