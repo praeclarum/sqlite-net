@@ -2960,8 +2960,8 @@ namespace SQLite
 		public static extern Result Prepare2 (IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
 
 #if NETFX_CORE
-        [DllImport ("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern Result Prepare2 (IntPtr db, byte[] queryBytes, int numBytes, out IntPtr stmt, IntPtr pzTail);
+		[DllImport ("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Prepare2 (IntPtr db, byte[] queryBytes, int numBytes, out IntPtr stmt, IntPtr pzTail);
 #endif
 
 		public static IntPtr Prepare2 (IntPtr db, string query)
@@ -3077,10 +3077,10 @@ namespace SQLite
 		[DllImport ("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int LibVersionNumber ();
 #else
-        public static Result Open(string filename, out Sqlite3DatabaseHandle db)
-        {
-            return (Result) Sqlite3.sqlite3_open(filename, out db);
-        }
+		public static Result Open(string filename, out Sqlite3DatabaseHandle db)
+		{
+			return (Result) Sqlite3.sqlite3_open(filename, out db);
+		}
 
 		public static Result Open(string filename, out Sqlite3DatabaseHandle db, int flags, IntPtr zVfs)
 		{
@@ -3090,11 +3090,6 @@ namespace SQLite
 			return (Result)Sqlite3.sqlite3_open_v2(filename, out db, flags, null);
 #endif
 		}
-
-    public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
-    {
-      return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
-    }
 
 		public static Result Close(Sqlite3DatabaseHandle db)
 		{
@@ -3263,6 +3258,11 @@ namespace SQLite
 		public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
 		{
 			return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
+		}
+
+		public static Result ExtendedErrCode(Sqlite3DatabaseHandle db)
+		{
+			return (Result)Sqlite3.sqlite3_extended_errcode(db);
 		}
 #endif
 
