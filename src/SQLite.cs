@@ -3260,9 +3260,9 @@ namespace SQLite
 			return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
 		}
 
-		public static Result ExtendedErrCode(Sqlite3DatabaseHandle db)
+		public static ExtendedResult ExtendedErrCode(Sqlite3DatabaseHandle db)
 		{
-			return (Result)Sqlite3.sqlite3_extended_errcode(db);
+			return (ExtendedResult)Sqlite3.sqlite3_extended_errcode(db);
 		}
 #endif
 
