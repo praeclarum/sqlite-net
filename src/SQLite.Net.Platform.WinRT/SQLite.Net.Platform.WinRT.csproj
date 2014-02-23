@@ -25,7 +25,6 @@
     <DefineConstants>DEBUG;TRACE;NETFX_CORE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,7 +33,6 @@
     <DefineConstants>TRACE;NETFX_CORE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|ARM'">
     <DebugSymbols>true</DebugSymbols>
@@ -119,14 +117,6 @@
     <Compile Include="SQLitePlatformWinRT.cs" />
     <Compile Include="StopwatchFactoryWinRT.cs" />
     <Compile Include="VolatileServiceWinRT.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <SDKReference Include="Microsoft.VCLibs, version=12.0">
-      <Name>Microsoft Visual C++ 2013 Runtime Package for Windows</Name>
-    </SDKReference>
-    <SDKReference Include="SQLite.WinRT81, Version=3.8.3.1">
-      <Name>SQLite for Windows Runtime %28Windows 8.1%29</Name>
-    </SDKReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>
