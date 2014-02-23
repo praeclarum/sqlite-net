@@ -2862,6 +2862,7 @@ namespace SQLite
 		public TableMapping Table { get; private set; }
 
 		Expression _where;
+		private bool _delete;
 		List<Ordering> _orderBys;
 		int? _limit;
 		int? _offset;
@@ -2890,6 +2891,7 @@ namespace SQLite
 		{
 			var q = new TableQuery<U> (Connection, Table);
 			q._where = _where;
+			q._delete = _delete;
 			q._deferred = _deferred;
 			if (_orderBys != null) {
 				q._orderBys = new List<Ordering> (_orderBys);
@@ -2903,6 +2905,22 @@ namespace SQLite
 			q._joinSelector = _joinSelector;
 			q._selector = _selector;
 			return q;
+		}
+
+		public int DeleteWhere(Expression<Func<T, bool>> predExpr)
+		{
+			if (predExpr.NodeType != ExpressionType.Lambda)
+			{
+				throw new NotSupportedException("Must be a predicate");
+			}
+
+			var lambda = (LambdaExpression)predExpr;
+			var pred = lambda.Body;
+			var q = Clone<T>();
+			q.AddDelete();
+			q.AddWhere(pred);
+
+			return q.GenerateCommand("").ExecuteNonQuery();
 		}
 
 		public TableQuery<T> Where (Expression<Func<T, bool>> predExpr)
@@ -2996,6 +3014,11 @@ namespace SQLite
 				_where = Expression.AndAlso (_where, pred);
 			}
 		}
+
+		private void AddDelete()
+		{
+			_delete = true;
+		}
 				
 		public TableQuery<TResult> Join<TInner, TKey, TResult> (
 			TableQuery<TInner> inner,
@@ -3026,20 +3049,25 @@ namespace SQLite
 				throw new NotSupportedException ("Joins are not supported.");
 			}
 			else {
-				var cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
+				string cmdText;
+				if (_delete) {
+					cmdText = "delete from \"" + Table.TableName + "\"";
+				} else { 
+					cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
+				}
 				var args = new List<object> ();
 				if (_where != null) {
 					var w = CompileExpr (_where, args);
 					cmdText += " where " + w.CommandText;
 				}
-				if ((_orderBys != null) && (_orderBys.Count > 0)) {
+				if (!_delete && (_orderBys != null) && (_orderBys.Count > 0)) {
 					var t = string.Join (", ", _orderBys.Select (o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray ());
 					cmdText += " order by " + t;
 				}
 				if (_limit.HasValue) {
 					cmdText += " limit " + _limit.Value;
 				}
-				if (_offset.HasValue) {
+				if (!_delete && _offset.HasValue) {
 					if (!_limit.HasValue) {
 						cmdText += " limit -1 ";
 					}

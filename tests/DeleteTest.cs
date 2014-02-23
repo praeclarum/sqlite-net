@@ -146,6 +146,18 @@ namespace SQLite.Tests
 			Assert.AreEqual(0, db.Table<TestObjWithOne2Many>().Count());
 			Assert.AreEqual(0,childObjects.Count());
 		}
+
+		[Test]
+		public void DeleteWhere()
+		{
+			var db = CreateDb ();
+
+			int deleted = db.Table<TestTable>().DeleteWhere(table => table.Datum < 1050);
+			Assert.AreEqual(deleted, 50);
+
+			int remaining = db.Table<TestTable>().Count();
+			Assert.AreEqual(remaining, 50);
+		}
 	}
 }
 
