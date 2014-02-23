@@ -1,25 +1,24 @@
 <?xml version="1.0"?>
-<package >
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
         <id>SQLite.Net.Platform.WinRT</id>
-        <version>2.2.0</version>
+        <version>2.1.1</version>
         <title>SQLite.Net PCL - WinRT Platform</title>
-        <authors>Øystein Krog,Frank Krueger,Tim Heuer,Nick Cipollina</authors>
-        <owners>Øystein Krog</owners>
+        <authors>Micah Lewis,Øystein Krog,Frank Krueger,Tim Heuer,Nick Cipollina</authors>
+        <owners>Micah Lewis,Øystein Krog</owners>
         <licenseUrl>https://raw.github.com/oysteinkrog/SQLite.Net-PCL/master/LICENSE.txt</licenseUrl>
         <projectUrl>https://github.com/oysteinkrog/SQLite.Net-PCL</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases. It is written in C# 3.0 and is meant to be simply compiled in with your projects. It was first designed to work with MonoTouch on the iPhone, but should work in any other CLI environment.</description>
+        <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases.  This is a fork of the original sqlite-net project, which aims to cleanup/improve the code and deliver the package as PCL assemblies with some additional platform-specific implementations.  To use this package you will need to install one of the platform packages or write your own implementation of ISQLitePlatform.  This package is compatible with the following .net platforms: net4+sl4+wp7+win8+monotouch+MonoAndroid</description>
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
-        <releaseNotes>v2.2.0: Added a WinRT platform project.</releaseNotes>
+        <releaseNotes>v2.1.1: Added a WinRT platform project.</releaseNotes>
         <tags>sqlite pcl sql winrt database</tags>
         <dependencies>
           <dependency id="SQLite.Net-PCL" />
+          <dependency id="SQLite-WinRT-redist" />
         </dependencies>
     </metadata>
     <files>
-        <file src="SQLite.Net.Platform.WinRT\ARM\SQLite.Net.Platform.WinRT.dll" target="lib\NetCore45\ARM" />
-        <file src="SQLite.Net.Platform.WinRT\x86\SQLite.Net.Platform.WinRT.dll" target="lib\NetCore45\x86" />
-        <file src="SQLite.Net.Platform.WinRT\x64\SQLite.Net.Platform.WinRT.dll" target="lib\NetCore45\x64" />
+        <file src="SQLite.Net.Platform.WinRT\SQLite.Net.Platform.WinRT.dll" target="lib\Windows8" />
     </files>
 </package>
