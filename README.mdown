@@ -22,11 +22,9 @@ I provide ready-made implementations of this class, please see use one(or more) 
 At the moment these platforms have nugets available:
 - Win32 (works on both x86 and x64 automatically) (very well tested)
 - XamarinIOS (very well tested)
-- XamarinAndroid (not very well tested, please let me know how this works for you).
-- WindowsPhone8 (not tested, please let me know if this works for you)
-
-In addition these platforms have implementations available in source:
-- WindowsRT (not tested, please help develop this)
+- XamarinAndroid (not very well tested, please give feedback) 
+- WindowsPhone8 (not very well tested, please give feedback) (contributed by Nick Cipollina, thanks!)
+- WindowsRT (not very well tested, please give feedback) (contributed by Nick Cipollina and Micah Lewis, thanks!)
 
 ## SQliteAsyncConnection
 The SQLiteAsyncConnection class now takes a Func<SQLiteConnectionWithLock> in the constructor instead of a path.
