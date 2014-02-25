@@ -15,7 +15,7 @@
         <tags>sqlite pcl sql winrt database</tags>
         <dependencies>
           <dependency id="SQLite.Net-PCL" />
-          <dependency id="SQLite-WinRT-redist" />
+          <dependency id="SQLite.WinRT.redist" />
         </dependencies>
     </metadata>
     <files>
