@@ -52,7 +52,6 @@ namespace SQLite.Net
 
         private readonly Random _rand = new Random();
 
-        private readonly ISQLitePlatform _sqlitePlatform;
         private TimeSpan _busyTimeout;
         private long _elapsedMilliseconds;
         private Dictionary<string, TableMapping> _mappings;
@@ -108,7 +107,7 @@ namespace SQLite.Net
         public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
             bool storeDateTimeAsTicks = false)
         {
-            _sqlitePlatform = sqlitePlatform;
+            Platform = sqlitePlatform;
 
             if (string.IsNullOrEmpty(databasePath))
             {
@@ -119,7 +118,7 @@ namespace SQLite.Net
 
             IDbHandle handle;
             byte[] databasePathAsBytes = GetNullTerminatedUtf8(DatabasePath);
-            Result r = _sqlitePlatform.SQLiteApi.Open(databasePathAsBytes, out handle, (int) openFlags, IntPtr.Zero);
+            Result r = Platform.SQLiteApi.Open(databasePathAsBytes, out handle, (int) openFlags, IntPtr.Zero);
 
             Handle = handle;
             if (r != Result.OK)
@@ -155,7 +154,7 @@ namespace SQLite.Net
                 _busyTimeout = value;
                 if (Handle != NullHandle)
                 {
-                    _sqlitePlatform.SQLiteApi.BusyTimeout(Handle, (int) _busyTimeout.TotalMilliseconds);
+                    Platform.SQLiteApi.BusyTimeout(Handle, (int) _busyTimeout.TotalMilliseconds);
                 }
             }
         }
@@ -177,6 +176,8 @@ namespace SQLite.Net
             get { return _transactionDepth > 0; }
         }
 
+        public ISQLitePlatform Platform { get; private set; }
+
         public void Dispose()
         {
             Dispose(true);
@@ -185,10 +186,10 @@ namespace SQLite.Net
 
         public void EnableLoadExtension(int onoff)
         {
-            Result r = _sqlitePlatform.SQLiteApi.EnableLoadExtension(Handle, onoff);
+            Result r = Platform.SQLiteApi.EnableLoadExtension(Handle, onoff);
             if (r != Result.OK)
             {
-                string msg = _sqlitePlatform.SQLiteApi.Errmsg16(Handle);
+                string msg = Platform.SQLiteApi.Errmsg16(Handle);
                 throw SQLiteException.New(r, msg);
             }
         }
@@ -223,7 +224,7 @@ namespace SQLite.Net
             TableMapping map;
             if (!_mappings.TryGetValue(type.FullName, out map))
             {
-                map = new TableMapping(_sqlitePlatform, type, createFlags);
+                map = new TableMapping(Platform, type, createFlags);
                 _mappings[type.FullName] = map;
             }
             return map;
@@ -451,7 +452,7 @@ namespace SQLite.Net
         /// <seealso cref="SQLiteCommand.OnInstanceCreated" />
         protected virtual SQLiteCommand NewCommand()
         {
-            return new SQLiteCommand(_sqlitePlatform, this);
+            return new SQLiteCommand(Platform, this);
         }
 
         /// <summary>
@@ -508,7 +509,7 @@ namespace SQLite.Net
             {
                 if (_sw == null)
                 {
-                    _sw = _sqlitePlatform.StopwatchFactory.Create();
+                    _sw = Platform.StopwatchFactory.Create();
                 }
                 _sw.Reset();
                 _sw.Start();
@@ -535,7 +536,7 @@ namespace SQLite.Net
             {
                 if (_sw == null)
                 {
-                    _sw = _sqlitePlatform.StopwatchFactory.Create();
+                    _sw = Platform.StopwatchFactory.Create();
                 }
                 _sw.Reset();
                 _sw.Start();
@@ -661,7 +662,7 @@ namespace SQLite.Net
         /// </returns>
         public TableQuery<T> Table<T>() where T : new()
         {
-            return new TableQuery<T>(_sqlitePlatform, this);
+            return new TableQuery<T>(Platform, this);
         }
 
         /// <summary>
@@ -934,7 +935,7 @@ namespace SQLite.Net
                     // TODO: Mild race here, but inescapable without locking almost everywhere.
                     if (0 <= depth && depth < _transactionDepth)
                     {
-                        _sqlitePlatform.VolatileService.Write(ref _transactionDepth, depth);
+                        Platform.VolatileService.Write(ref _transactionDepth, depth);
                         Execute(cmd + savepoint);
                         return;
                     }
@@ -1212,7 +1213,7 @@ namespace SQLite.Net
 
             if (map.HasAutoIncPK)
             {
-                long id = _sqlitePlatform.SQLiteApi.LastInsertRowid(Handle);
+                long id = Platform.SQLiteApi.LastInsertRowid(Handle);
                 map.SetAutoIncPK(obj, id);
             }
 
@@ -1390,10 +1391,10 @@ namespace SQLite.Net
                             sqlInsertCommand.Dispose();
                         }
                     }
-                    Result r = _sqlitePlatform.SQLiteApi.Close(Handle);
+                    Result r = Platform.SQLiteApi.Close(Handle);
                     if (r != Result.OK)
                     {
-                        string msg = _sqlitePlatform.SQLiteApi.Errmsg16(Handle);
+                        string msg = Platform.SQLiteApi.Errmsg16(Handle);
                         throw SQLiteException.New(r, msg);
                     }
                 }
