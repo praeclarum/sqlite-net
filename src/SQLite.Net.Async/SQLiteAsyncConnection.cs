@@ -261,7 +261,7 @@ namespace SQLite.Net.Async
                 {
                     return conn.Get(predicate);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler);
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate)
