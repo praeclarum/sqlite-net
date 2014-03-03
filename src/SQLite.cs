@@ -98,6 +98,107 @@ namespace SQLite
 		}
 	}
 
+    public class UniqueConstraintViolationException : SQLiteException
+    {
+        // This is intended for use within insert/update loops. It should let you 
+        // know which object caused the exception to be thrown.
+        public  object DataObject { get; private set; }
+
+        protected UniqueConstraintViolationException(SQLite3.Result r, string message)
+            : this (r, message, null)
+        {
+
+        }
+
+        protected UniqueConstraintViolationException(SQLite3.Result r, string message, object obj)
+            : base (r, message)
+        {
+            DataObject = obj;
+        }
+
+        public static new UniqueConstraintViolationException New(SQLite3.Result r, string message)
+        {
+            return new UniqueConstraintViolationException (r, message);
+        }
+
+        public static UniqueConstraintViolationException New(SQLiteException exception, object obj)
+        {
+            return new UniqueConstraintViolationException (exception.Result, exception.Message, obj);
+        }
+    }
+
+    public static class Pragma
+    {
+        public class IndexColumnInfo
+        {
+            [Column ("seqno")]
+            public int SeqNo { get; set; }
+            [Column ("cid")]
+            public string TableRank { get; set; }
+            [Column ("name")]
+            public string Name { get; set; }
+        }
+
+        public class IndexInfo
+        {
+            [Column ("seq")]
+            public int Seq { get; set; }
+            [Column ("name")]
+            public string Name { get; set; }
+            [Column ("unique")]
+            public bool Unique { get; set; }
+
+            public List<IndexColumnInfo> GetColumns(SQLiteConnection db)
+            {
+                return GetIndexInfo (db, Name).ToList ();
+            }
+        }
+
+        public static List<IndexInfo> GetIndexList<T>(SQLiteConnection db)
+        {
+            return GetIndexList (db, typeof (T));
+        }
+
+        public static List<IndexInfo> GetIndexList(SQLiteConnection db, Type type)
+        {
+            if (db == null) {
+                throw new ArgumentNullException ("db");
+            }
+
+            if (type == null) {
+                throw new ArgumentNullException ("type");
+            }
+
+            var map = db.GetMapping (type);
+            var query = string.Format ("pragma index_list (\"{0}\")", map.TableName);
+            return db.Query<IndexInfo> (query).OrderBy (i => i.Seq).ToList();
+        }
+
+        public static List<IndexColumnInfo> GetIndexInfo(SQLiteConnection db, IndexInfo index)
+        {
+            if (index == null) {
+                throw new ArgumentNullException ("listInfo");
+            }
+            return GetIndexInfo (db, index.Name).ToList();
+        }
+
+
+        public static List<IndexColumnInfo> GetIndexInfo(SQLiteConnection db, string indexName)
+        {
+            if (db == null) {
+                throw new ArgumentNullException ("db");
+            }
+
+            if (indexName == null) {
+                throw new ArgumentNullException ("indexName");
+            }
+
+            var query = string.Format ("pragma index_info(\"{0}\")", indexName);
+            IEnumerable<IndexColumnInfo> retVal = db.Query<IndexColumnInfo> (query).OrderBy (c => c.SeqNo);
+            return retVal.ToList();
+        }
+    }
+
 	[Flags]
 	public enum SQLiteOpenFlags {
 		ReadOnly = 1, ReadWrite = 2, Create = 4,
@@ -1258,11 +1359,14 @@ namespace SQLite
 				count = insertCmd.ExecuteNonQuery (vals);
 			}
 			catch (SQLiteException ex) {
-
-				if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-					throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
-				}
-				throw;
+                switch (SQLite3.ExtendedErrCode (this.Handle)) {
+                case SQLite3.ExtendedResult.ConstraintNotNull:
+                    throw NotNullConstraintViolationException.New (ex, map, obj);
+                case SQLite3.ExtendedResult.ConstraintUnique:
+                    throw UniqueConstraintViolationException.New (ex, obj);
+                default:
+                    throw;
+                }
 			}
 
             if (map.HasAutoIncPK)
@@ -1336,12 +1440,14 @@ namespace SQLite
 				rowsAffected = Execute (q, ps.ToArray ());
 			}
 			catch (SQLiteException ex) {
-
-				if (ex.Result == SQLite3.Result.Constraint && SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-					throw NotNullConstraintViolationException.New (ex, map, obj);
-				}
-
-				throw ex;
+                switch (SQLite3.ExtendedErrCode (this.Handle)) {
+                case SQLite3.ExtendedResult.ConstraintNotNull:
+                    throw NotNullConstraintViolationException.New (ex, map, obj);
+                case SQLite3.ExtendedResult.ConstraintUnique:
+                    throw UniqueConstraintViolationException.New (ex, obj);
+                default:
+                    throw ex;
+                }
 			}
 
 			return rowsAffected;
@@ -1427,6 +1533,64 @@ namespace SQLite
 			var query = string.Format("delete from \"{0}\"", map.TableName);
 			return Execute (query);
 		}
+
+        public class ConstraintValidationInfo
+        {
+            public string ConstraintName { get; private set; }
+            public TableMapping.Column[] Columns { get; private set; }
+
+            public ConstraintValidationInfo(string name, IEnumerable<TableMapping.Column> columns)
+            {
+                ConstraintName = name;
+
+                if (columns == null) {
+                    Columns =   new TableMapping.Column[0];
+                } else {
+                    Columns = columns.ToArray ();
+                }
+            }
+        }
+
+        public List<ConstraintValidationInfo> ValidateUniqueConstraints(object obj)
+        {
+            if (obj == null) {
+                return ValidateUniqueConstraints(null, null);
+            }
+            return ValidateUniqueConstraints (obj, obj.GetType ());
+        }
+
+        public List<ConstraintValidationInfo> ValidateUniqueConstraints(object obj, Type objType)
+        {
+            var constraints = new List<ConstraintValidationInfo> ();
+            var map = GetMapping(objType);
+            var pk = map.PK;
+
+            if (obj == null) {
+                return constraints;
+            }
+
+            if (objType == null) {
+                objType = obj.GetType ();
+            }
+
+            var indices = Pragma.GetIndexList (this, objType).Where(i => i.Unique);
+            foreach (Pragma.IndexInfo index in indices) {
+                var columns = Pragma.GetIndexInfo (this, index);
+                var query = string.Format ("select count(*) from \"{0}\" where {1} {2}"
+                                            , map.TableName
+                                            , string.Join (" and ", columns.Select (c => string.Format ("\"{0}\" = ?", c.Name)))
+                                            , string.Format(" and \"{0}\" <> ?", pk.Name));
+                var mappingColumns = columns.Select(c => map.FindColumn(c.Name));
+                var values = new List<object> (mappingColumns.Select(c => c.GetValue (obj)));
+                values.Add (pk.GetValue (obj));
+                var numRows = this.ExecuteScalar<int> (query, values.ToArray());
+                if (numRows > 0) {
+                    constraints.Add (new ConstraintValidationInfo(index.Name, mappingColumns));
+                }
+            }
+ 
+            return constraints;
+        }
 
 		~SQLiteConnection ()
 		{
@@ -1525,7 +1689,7 @@ namespace SQLite
 	{
 	}
 
-	[AttributeUsage (AttributeTargets.Property)]
+    [AttributeUsage (AttributeTargets.Property, AllowMultiple = true)]
 	public class IndexedAttribute : Attribute
 	{
 		public string Name { get; set; }
@@ -1548,7 +1712,7 @@ namespace SQLite
 	{
 	}
 
-	[AttributeUsage (AttributeTargets.Property)]
+    [AttributeUsage (AttributeTargets.Property, AllowMultiple = true)]
 	public class UniqueAttribute : IndexedAttribute
 	{
 		public override bool Unique {
@@ -1972,9 +2136,16 @@ namespace SQLite
 				throw SQLiteException.New (r, msg);
 			}
 			else if (r == SQLite3.Result.Constraint) {
-				if (SQLite3.ExtendedErrCode (_conn.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-					throw NotNullConstraintViolationException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-				}
+                SQLite3.ExtendedResult err = SQLite3.ExtendedErrCode (_conn.Handle); // MUST do this before calling GetErrMsg
+                string msg = SQLite3.GetErrmsg (_conn.Handle);
+                switch (SQLite3.ExtendedErrCode (_conn.Handle)) {
+                case SQLite3.ExtendedResult.ConstraintNotNull:
+                    throw NotNullConstraintViolationException.New (r, msg);
+                case SQLite3.ExtendedResult.ConstraintUnique:
+                    throw UniqueConstraintViolationException.New (r, msg);
+                default:
+                    throw SQLiteException.New (r, msg);
+                }
 			}
 
 			throw SQLiteException.New(r, r.ToString());
