@@ -131,6 +131,27 @@ namespace SQLite.Net
             return q;
         }
 
+        public int Delete(Expression<Func<T, bool>> predExpr)
+        {
+            if (predExpr.NodeType == ExpressionType.Lambda)
+            {
+                var lambda = (LambdaExpression) predExpr;
+                var pred = lambda.Body;
+                var args = new List<object>();
+                var w = CompileExpr(pred, args);
+                var cmdText = "delete from \"" + Table.TableName + "\"";
+                cmdText += " where " + w.CommandText;
+                var command = Connection.CreateCommand(cmdText, args.ToArray());
+
+                var result = command.ExecuteNonQuery();
+                return result;
+            }
+            else
+            {
+                throw new NotSupportedException("Must be a predicate");
+            }
+        }
+
         [PublicAPI]
         public TableQuery<T> Skip(int n)
         {
