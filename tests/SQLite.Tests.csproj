@@ -71,6 +71,5 @@
     <Compile Include="MigrationTest.cs" />
     <Compile Include="EqualsTest.cs" />
     <Compile Include="DateTimeOffsetTest.cs" />
-    <Compile Include="DeleteExtensions.cs" />
   </ItemGroup>
 </Project>
