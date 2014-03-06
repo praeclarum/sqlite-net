@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using SQLite.Net.Async;
 using SQLite.Net.Attributes;
@@ -19,9 +20,9 @@ namespace SQLite.Net.Tests
         }
 
 
-        private void TestAsyncDateTime(SQLiteAsyncConnection db)
+        private async Task TestAsyncDateTime(SQLiteAsyncConnection db)
         {
-            db.CreateTableAsync<TestObj>().Wait();
+            await db.CreateTableAsync<TestObj>();
 
             TestObj o, o2;
 
@@ -32,8 +33,8 @@ namespace SQLite.Net.Tests
             {
                 ModifiedTime = new DateTime(2012, 1, 14, 3, 2, 1),
             };
-            db.InsertAsync(o).Wait();
-            o2 = db.GetAsync<TestObj>(o.Id).Result;
+            await db.InsertAsync(o);
+            o2 = await db.GetAsync<TestObj>(o.Id);
             Assert.AreEqual(o.ModifiedTime, o2.ModifiedTime);
         }
 
