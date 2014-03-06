@@ -16,6 +16,21 @@ namespace SQLite.Net.Platform.WindowsPhone8
             return ret;
         }
 
+        public ExtendedResult ExtendedErrCode(IDbHandle db)
+        {
+            // not supported
+            return 0;
+//            var dbHandle = (DbHandle)db;
+//            return Sqlite3.sqlite3_extended_errcode(dbHandle.InternalDbHandle);
+        }
+
+        public int LibVersionNumber()
+        {
+            // not supported
+            return 0;
+//            return Sqlite3.sqlite3_libversion_number();
+        }
+
         public Result EnableLoadExtension(IDbHandle db, int onoff)
         {
             var dbHandle = (DbHandle)db;

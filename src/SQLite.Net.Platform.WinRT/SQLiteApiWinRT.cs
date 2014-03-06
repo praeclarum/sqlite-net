@@ -147,6 +147,11 @@ namespace SQLite.Net.Platform.WinRT
             return (ColType)SQLite3.ColumnType(dbStatement.InternalStmt, index);
         }
 
+        public int LibVersionNumber()
+        {
+            return SQLite3.sqlite3_libversion_number();
+        }
+
         public Result EnableLoadExtension(IDbHandle db, int onoff)
         {
             return (Result)1;
@@ -177,6 +182,12 @@ namespace SQLite.Net.Platform.WinRT
             var ret = (Result)SQLite3.Open(filename, out internalDbHandle, flags, zvfs);
             db = new DbHandle(internalDbHandle);
             return ret;
+        }
+
+        public ExtendedResult ExtendedErrCode(IDbHandle db)
+        {
+            var dbHandle = (DbHandle)db;
+            return SQLite3.sqlite3_extended_errcode(dbHandle.InternalDbHandle);
         }
 
         public IDbStatement Prepare2(IDbHandle db, string query)
@@ -359,5 +370,11 @@ namespace SQLite.Net.Platform.WinRT
                 Marshal.Copy(ColumnBlob(stmt, index), result, 0, length);
             return result;
         }
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_extended_errcode", CallingConvention = CallingConvention.Cdecl)]
+        public static extern ExtendedResult sqlite3_extended_errcode(IntPtr db);
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int sqlite3_libversion_number();
     }
 }
