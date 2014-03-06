@@ -50,6 +50,7 @@
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />
     <Compile Include="NullableTest.cs" />
+    <Compile Include="PragmaTest.cs" />
     <Compile Include="DropTableTest.cs" />
     <Compile Include="LinqTest.cs" />
     <Compile Include="TestDb.cs" />
