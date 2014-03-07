@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using SQLite.Net.Interop;
+using System.Reflection;
 
 namespace SQLite.Net.Platform.Win32
 {
@@ -10,21 +12,14 @@ namespace SQLite.Net.Platform.Win32
         {
             // load native library
             int ptrSize = Marshal.SizeOf(typeof (IntPtr));
-            if (ptrSize == 8)
+            string relativePath = ptrSize == 8 ? @"x64\SQLite.Interop.dll" : @"x86\SQLite.Interop.dll";
+            string currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string interopPath = Path.Combine(currentPath, relativePath);
+
+            IntPtr ret = LoadLibrary(interopPath);
+            if (ret == IntPtr.Zero)
             {
-                IntPtr ret = LoadLibrary(@"x64\SQLite.Interop.dll");
-                if (ret == IntPtr.Zero)
-                {
-                    throw new Exception("Failed to load native sqlite library");
-                }
-            }
-            else if (ptrSize == 4)
-            {
-                IntPtr ret = LoadLibrary(@"x86\SQLite.Interop.dll");
-                if (ret == IntPtr.Zero)
-                {
-                    throw new Exception("Failed to load native sqlite library");
-                }
+                throw new Exception("Failed to load native sqlite library");
             }
         }
 
