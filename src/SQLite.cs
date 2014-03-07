@@ -1270,7 +1270,10 @@ namespace SQLite
 				var id = SQLite3.LastInsertRowid (Handle);
 				map.SetAutoIncPK (obj, id);
 			}
-			
+
+			if (count > 0)
+				OnTableChanged (map, NotifyTableChangedAction.Insert);
+
 			return count;
 		}
 
@@ -1344,6 +1347,9 @@ namespace SQLite
 				throw ex;
 			}
 
+			if (rowsAffected > 0)
+				OnTableChanged (map, NotifyTableChangedAction.Update);
+
 			return rowsAffected;
 		}
 
@@ -1384,7 +1390,10 @@ namespace SQLite
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
 			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-			return Execute (q, pk.GetValue (objectToDelete));
+			var count = Execute (q, pk.GetValue (objectToDelete));
+			if (count > 0)
+				OnTableChanged (map, NotifyTableChangedAction.Delete);
+			return count;
 		}
 
 		/// <summary>
@@ -1407,7 +1416,10 @@ namespace SQLite
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
 			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-			return Execute (q, primaryKey);
+			var count = Execute (q, primaryKey);
+			if (count > 0)
+				OnTableChanged (map, NotifyTableChangedAction.Delete);
+			return count;
 		}
 
 		/// <summary>
@@ -1425,7 +1437,10 @@ namespace SQLite
 		{
 			var map = GetMapping (typeof (T));
 			var query = string.Format("delete from \"{0}\"", map.TableName);
-			return Execute (query);
+			var count = Execute (query);
+			if (count > 0)
+				OnTableChanged (map, NotifyTableChangedAction.Delete);
+			return count;
 		}
 
 		~SQLiteConnection ()
@@ -1465,6 +1480,34 @@ namespace SQLite
 				}
 			}
 		}
+
+		void OnTableChanged (TableMapping table, NotifyTableChangedAction action)
+		{
+			var ev = TableChanged;
+			if (ev != null)
+				ev (this, new NotifyTableChangedEventArgs (table, action));
+		}
+
+		public event EventHandler<NotifyTableChangedEventArgs> TableChanged;
+	}
+
+	public class NotifyTableChangedEventArgs : EventArgs
+	{
+		public TableMapping Table { get; private set; }
+		public NotifyTableChangedAction Action { get; private set; }
+
+		public NotifyTableChangedEventArgs (TableMapping table, NotifyTableChangedAction action)
+		{
+			Table = table;
+			Action = action;		
+		}
+	}
+
+	public enum NotifyTableChangedAction
+	{
+		Insert,
+		Update,
+		Delete,
 	}
 
 	/// <summary>
