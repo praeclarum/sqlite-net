@@ -404,12 +404,26 @@ namespace SQLite
 
 			foreach (var indexName in indexes.Keys) {
 				var index = indexes[indexName];
-				var columns = String.Join("\",\"", index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray());
+				var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
                 count += CreateIndex(indexName, index.TableName, columns, index.Unique);
 			}
 			
 			return count;
 		}
+
+        /// <summary>
+        /// Creates an index for the specified table and columns.
+        /// </summary>
+        /// <param name="indexName">Name of the index to create</param>
+        /// <param name="tableName">Name of the database table</param>
+        /// <param name="columnNames">An array of column names to index</param>
+        /// <param name="unique">Whether the index should be unique</param>
+        public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
+        {
+            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
+            var sql = String.Format(sqlFormat, tableName, string.Join ("\", \"", columnNames), unique ? "unique" : "", indexName);
+            return Execute(sql);
+        }
 
         /// <summary>
         /// Creates an index for the specified table and column.
@@ -420,9 +434,7 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
         {
-            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
-            var sql = String.Format(sqlFormat, tableName, columnName, unique ? "unique" : "", indexName);
-            return Execute(sql);
+            return CreateIndex(indexName, tableName, new string[] { columnName }, unique);
         }
         
         /// <summary>
@@ -433,7 +445,18 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public int CreateIndex(string tableName, string columnName, bool unique = false)
         {
-            return CreateIndex(string.Concat(tableName, "_", columnName.Replace("\",\"", "_")), tableName, columnName, unique);
+            return CreateIndex(tableName + "_" + columnName, tableName, columnName, unique);
+        }
+
+        /// <summary>
+        /// Creates an index for the specified table and columns.
+        /// </summary>
+        /// <param name="tableName">Name of the database table</param>
+        /// <param name="columnNames">An array of column names to index</param>
+        /// <param name="unique">Whether the index should be unique</param>
+        public int CreateIndex(string tableName, string[] columnNames, bool unique = false)
+        {
+            return CreateIndex(tableName + "_" + string.Join ("_", columnNames), tableName, columnNames, unique);
         }
 
         /// <summary>
@@ -2979,10 +3002,20 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Prepare2 (IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
 
+#if NETFX_CORE
+		[DllImport ("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Prepare2 (IntPtr db, byte[] queryBytes, int numBytes, out IntPtr stmt, IntPtr pzTail);
+#endif
+
 		public static IntPtr Prepare2 (IntPtr db, string query)
 		{
 			IntPtr stmt;
-			var r = Prepare2 (db, query, System.Text.UTF8Encoding.UTF8.GetByteCount(query), out stmt, IntPtr.Zero);
+#if NETFX_CORE
+            byte[] queryBytes = System.Text.UTF8Encoding.UTF8.GetBytes (query);
+            var r = Prepare2 (db, queryBytes, queryBytes.Length, out stmt, IntPtr.Zero);
+#else
+            var r = Prepare2 (db, query, System.Text.UTF8Encoding.UTF8.GetByteCount (query), out stmt, IntPtr.Zero);
+#endif
 			if (r != Result.OK) {
 				throw SQLiteException.New (r, GetErrmsg (db));
 			}
@@ -3087,10 +3120,10 @@ namespace SQLite
 		[DllImport ("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int LibVersionNumber ();
 #else
-        public static Result Open(string filename, out Sqlite3DatabaseHandle db)
-        {
-            return (Result) Sqlite3.sqlite3_open(filename, out db);
-        }
+		public static Result Open(string filename, out Sqlite3DatabaseHandle db)
+		{
+			return (Result) Sqlite3.sqlite3_open(filename, out db);
+		}
 
 		public static Result Open(string filename, out Sqlite3DatabaseHandle db, int flags, IntPtr zVfs)
 		{
@@ -3100,11 +3133,6 @@ namespace SQLite
 			return (Result)Sqlite3.sqlite3_open_v2(filename, out db, flags, null);
 #endif
 		}
-
-    public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
-    {
-      return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
-    }
 
 		public static Result Close(Sqlite3DatabaseHandle db)
 		{
@@ -3273,6 +3301,11 @@ namespace SQLite
 		public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
 		{
 			return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
+		}
+
+		public static ExtendedResult ExtendedErrCode(Sqlite3DatabaseHandle db)
+		{
+			return (ExtendedResult)Sqlite3.sqlite3_extended_errcode(db);
 		}
 #endif
 
