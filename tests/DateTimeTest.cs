@@ -71,21 +71,21 @@ namespace SQLite.Net.Tests
         }
 
         [Test]
-        public void AsyncAsString()
+        public async Task AsyncAsString()
         {
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformWin32());
             var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), false);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
-            TestAsyncDateTime(db);
+            await TestAsyncDateTime(db);
         }
 
         [Test]
-        public void AsyncAsTicks()
+        public async Task AsyncAsTicks()
         {
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformWin32());
             var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), true);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
-            TestAsyncDateTime(db);
+            await TestAsyncDateTime(db);
         }
     }
 }
