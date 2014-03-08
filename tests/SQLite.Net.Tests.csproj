@@ -49,6 +49,7 @@
     <Compile Include="BooleanTest.cs" />
     <Compile Include="ByteArrayTest.cs" />
     <Compile Include="ConnectionTrackingTest.cs" />
+    <Compile Include="TimeSpanTest.cs" />
     <Compile Include="ExceptionAssert.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
