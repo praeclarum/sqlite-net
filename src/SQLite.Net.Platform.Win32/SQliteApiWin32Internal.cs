@@ -13,8 +13,11 @@ namespace SQLite.Net.Platform.Win32
             // load native library
             int ptrSize = Marshal.SizeOf(typeof (IntPtr));
             string relativePath = ptrSize == 8 ? @"x64\SQLite.Interop.dll" : @"x86\SQLite.Interop.dll";
-            string currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string interopPath = Path.Combine(currentPath, relativePath);
+            string assemblyCurrentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string assemblyInteropPath = Path.Combine(assemblyCurrentPath, relativePath);
+
+            // try relative to assembly first, if that does not exist try relative to working dir
+            string interopPath = File.Exists(assemblyInteropPath) ? assemblyInteropPath : relativePath;
 
             IntPtr ret = LoadLibrary(interopPath);
             if (ret == IntPtr.Zero)
