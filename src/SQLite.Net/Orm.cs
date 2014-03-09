@@ -31,7 +31,6 @@ namespace SQLite.Net
 {
     public static class Orm
     {
-        public const int DefaultMaxStringLength = 140;
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
 
