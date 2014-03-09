@@ -172,6 +172,8 @@ namespace SQLite.Tests
 
                     Assert.IsTrue (exceptionCaught, "Expected an exception of type UniqueConstraintViolationException to be thrown. No exception was thrown.");
                 }
+            } else {
+                Inconclusive ();
             }
         }
 
@@ -200,6 +202,8 @@ namespace SQLite.Tests
 
                     Assert.IsTrue (exceptionCaught, "Expected an exception of type UniqueConstraintViolationException to be thrown. No exception was thrown.");
                 }
+            } else {
+                Inconclusive ();
             }
         }
 
@@ -225,6 +229,8 @@ namespace SQLite.Tests
 
                     Assert.IsTrue (exceptionCaught, "Expected an exception of type UniqueConstraintViolationException to be thrown. No exception was thrown.");
                 }
+            } else {
+                Inconclusive ();
             }
         }
 
@@ -253,11 +259,13 @@ namespace SQLite.Tests
 
                     Assert.IsTrue (exceptionCaught, "Expected an exception of type UniqueConstraintViolationException to be thrown. No exception was thrown.");
                 }
+            } else {
+                Inconclusive ();
             }
         }
 
         [Test]
-        public void GetMultipleFailedConstraints()
+        public void ValidateConstraintsInExceptionHandler()
         {
             using (var db = new TestDb ()) {
                 bool exceptionCaught = false;
@@ -272,53 +280,30 @@ namespace SQLite.Tests
                     db.Insert (obj);
                     obj.ID = 0;
                     db.Insert (obj);
-                } catch (UniqueConstraintViolationException) {
-                    exceptionCaught = true;
+                } catch (Exception ex) {
+                    if (SQLite3.LibVersionNumber () >= 3007017) {
+                        if (ex is UniqueConstraintViolationException) {
+                            exceptionCaught = true;
+                        }
+                    } else if (ex is SQLiteException && ((SQLiteException)ex).Result == SQLite3.Result.Constraint) {
+                        exceptionCaught = true;
+                    }
+
                     validationIssues = (List<SQLiteConnection.ConstraintValidationInfo>)db.ValidateUniqueConstraints (obj);
                     Assert.AreEqual (2, validationIssues.Count);
-                    var sorted = validationIssues.OrderBy (i => i.ConstraintName).ToArray();
+                    var sorted = validationIssues.OrderBy (i => i.ConstraintName).ToArray ();
                     Assert.AreEqual ("UX_One", sorted[0].ConstraintName);
                     Assert.AreEqual ("UX_Two", sorted[1].ConstraintName);
                     Assert.AreEqual ("One, Two", string.Join (", ", sorted[0].Columns.Select (c => c.Name)));
                     Assert.AreEqual ("Two, Three", string.Join (", ", sorted[1].Columns.Select (c => c.Name)));
                 }
 
-                Assert.IsTrue (exceptionCaught, "Expected an exception of type UniqueConstraintViolationException to be thrown. No exception was thrown.");
+                Assert.IsTrue (exceptionCaught, "Expected an exception of type UniqueConstraintViolationException or SQLiteException to be thrown. No exception was thrown.");
             }
         }
 
         [Test]
-        public void GetSingleFailedConstraint()
-        {
-            using (var db = new TestDb ()) {
-                bool exceptionCaught = false;
-                TheThree obj = new TheThree ();
-                List<SQLiteConnection.ConstraintValidationInfo> validationIssues;
-
-                try {
-                    db.CreateTable<TheThree> ();
-                    obj.One = 1;
-                    obj.Two = 2;
-                    obj.Three = 3;
-                    db.Insert (obj);
-                    obj.ID = 0;
-                    obj.Three = 0;
-                    db.Insert (obj);
-                } catch (UniqueConstraintViolationException) {
-                    exceptionCaught = true;
-                    validationIssues = (List<SQLiteConnection.ConstraintValidationInfo>)db.ValidateUniqueConstraints (obj);
-                    Assert.AreEqual (1, validationIssues.Count);
-                    Assert.AreEqual ("UX_One", validationIssues[0].ConstraintName);
-                    Assert.AreEqual ("One", validationIssues[0].Columns[0].Name);
-                    Assert.AreEqual ("Two", validationIssues[0].Columns[1].Name);
-                }
-
-                Assert.IsTrue (exceptionCaught, "Expected an exception of type UniqueConstraintViolationException to be thrown. No exception was thrown.");
-            }
-        }
-
-        [Test]
-        public void PrevalidateObjectWithViolations()
+        public void ValidateConstraints()
         {
             using (var db = new TestDb ()) {
                 TheThree obj = new TheThree ();
@@ -330,17 +315,18 @@ namespace SQLite.Tests
                 obj.Three = 3;
                 db.Insert (obj);
                 obj.ID = 0;
-                obj.One = 0;
-                validationIssues = db.ValidateUniqueConstraints (obj);
+                obj.Three = 0;
+
+                validationIssues = (List<SQLiteConnection.ConstraintValidationInfo>)db.ValidateUniqueConstraints (obj);
                 Assert.AreEqual (1, validationIssues.Count);
-                Assert.AreEqual ("UX_Two", validationIssues[0].ConstraintName);
-                Assert.AreEqual ("Two", validationIssues[0].Columns[0].Name);
-                Assert.AreEqual ("Three", validationIssues[0].Columns[1].Name);
+                Assert.AreEqual ("UX_One", validationIssues[0].ConstraintName);
+                Assert.AreEqual ("One", validationIssues[0].Columns[0].Name);
+                Assert.AreEqual ("Two", validationIssues[0].Columns[1].Name);
             }
         }
 
         [Test]
-        public void PrevalidateObjectWithNoViolations()
+        public void ValidateWithNoViolations()
         {
             using (var db = new TestDb ()) {
                 TheThree obj = new TheThree ();
@@ -359,8 +345,6 @@ namespace SQLite.Tests
                 Assert.AreEqual (0, validationIssues.Count);
             }
         }
-
-
 
         [Test]
         public void ValidationIgnoresNonUniqueIndices()
@@ -397,5 +381,14 @@ namespace SQLite.Tests
 				Assert.IsNotNull (idx_columns.SingleOrDefault (c => c.Name == col), String.Format ("Column {0} not in index {1}", col, idx.Name));
 			}
 		}
+
+        void Inconclusive()
+        {
+#if NETFX_CORE
+            Assert.Inconclusive ("Specific exception information is only available in SQLite3 version 3.7.17 and above.");
+#else
+            Assert.Ignore ("Specific constraint exception information is only available in SQLite3 version 3.7.17 and above.");
+#endif
+        }
 	}
 }
