@@ -166,6 +166,9 @@
     <Compile Include="..\NullableTest.cs">
       <Link>NullableTest.cs</Link>
     </Compile>
+    <Compile Include="..\PragmaTest.cs">
+      <Link>PragmaTest.cs</Link>
+    </Compile>
     <Compile Include="..\SkipTest.cs">
       <Link>SkipTest.cs</Link>
     </Compile>
