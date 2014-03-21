@@ -56,11 +56,18 @@ namespace SQLite.Tests
 			var n = 500;
 			var errors = new List<string> ();
 			for (var i = 0; i < n; i++) {
-				Task.Factory.StartNew (delegate {
+				var ii = i;
+
+#if NETFX_CORE
+                Task.Run (
+#else
+				var th = new Thread ((ThreadStart)
+#endif
+                delegate {
 					try {
 						var conn = GetConnection ();
 						var obj = new Customer {
-							FirstName = i.ToString (),
+							FirstName = ii.ToString (),
 						};
 						conn.InsertAsync (obj).Wait ();
 						if (obj.Id == 0) {
@@ -85,6 +92,10 @@ namespace SQLite.Tests
 						doneEvent.Set();
 					}
 				});
+
+#if !NETFX_CORE
+				th.Start ();
+#endif
 			}
 			doneEvent.WaitOne ();
 			
