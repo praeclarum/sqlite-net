@@ -404,8 +404,11 @@ namespace SQLite.Tests
 
         void Inconclusive()
         {
-#if !NETFX_CORE
-            Console.WriteLine ("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
+            string message = "Detailed constraint information is only available in SQLite3 version 3.7.17 and above.";
+#if NETFX_CORE
+            throw new AssertInconclusiveException (message);
+#else
+            throw new IgnoreException (message);
 #endif
         }
 	}
