@@ -4,7 +4,18 @@ using System.Linq;
 using NUnit.Framework;
 using SQLite.Net.Attributes;
 using SQLite.Net.Interop;
-using SQLite.Net.Platform.Win32;
+
+#if __WIN32__
+using SQLitePlatformTest=SQLite.Net.Platform.Win32.SQLitePlatformWin32;
+#elif NETFX_CORE
+using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
+#elif WINDOWS_PHONE
+using SQLitePlatformTest = SQLite.Net.Platform.WindowsPhone8.SQLitePlatformWP8;
+#elif __IOS__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
+#elif __ANDROID__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndroid;
+#endif
 
 namespace SQLite.Net.Tests
 {
@@ -27,7 +38,7 @@ namespace SQLite.Net.Tests
         public class TestDb : SQLiteConnection
         {
             public TestDb(String path)
-                : base(new SQLitePlatformWin32(), path)
+                : base(new SQLitePlatformTest(), path)
             {
                 CreateTable<TestObj>();
             }
@@ -36,7 +47,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void AutoGuid_EmptyGuid()
         {
-            var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
+            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.GetTempFileName());
             db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
 
             var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
@@ -66,7 +77,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void AutoGuid_HasGuid()
         {
-            var db = new SQLiteConnection(new SQLitePlatformWin32(), TestPath.GetTempFileName());
+            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.GetTempFileName());
             db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
 
             var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");

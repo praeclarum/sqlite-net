@@ -1,7 +1,18 @@
 ﻿using System.Linq;
 using NUnit.Framework;
 using SQLite.Net.Attributes;
-using SQLite.Net.Platform.Win32;
+
+#if __WIN32__
+using SQLitePlatformTest=SQLite.Net.Platform.Win32.SQLitePlatformWin32;
+#elif NETFX_CORE
+using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
+#elif WINDOWS_PHONE
+using SQLitePlatformTest = SQLite.Net.Platform.WindowsPhone8.SQLitePlatformWP8;
+#elif __IOS__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
+#elif __ANDROID__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndroid;
+#endif
 
 namespace SQLite.Net.Tests
 {
@@ -11,10 +22,10 @@ namespace SQLite.Net.Tests
         [SetUp]
         public void SetUp()
         {
-            _sqlite3Platform = new SQLitePlatformWin32();
+            _sqlite3Platform = new SQLitePlatformTest();
         }
 
-        private SQLitePlatformWin32 _sqlite3Platform;
+        private SQLitePlatformTest _sqlite3Platform;
 
         public class ByteArrayClass
         {

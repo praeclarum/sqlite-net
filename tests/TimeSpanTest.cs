@@ -3,7 +3,18 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using SQLite.Net.Async;
 using SQLite.Net.Attributes;
-using SQLite.Net.Platform.Win32;
+
+#if __WIN32__
+using SQLitePlatformTest=SQLite.Net.Platform.Win32.SQLitePlatformWin32;
+#elif NETFX_CORE
+using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
+#elif WINDOWS_PHONE
+using SQLitePlatformTest = SQLite.Net.Platform.WindowsPhone8.SQLitePlatformWP8;
+#elif __IOS__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
+#elif __ANDROID__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndroid;
+#endif
 
 namespace SQLite.Net.Tests
 {
@@ -35,7 +46,7 @@ namespace SQLite.Net.Tests
         [Test]
         public async Task TestTimeSpan()
         {
-            var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformWin32());
+            var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
             var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), true);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
             await TestAsyncDateTime(db);

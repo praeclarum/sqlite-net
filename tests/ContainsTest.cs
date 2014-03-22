@@ -3,7 +3,18 @@ using System.Linq;
 using NUnit.Framework;
 using SQLite.Net.Attributes;
 using SQLite.Net.Interop;
-using SQLite.Net.Platform.Win32;
+
+#if __WIN32__
+using SQLitePlatformTest=SQLite.Net.Platform.Win32.SQLitePlatformWin32;
+#elif NETFX_CORE
+using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
+#elif WINDOWS_PHONE
+using SQLitePlatformTest = SQLite.Net.Platform.WindowsPhone8.SQLitePlatformWP8;
+#elif __IOS__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
+#elif __ANDROID__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndroid;
+#endif
 
 namespace SQLite.Net.Tests
 {
@@ -42,7 +53,7 @@ namespace SQLite.Net.Tests
                     Name = i.ToString()
                 };
 
-            var db = new TestDb(new SQLitePlatformWin32(), TestPath.GetTempFileName());
+            var db = new TestDb(new SQLitePlatformTest(), TestPath.GetTempFileName());
 
             db.InsertAll(cq);
 
@@ -67,7 +78,7 @@ namespace SQLite.Net.Tests
                     Name = i.ToString()
                 };
 
-            var db = new TestDb(new SQLitePlatformWin32(), TestPath.GetTempFileName());
+            var db = new TestDb(new SQLitePlatformTest(), TestPath.GetTempFileName());
 
             db.InsertAll(cq);
 
