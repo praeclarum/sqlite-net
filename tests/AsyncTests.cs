@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -160,10 +161,11 @@ namespace SQLite.Net.Tests
             await globalConn.CreateTableAsync<Customer>();
 
             int n = 500;
-            var errors = new List<string>();
+            var errors = new ConcurrentBag<string>();
             var tasks = new List<Task>();
             for (int i = 0; i < n; i++)
             {
+                int i1 = i;
                 tasks.Add(Task.Factory.StartNew(async delegate
                 {
                     try
@@ -171,32 +173,23 @@ namespace SQLite.Net.Tests
                         SQLiteAsyncConnection conn = GetConnection();
                         var obj = new Customer
                         {
-                            FirstName = i.ToString(),
+                            FirstName = i1.ToString(),
                         };
                         await conn.InsertAsync(obj);
                         if (obj.Id == 0)
                         {
-                            lock (errors)
-                            {
-                                errors.Add("Bad Id");
-                            }
+                            errors.Add("Bad id");
                         }
                         var obj3 = await (from c in conn.Table<Customer>() where c.Id == obj.Id select c).ToListAsync();
                         Customer obj2 = obj3.FirstOrDefault();
                         if (obj2 == null)
                         {
-                            lock (errors)
-                            {
-                                errors.Add("Failed query");
-                            }
+                            errors.Add("Failed query");
                         }
                     }
                     catch (Exception ex)
                     {
-                        lock (errors)
-                        {
-                            errors.Add(ex.Message);
-                        }
+                        errors.Add(ex.Message);
                     }
                 }));
             }
