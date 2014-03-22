@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4B386F57-D313-4842-AE9B-F54EDBF1EBD5}</ProjectGuid>
+    <ProjectTypeGuids>{6BC8ED88-2882-458C-8E55-DFD12B67127B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SQLite.Net.Tests.XamarinIOS</RootNamespace>
+    <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
+    <AssemblyName>SQLiteNetTestsXamarinIOS</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Debug</OutputPath>
+    <DefineConstants>DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <MtouchLink>None</MtouchLink>
+    <MtouchDebug>true</MtouchDebug>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <MtouchLink>None</MtouchLink>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhone\Debug</OutputPath>
+    <DefineConstants>DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <MtouchDebug>true</MtouchDebug>
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhone\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+    <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+    <CodesignKey>iPhone Distribution</CodesignKey>
+    <BuildIpa>True</BuildIpa>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+    <OutputPath>bin\iPhone\AppStore</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+    <CodesignKey>iPhone Distribution</CodesignKey>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\AsyncTests.cs">
+      <Link>Tests\AsyncTests.cs</Link>
+    </Compile>
+    <Compile Include="..\BooleanTest.cs">
+      <Link>Tests\BooleanTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ByteArrayTest.cs">
+      <Link>Tests\ByteArrayTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CollateTest.cs">
+      <Link>Tests\CollateTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ConnectionTrackingTest.cs">
+      <Link>Tests\ConnectionTrackingTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ContainsTest.cs">
+      <Link>Tests\ContainsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CreateTableImplicitTest.cs">
+      <Link>Tests\CreateTableImplicitTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CreateTableTest.cs">
+      <Link>Tests\CreateTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DateTimeTest.cs">
+      <Link>Tests\DateTimeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DeleteTest.cs">
+      <Link>Tests\DeleteTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DropTableTest.cs">
+      <Link>Tests\DropTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\EqualsTest.cs">
+      <Link>Tests\EqualsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ExceptionAssert.cs">
+      <Link>Tests\ExceptionAssert.cs</Link>
+    </Compile>
+    <Compile Include="..\ExpressionTests.cs">
+      <Link>Tests\ExpressionTests.cs</Link>
+    </Compile>
+    <Compile Include="..\GuidTests.cs">
+      <Link>Tests\GuidTests.cs</Link>
+    </Compile>
+    <Compile Include="..\InheritanceTest.cs">
+      <Link>Tests\InheritanceTest.cs</Link>
+    </Compile>
+    <Compile Include="..\InsertTest.cs">
+      <Link>Tests\InsertTest.cs</Link>
+    </Compile>
+    <Compile Include="..\JoinTest.cs">
+      <Link>Tests\JoinTest.cs</Link>
+    </Compile>
+    <Compile Include="..\LinqTest.cs">
+      <Link>Tests\LinqTest.cs</Link>
+    </Compile>
+    <Compile Include="..\MappingTest.cs">
+      <Link>Tests\MappingTest.cs</Link>
+    </Compile>
+    <Compile Include="..\MigrationTest.cs">
+      <Link>Tests\MigrationTest.cs</Link>
+    </Compile>
+    <Compile Include="..\NullableTest.cs">
+      <Link>Tests\NullableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\OpenTests.cs">
+      <Link>Tests\OpenTests.cs</Link>
+    </Compile>
+    <Compile Include="..\ScalarTest.cs">
+      <Link>Tests\ScalarTest.cs</Link>
+    </Compile>
+    <Compile Include="..\SkipTest.cs">
+      <Link>Tests\SkipTest.cs</Link>
+    </Compile>
+    <Compile Include="..\StringQueryTest.cs">
+      <Link>Tests\StringQueryTest.cs</Link>
+    </Compile>
+    <Compile Include="..\TestDb.cs">
+      <Link>Tests\TestDb.cs</Link>
+    </Compile>
+    <Compile Include="..\TimeSpanTest.cs">
+      <Link>Tests\TimeSpanTest.cs</Link>
+    </Compile>
+    <Compile Include="..\TransactionTest.cs">
+      <Link>Tests\TransactionTest.cs</Link>
+    </Compile>
+    <Compile Include="..\UnicodeTest.cs">
+      <Link>Tests\UnicodeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\UniqueTest.cs">
+      <Link>Tests\UniqueTest.cs</Link>
+    </Compile>
+    <Compile Include="Main.cs" />
+    <Compile Include="AppDelegate.cs" />
+    <None Include="Info.plist" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="Resources\Default.png" />
+    <BundleResource Include="Resources\Default@2x.png" />
+    <BundleResource Include="Resources\Default-568h@2x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="MonoTouch.NUnitLite" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="monotouch" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SQLite.Net.Async\SQLite.Net.Async.csproj">
+      <Project>{3AB34E91-8E1A-442F-8E66-2494B371A890}</Project>
+      <Name>SQLite.Net.Async</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\SQLite.Net.Platform.XamarinIOS\SQLite.Net.Platform.XamarinIOS.csproj">
+      <Project>{6377929d-6253-450d-bf4b-3e8ece2564f7}</Project>
+      <Name>SQLite.Net.Platform.XamarinIOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\SQLite.Net\SQLite.Net.csproj">
+      <Project>{4971D437-0694-4297-A8CC-146CE08C3BD9}</Project>
+      <Name>SQLite.Net</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
+</Project>

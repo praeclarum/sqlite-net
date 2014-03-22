@@ -1,0 +1,261 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.20506</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{46DF3E43-6B65-4C3D-8911-64FCC301040F}</ProjectGuid>
+    <ProjectTypeGuids>{C089C8C0-30E0-4E22-80C0-CE093F111A43};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SQLite.Net.Tests.WindowsPhone8</RootNamespace>
+    <AssemblyName>SQLite.Net.Tests.WindowsPhone8</AssemblyName>
+    <TargetFrameworkIdentifier>WindowsPhone</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v8.0</TargetFrameworkVersion>
+    <SilverlightVersion>$(TargetFrameworkVersion)</SilverlightVersion>
+    <SilverlightApplication>true</SilverlightApplication>
+    <WPTestProject>true</WPTestProject>
+    <SupportedCultures>
+    </SupportedCultures>
+    <XapOutputs>true</XapOutputs>
+    <GenerateSilverlightManifest>true</GenerateSilverlightManifest>
+    <XapFilename>SQLite.Net.Tests.WindowsPhone8_$(Configuration)_$(Platform).xap</XapFilename>
+    <SilverlightManifestTemplate>Properties\AppManifest.xml</SilverlightManifestTemplate>
+    <SilverlightAppEntry>SQLite.Net.Tests.WindowsPhone8.App</SilverlightAppEntry>
+    <ValidateXaml>false</ValidateXaml>
+    <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
+    <ThrowErrorsInValidation>true</ThrowErrorsInValidation>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>Bin\x86\Debug</OutputPath>
+    <DefineConstants>DEBUG;TRACE;SILVERLIGHT;WINDOWS_PHONE</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>Bin\x86\Release</OutputPath>
+    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|ARM' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>Bin\ARM\Debug</OutputPath>
+    <DefineConstants>DEBUG;TRACE;SILVERLIGHT;WINDOWS_PHONE</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|ARM' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>Bin\ARM\Release</OutputPath>
+    <DefineConstants>TRACE;SILVERLIGHT;WINDOWS_PHONE</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\AsyncTests.cs">
+      <Link>Tests\AsyncTests.cs</Link>
+    </Compile>
+    <Compile Include="..\BooleanTest.cs">
+      <Link>Tests\BooleanTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ByteArrayTest.cs">
+      <Link>Tests\ByteArrayTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CollateTest.cs">
+      <Link>Tests\CollateTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ConnectionTrackingTest.cs">
+      <Link>Tests\ConnectionTrackingTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ContainsTest.cs">
+      <Link>Tests\ContainsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CreateTableImplicitTest.cs">
+      <Link>Tests\CreateTableImplicitTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CreateTableTest.cs">
+      <Link>Tests\CreateTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DateTimeTest.cs">
+      <Link>Tests\DateTimeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DeleteTest.cs">
+      <Link>Tests\DeleteTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DropTableTest.cs">
+      <Link>Tests\DropTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\EqualsTest.cs">
+      <Link>Tests\EqualsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ExceptionAssert.cs">
+      <Link>Tests\ExceptionAssert.cs</Link>
+    </Compile>
+    <Compile Include="..\ExpressionTests.cs">
+      <Link>Tests\ExpressionTests.cs</Link>
+    </Compile>
+    <Compile Include="..\GuidTests.cs">
+      <Link>Tests\GuidTests.cs</Link>
+    </Compile>
+    <Compile Include="..\InheritanceTest.cs">
+      <Link>Tests\InheritanceTest.cs</Link>
+    </Compile>
+    <Compile Include="..\InsertTest.cs">
+      <Link>Tests\InsertTest.cs</Link>
+    </Compile>
+    <Compile Include="..\JoinTest.cs">
+      <Link>Tests\JoinTest.cs</Link>
+    </Compile>
+    <Compile Include="..\LinqTest.cs">
+      <Link>Tests\LinqTest.cs</Link>
+    </Compile>
+    <Compile Include="..\MappingTest.cs">
+      <Link>Tests\MappingTest.cs</Link>
+    </Compile>
+    <Compile Include="..\MigrationTest.cs">
+      <Link>Tests\MigrationTest.cs</Link>
+    </Compile>
+    <Compile Include="..\NullableTest.cs">
+      <Link>Tests\NullableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\OpenTests.cs">
+      <Link>Tests\OpenTests.cs</Link>
+    </Compile>
+    <Compile Include="..\ScalarTest.cs">
+      <Link>Tests\ScalarTest.cs</Link>
+    </Compile>
+    <Compile Include="..\SkipTest.cs">
+      <Link>Tests\SkipTest.cs</Link>
+    </Compile>
+    <Compile Include="..\StringQueryTest.cs">
+      <Link>Tests\StringQueryTest.cs</Link>
+    </Compile>
+    <Compile Include="..\TestDb.cs">
+      <Link>Tests\TestDb.cs</Link>
+    </Compile>
+    <Compile Include="..\TimeSpanTest.cs">
+      <Link>Tests\TimeSpanTest.cs</Link>
+    </Compile>
+    <Compile Include="..\TransactionTest.cs">
+      <Link>Tests\TransactionTest.cs</Link>
+    </Compile>
+    <Compile Include="..\UnicodeTest.cs">
+      <Link>Tests\UnicodeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\UniqueTest.cs">
+      <Link>Tests\UniqueTest.cs</Link>
+    </Compile>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="LocalizedStrings.cs" />
+    <Compile Include="MainPage.xaml.cs">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources\AppResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AppResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </ApplicationDefinition>
+    <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Properties\AppManifest.xml" />
+    <None Include="Properties\WMAppManifest.xml">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <SDKReference Include="MSTestFramework, Version=11.0" />
+    <SDKReference Include="TestPlatform, Version=11.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\AlignmentGrid.png" />
+    <Content Include="Assets\ApplicationIcon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Tiles\FlipCycleTileLarge.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Tiles\FlipCycleTileMedium.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Tiles\FlipCycleTileSmall.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\AppResources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>AppResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SQLite.Net.Async\SQLite.Net.Async.csproj">
+      <Project>{3AB34E91-8E1A-442F-8E66-2494B371A890}</Project>
+      <Name>SQLite.Net.Async</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\SQLite.Net.Platform.WindowsPhone8\SQLite.Net.Platform.WindowsPhone8.csproj">
+      <Project>{741521F8-F9D8-40F4-A5D4-AED4E26841ED}</Project>
+      <Name>SQLite.Net.Platform.WindowsPhone8</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\SQLite.Net\SQLite.Net.csproj">
+      <Project>{4971D437-0694-4297-A8CC-146CE08C3BD9}</Project>
+      <Name>SQLite.Net</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <ProjectExtensions />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+  </Target>
+</Project>

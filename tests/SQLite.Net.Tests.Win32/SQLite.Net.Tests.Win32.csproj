@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BFF4B373-2844-40AD-8994-2BA5AC42AEE0}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SQLite.Net.Tests.Win32</RootNamespace>
+    <AssemblyName>SQLite.Net.Tests.Win32</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <ProductVersion>12.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;__WIN32__</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;__WIN32__</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\AsyncTests.cs">
+      <Link>AsyncTests.cs</Link>
+    </Compile>
+    <Compile Include="..\BooleanTest.cs">
+      <Link>BooleanTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ByteArrayTest.cs">
+      <Link>ByteArrayTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CollateTest.cs">
+      <Link>CollateTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ConnectionTrackingTest.cs">
+      <Link>ConnectionTrackingTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ContainsTest.cs">
+      <Link>ContainsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CreateTableImplicitTest.cs">
+      <Link>CreateTableImplicitTest.cs</Link>
+    </Compile>
+    <Compile Include="..\CreateTableTest.cs">
+      <Link>CreateTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DateTimeTest.cs">
+      <Link>DateTimeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DeleteTest.cs">
+      <Link>DeleteTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DropTableTest.cs">
+      <Link>DropTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\EqualsTest.cs">
+      <Link>EqualsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\ExceptionAssert.cs">
+      <Link>ExceptionAssert.cs</Link>
+    </Compile>
+    <Compile Include="..\ExpressionTests.cs">
+      <Link>ExpressionTests.cs</Link>
+    </Compile>
+    <Compile Include="..\GuidTests.cs">
+      <Link>GuidTests.cs</Link>
+    </Compile>
+    <Compile Include="..\InheritanceTest.cs">
+      <Link>InheritanceTest.cs</Link>
+    </Compile>
+    <Compile Include="..\InsertTest.cs">
+      <Link>InsertTest.cs</Link>
+    </Compile>
+    <Compile Include="..\JoinTest.cs">
+      <Link>JoinTest.cs</Link>
+    </Compile>
+    <Compile Include="..\LinqTest.cs">
+      <Link>LinqTest.cs</Link>
+    </Compile>
+    <Compile Include="..\MappingTest.cs">
+      <Link>MappingTest.cs</Link>
+    </Compile>
+    <Compile Include="..\MigrationTest.cs">
+      <Link>MigrationTest.cs</Link>
+    </Compile>
+    <Compile Include="..\NullableTest.cs">
+      <Link>NullableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\OpenTests.cs">
+      <Link>OpenTests.cs</Link>
+    </Compile>
+    <Compile Include="..\ScalarTest.cs">
+      <Link>ScalarTest.cs</Link>
+    </Compile>
+    <Compile Include="..\SkipTest.cs">
+      <Link>SkipTest.cs</Link>
+    </Compile>
+    <Compile Include="..\StringQueryTest.cs">
+      <Link>StringQueryTest.cs</Link>
+    </Compile>
+    <Compile Include="..\TestDb.cs">
+      <Link>TestDb.cs</Link>
+    </Compile>
+    <Compile Include="..\TimeSpanTest.cs">
+      <Link>TimeSpanTest.cs</Link>
+    </Compile>
+    <Compile Include="..\TransactionTest.cs">
+      <Link>TransactionTest.cs</Link>
+    </Compile>
+    <Compile Include="..\UnicodeTest.cs">
+      <Link>UnicodeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\UniqueTest.cs">
+      <Link>UniqueTest.cs</Link>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SQLite.Net.Async\SQLite.Net.Async.csproj">
+      <Project>{3AB34E91-8E1A-442F-8E66-2494B371A890}</Project>
+      <Name>SQLite.Net.Async</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\SQLite.Net.Platform.Win32\SQLite.Net.Platform.Win32.csproj">
+      <Project>{03799AD1-9FCF-48CB-8E6E-B233DF583B10}</Project>
+      <Name>SQLite.Net.Platform.Win32</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\SQLite.Net\SQLite.Net.csproj">
+      <Project>{4971D437-0694-4297-A8CC-146CE08C3BD9}</Project>
+      <Name>SQLite.Net</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+  </Target>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
