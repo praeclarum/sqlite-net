@@ -17,7 +17,7 @@ v1.0.7: Update with commits through 06-FEB-2013.</releaseNotes>
         <tags>sqlite pcl sql win32 database</tags>		
 		<dependencies>
 		  <dependency id="SQLite.Net-PCL" />
-		  <dependency id="System.Data.SQLite" />
+		  <dependency id="System.Data.SQLite.Core" />
 		</dependencies>
     </metadata>
     <files>
