@@ -57,10 +57,7 @@ namespace SQLite.Net
 
         public int ExecuteNonQuery(object[] source)
         {
-            if (Connection.Trace)
-            {
-                Debug.WriteLine("Executing: " + CommandText);
-            }
+            Connection.TraceListener.WriteLine("Executing: {0}", CommandText);
 
             var r = Result.OK;
 

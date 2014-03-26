@@ -138,7 +138,7 @@ namespace SQLite.Net
 
         public bool TimeExecution { get; set; }
 
-        public bool Trace { get; set; }
+        public ITraceListener TraceListener { get; set; }
 
         public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -521,8 +521,8 @@ namespace SQLite.Net
             {
                 _sw.Stop();
                 _elapsedMilliseconds += _sw.ElapsedMilliseconds;
-                Debug.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds,
-                    _elapsedMilliseconds/1000.0);
+
+                this.TraceListener.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0);
             }
 
             return r;
@@ -548,8 +548,8 @@ namespace SQLite.Net
             {
                 _sw.Stop();
                 _elapsedMilliseconds += _sw.ElapsedMilliseconds;
-                Debug.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds,
-                    _elapsedMilliseconds/1000.0);
+
+                this.TraceListener.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0);
             }
 
             return r;

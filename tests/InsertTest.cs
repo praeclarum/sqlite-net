@@ -99,7 +99,7 @@ namespace SQLite.Net.Tests
                     Text = "I am"
                 };
             TestObj[] objs = q.ToArray();
-            _db.Trace = false;
+            _db.TraceListener = DebugTraceListener.Instance;
 
             var sw = new Stopwatch();
             sw.Start();
@@ -216,7 +216,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void InsertOrReplace()
         {
-            _db.Trace = true;
+            _db.TraceListener = DebugTraceListener.Instance;
             _db.InsertAll(from i in Enumerable.Range(1, 20)
                 select new TestObj
                 {

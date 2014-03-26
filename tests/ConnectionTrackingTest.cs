@@ -56,7 +56,7 @@ namespace SQLite.Net.Tests
             {
                 CreateTable<Product>();
                 CreateTable<OrderLine>();
-                Trace = true;
+                TraceListener = DebugTraceListener.Instance;
             }
         }
 
