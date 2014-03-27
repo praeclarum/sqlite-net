@@ -140,6 +140,9 @@
       <Link>UniqueTest.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\BlobSerializationTest.cs">
+      <Link>BlobSerializationTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\SQLite.Net.Async\SQLite.Net.Async.csproj">

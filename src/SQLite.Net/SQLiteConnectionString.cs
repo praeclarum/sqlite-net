@@ -28,16 +28,19 @@ namespace SQLite.Net
     /// </summary>
     public class SQLiteConnectionString
     {
-        public SQLiteConnectionString(string databasePath, bool storeDateTimeAsTicks)
+        public SQLiteConnectionString(string databasePath, bool storeDateTimeAsTicks,
+            IBlobSerializer serializer = null)
         {
             ConnectionString = databasePath;
             StoreDateTimeAsTicks = storeDateTimeAsTicks;
 
             DatabasePath = databasePath;
+            Serializer = serializer;
         }
 
         public string ConnectionString { get; private set; }
         public string DatabasePath { get; private set; }
         public bool StoreDateTimeAsTicks { get; private set; }
+        public IBlobSerializer Serializer { get; private set; }
     }
 }

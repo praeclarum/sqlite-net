@@ -221,12 +221,12 @@ namespace SQLite.Net
                     b.Index = nextIdx++;
                 }
 
-                BindParameter(_sqlitePlatform.SQLiteApi, stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks);
+                BindParameter(_sqlitePlatform.SQLiteApi, stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks, _conn.Serializer);
             }
         }
 
         internal static void BindParameter(ISQLiteApi isqLite3Api, IDbStatement stmt, int index, object value,
-            bool storeDateTimeAsTicks)
+            bool storeDateTimeAsTicks, IBlobSerializer serializer)
         {
             if (value == null)
             {
@@ -285,6 +285,11 @@ namespace SQLite.Net
                 else if (value is Guid)
                 {
                     isqLite3Api.BindText16(stmt, index, ((Guid) value).ToString(), 72, NegativePointer);
+                }
+                else if (serializer != null && serializer.CanDeserialize(value.GetType()))
+                {
+                    var bytes = serializer.Serialize(value);
+                    isqLite3Api.BindBlob(stmt, index, bytes, bytes.Length, NegativePointer);
                 }
                 else
                 {
@@ -372,6 +377,11 @@ namespace SQLite.Net
             {
                 string text = _sqlitePlatform.SQLiteApi.ColumnText16(stmt, index);
                 return new Guid(text);
+            }
+            if (_conn.Serializer != null && _conn.Serializer.CanDeserialize(clrType))
+            {
+                var bytes = _sqlitePlatform.SQLiteApi.ColumnByteArray(stmt, index);
+                return _conn.Serializer.Deserialize(bytes, clrType);
             }
             throw new NotSupportedException("Don't know how to read " + clrType);
         }

@@ -73,7 +73,7 @@ namespace SQLite.Net
                 for (int i = 0; i < source.Length; i++)
                 {
                     SQLiteCommand.BindParameter(_sqlitePlatform.SQLiteApi, Statement, i + 1, source[i],
-                        Connection.StoreDateTimeAsTicks);
+                        Connection.StoreDateTimeAsTicks, Connection.Serializer);
                 }
             }
             r = _sqlitePlatform.SQLiteApi.Step(Statement);
