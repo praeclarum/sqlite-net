@@ -47,7 +47,7 @@ namespace SQLite.Net.Tests
             public TestDb(ISQLitePlatform sqlitePlatform, String path)
                 : base(sqlitePlatform, path)
             {
-                Trace = true;
+                TraceListener = DebugTraceListener.Instance;
                 CreateTable<TestObj>();
             }
         }

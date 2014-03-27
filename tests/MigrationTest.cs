@@ -25,7 +25,7 @@ namespace SQLite.Net.Tests
         {
             using (var db = new TestDb(true)
             {
-                Trace = true
+                TraceListener = DebugTraceListener.Instance
             })
             {
                 db.CreateTable<LowerId>();

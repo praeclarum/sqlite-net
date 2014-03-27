@@ -48,10 +48,7 @@ namespace SQLite.Net
 
         public int ExecuteNonQuery()
         {
-            if (_conn.Trace)
-            {
-                Debug.WriteLine("Executing: " + this);
-            }
+            _conn.TraceListener.WriteLine("Executing: {0}", this);
 
             var r = Result.OK;
             IDbStatement stmt = Prepare();
@@ -103,10 +100,7 @@ namespace SQLite.Net
 
         public IEnumerable<T> ExecuteDeferredQuery<T>(TableMapping map)
         {
-            if (_conn.Trace)
-            {
-                Debug.WriteLine("Executing Query: " + this);
-            }
+            _conn.TraceListener.WriteLine("Executing Query: {0}", this);
 
             IDbStatement stmt = Prepare();
             try
@@ -144,10 +138,7 @@ namespace SQLite.Net
 
         public T ExecuteScalar<T>()
         {
-            if (_conn.Trace)
-            {
-                Debug.WriteLine("Executing Query: " + this);
-            }
+            _conn.TraceListener.WriteLine("Executing Query: {0}", this);
 
             T val = default(T);
 

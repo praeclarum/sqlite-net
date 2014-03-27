@@ -40,7 +40,7 @@ namespace SQLite.Net.Tests
             public DbAcs(ISQLitePlatform sqlitePlatform, String path)
                 : base(sqlitePlatform, path)
             {
-                Trace = true;
+                TraceListener = DebugTraceListener.Instance;
             }
 
             public void buildTable()

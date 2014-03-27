@@ -57,7 +57,7 @@ namespace SQLite.Net.Tests
 
             db.InsertAll(cq);
 
-            db.Trace = true;
+            db.TraceListener = DebugTraceListener.Instance;
 
             var tensq = new[] {"0", "10", "20"};
             List<TestObj> tens = (from o in db.Table<TestObj>() where tensq.Contains(o.Name) select o).ToList();
@@ -82,7 +82,7 @@ namespace SQLite.Net.Tests
 
             db.InsertAll(cq);
 
-            db.Trace = true;
+            db.TraceListener = DebugTraceListener.Instance;
 
             var tensq = new[] {"0", "10", "20"};
             List<TestObj> tens = (from o in db.Table<TestObj>() where tensq.Contains(o.Name) select o).ToList();

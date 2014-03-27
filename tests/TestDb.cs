@@ -72,7 +72,7 @@ namespace SQLite.Net.Tests
         public TestDb(bool storeDateTimeAsTicks = false)
             : base(new SQLitePlatformTest(), TestPath.GetTempFileName(), storeDateTimeAsTicks)
         {
-            Trace = true;
+            TraceListener = DebugTraceListener.Instance;
         }
     }
 

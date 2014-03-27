@@ -31,7 +31,7 @@ namespace SQLite.Net.Tests
         {
             public TestDb() : base(new SQLitePlatformTest(), TestPath.GetTempFileName())
             {
-                Trace = true;
+                TraceListener = DebugTraceListener.Instance;
             }
         }
 
