@@ -51,6 +51,9 @@
     <Compile Include="..\AsyncTests.cs">
       <Link>Tests\AsyncTests.cs</Link>
     </Compile>
+    <Compile Include="..\BlobSerializationTest.cs">
+      <Link>Tests\BlobSerializationTest.cs</Link>
+    </Compile>
     <Compile Include="..\BooleanTest.cs">
       <Link>Tests\BooleanTest.cs</Link>
     </Compile>
