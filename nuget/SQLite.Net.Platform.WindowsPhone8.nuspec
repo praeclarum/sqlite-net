@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net.Platform.WindowsPhone8</id>
-        <version>2.1.0</version>
+        <version>2.2.0</version>
         <title>SQLite.Net PCL - WindowsPhone8 Platform</title>
         <authors>Øystein Krog, Frank Krueger, Tim Heuer, Nick Cipollina</authors>
         <owners>Øystein Krog</owners>
@@ -11,9 +11,9 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases. It is written in C# 3.0 and is meant to be simply compiled in with your projects. It was first designed to work with MonoTouch on the iPhone, but should work in any other CLI environment.</description>
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
-        <releaseNotes>v2.1.0: Fixes to SQLiteAsyncConnection and added WindowsPhone8 platform project/nuget. (Contributed by Nick Cipollina)
-v2.0.0: Initial release of new PCL version.
-v1.0.7: Update with commits through 06-FEB-2013.</releaseNotes>
+        <releaseNotes>v2.2.0: Synchronize against upstream (Add support for ToUpper, TimeSpan etc). 
+Add trace listener abstraction (thanks @kentcb).
+Add support for custom Blob serializer (thanks @sami1971).</releaseNotes>
         <tags>sqlite pcl sql database wp8 windows phone WindowsPhone8</tags>		
 		<dependencies>
 		  <dependency id="sqlite-net-wp8" />
