@@ -1465,6 +1465,37 @@ namespace SQLite
 				OnTableChanged (map, NotifyTableChangedAction.Delete);
 			return count;
 		}
+		
+			
+	        /// <summary>
+	        /// Add your Custom function to sql 
+	        /// ex: Select MyTestFunc(10, 20)
+	        /// </summary>
+	        /// <param name="Name">Your function name like MyTestFunc</param>
+	        /// <param name="ParamLen">number of Function parameters, -1 mean is unlimited</param>
+	        /// <param name="Invoke">Your function definition</param>
+	        public void RegisterFunction(string Name, int ParamLen, Func<object[], object> Invoke){
+	            SQLite3.CreateFunction(Handle, System.Text.Encoding.UTF8.GetBytes(Name),
+	                                   ParamLen, 1, IntPtr.Zero, 
+	                                   new SQLite3.SQLiteCallback((c, cnt, args) => SQLite3.SetReturnValue(c, Invoke(SQLite3.ConvertParams(cnt, args)))),
+	                                   null, null, 0);
+	        }
+	
+	        /// <summary>
+	        /// Add your Custom function to sql 
+	        /// ex: Select MyTestFunc(10, 20)
+	        /// </summary>
+	        /// <param name="Name">Your function name like MyTestFunc</param>
+	        /// <param name="ParamLen">number of Function parameters, -1 mean is unlimited</param>
+	        public void RegisterFunction(string Name, int ParamLen, Func<object[], object> Invoke, Func<object[], object> Step, Func<object> Finish){
+	            SQLite3.CreateFunction(Handle, System.Text.Encoding.UTF8.GetBytes(Name),
+	                                   ParamLen, 1, IntPtr.Zero, 
+	                                   new SQLite3.SQLiteCallback((c, cnt, args) => SQLite3.SetReturnValue(c, Invoke(SQLite3.ConvertParams(cnt, args)))),
+	                                   new SQLite3.SQLiteCallback((c, cnt, args) => SQLite3.SetReturnValue(c, Step(SQLite3.ConvertParams(cnt, args)))),
+	                                   new SQLite3.SQLiteFinalCallback((c) => SQLite3.SetReturnValue(c, Finish())),
+	                                   1);
+	        }
+
 
 		~SQLiteConnection ()
 		{
@@ -2992,6 +3023,230 @@ namespace SQLite
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);
+
+	        public delegate void SQLiteCallback(IntPtr context, int nArgs, IntPtr argsptr);
+	        public delegate void SQLiteFinalCallback(IntPtr context);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_create_function", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
+	        public static extern int CreateFunction(IntPtr db, byte[] strName, int nArgs, int nType, IntPtr pvUser, SQLiteCallback func, SQLiteCallback fstep, SQLiteFinalCallback ffinal, int needCollSeq);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_value_type", CallingConvention=CallingConvention.Cdecl)]
+	        public static extern TypeAffinity GetParamValueType(IntPtr p);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_value_int64", CallingConvention=CallingConvention.Cdecl)]
+	        public static extern long GetParamValueInt64(IntPtr p);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_value_double", CallingConvention=CallingConvention.Cdecl)]
+	        public static extern double GetParamValueDouble(IntPtr p);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_value_text")]
+	        public static extern IntPtr GetParamValueText(IntPtr p);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_value_bytes")]
+	        public static extern int GetParamValueBytes(IntPtr p);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_value_blob")]
+	        public static extern IntPtr GetParamValueBlob(IntPtr p);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_result_null")]
+	        public static extern void ResultNull(IntPtr p);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_result_text", CallingConvention=CallingConvention.Cdecl)]
+	        public static extern void ResultText(IntPtr context, byte[] value, int nLen, IntPtr pvReserved);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_result_error", CallingConvention=CallingConvention.Cdecl)]
+	        public static extern void ResultError(IntPtr context, byte[] strErr, int nLen);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_result_int64")]
+	        public static extern void ResultInt64(IntPtr context, long value);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_result_double")]
+	        public static extern void ResultDouble(IntPtr context, double value);
+	        [DllImport("sqlite3", EntryPoint = "sqlite3_result_blob", CallingConvention=CallingConvention.Cdecl)]
+	        public static extern void ResultBlob(IntPtr context, byte[] value, int nSize, IntPtr pvReserved);
+	
+	
+	        public static long GetParamValueBytes(IntPtr p, int nDataOffset, byte[] bDest, int nStart, int nLength)
+	        {
+	            IntPtr ptr;
+	            int nlen;
+	            int nCopied = nLength;
+	
+	            nlen = GetParamValueBytes(p);
+	            ptr = GetParamValueBlob(p);
+	
+	            if (bDest == null) return nlen;
+	
+	            if (nCopied + nStart > bDest.Length) nCopied = bDest.Length - nStart;
+	            if (nCopied + nDataOffset > nlen) nCopied = nlen - nDataOffset;
+	
+	            unsafe {
+	                if (nCopied > 0)
+	                    Marshal.Copy((IntPtr)((byte*)ptr + nDataOffset), bDest, nStart, nCopied);
+	                else nCopied = 0;
+	            }
+	
+	            return nCopied;
+	        }
+	
+	
+	        public static object[] ConvertParams(int nArgs, IntPtr argsptr)
+	        {
+	            object[] parms = new object[nArgs];
+	            IntPtr[] argint = new IntPtr[nArgs];
+	            Marshal.Copy(argsptr, argint, 0, nArgs);
+	
+	            for (int n = 0; n < nArgs; n++)
+	            {
+	                switch (GetParamValueType((IntPtr)argint[n]))
+	                {
+	                case TypeAffinity.Null:
+	                    parms[n] = DBNull.Value;
+	                    break;
+	                case TypeAffinity.Int64:
+	                    parms[n] = GetParamValueInt64((IntPtr)argint[n]);
+	                    break;
+	                case TypeAffinity.Double:
+	                    parms[n] = GetParamValueDouble((IntPtr)argint[n]);
+	                    break;
+	                case TypeAffinity.Text:
+	                    IntPtr pv = GetParamValueText((IntPtr)argint[n]);
+	                    
+	                    parms[n] = UTF8ToString(pv, 100);
+	                    break;
+	                case TypeAffinity.Blob:
+	                    {
+	                        int x;
+	                        byte[] blob;
+	
+	                        x = (int)GetParamValueBytes((IntPtr)argint[n], 0, null, 0, 0);
+	                        blob = new byte[x];
+	                        GetParamValueBytes((IntPtr)argint[n], 0, blob, 0, x);
+	                        parms[n] = blob;
+	                    }
+	                    break;
+	                case TypeAffinity.DateTime:
+	                    int lend = 100;
+	                    IntPtr pvd = GetParamValueText((IntPtr)argint[n]);
+	
+	                    parms[n] = ToDateTime(UTF8ToString(pvd, lend));
+	                    break;
+	                }
+	            }
+	            return parms;
+	        }
+	        public static string UTF8ToString(IntPtr nativestring, int nativestringlen)
+	        {
+	            if (nativestringlen == 0 || nativestring == IntPtr.Zero) return "";
+	            if (nativestringlen == -1) {
+	                do
+	                {
+	                    nativestringlen++;
+	                } while (Marshal.ReadByte(nativestring, nativestringlen) != 0);
+	            }
+	            byte[] byteArray = new byte[nativestringlen];
+	            Marshal.Copy(nativestring, byteArray, 0, nativestringlen);
+	            return System.Text.Encoding.UTF8.GetString(byteArray, 0, nativestringlen);
+	        }
+	        public static DateTime ToDateTime(string dateText)
+	        {      
+	            return DateTime.ParseExact(dateText, DateFormats, System.Globalization.DateTimeFormatInfo.InvariantInfo, System.Globalization.DateTimeStyles.None);
+	        }
+	
+	
+	        public static void SetReturnValue(IntPtr context, object returnValue) {
+	            if (returnValue == null || returnValue == DBNull.Value) {
+	                ResultNull(context);
+	                return;
+	            }
+	
+	            Type t = returnValue.GetType();
+	            if (t == typeof(DateTime)) {
+	                byte[] b = System.Text.Encoding.UTF8.GetBytes(((DateTime)returnValue).ToString(DateFormats[7], System.Globalization.CultureInfo.InvariantCulture));
+	                ResultText(context, b, b.Length - 1, (IntPtr)(-1));
+	                return;
+	            }
+	            else {
+	                Exception r = returnValue as Exception;
+	
+	                if (r != null) {
+	                    byte[] err_buff = System.Text.Encoding.UTF8.GetBytes(r.Message);
+	                    ResultError(context, err_buff, err_buff.Length);
+	                    return;
+	                }
+	            }
+	
+	            switch (TypeToAffinity(t)) {
+	            case TypeAffinity.Null:
+	                ResultNull(context);
+	                return;
+	            case TypeAffinity.Int64:
+	                ResultInt64(context, Convert.ToInt64(returnValue, System.Globalization.CultureInfo.CurrentCulture));
+	                return;
+	            case TypeAffinity.Double:
+	                ResultDouble(context, Convert.ToDouble(returnValue, System.Globalization.CultureInfo.CurrentCulture));
+	                return;
+	            case TypeAffinity.Text:
+	                byte[] str_buff = System.Text.Encoding.UTF8.GetBytes(returnValue.ToString());
+	                ResultText(context, str_buff, str_buff.Length, (IntPtr)(-1));
+	                return;
+	            case TypeAffinity.Blob:
+	                byte[] blob_buff = (byte[])returnValue;
+	                ResultBlob(context, blob_buff, blob_buff.Length, (IntPtr)(-1));
+	                return;
+	            }
+	        }
+	
+	        public static TypeAffinity TypeToAffinity(Type typ) {
+	            TypeCode tc = Type.GetTypeCode(typ);
+	            if (tc == TypeCode.Object) {
+	                if (typ == typeof(byte[]) || typ == typeof(Guid))
+	                    return TypeAffinity.Blob;
+	                else
+	                    return TypeAffinity.Text;
+	            }
+	            return _typecodeAffinities[(int)tc];
+	        }
+	
+	        private static TypeAffinity[] _typecodeAffinities =
+	        {
+	            TypeAffinity.Null,
+	            TypeAffinity.Blob,
+	            TypeAffinity.Null,
+	            TypeAffinity.Int64,
+	            TypeAffinity.Int64,
+	            TypeAffinity.Int64,
+	            TypeAffinity.Int64,
+	            TypeAffinity.Int64, // 7
+	            TypeAffinity.Int64,
+	            TypeAffinity.Int64,
+	            TypeAffinity.Int64,
+	            TypeAffinity.Int64, // 11
+	            TypeAffinity.Int64,
+	            TypeAffinity.Double,
+	            TypeAffinity.Double,
+	            TypeAffinity.Double,
+	            TypeAffinity.DateTime,
+	            TypeAffinity.Null,
+	            TypeAffinity.Text,
+	        };
+	
+	        public enum TypeAffinity
+	        {           
+	            Uninitialized = 0,
+	            Int64 = 1,
+	            Double = 2,
+	            Text = 3,
+	            Blob = 4,
+	            Null = 5,
+	            DateTime = 10,
+	            None = 11,
+	        }
+	
+	        public static string[] DateFormats = new string[] {
+	            "THHmmss", "THHmm", "HH:mm:ss", "HH:mm",
+	            "HH:mm:ss.FFFFFFF",
+	            "yy-MM-dd", "yyyy-MM-dd",
+	            "yyyy-MM-dd HH:mm:ss.FFFFFFF",
+	            "yyyy-MM-dd HH:mm:ss",
+	            "yyyy-MM-dd HH:mm",                               
+	            "yyyy-MM-ddTHH:mm:ss.FFFFFFF",
+	            "yyyy-MM-ddTHH:mm",
+	            "yyyy-MM-ddTHH:mm:ss",
+	            "yyyyMMddHHmmss",
+	            "yyyyMMddHHmm",
+	            "yyyyMMddTHHmmssFFFFFFF",
+	            "yyyyMMdd"
+	        };
+
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_busy_timeout", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
