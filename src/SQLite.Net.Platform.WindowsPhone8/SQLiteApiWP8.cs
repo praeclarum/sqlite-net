@@ -9,7 +9,7 @@ namespace SQLite.Net.Platform.WindowsPhone8
     {
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zVfs)
         {
-            string dbFileName = Encoding.UTF8.GetString(filename, 0, filename.Length);
+            string dbFileName = Encoding.UTF8.GetString(filename, 0, filename.Length -1 );
             Database internalDbHandle = null;
             var ret = (Result)Sqlite3.sqlite3_open_v2(dbFileName, out internalDbHandle, flags, "");
             db = new DbHandle(internalDbHandle);
