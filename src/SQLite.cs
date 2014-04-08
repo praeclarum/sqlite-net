@@ -112,12 +112,13 @@ namespace SQLite
     [Flags]
     public enum CreateFlags
     {
-        None = 0,
-        ImplicitPK = 1,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
-        ImplicitIndex = 2, // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
-        AllImplicit = 3,   // do both above
-
-        AutoIncPK = 4      // force PK field to be auto inc
+        None                = 0x000,
+        ImplicitPK          = 0x001,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
+        ImplicitIndex       = 0x002,    // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
+        AllImplicit         = 0x003,    // do both above
+        AutoIncPK           = 0x004,    // force PK field to be auto inc
+        FullTextSearch3     = 0x100,    // create virtual table using FTS3
+        FullTextSearch4     = 0x200     // create virtual table using FTS4
     }
 
 	/// <summary>
@@ -363,8 +364,16 @@ namespace SQLite
 				map = GetMapping (ty, createFlags);
 				_tables.Add (ty.FullName, map);
 			}
-			var query = "create table if not exists \"" + map.TableName + "\"(\n";
-			
+
+            // Facilitate virtual tables a.k.a. full-text search.
+		    bool fts3 = (createFlags & CreateFlags.FullTextSearch3) != 0;
+		    bool fts4 = (createFlags & CreateFlags.FullTextSearch4) != 0;
+		    bool fts = fts3 || fts4;
+            var @virtual = fts ? "virtual " : string.Empty;
+		    var @using = fts3 ? "using fts3 " : fts4 ? "using fts4 " : string.Empty;
+
+            // Build query.
+			var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
