@@ -46,6 +46,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Tests.XamarinAnd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Platform.Generic", "src\SQLite.Net.Platform.Generic\SQLite.Net.Platform.Generic.csproj", "{F662E15A-8753-468E-A67E-3FCF45F12B89}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Net.Tests.Generic", "tests\SQLite.Net.Tests.Generic\SQLite.Net.Tests.Generic.csproj", "{C129735F-5D4B-40BE-9410-F43E548FFF5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ad-Hoc|Any CPU = Ad-Hoc|Any CPU
@@ -730,6 +732,62 @@ Global
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|x64.Build.0 = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|x86.ActiveCfg = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|x86.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|Any CPU.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|Any CPU.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|ARM.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|ARM.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|iPhoneSimulator.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|Mixed Platforms.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|x64.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|x64.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|x86.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Ad-Hoc|x86.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|Any CPU.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|Any CPU.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|ARM.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|ARM.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|iPhone.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|iPhone.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|iPhoneSimulator.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|Mixed Platforms.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|x64.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|x64.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|x86.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.AppStore|x86.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|ARM.Build.0 = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|x64.Build.0 = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Debug|x86.Build.0 = Debug|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|ARM.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|ARM.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|iPhone.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|x64.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|x64.Build.0 = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|x86.ActiveCfg = Release|Any CPU
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -748,6 +806,7 @@ Global
 		{2C3224FB-4513-4A16-B67F-3C4F1BDC7765} = {0C4021EF-617B-4620-ADD3-A702B4F9FA86}
 		{9E5D6B89-B69B-486B-9F7B-406BE8690589} = {49C7015B-F41A-47A6-8200-B925902E74E9}
 		{F662E15A-8753-468E-A67E-3FCF45F12B89} = {59584026-7610-4CD5-A74E-D2B0A2E1CE87}
+		{C129735F-5D4B-40BE-9410-F43E548FFF5E} = {0C4021EF-617B-4620-ADD3-A702B4F9FA86}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = tests\SQLite.Tests.csproj
