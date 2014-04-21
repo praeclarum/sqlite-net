@@ -20,6 +20,6 @@ Add support for custom Blob serializer (thanks @sami1971).</releaseNotes>
         <tags>sqlite pcl sql database monotouch ios monodroid android win32 metro winrt</tags>
     </metadata>
     <files>
-        <file src="SQLite.Net\SQLite.Net.dll" target="lib\portable-net4+sl4+wp7+win8+monotouch+MonoAndroid\SQLite.Net.dll" />
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\portable-net4+sl5+netcore45+wp8+MonoAndroid1+MonoTouch1\SQLite.Net.dll" />
     </files>
 </package>
