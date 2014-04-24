@@ -23,6 +23,6 @@ Add support for custom Blob serializer (thanks @sami1971).</releaseNotes>
         </dependencies>
     </metadata>
     <files>
-        <file src="SQLite.Net.Async\SQLite.Net.Async.dll" target="lib\portable-net4+sl5+wp8+win8+monotouch+monoAndroid\SQLite.Net.Async.dll" />
+        <file src="SQLite.Net.Async\SQLite.Net.Async.dll" target="lib\portable-net4+sl5+netcore45+wp8+MonoAndroid1+MonoTouch1\SQLite.Net.Async.dll" />
     </files>
 </package>
