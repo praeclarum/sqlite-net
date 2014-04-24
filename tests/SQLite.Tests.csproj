@@ -47,6 +47,7 @@
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />
+    <Compile Include="MultiplePrimaryKeyTest.cs" />
     <Compile Include="NullableTest.cs" />
     <Compile Include="DropTableTest.cs" />
     <Compile Include="LinqTest.cs" />

@@ -364,10 +364,17 @@ namespace SQLite
 				_tables.Add (ty.FullName, map);
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
-			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
+
+			var pkCols = map.Columns.Where(p => p.IsPK);
+			int numPkCols = pkCols.Count();
+
+			var decls = map.Columns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, numPkCols == 1));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
+
+			if (numPkCols > 1)
+				query += string.Format(",\nprimary key ({0})\n", string.Join(", ", pkCols.Select(p => "\"" + p.Name + "\"")));
+
 			query += ")";
 			
 			var count = Execute (query);
@@ -1883,11 +1890,11 @@ namespace SQLite
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
 
-		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
+		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks, bool trySetAsPrimaryKey = true)
 		{
 			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
 			
-			if (p.IsPK) {
+			if (trySetAsPrimaryKey && p.IsPK) {
 				decl += "primary key ";
 			}
 			if (p.IsAutoInc) {
