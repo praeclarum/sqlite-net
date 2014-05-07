@@ -725,6 +725,115 @@ namespace SQLite.Net.Tests
         }
 
         [Test]
+        public async Task TestInsertOrReplaceAllAsync()
+        {
+            // create a bunch of customers...
+            var customers = new List<Customer>();
+            for (int index = 0; index < 100; index++)
+            {
+                var customer = new Customer();
+                customer.Id = index;
+                customer.FirstName = "foo";
+                customer.LastName = "bar";
+                customer.Email = Guid.NewGuid().ToString();
+                customers.Add(customer);
+            }
+
+            // connect...
+            string path = null;
+            SQLiteAsyncConnection conn = GetConnection(ref path);
+            await conn.CreateTableAsync<Customer>();
+
+            // insert them all...
+            await conn.InsertOrReplaceAllAsync(customers);
+
+            // change the existing ones...
+            foreach (var customer in customers)
+            {
+                customer.FirstName = "baz";
+                customer.LastName = "biz";
+            }
+
+            // ... and add a few more
+            for (int index = 100; index < 200; index++)
+            {
+                var customer = new Customer();
+                customer.Id = index;
+                customer.FirstName = "foo";
+                customer.LastName = "bar";
+                customer.Email = Guid.NewGuid().ToString();
+                customers.Add(customer);
+            }
+
+            // insert them all, replacing the already existing ones
+            await conn.InsertOrReplaceAllAsync(customers);
+
+            // check...
+            using (var check = new SQLiteConnection(_sqlite3Platform, path))
+            {
+                for (int index = 0; index < customers.Count; index++)
+                {
+                    // load it back and check...
+                    var loaded = check.Get<Customer>(customers[index].Id);
+                    Assert.AreEqual(loaded.FirstName, customers[index].FirstName);
+                    Assert.AreEqual(loaded.LastName, customers[index].LastName);
+                    Assert.AreEqual(loaded.Email, customers[index].Email);
+                }
+            }
+
+        }
+
+        [Test]
+        public async Task TestInsertOrReplaceAsync()
+        {
+            // create...
+            var customer = new Customer();
+            customer.Id = 42;
+            customer.FirstName = "foo";
+            customer.LastName = "bar";
+            customer.Email = Guid.NewGuid().ToString();
+
+            // connect...
+            string path = null;
+            SQLiteAsyncConnection conn = GetConnection(ref path);
+            await conn.CreateTableAsync<Customer>();
+
+            // run...
+            await conn.InsertOrReplaceAsync(customer);
+
+            // check...
+            using (var check = new SQLiteConnection(_sqlite3Platform, path))
+            {
+                // load it back...
+                var loaded = check.Get<Customer>(customer.Id);
+                Assert.AreEqual(loaded.Id, customer.Id);
+                Assert.AreEqual(loaded.FirstName, customer.FirstName);
+                Assert.AreEqual(loaded.LastName, customer.LastName);
+                Assert.AreEqual(loaded.Email, customer.Email);
+            }
+
+            // change ...
+            customer.FirstName = "baz";
+            customer.LastName = "biz";
+            customer.Email = Guid.NewGuid().ToString();
+
+            // replace...
+            await conn.InsertOrReplaceAsync(customer);
+
+            // check again...
+            // check...
+            using (var check = new SQLiteConnection(_sqlite3Platform, path))
+            {
+                // load it back...
+                var loaded = check.Get<Customer>(customer.Id);
+                Assert.AreEqual(loaded.Id, customer.Id);
+                Assert.AreEqual(loaded.FirstName, customer.FirstName);
+                Assert.AreEqual(loaded.LastName, customer.LastName);
+                Assert.AreEqual(loaded.Email, customer.Email);
+            }
+        }
+
+        [Test]
         public async Task TestQueryAsync()
         {
             // connect...

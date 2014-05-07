@@ -169,6 +169,22 @@ namespace SQLite.Net.Async
             }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
+        public Task<int> InsertOrReplaceAsync(object item)
+        {
+            if (item == null)
+            {
+                throw new ArgumentNullException("item");
+            }
+            return Task.Factory.StartNew(() =>
+            {
+                SQLiteConnectionWithLock conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrReplace(item);
+                }
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
+
         public Task<int> DeleteAsync(object item)
         {
             if (item == null)
@@ -313,6 +329,22 @@ namespace SQLite.Net.Async
                 using (conn.Lock())
                 {
                     return conn.InsertAll(items);
+                }
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
+
+        public Task<int> InsertOrReplaceAllAsync(IEnumerable items)
+        {
+            if (items == null)
+            {
+                throw new ArgumentNullException("items");
+            }
+            return Task.Factory.StartNew(() =>
+            {
+                SQLiteConnectionWithLock conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrReplaceAll(items);
                 }
             }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
