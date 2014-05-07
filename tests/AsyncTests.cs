@@ -299,6 +299,59 @@ namespace SQLite.Net.Tests
         }
 
         [Test]
+        public async Task TestAsyncTableThenBy()
+        {
+            SQLiteAsyncConnection conn = GetConnection();
+            await conn.CreateTableAsync<Customer>();
+            await conn.ExecuteAsync("delete from customer");
+
+            // create...
+            for (int index = 0; index < 10; index++)
+            {
+                await conn.InsertAsync(CreateCustomer());
+            }
+            var preceedingFirstNameCustomer = CreateCustomer();
+            preceedingFirstNameCustomer.FirstName = "a" + preceedingFirstNameCustomer.FirstName;
+            await conn.InsertAsync(preceedingFirstNameCustomer);
+
+            // query...
+            AsyncTableQuery<Customer> query = conn.Table<Customer>().OrderBy(v => v.FirstName).ThenBy(v => v.Email);
+            var items = await query.ToListAsync();
+
+            // check...
+            var list = (await conn.Table<Customer>().ToListAsync()).OrderBy(v => v.FirstName).ThenBy(v => v.Email).ToList();
+            for (var i = 0; i < list.Count; i++)
+                Assert.AreEqual(list[i].Email, items[i].Email);
+        }
+
+        [Test]
+        public async Task TestAsyncTableThenByDescending()
+        {
+            SQLiteAsyncConnection conn = GetConnection();
+            await conn.CreateTableAsync<Customer>();
+            await conn.ExecuteAsync("delete from customer");
+
+            // create...
+            for (int index = 0; index < 10; index++)
+            {
+                await conn.InsertAsync(CreateCustomer());
+            }
+            var preceedingFirstNameCustomer = CreateCustomer();
+            preceedingFirstNameCustomer.FirstName = "a" + preceedingFirstNameCustomer.FirstName;
+            await conn.InsertAsync(preceedingFirstNameCustomer);
+
+            // query...
+            AsyncTableQuery<Customer> query = conn.Table<Customer>().OrderBy(v => v.FirstName).ThenByDescending(v => v.Email);
+            var items = await query.ToListAsync();
+
+
+            // check...
+            var list = (await conn.Table<Customer>().ToListAsync()).OrderBy(v => v.FirstName).ThenByDescending(v => v.Email).ToList();
+            for (var i = 0; i < list.Count; i++)
+                Assert.AreEqual(list[i].Email, items[i].Email);
+        }
+
+        [Test]
         public async Task TestAsyncTableQueryCountAsync()
         {
             SQLiteAsyncConnection conn = GetConnection();
