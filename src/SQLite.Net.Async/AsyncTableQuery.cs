@@ -88,6 +88,24 @@ namespace SQLite.Net.Async
             return new AsyncTableQuery<T>(_innerQuery.OrderByDescending(orderExpr), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
         }
 
+        public AsyncTableQuery<T> ThenBy<TValue>(Expression<Func<T, TValue>> orderExpr)
+        {
+            if (orderExpr == null)
+            {
+                throw new ArgumentNullException("orderExpr");
+            }
+            return new AsyncTableQuery<T>(_innerQuery.ThenBy(orderExpr), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
+        }
+
+        public AsyncTableQuery<T> ThenByDescending<TValue>(Expression<Func<T, TValue>> orderExpr)
+        {
+            if (orderExpr == null)
+            {
+                throw new ArgumentNullException("orderExpr");
+            }
+            return new AsyncTableQuery<T>(_innerQuery.ThenByDescending(orderExpr), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
+        }
+
         public Task<List<T>> ToListAsync()
         {
             return Task.Factory.StartNew(() =>

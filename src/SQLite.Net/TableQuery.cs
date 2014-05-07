@@ -153,6 +153,16 @@ namespace SQLite.Net
             return AddOrderBy(orderExpr, false);
         }
 
+        public TableQuery<T> ThenBy<TValue>(Expression<Func<T, TValue>> orderExpr)
+        {
+            return AddOrderBy<TValue>(orderExpr, true);
+        }
+
+        public TableQuery<T> ThenByDescending<TValue>(Expression<Func<T, TValue>> orderExpr)
+        {
+            return AddOrderBy<TValue>(orderExpr, false);
+        }
+
         private TableQuery<T> AddOrderBy<TValue>(Expression<Func<T, TValue>> orderExpr, bool asc)
         {
             if (orderExpr.NodeType == ExpressionType.Lambda)
