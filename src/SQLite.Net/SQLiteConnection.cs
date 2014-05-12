@@ -1113,6 +1113,32 @@ namespace SQLite.Net
         }
 
         /// <summary>
+        ///     Inserts all specified objects.
+        ///     For each insertion, if a UNIQUE 
+        ///     constraint violation occurs with
+        ///     some pre-existing object, this function
+        ///     deletes the old object.
+        /// </summary>
+        /// <param name="objects">
+        ///     An <see cref="IEnumerable" /> of the objects to insert or replace.
+        /// </param>
+        /// <returns>
+        ///     The total number of rows modified.
+        /// </returns>
+        public int InsertOrReplaceAll(IEnumerable objects)
+        {
+            int c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (object r in objects)
+                {
+                    c += InsertOrReplace(r);
+                }
+            });
+            return c;
+        }
+
+        /// <summary>
         ///     Inserts the given object and retrieves its
         ///     auto incremented primary key if it has one.
         /// </summary>
@@ -1149,6 +1175,35 @@ namespace SQLite.Net
         public int InsertOrReplace(object obj, Type objType)
         {
             return Insert(obj, "OR REPLACE", objType);
+        }
+
+        /// <summary>
+        ///     Inserts all specified objects.
+        ///     For each insertion, if a UNIQUE 
+        ///     constraint violation occurs with
+        ///     some pre-existing object, this function
+        ///     deletes the old object.
+        /// </summary>
+        /// <param name="objects">
+        ///     An <see cref="IEnumerable" /> of the objects to insert or replace.
+        /// </param>
+        /// <param name="objType">
+        ///     The type of objects to insert or replace.
+        /// </param>
+        /// <returns>
+        ///     The total number of rows modified.
+        /// </returns>
+        public int InsertOrReplaceAll(IEnumerable objects, Type objType)
+        {
+            int c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (object r in objects)
+                {
+                    c += InsertOrReplace(r, objType);
+                }
+            });
+            return c;
         }
 
         /// <summary>
