@@ -29,6 +29,7 @@ At the moment these platforms have nugets available:
 Note: 
 To use the WP8 platform you must install the "SQLite for Windows Phone" VSIX extension. 
 Then, in the WP8 project, add a reference to it (in the Windows Phone SDK 8.0 / Extensions section of the Add Reference dialog)
+If you have problems with signed apps take a look here: https://github.com/oysteinkrog/SQLite.Net-PCL/issues/25
 
 ## SQliteAsyncConnection
 The SQLiteAsyncConnection class now takes a Func<SQLiteConnectionWithLock> in the constructor instead of a path.
