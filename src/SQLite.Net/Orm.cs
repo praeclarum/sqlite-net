@@ -63,28 +63,39 @@ namespace SQLite.Net
         {
             Type clrType = p.ColumnType;
             if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) ||
-                clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32))
+                clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Boolean>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Byte>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<UInt16>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<SByte>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Int16>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Int32>)))
             {
                 return "integer";
             }
-            if (clrType == typeof (UInt32) || clrType == typeof (Int64))
+            if (clrType == typeof (UInt32) || clrType == typeof (Int64) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<UInt32>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Int64>)))
             {
                 return "bigint";
             }
-            if (clrType == typeof (Single) || clrType == typeof (Double) || clrType == typeof (Decimal))
+            if (clrType == typeof (Single) || clrType == typeof (Double) || clrType == typeof (Decimal) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Single>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Double>)) ||
+                clrType.GetInterfaces().Contains(typeof(ISerializable<Decimal>)))
             {
                 return "float";
             }
-            if (clrType == typeof (String))
+            if (clrType == typeof (String) || clrType.GetInterfaces().Contains(typeof(ISerializable<String>)))
             {
                 int len = p.MaxStringLength;
                 return "varchar(" + len + ")";
             }
-            if (clrType == typeof (TimeSpan))
+            if (clrType == typeof (TimeSpan) || clrType.GetInterfaces().Contains(typeof(ISerializable<TimeSpan>)))
             {
                 return "bigint";
             }
-            if (clrType == typeof (DateTime))
+            if (clrType == typeof (DateTime) || clrType.GetInterfaces().Contains(typeof(ISerializable<DateTime>)))
             {
                 return storeDateTimeAsTicks ? "bigint" : "datetime";
             }
@@ -92,11 +103,11 @@ namespace SQLite.Net
             {
                 return "integer";
             }
-            if (clrType == typeof (byte[]))
+            if (clrType == typeof (byte[]) || clrType.GetInterfaces().Contains(typeof(ISerializable<byte[]>)))
             {
                 return "blob";
             }
-            if (clrType == typeof (Guid))
+            if (clrType == typeof (Guid) || clrType.GetInterfaces().Contains(typeof(ISerializable<Guid>)))
             {
                 return "varchar(36)";
             }
