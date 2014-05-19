@@ -38,10 +38,10 @@ namespace SQLite.Tests
 	{
 		[AutoIncrement, PrimaryKey]
 		public int Id { get; set; }
-        [Indexed("IX_OrderProduct", 1)]
+				[Indexed("IX_OrderProduct", 1)]
 		public int OrderId { get; set; }
-        [Indexed("IX_OrderProduct", 2)]
-        public int ProductId { get; set; }
+				[Indexed("IX_OrderProduct", 2)]
+				public int ProductId { get; set; }
 		public int Quantity { get; set; }
 		public decimal UnitPrice { get; set; }
 		public OrderLineStatus Status { get; set; }
@@ -56,6 +56,18 @@ namespace SQLite.Tests
 		public TestDb (bool storeDateTimeAsTicks = false) : base (TestPath.GetTempFileName (), storeDateTimeAsTicks)
 		{
 			Trace = true;
+		}
+	}
+
+	public class TestAsyncDb : SQLiteAsyncConnection
+	{
+		public TestAsyncDb(bool storeDateTimeAsTicks = false) : base(TestPath.GetTempFileName(), storeDateTimeAsTicks)
+		{
+		}
+
+		public TestAsyncDb(string databasePath, bool storeDateTimeAsTicks = false)
+			: base(databasePath, storeDateTimeAsTicks)
+		{
 		}
 	}
 

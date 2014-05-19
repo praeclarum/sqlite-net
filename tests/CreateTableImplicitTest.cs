@@ -54,7 +54,7 @@ namespace SQLite.Tests
 
             var mapping = db.GetMapping<NoAttributes>();
 
-            Assert.IsNull (mapping.PK);
+            Assert.AreEqual(mapping.PKs.Count, 0);
 
             var column = mapping.Columns[2];
             Assert.AreEqual("IndexedId", column.Name);
@@ -72,10 +72,11 @@ namespace SQLite.Tests
 
             var mapping = db.GetMapping<NoAttributes>();
 
-            Assert.IsNotNull(mapping.PK);
-            Assert.AreEqual("Id", mapping.PK.Name);
-            Assert.IsTrue(mapping.PK.IsPK);
-            Assert.IsFalse(mapping.PK.IsAutoInc);
+            Assert.AreNotEqual(mapping.PKs.Count, 0);
+            var pk = mapping.PKs.First();
+            Assert.AreEqual("Id", pk.Name);
+            Assert.IsTrue(pk.IsPK);
+            Assert.IsFalse(pk.IsAutoInc);
 
             CheckPK(db);
         }
@@ -90,10 +91,11 @@ namespace SQLite.Tests
 
             var mapping = db.GetMapping<PkAttribute>();
 
-            Assert.IsNotNull(mapping.PK);
-            Assert.AreEqual("Id", mapping.PK.Name);
-            Assert.IsTrue(mapping.PK.IsPK);
-            Assert.IsTrue(mapping.PK.IsAutoInc);
+            Assert.AreNotEqual(mapping.PKs.Count, 0);
+            var pk = mapping.PKs.First();
+            Assert.AreEqual("Id", pk.Name);
+            Assert.IsTrue(pk.IsPK);
+						Assert.IsTrue(pk.IsAutoInc);
         }
 
         [Test]
@@ -118,10 +120,11 @@ namespace SQLite.Tests
 
             var mapping = db.GetMapping<NoAttributes>();
 
-            Assert.IsNotNull(mapping.PK);
-            Assert.AreEqual("Id", mapping.PK.Name);
-            Assert.IsTrue(mapping.PK.IsPK);
-            Assert.IsTrue(mapping.PK.IsAutoInc);
+            Assert.AreNotEqual(mapping.PKs.Count, 0);
+            var pk = mapping.PKs.First();
+            Assert.AreEqual("Id", pk.Name);
+            Assert.IsTrue(pk.IsPK);
+						Assert.IsTrue(pk.IsAutoInc);
         }
 
         [Test]
@@ -133,10 +136,11 @@ namespace SQLite.Tests
 
             var mapping = db.GetMapping<PkAttribute>();
 
-            Assert.IsNotNull(mapping.PK);
-            Assert.AreEqual("Id", mapping.PK.Name);
-            Assert.IsTrue(mapping.PK.IsPK);
-            Assert.IsTrue(mapping.PK.IsAutoInc);
+            Assert.AreNotEqual(mapping.PKs.Count, 0);
+            var pk = mapping.PKs.First();
+            Assert.AreEqual("Id", pk.Name);
+            Assert.IsTrue(pk.IsPK);
+						Assert.IsTrue(pk.IsAutoInc);
         }
 
         [Test]
@@ -148,10 +152,11 @@ namespace SQLite.Tests
 
             var mapping = db.GetMapping<NoAttributes>();
 
-            Assert.IsNotNull(mapping.PK);
-            Assert.AreEqual("Id", mapping.PK.Name);
-            Assert.IsTrue(mapping.PK.IsPK);
-            Assert.IsFalse(mapping.PK.IsAutoInc);
+            Assert.AreNotEqual(mapping.PKs.Count, 0);
+            var pk = mapping.PKs.First();
+            Assert.AreEqual("Id", pk.Name);
+            Assert.IsTrue(pk.IsPK);
+            Assert.IsFalse(pk.IsAutoInc);
         }
 
         [Test]
@@ -163,10 +168,11 @@ namespace SQLite.Tests
 
             var mapping = db.GetMapping<NoAttributes>();
 
-            Assert.IsNotNull(mapping.PK);
-            Assert.AreEqual("Id", mapping.PK.Name);
-            Assert.IsTrue(mapping.PK.IsPK);
-            Assert.IsTrue(mapping.PK.IsAutoInc);
+            Assert.AreNotEqual(mapping.PKs.Count, 0);
+            var pk = mapping.PKs.First();
+            Assert.AreEqual("Id", pk.Name);
+            Assert.IsTrue(pk.IsPK);
+						Assert.IsTrue(pk.IsAutoInc);
         }
     }
 }
