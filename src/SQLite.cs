@@ -364,10 +364,17 @@ namespace SQLite
 				_tables.Add (ty.FullName, map);
 			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
-			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
+
+			var pkCols = map.Columns.Where(p => p.IsPK);
+			int numPkCols = pkCols.Count();
+
+			var decls = map.Columns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, numPkCols == 1));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
+
+			if (numPkCols > 1)
+				query += string.Format(",\nprimary key ({0})\n", string.Join(", ", pkCols.Select(p => "\"" + p.Name + "\"")));
+
 			query += ")";
 			
 			var count = Execute (query);
@@ -1234,35 +1241,39 @@ namespace SQLite
 			var map = GetMapping (objType);
 
 #if NETFX_CORE
-            if (map.PK != null && map.PK.IsAutoGuid)
-            {
-                // no GetProperty so search our way up the inheritance chain till we find it
-                PropertyInfo prop;
-                while (objType != null)
-                {
-                    var info = objType.GetTypeInfo();
-                    prop = info.GetDeclaredProperty(map.PK.PropertyName);
-                    if (prop != null) 
-                    {
-                        if (prop.GetValue(obj, null).Equals(Guid.Empty))
-                        {
-                            prop.SetValue(obj, Guid.NewGuid(), null);
-                        }
-                        break; 
-                    }
-
-                    objType = info.BaseType;
-                }
-            }
+			foreach (var pk in map.PKs)
+			{
+				if (pk.IsAutoGuid)
+				{
+					// no GetProperty so search our way up the inheritance chain till we find it
+					PropertyInfo prop;
+					while (objType != null)
+					{
+						var info = objType.GetTypeInfo();
+						prop = info.GetDeclaredProperty(pk.PropertyName);
+						if (prop != null)
+						{
+							if (prop.GetValue(obj, null).Equals(Guid.Empty))
+							{
+								prop.SetValue(obj, Guid.NewGuid(), null);
+							}
+							break;
+						}
+						objType = info.BaseType;
+					}
+				}
+			}
 #else
-            if (map.PK != null && map.PK.IsAutoGuid) {
-                var prop = objType.GetProperty(map.PK.PropertyName);
-                if (prop != null) {
-                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
-                        prop.SetValue(obj, Guid.NewGuid(), null);
-                    }
-                }
-            }
+			foreach (var pk in map.PKs) {
+				if (pk.IsAutoGuid) {
+					var prop = objType.GetProperty(pk.PropertyName);
+					if (prop != null) {
+						if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
+							prop.SetValue(obj, Guid.NewGuid(), null);
+						}
+					}
+				}
+			}
 #endif
 
 
@@ -1342,21 +1353,22 @@ namespace SQLite
 			
 			var map = GetMapping (objType);
 			
-			var pk = map.PK;
-			
-			if (pk == null) {
+			var pks = map.PKs;
+			if (pks.Count == 0) {
 				throw new NotSupportedException ("Cannot update " + map.TableName + ": it has no PK");
 			}
 			
 			var cols = from p in map.Columns
-				where p != pk
+				where !p.IsPK
 				select p;
 			var vals = from c in cols
 				select c.GetValue (obj);
-			var ps = new List<object> (vals);
-			ps.Add (pk.GetValue (obj));
-			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
-				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
+
+			var q = string.Format ("update \"{0}\" set {1} {2} ", map.TableName, string.Join (",", (from c in cols
+				select "\"" + c.Name + "\" = ? ").ToArray ()), map.GetPrimaryKeyClause());
+
+			var ps = new List<object>(vals);
+			ps.AddRange(pks.Select(pk => pk.GetValue(obj)));
 
 			try {
 				rowsAffected = Execute (q, ps.ToArray ());
@@ -1408,12 +1420,12 @@ namespace SQLite
 		public int Delete (object objectToDelete)
 		{
 			var map = GetMapping (objectToDelete.GetType ());
-			var pk = map.PK;
-			if (pk == null) {
+			var pks = map.PKs;
+			if (pks.Count == 0) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
-			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-			var count = Execute (q, pk.GetValue (objectToDelete));
+			var q = string.Format ("delete from \"{0}\" {1}", map.TableName, map.GetPrimaryKeyClause());
+			var count = Execute (q, pks.Select(pk => pk.GetValue (objectToDelete)).ToArray());
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Delete);
 			return count;
@@ -1434,11 +1446,14 @@ namespace SQLite
 		public int Delete<T> (object primaryKey)
 		{
 			var map = GetMapping (typeof (T));
-			var pk = map.PK;
-			if (pk == null) {
+			var pks = map.PKs;
+			if (pks.Count == 0) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
 			}
-			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
+			if (pks.Count > 1) {
+				throw new NotSupportedException("Cannot delete " + map.TableName + ": it has > 1 PK");
+			}
+			var q = string.Format ("delete from \"{0}\" {1}", map.TableName, map.GetPrimaryKeyClause());
 			var count = Execute (q, primaryKey);
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Delete);
@@ -1658,7 +1673,7 @@ namespace SQLite
 
 		public Column[] Columns { get; private set; }
 
-		public Column PK { get; private set; }
+		public List<Column> PKs { get; private set; }
 
 		public string GetByPrimaryKeySql { get; private set; }
 
@@ -1698,24 +1713,41 @@ namespace SQLite
 				}
 			}
 			Columns = cols.ToArray ();
+			PKs = new List<Column>();
 			foreach (var c in Columns) {
 				if (c.IsAutoInc && c.IsPK) {
 					_autoPk = c;
 				}
 				if (c.IsPK) {
-					PK = c;
+					PKs.Add(c);
 				}
 			}
 			
 			HasAutoIncPK = _autoPk != null;
 
-			if (PK != null) {
-				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" where \"{1}\" = ?", TableName, PK.Name);
+			if (PKs.Count > 0) {
+				GetByPrimaryKeySql = string.Format("select * from \"{0}\" {1}", TableName, GetPrimaryKeyClause()); ;
 			}
 			else {
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
+		}
+
+		public string GetPrimaryKeyClause()
+		{
+			string clause = String.Empty;
+			bool first = true;
+			foreach (Column pk in PKs) {
+				if (first) {
+					clause += "where ";
+					first = false;
+				} else {
+					clause += " and ";
+				}
+				clause += string.Format("\"{0}\" = ?", pk.Name);
+			}
+			return clause;
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -1883,11 +1915,11 @@ namespace SQLite
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
 
-		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
+		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks, bool trySetAsPrimaryKey = true)
 		{
 			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
 			
-			if (p.IsPK) {
+			if (trySetAsPrimaryKey && p.IsPK) {
 				decl += "primary key ";
 			}
 			if (p.IsAutoInc) {
