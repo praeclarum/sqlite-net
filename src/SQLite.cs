@@ -1243,14 +1243,14 @@ namespace SQLite
 #if NETFX_CORE
 			foreach (var pk in map.PKs)
 			{
-				if (map.PK.IsAutoGuid)
+				if (pk.IsAutoGuid)
 				{
 					// no GetProperty so search our way up the inheritance chain till we find it
 					PropertyInfo prop;
 					while (objType != null)
 					{
 						var info = objType.GetTypeInfo();
-						prop = info.GetDeclaredProperty(map.PK.PropertyName);
+						prop = info.GetDeclaredProperty(pk.PropertyName);
 						if (prop != null)
 						{
 							if (prop.GetValue(obj, null).Equals(Guid.Empty))
