@@ -4,11 +4,11 @@ using SQLite.Net.Attributes;
 using SQLite.Net.Interop;
 
 #if __WIN32__
-using SQLitePlatformTest=SQLite.Net.Platform.Win32.SQLitePlatformWin32;
-#elif NETFX_CORE
-using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
+using SQLitePlatformTest = SQLite.Net.Platform.Win32.SQLitePlatformWin32;
 #elif WINDOWS_PHONE
 using SQLitePlatformTest = SQLite.Net.Platform.WindowsPhone8.SQLitePlatformWP8;
+#elif __WINRT__
+using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
 #elif __IOS__
 using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
 #elif __ANDROID__
