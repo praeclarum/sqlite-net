@@ -12,8 +12,10 @@ using SQLite.Net.Platform.XamarinIOS;
 #elif WINDOWS_PHONE
 using SQLite.Net.Platform.WindowsPhone8;
 using Windows.Storage;
-#else
+#elif __WIN32__
 using SQLitePlatform = SQLite.Net.Platform.Win32.SQLitePlatformWin32;
+#else
+using SQLitePlatform = SQLite.Net.Platform.Generic.SQLitePlatformGeneric;
 #endif
 
 #if WINDOWS_PHONE

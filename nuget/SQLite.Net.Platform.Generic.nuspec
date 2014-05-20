@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>SQLite.Net.Platform.Generic</id>
+        <version>2.2.0</version>
+        <title>SQLite.Net PCL - Generic Platform</title>
+        <authors>Øystein Krog,Frank Krueger,Tim Heuer,James Ottaway</authors>
+        <owners>Øystein Krog</owners>
+        <licenseUrl>https://raw.github.com/oysteinkrog/SQLite.Net-PCL/master/LICENSE.txt</licenseUrl>
+        <projectUrl>https://github.com/oysteinkrog/SQLite.Net-PCL</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases. It is written in C# 3.0 and is meant to be simply compiled in with your projects. It was first designed to work with MonoTouch on the iPhone, but should work in any other CLI environment.</description>
+        <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
+        <releaseNotes>v2.2.0: Synchronize against upstream (Add support for ToUpper, TimeSpan etc).
+Add trace listener abstraction (thanks @kentcb).
+Add support for custom Blob serializer (thanks @sami1971).</releaseNotes>
+        <tags>sqlite pcl sql database</tags>
+		<dependencies>
+		  <dependency id="SQLite.Net-PCL" />
+		</dependencies>
+    </metadata>
+    <files>
+        <file src="SQLite.Net.Platform.Generic\SQLite.Net.Platform.Generic.dll" target="lib\MonoAndroid\SQLite.Net.Platform.XamarinAndroid.dll" />
+    </files>
+</package>

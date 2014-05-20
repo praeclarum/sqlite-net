@@ -4,6 +4,9 @@ copy ..\src\SQLite.Net\bin\Release\SQLite.Net.dll SQLite.Net
 mkdir SQLite.Net.Async
 copy ..\src\SQLite.Net.Async\bin\Release\SQLite.Net.Async.dll SQLite.Net.Async
 
+mkdir SQLite.Net.Platform.Generic
+copy ..\src\SQLite.Net.Platform.Generic\bin\Release\SQLite.Net.Platform.Generic.dll SQLite.Net.Platform.Generic
+
 mkdir SQLite.Net.Platform.Win32
 copy ..\src\SQLite.Net.Platform.Win32\bin\Release\SQLite.Net.Platform.Win32.dll SQLite.Net.Platform.Win32
 
