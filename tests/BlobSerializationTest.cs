@@ -5,17 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-#if __ANDROID__
-using SQLite.Net.Platform.XamarinAndroid;
-#elif __IOS__
-using SQLite.Net.Platform.XamarinIOS;
+#if __WIN32__
+using SQLitePlatformTest=SQLite.Net.Platform.Win32.SQLitePlatformWin32;
+#elif NETFX_CORE
+using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
 #elif WINDOWS_PHONE
-using SQLite.Net.Platform.WindowsPhone8;
-using Windows.Storage;
-#elif __WIN32__
-using SQLitePlatform = SQLite.Net.Platform.Win32.SQLitePlatformWin32;
-#else
-using SQLitePlatform = SQLite.Net.Platform.Generic.SQLitePlatformGeneric;
+using SQLitePlatformTest = SQLite.Net.Platform.WindowsPhone8.SQLitePlatformWP8;
+#elif __IOS__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
+#elif __ANDROID__
+using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndroid;
 #endif
 
 #if WINDOWS_PHONE
@@ -38,7 +37,7 @@ namespace SQLite.Net.Tests
         public class BlobDatabase : SQLiteConnection
         {
             public BlobDatabase(IBlobSerializer serializer) :
-                base(new SQLitePlatform(), TestPath.GetTempFileName(), false, serializer)
+                base(new SQLitePlatformTest(), TestPath.GetTempFileName(), false, serializer)
             {
                 DropTable<ComplexOrder>();
             }
