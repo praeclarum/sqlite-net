@@ -144,6 +144,9 @@
     <Compile Include="..\UniqueTest.cs">
       <Link>Tests\UniqueTest.cs</Link>
     </Compile>
+    <Compile Include="..\SerializableTest.cs">
+      <Link>Tests\SerializableTest.cs</Link>
+    </Compile>
     <Compile Include="MainActivity.cs" />
     <Compile Include="TestsSample.cs" />
     <Compile Include="Resources\Resource.designer.cs" />

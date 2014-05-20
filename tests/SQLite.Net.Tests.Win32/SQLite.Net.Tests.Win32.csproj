@@ -139,6 +139,9 @@
     <Compile Include="..\UniqueTest.cs">
       <Link>UniqueTest.cs</Link>
     </Compile>
+    <Compile Include="..\SerializableTest.cs">
+      <Link>SerializableTest.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\BlobSerializationTest.cs">
       <Link>BlobSerializationTest.cs</Link>

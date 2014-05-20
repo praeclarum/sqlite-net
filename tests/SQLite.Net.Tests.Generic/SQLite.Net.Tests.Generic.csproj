@@ -133,6 +133,9 @@
     <Compile Include="..\UniqueTest.cs">
       <Link>UniqueTest.cs</Link>
     </Compile>
+    <Compile Include="..\SerializableTest.cs">
+      <Link>SerializableTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
