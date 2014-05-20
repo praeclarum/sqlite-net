@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 #if __WIN32__
@@ -287,8 +288,8 @@ namespace SQLite.Net.Tests
                 db.CreateTable<ComplexOrder>();
             }
 
-            Assert.Contains(typeof(List<ComplexHistory>), types);
-            Assert.Contains(typeof(List<ComplexLine>), types);
+            Assert.That(types, Has.Member(typeof (List<ComplexHistory>)));
+            Assert.That(types, Has.Member(typeof (List<ComplexLine>)));
 
             Assert.AreEqual(2, types.Count, "Too many types requested by serializer");
         }
@@ -327,7 +328,7 @@ namespace SQLite.Net.Tests
                 db.CreateTable<UnsupportedTypes>();
             }
 
-            Assert.Contains(typeof(DateTimeOffset), types);
+            Assert.That(types, Has.Member(typeof (List<DateTimeOffset>)));
 
             Assert.AreEqual(1, types.Count, "Too many types requested by serializer");
         }
