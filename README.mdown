@@ -20,11 +20,12 @@ You now have to pass in an implementation of ISQlitePlatform in the SQLiteConnec
 I provide ready-made implementations of this class, please see use one(or more) of these [nugets](https://www.nuget.org/profiles/oystein.krog/).
 
 At the moment these platforms have nugets available:
-- Win32 (works on both x86 and x64 automatically) (very well tested)
+- Win32 (bundles sqlite binaries for windows, works on both x86 and x64 automatically) (very well tested)
 - XamarinIOS (very well tested)
 - XamarinAndroid (not very well tested, please give feedback) 
 - WindowsPhone8 (not very well tested, please give feedback) (contributed by Nick Cipollina, thanks!)
 - WindowsRT (not very well tested, please give feedback) (contributed by Nick Cipollina and Micah Lewis, thanks!)
+- Generic (well tested) (net4 project without any sqlite3 binaries, requires sqlite installed in the OS) (contributed by James Ottaway)
 
 Note: 
 To use the WP8 platform you must install the "SQLite for Windows Phone" VSIX extension. 
