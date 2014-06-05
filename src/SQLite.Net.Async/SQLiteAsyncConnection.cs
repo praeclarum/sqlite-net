@@ -47,7 +47,7 @@ namespace SQLite.Net.Async
             _taskScheduler = taskScheduler;
         }
 
-        private SQLiteConnectionWithLock GetConnection()
+        protected SQLiteConnectionWithLock GetConnection()
         {
             return _sqliteConnectionFunc();
         }
