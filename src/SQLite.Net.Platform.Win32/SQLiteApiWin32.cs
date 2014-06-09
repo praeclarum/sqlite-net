@@ -26,6 +26,21 @@ namespace SQLite.Net.Platform.Win32
             return SQLiteApiWin32Internal.sqlite3_close(internalDbHandle.DbPtr);
         }
 
+        public Result Initialize()
+        {
+            return SQLiteApiWin32Internal.sqlite3_initialize();
+        }
+        public Result Shutdown()
+        {
+            return SQLiteApiWin32Internal.sqlite3_shutdown();
+        }
+
+        public Result Config(ConfigOption option)
+        {
+            return SQLiteApiWin32Internal.sqlite3_config(option);
+        }
+
+
         public Result BusyTimeout(IDbHandle db, int milliseconds)
         {
             var internalDbHandle = (DbHandle) db;

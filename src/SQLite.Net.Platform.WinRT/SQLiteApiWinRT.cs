@@ -69,6 +69,21 @@ namespace SQLite.Net.Platform.WinRT
             return (Result)SQLite3.Close(dbHandle.InternalDbHandle);
         }
 
+        public Result Initialize()
+        {
+            throw new NotSupportedException();
+        }
+        public Result Shutdown()
+        {
+            throw new NotSupportedException();
+        }
+
+        public Result Config(ConfigOption option)
+        {
+            return (Result)SQLite3.Config(option);
+        }
+
+
         public byte[] ColumnBlob(IDbStatement stmt, int index)
         {
             var dbStatement = (DbStatement)stmt;

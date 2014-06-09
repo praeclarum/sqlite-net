@@ -26,6 +26,20 @@ namespace SQLite.Net.Platform.XamarinAndroid
             return SQLiteApiAndroidInternal.sqlite3_close(internalDbHandle.DbPtr);
         }
 
+        public Result Initialize()
+        {
+            return SQLiteApiAndroidInternal.sqlite3_initialize();
+        }
+        public Result Shutdown()
+        {
+            return SQLiteApiAndroidInternal.sqlite3_shutdown();
+        }
+
+        public Result Config(ConfigOption option)
+        {
+            return SQLiteApiAndroidInternal.sqlite3_config(option);
+        }
+
         public Result BusyTimeout(IDbHandle db, int milliseconds)
         {
             var internalDbHandle = (DbHandle) db;
@@ -213,5 +227,7 @@ namespace SQLite.Net.Platform.XamarinAndroid
                 return other is DbStatement && StmtPtr == ((DbStatement) other).StmtPtr;
             }
         }
+
+
     }
 }

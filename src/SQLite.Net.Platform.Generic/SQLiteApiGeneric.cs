@@ -25,6 +25,19 @@ namespace SQLite.Net.Platform.Generic
             var internalDbHandle = (DbHandle) db;
             return SQLiteApiGenericInternal.sqlite3_close(internalDbHandle.DbPtr);
         }
+        public Result Initialize()
+        {
+            return SQLiteApiGenericInternal.sqlite3_initialize();
+        }
+        public Result Shutdown()
+        {
+            return SQLiteApiGenericInternal.sqlite3_shutdown();
+        }
+
+        public Result Config(ConfigOption option)
+        {
+            return SQLiteApiGenericInternal.sqlite3_config(option);
+        }
 
         public Result BusyTimeout(IDbHandle db, int milliseconds)
         {

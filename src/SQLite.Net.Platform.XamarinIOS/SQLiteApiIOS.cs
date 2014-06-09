@@ -26,6 +26,20 @@ namespace SQLite.Net.Platform.XamarinIOS
             return SQLiteApiIOSInternal.sqlite3_close(internalDbHandle.DbPtr);
         }
 
+        public Result Initialize()
+        {
+            return SQLiteApiIOSInternal.sqlite3_initialize();
+        }
+        public Result Shutdown()
+        {
+            return SQLiteApiIOSInternal.sqlite3_shutdown();
+        }
+
+        public Result Config(ConfigOption option)
+        {
+            return SQLiteApiIOSInternal.sqlite3_config(option);
+        }
+
         public Result BusyTimeout(IDbHandle db, int milliseconds)
         {
             var internalDbHandle = (DbHandle) db;
