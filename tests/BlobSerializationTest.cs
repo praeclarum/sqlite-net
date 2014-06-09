@@ -328,7 +328,7 @@ namespace SQLite.Net.Tests
                 db.CreateTable<UnsupportedTypes>();
             }
 
-            Assert.That(types, Has.Member(typeof (List<DateTimeOffset>)));
+            Assert.That(types, Has.Member(typeof (DateTimeOffset)));
 
             Assert.AreEqual(1, types.Count, "Too many types requested by serializer");
         }
