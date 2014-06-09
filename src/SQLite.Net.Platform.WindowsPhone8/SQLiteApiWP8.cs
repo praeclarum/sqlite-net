@@ -28,6 +28,20 @@ namespace SQLite.Net.Platform.WindowsPhone8
             return (Result)Sqlite3.sqlite3_close(dbHandle.InternalDbHandle);
         }
 
+        public Result Initialize()
+        {
+            throw new NotSupportedException();
+        }
+        public Result Shutdown()
+        {
+            throw new NotSupportedException();
+        }
+
+        public Result Config(ConfigOption option)
+        {
+            throw new NotSupportedException();
+        }
+
         public Result BusyTimeout(IDbHandle db, int milliseconds)
         {
             var dbHandle = (DbHandle)db;

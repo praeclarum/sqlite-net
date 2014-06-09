@@ -33,7 +33,9 @@ namespace SQLite.Net.Interop
 
         Result Close(IDbHandle db);
 
-        //        Result Config(ConfigOption option);
+        Result Initialize();
+        Result Shutdown();
+        Result Config(ConfigOption option);
 
         //        int SetDirectory(uint directoryType, string directoryPath);
 
