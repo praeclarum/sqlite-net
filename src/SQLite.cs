@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2012 Krueger Systems, Inc.
+// Copyright (c) 2009-2014 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -219,6 +219,7 @@ namespace SQLite
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 		
+#if __IOS__
 		static SQLiteConnection ()
 		{
 			if (_preserveDuringLinkMagic) {
@@ -226,6 +227,13 @@ namespace SQLite
 				ti.Name = "magic";
 			}
 		}
+
+   		/// <summary>
+		/// Used to list some code that we want the MonoTouch linker
+		/// to see, but that we never want to actually execute.
+		/// </summary>
+		static bool _preserveDuringLinkMagic;
+#endif
 
 #if !USE_SQLITEPCL_RAW
         public void EnableLoadExtension(int onoff)
@@ -247,14 +255,8 @@ namespace SQLite
 			return bytes;
 		}
 #endif
-		
-		/// <summary>
-		/// Used to list some code that we want the MonoTouch linker
-		/// to see, but that we never want to actually execute.
-		/// </summary>
-		static bool _preserveDuringLinkMagic;
 
-		/// <summary>
+        /// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
 		/// The handler will sleep multiple times until a total time of <see cref="BusyTimeout"/> has accumulated.
 		/// </summary>
