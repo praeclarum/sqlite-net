@@ -2978,6 +2978,9 @@ namespace SQLite
 		}
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
+		[DllImport("sqlite3", EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
+		public static extern int Threadsafe ();
+
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db);
 
