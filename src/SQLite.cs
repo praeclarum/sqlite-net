@@ -588,9 +588,13 @@ namespace SQLite
 
 			var cmd = NewCommand ();
 			cmd.CommandText = cmdText;
-			foreach (var o in ps) {
-				cmd.Bind (o);
-			}
+		    if (ps != null)
+            {
+                foreach (var o in ps)
+                {
+                    cmd.Bind(o);
+                }
+		    }
 			return cmd;
 		}
 
