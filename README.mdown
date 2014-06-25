@@ -149,7 +149,7 @@ operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to
 Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
 
 		var conn = new SQLiteAsyncConnection("foofoo");
-		conn.ExecuteScalarAsync<int>("select count(*) from Stock", null).ContinueWith((t) =>
+		conn.ExecuteScalarAsync<int>("select count(*) from Stock").ContinueWith((t) =>
 		{
 			Debug.WriteLine(string.Format("Found '{0}' stock items.", t.Result));
 		});
