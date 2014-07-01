@@ -170,6 +170,9 @@
     <Compile Include="..\UniqueTest.cs">
       <Link>Tests\UniqueTest.cs</Link>
     </Compile>
+    <Compile Include="..\SerializableTest.cs">
+      <Link>Tests\SerializableTest.cs</Link>
+    </Compile>
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
     <None Include="Info.plist" />

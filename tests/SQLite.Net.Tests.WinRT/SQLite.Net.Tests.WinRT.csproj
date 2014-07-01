@@ -209,6 +209,9 @@
     <Compile Include="..\UniqueTest.cs">
       <Link>Tests\UniqueTest.cs</Link>
     </Compile>
+    <Compile Include="..\SerializableTest.cs">
+      <Link>Tests\SerializableTest.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
