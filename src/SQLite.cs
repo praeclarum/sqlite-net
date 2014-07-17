@@ -2976,8 +2976,11 @@ namespace SQLite
 		{
 			SingleThread = 1,
 			MultiThread = 2,
-			Serialized = 3
+			Serialized = 3,
+			Log = 16,
 		}
+
+		public delegate void ErrorLogCallback (IntPtr pArg, int iErrCode, string zMsg);
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
 		[DllImport("sqlite3", EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
@@ -3009,6 +3012,9 @@ namespace SQLite
 		
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
+
+		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
+		public static extern Result Config (ConfigOption option, ErrorLogCallback callback, IntPtr pArg);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);
