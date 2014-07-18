@@ -324,6 +324,19 @@ namespace SQLite.Net
                     CommandText = text
                 };
             }
+            if (expr.NodeType == ExpressionType.Not)
+            {
+                var operandExpr = ((UnaryExpression) expr).Operand;
+                var opr = CompileExpr(operandExpr, queryArgs);
+                object val = opr.Value;
+                if (val is bool)
+                    val = !((bool) val);
+                return new CompileResult
+                {
+                    CommandText = "NOT(" + opr.CommandText + ")",
+                    Value = val
+                };
+            }
             if (expr.NodeType == ExpressionType.Call)
             {
                 var call = (MethodCallExpression) expr;
