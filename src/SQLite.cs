@@ -2653,7 +2653,18 @@ namespace SQLite
 				else
 					text = "(" + leftr.CommandText + " " + GetSqlName(bin) + " " + rightr.CommandText + ")";
 				return new CompileResult { CommandText = text };
-			} else if (expr.NodeType == ExpressionType.Call) {
+			} else if (expr.NodeType == ExpressionType.Not) {
+                var operandExpr = ((UnaryExpression)expr).Operand;
+                var opr = CompileExpr(operandExpr, queryArgs);
+                object val = opr.Value;
+                if (val is bool)
+                    val = !((bool) val);
+                return new CompileResult
+                {
+                    CommandText = "NOT(" + opr.CommandText + ")",
+                    Value = val
+                };
+            } else if (expr.NodeType == ExpressionType.Call) {
 				
 				var call = (MethodCallExpression)expr;
 				var args = new CompileResult[call.Arguments.Count];
