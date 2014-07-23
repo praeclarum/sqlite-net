@@ -183,5 +183,55 @@ namespace SQLite.Tests
 			Assert.AreEqual (1, db.Table<Issue96_A>().Where(p => p.ClassB == id).Count ());
 			Assert.AreEqual (3, db.Table<Issue96_A>().Where(p => p.ClassB == null).Count ());
 		}
+
+        public class Issue303_A
+        {
+            [PrimaryKey, NotNull]
+            public int Id { get; set; }
+            public string Name { get; set; }
+        }
+
+        public class Issue303_B
+        {
+            [PrimaryKey, NotNull]
+            public int Id { get; set; }
+            public bool Flag { get; set; }
+        }
+
+        [Test]
+        public void Issue303_WhereNot_A()
+        {
+            using (var db = new TestDb())
+            {
+                db.CreateTable<Issue303_A>();
+                db.Insert(new Issue303_A { Id = 1, Name = "aa" });
+                db.Insert(new Issue303_A { Id = 2, Name = null });
+                db.Insert(new Issue303_A { Id = 3, Name = "test" });
+                db.Insert(new Issue303_A { Id = 4, Name = null });
+
+                var r = (from p in db.Table<Issue303_A>() where !(p.Name == null) select p).ToList();
+                Assert.AreEqual(2, r.Count);
+                Assert.AreEqual(1, r[0].Id);
+                Assert.AreEqual(3, r[1].Id);
+            }
+        }
+
+        [Test]
+        public void Issue303_WhereNot_B()
+        {
+            using (var db = new TestDb())
+            {
+                db.CreateTable<Issue303_B>();
+                db.Insert(new Issue303_B { Id = 1, Flag = true });
+                db.Insert(new Issue303_B { Id = 2, Flag = false });
+                db.Insert(new Issue303_B { Id = 3, Flag = true });
+                db.Insert(new Issue303_B { Id = 4, Flag = false });
+
+                var r = (from p in db.Table<Issue303_B>() where !p.Flag select p).ToList();
+                Assert.AreEqual(2, r.Count);
+                Assert.AreEqual(2, r[0].Id);
+                Assert.AreEqual(4, r[1].Id);
+            }
+        }
 	}
 }
