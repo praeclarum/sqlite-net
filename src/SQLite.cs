@@ -857,6 +857,25 @@ namespace SQLite
         }
 
 		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type. 
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public T FindWithQuery<T> (string query, params object[] args) where T : new()
+		{
+			return Query<T> (query, args).FirstOrDefault ();
+		}
+
+		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
 		public bool IsInTransaction {
