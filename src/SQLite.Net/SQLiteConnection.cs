@@ -839,6 +839,25 @@ namespace SQLite.Net
         }
 
         /// <summary>
+        ///     Attempts to retrieve the first object that matches the query from the table
+        ///     associated with the specified type.
+        /// </summary>
+        /// <param name="query">
+        ///     The fully escaped SQL.
+        /// </param>
+        /// <param name="args">
+        ///     Arguments to substitute for the occurences of '?' in the query.
+        /// </param>
+        /// <returns>
+        ///     The object that matches the given predicate or null
+        ///     if the object is not found.
+        /// </returns>
+        public T FindWithQuery<T>(string query, params object[] args) where T : class
+        {
+            return Query<T>(query, args).FirstOrDefault();
+        }
+
+        /// <summary>
         ///     Attempts to retrieve an object with the given primary key from the table
         ///     associated with the specified type. Use of this method requires that
         ///     the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
