@@ -20,6 +20,8 @@
 // THE SOFTWARE.
 //
 
+#define TRACE_SQLITE // enable to trace sql commands to debug output
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -117,6 +119,18 @@ namespace SQLite
 			});
 		}
 
+        public Task<int> DropTableAsync(Type tableType)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.DropTable(tableType);
+                }
+            });
+        }
+
 		public Task<int> InsertAsync (object item)
 		{
 			return Task.Factory.StartNew (() => {
@@ -126,6 +140,18 @@ namespace SQLite
 				}
 			});
 		}
+
+        public Task<int> InsertOrReplaceAsync(object item)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrReplace(item);
+                }
+            });
+        }
 
 		public Task<int> UpdateAsync (object item)
 		{
@@ -146,6 +172,18 @@ namespace SQLite
 				}
 			});
 		}
+
+        public Task<int> DeleteAllAsync<T>()
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.DeleteAll<T>();
+                }
+            });
+        }
 
         public Task<T> GetAsync<T>(object pk)
             where T : new()
@@ -406,6 +444,9 @@ namespace SQLite
 			{
 				ConnectionString = connectionString;
 				Connection = new SQLiteConnectionWithLock (connectionString, openFlags);
+#if TRACE_SQLITE
+			    Connection.Trace = true;
+#endif
 			}
 
 			public void OnApplicationSuspended ()
