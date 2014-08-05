@@ -45,7 +45,7 @@ namespace SQLite.Net.Tests
             //
             o = new TestObj
             {
-                ModifiedTime = new DateTime(2012, 1, 14, 3, 2, 1, DateTimeKind.Utc),
+                ModifiedTime = DateTime.UtcNow,
             };
             await db.InsertAsync(o);
             o2 = await db.GetAsync<TestObj>(o.Id);
@@ -66,7 +66,7 @@ namespace SQLite.Net.Tests
             //
             o = new TestObj
             {
-                ModifiedTime = new DateTime(2012, 1, 14, 3, 2, 1, DateTimeKind.Utc),
+                ModifiedTime = DateTime.UtcNow,
             };
             db.Insert(o);
             o2 = db.Get<TestObj>(o.Id);

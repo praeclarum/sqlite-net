@@ -332,7 +332,7 @@ namespace SQLite.Net
                     }
                     else
                     {
-                        isqLite3Api.BindText16(stmt, index, ((DateTime)value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"), -1, NegativePointer);
+                        isqLite3Api.BindText16(stmt, index, ((DateTime)value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"), -1, NegativePointer);
                     }
                 }
                 else if (value is DateTimeOffset)
@@ -347,7 +347,7 @@ namespace SQLite.Net
                     }
                     else
                     {
-                        isqLite3Api.BindText16(stmt, index, ((ISerializable<DateTime>)value).Serialize().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"), -1, NegativePointer);
+                        isqLite3Api.BindText16(stmt, index, ((ISerializable<DateTime>)value).Serialize().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"), -1, NegativePointer);
                     }
                 }
                 else if (value.GetType().GetTypeInfo().IsEnum)
