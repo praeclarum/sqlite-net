@@ -34,7 +34,7 @@ namespace SQLite.Net.Tests
         }
 
 
-        private async Task TestAsyncDateTime(SQLiteAsyncConnection db)
+        private async Task TestAsyncDateTime(SQLiteAsyncConnection db, bool storeDateTimeAsTicks)
         {
             await db.CreateTableAsync<TestObj>();
 
@@ -45,11 +45,14 @@ namespace SQLite.Net.Tests
             //
             o = new TestObj
             {
-                ModifiedTime = new DateTime(2012, 1, 14, 3, 2, 1),
+                ModifiedTime = new DateTime(2012, 1, 14, 3, 2, 1, DateTimeKind.Utc),
             };
             await db.InsertAsync(o);
             o2 = await db.GetAsync<TestObj>(o.Id);
-            Assert.AreEqual(o.ModifiedTime, o2.ModifiedTime);
+            Assert.AreEqual(o.ModifiedTime, o2.ModifiedTime.ToUniversalTime());
+
+            var expectedTimeZone = storeDateTimeAsTicks ? DateTimeKind.Utc : DateTimeKind.Local;
+            Assert.AreEqual(o2.ModifiedTime.Kind, expectedTimeZone);
         }
 
         private void TestDateTime(TestDb db)
@@ -63,11 +66,14 @@ namespace SQLite.Net.Tests
             //
             o = new TestObj
             {
-                ModifiedTime = new DateTime(2012, 1, 14, 3, 2, 1),
+                ModifiedTime = new DateTime(2012, 1, 14, 3, 2, 1, DateTimeKind.Utc),
             };
             db.Insert(o);
             o2 = db.Get<TestObj>(o.Id);
-            Assert.AreEqual(o.ModifiedTime, o2.ModifiedTime);
+            Assert.AreEqual(o.ModifiedTime, o2.ModifiedTime.ToUniversalTime());
+
+            var expectedTimeZone = db.StoreDateTimeAsTicks ? DateTimeKind.Utc : DateTimeKind.Local;
+            Assert.AreEqual(o2.ModifiedTime.Kind, expectedTimeZone);
         }
 
         [Test]
@@ -90,7 +96,7 @@ namespace SQLite.Net.Tests
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
             var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), false);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
-            await TestAsyncDateTime(db);
+            await TestAsyncDateTime(db, sqLiteConnectionString.StoreDateTimeAsTicks);
         }
 
         [Test]
@@ -99,7 +105,7 @@ namespace SQLite.Net.Tests
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
             var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), true);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
-            await TestAsyncDateTime(db);
+            await TestAsyncDateTime(db, sqLiteConnectionString.StoreDateTimeAsTicks);
         }
     }
 }

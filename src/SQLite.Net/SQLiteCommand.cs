@@ -236,8 +236,7 @@ namespace SQLite.Net
             }
         }
 
-        internal static void BindParameter(ISQLiteApi isqLite3Api, IDbStatement stmt, int index, object value,
-            bool storeDateTimeAsTicks, IBlobSerializer serializer)
+        internal static void BindParameter(ISQLiteApi isqLite3Api, IDbStatement stmt, int index, object value, bool storeDateTimeAsTicks, IBlobSerializer serializer)
         {
             if (value == null)
             {
@@ -247,19 +246,19 @@ namespace SQLite.Net
             {
                 if (value is int)
                 {
-                    isqLite3Api.BindInt(stmt, index, (int) value);
+                    isqLite3Api.BindInt(stmt, index, (int)value);
                 }
                 else if (value is ISerializable<int>)
                 {
-                    isqLite3Api.BindInt(stmt, index, ((ISerializable<int>) value).Serialize());
+                    isqLite3Api.BindInt(stmt, index, ((ISerializable<int>)value).Serialize());
                 }
                 else if (value is string)
                 {
-                    isqLite3Api.BindText16(stmt, index, (string) value, -1, NegativePointer);
+                    isqLite3Api.BindText16(stmt, index, (string)value, -1, NegativePointer);
                 }
                 else if (value is ISerializable<string>)
                 {
-                    isqLite3Api.BindText16(stmt, index, ((ISerializable<string>) value).Serialize(), -1, NegativePointer);
+                    isqLite3Api.BindText16(stmt, index, ((ISerializable<string>)value).Serialize(), -1, NegativePointer);
                 }
                 else if (value is byte || value is ushort || value is sbyte || value is short)
                 {
@@ -267,27 +266,27 @@ namespace SQLite.Net
                 }
                 else if (value is ISerializable<byte>)
                 {
-                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<byte>) value).Serialize()));
+                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<byte>)value).Serialize()));
                 }
                 else if (value is ISerializable<ushort>)
                 {
-                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<ushort>) value).Serialize()));
+                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<ushort>)value).Serialize()));
                 }
                 else if (value is ISerializable<sbyte>)
                 {
-                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<sbyte>) value).Serialize()));
+                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<sbyte>)value).Serialize()));
                 }
                 else if (value is ISerializable<short>)
                 {
-                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<short>) value).Serialize()));
+                    isqLite3Api.BindInt(stmt, index, Convert.ToInt32(((ISerializable<short>)value).Serialize()));
                 }
                 else if (value is bool)
                 {
-                    isqLite3Api.BindInt(stmt, index, (bool) value ? 1 : 0);
+                    isqLite3Api.BindInt(stmt, index, (bool)value ? 1 : 0);
                 }
                 else if (value is ISerializable<bool>)
                 {
-                    isqLite3Api.BindInt(stmt, index, ((ISerializable<bool>) value).Serialize() ? 1 : 0);
+                    isqLite3Api.BindInt(stmt, index, ((ISerializable<bool>)value).Serialize() ? 1 : 0);
                 }
                 else if (value is uint || value is long)
                 {
@@ -295,11 +294,11 @@ namespace SQLite.Net
                 }
                 else if (value is ISerializable<uint>)
                 {
-                    isqLite3Api.BindInt64(stmt, index, Convert.ToInt64(((ISerializable<uint>) value).Serialize()));
+                    isqLite3Api.BindInt64(stmt, index, Convert.ToInt64(((ISerializable<uint>)value).Serialize()));
                 }
                 else if (value is ISerializable<long>)
                 {
-                    isqLite3Api.BindInt64(stmt, index, Convert.ToInt64(((ISerializable<long>) value).Serialize()));
+                    isqLite3Api.BindInt64(stmt, index, Convert.ToInt64(((ISerializable<long>)value).Serialize()));
                 }
                 else if (value is float || value is double || value is decimal)
                 {
@@ -307,48 +306,48 @@ namespace SQLite.Net
                 }
                 else if (value is ISerializable<float>)
                 {
-                    isqLite3Api.BindDouble(stmt, index, Convert.ToDouble(((ISerializable<float>) value).Serialize()));
+                    isqLite3Api.BindDouble(stmt, index, Convert.ToDouble(((ISerializable<float>)value).Serialize()));
                 }
                 else if (value is ISerializable<double>)
                 {
-                    isqLite3Api.BindDouble(stmt, index, Convert.ToDouble(((ISerializable<double>) value).Serialize()));
+                    isqLite3Api.BindDouble(stmt, index, Convert.ToDouble(((ISerializable<double>)value).Serialize()));
                 }
                 else if (value is ISerializable<decimal>)
                 {
-                    isqLite3Api.BindDouble(stmt, index, Convert.ToDouble(((ISerializable<decimal>) value).Serialize()));
+                    isqLite3Api.BindDouble(stmt, index, Convert.ToDouble(((ISerializable<decimal>)value).Serialize()));
                 }
                 else if (value is TimeSpan)
                 {
-                    isqLite3Api.BindInt64(stmt, index, ((TimeSpan) value).Ticks);
+                    isqLite3Api.BindInt64(stmt, index, ((TimeSpan)value).Ticks);
                 }
                 else if (value is ISerializable<TimeSpan>)
                 {
-                    isqLite3Api.BindInt64(stmt, index, ((ISerializable<TimeSpan>) value).Serialize().Ticks);
+                    isqLite3Api.BindInt64(stmt, index, ((ISerializable<TimeSpan>)value).Serialize().Ticks);
                 }
                 else if (value is DateTime)
                 {
                     if (storeDateTimeAsTicks)
                     {
-                        isqLite3Api.BindInt64(stmt, index, ((DateTime) value).Ticks);
+                        isqLite3Api.BindInt64(stmt, index, ((DateTime)value).ToUniversalTime().Ticks);
                     }
                     else
                     {
-                        isqLite3Api.BindText16(stmt, index, ((DateTime) value).ToString("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+                        isqLite3Api.BindText16(stmt, index, ((DateTime)value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"), -1, NegativePointer);
                     }
                 }
                 else if (value is DateTimeOffset)
                 {
-                    isqLite3Api.BindInt64(stmt, index, ((DateTimeOffset) value).UtcTicks);
+                    isqLite3Api.BindInt64(stmt, index, ((DateTimeOffset)value).UtcTicks);
                 }
                 else if (value is ISerializable<DateTime>)
                 {
                     if (storeDateTimeAsTicks)
                     {
-                        isqLite3Api.BindInt64(stmt, index, ((ISerializable<DateTime>) value).Serialize().Ticks);
+                        isqLite3Api.BindInt64(stmt, index, ((ISerializable<DateTime>)value).Serialize().ToUniversalTime().Ticks);
                     }
                     else
                     {
-                        isqLite3Api.BindText16(stmt, index, ((ISerializable<DateTime>) value).Serialize().ToString("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+                        isqLite3Api.BindText16(stmt, index, ((ISerializable<DateTime>)value).Serialize().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"), -1, NegativePointer);
                     }
                 }
                 else if (value.GetType().GetTypeInfo().IsEnum)
@@ -357,20 +356,19 @@ namespace SQLite.Net
                 }
                 else if (value is byte[])
                 {
-                    isqLite3Api.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
+                    isqLite3Api.BindBlob(stmt, index, (byte[])value, ((byte[])value).Length, NegativePointer);
                 }
                 else if (value is ISerializable<byte[]>)
                 {
-                    isqLite3Api.BindBlob(stmt, index, ((ISerializable<byte[]>) value).Serialize(), ((ISerializable<byte[]>) value).Serialize().Length,
-                        NegativePointer);
+                    isqLite3Api.BindBlob(stmt, index, ((ISerializable<byte[]>)value).Serialize(), ((ISerializable<byte[]>)value).Serialize().Length, NegativePointer);
                 }
                 else if (value is Guid)
                 {
-                    isqLite3Api.BindText16(stmt, index, ((Guid) value).ToString(), 72, NegativePointer);
+                    isqLite3Api.BindText16(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
                 }
                 else if (value is ISerializable<Guid>)
                 {
-                    isqLite3Api.BindText16(stmt, index, ((ISerializable<Guid>) value).Serialize().ToString(), 72, NegativePointer);
+                    isqLite3Api.BindText16(stmt, index, ((ISerializable<Guid>)value).Serialize().ToString(), 72, NegativePointer);
                 }
                 else if (serializer != null && serializer.CanDeserialize(value.GetType()))
                 {
@@ -450,7 +448,7 @@ namespace SQLite.Net
             {
                 if (_conn.StoreDateTimeAsTicks)
                 {
-                    return new DateTime(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index));
+                    return new DateTime(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index), DateTimeKind.Utc);
                 }
                 return DateTime.Parse(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index));
             }
