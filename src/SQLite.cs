@@ -380,6 +380,10 @@ namespace SQLite
 				map = GetMapping (ty, createFlags);
 				_tables.Add (ty.FullName, map);
 			}
+			
+			if (map.Columns.Length == 0) {
+				throw new Exception(string.Format("Cannot create a table with zero columns (does '{0}' have public properties?)", ty.FullName));
+			}
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
 			
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
