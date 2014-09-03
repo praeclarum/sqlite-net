@@ -2730,6 +2730,14 @@ namespace SQLite
 					CommandText = valr.CommandText,
 					Value = valr.Value != null ? ConvertTo (valr.Value, ty) : null
 				};
+            		} else if (expr.NodeType == ExpressionType.Not) {
+            			var u = (UnaryExpression)expr;
+            			var ty = u.Type;
+            			var valr = CompileExpr(u.Operand, queryArgs);
+            			return new CompileResult {
+                    			CommandText = "NOT " + valr.CommandText,
+                    			Value = valr.Value != null ? ConvertTo(valr.Value, ty) : null
+                		};
 			} else if (expr.NodeType == ExpressionType.MemberAccess) {
 				var mem = (MemberExpression)expr;
 				
