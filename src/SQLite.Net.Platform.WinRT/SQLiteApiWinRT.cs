@@ -173,9 +173,8 @@ namespace SQLite.Net.Platform.WinRT
 
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zvfs)
         {
-            string dbFileName = Encoding.UTF8.GetString(filename, 0, filename.Length);
             Sqlite3DatabaseHandle internalDbHandle;
-            var ret = (Result)SQLite3.Open(dbFileName, out internalDbHandle, flags, zvfs);
+            var ret = (Result)SQLite3.Open(filename, out internalDbHandle, flags, zvfs);
             db = new DbHandle(internalDbHandle);
             return ret;
         }
