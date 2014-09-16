@@ -344,6 +344,18 @@ namespace SQLite
 
 			return Execute (query);
 		}
+
+        /// <summary>
+        /// Executes a "drop table" on the database.  This is non-recoverable.
+        /// </summary>
+        public int DropTable(Type tableType)
+        {
+            var map = GetMapping(tableType);
+
+            var query = string.Format("drop table if exists \"{0}\"", map.TableName);
+
+            return Execute(query);
+        }
 		
 		/// <summary>
 		/// Executes a "create table if not exists" on the database. It also
@@ -380,19 +392,26 @@ namespace SQLite
 				map = GetMapping (ty, createFlags);
 				_tables.Add (ty.FullName, map);
 			}
-			var query = "create table if not exists \"" + map.TableName + "\"(\n";
-			
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
-			var decl = string.Join (",\n", decls.ToArray ());
-			query += decl;
-			query += ")";
-			
-			var count = Execute (query);
-			
-			if (count == 0) { //Possible bug: This always seems to return 0?
-				// Table already exists, migrate it
-				MigrateTable (map);
-			}
+
+		    var checkQuery = "SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name='"+map.TableName+"';";
+		    var checkResult = ExecuteScalar<int>(checkQuery);
+		    int count = 0;
+		    if (checkResult == 0)
+		    {
+		        var query = "create table if not exists \"" + map.TableName + "\"(\n";
+
+		        var decls = map.Columns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks));
+		        var decl = string.Join(",\n", decls.ToArray());
+		        query += decl;
+		        query += ")";
+
+		        count = Execute(query);
+		    }
+		    else
+		    {
+		        // Table already exists, migrate it
+		        MigrateTable(map);
+		    }
 
 			var indexes = new Dictionary<string, IndexInfo> ();
 			foreach (var c in map.Columns) {
@@ -1098,6 +1117,28 @@ namespace SQLite
 			});
 			return c;
 		}
+
+        /// <summary>
+        /// Inserts all specified objects.
+        /// </summary>
+        /// <param name="objects">
+        /// An <see cref="IEnumerable"/> of the objects to insert.
+        /// </param>
+        /// <returns>
+        /// The number of rows added to the table.
+        /// </returns>
+        public int InsertOrReplaceAll(System.Collections.IEnumerable objects)
+        {
+            var c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (var r in objects)
+                {
+                    c += InsertOrReplace(r);
+                }
+            });
+            return c;
+        }
 
 		/// <summary>
 		/// Inserts all specified objects.
