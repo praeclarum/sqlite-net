@@ -39,21 +39,21 @@ namespace SQLite.Net
         private Column[] _insertOrReplaceColumns;
 
         public TableMapping(ISQLitePlatform platformImplementation, Type type,
-            CreateFlags createFlags = CreateFlags.None)
+                            CreateFlags createFlags = CreateFlags.None)
         {
             _sqlitePlatform = platformImplementation;
             MappedType = type;
 
-            var tableAttr = (TableAttribute) type.GetCustomAttributes(typeof (TableAttribute), true).FirstOrDefault();
+            var tableAttr = type.GetTypeInfo().CustomAttributes.FirstOrDefault(data => data.AttributeType == typeof(TableAttribute));
 
-            TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
+            TableName = tableAttr != null ? (string)tableAttr.ConstructorArguments.FirstOrDefault().Value : MappedType.Name;
 
             IEnumerable<PropertyInfo> props = _sqlitePlatform.ReflectionService.GetPublicInstanceProperties(MappedType);
 
             var cols = new List<Column>();
             foreach (PropertyInfo p in props)
             {
-                bool ignore = p.GetCustomAttributes(typeof (IgnoreAttribute), true).Length > 0;
+                bool ignore = p.GetType().GetTypeInfo().CustomAttributes.Count(attr => attr.AttributeType == typeof(IgnoreAttribute)) > 0;
 
                 if (p.CanWrite && !ignore)
                 {
@@ -177,9 +177,9 @@ namespace SQLite.Net
 
                 insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
                     string.Join(",", (from c in cols
-                        select "\"" + c.Name + "\"").ToArray()),
+                                                     select "\"" + c.Name + "\"").ToArray()),
                     string.Join(",", (from c in cols
-                        select "?").ToArray()), extra);
+                                                     select "?").ToArray()), extra);
             }
 
             var insertCommand = new PreparedSqlLiteInsertCommand(_sqlitePlatform, conn);
@@ -203,7 +203,7 @@ namespace SQLite.Net
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr =
-                    (ColumnAttribute) prop.GetCustomAttributes(typeof (ColumnAttribute), true).FirstOrDefault();
+                    (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
                 _prop = prop;
                 Name = colAttr == null ? prop.Name : colAttr.Name;
@@ -212,22 +212,21 @@ namespace SQLite.Net
                 Collation = Orm.Collation(prop);
 
                 IsPK = Orm.IsPK(prop) ||
-                       (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
-                        string.Compare(prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
+                (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
+                string.Compare(prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
                 bool isAuto = Orm.IsAutoInc(prop) ||
                               (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
-                IsAutoGuid = isAuto && ColumnType == typeof (Guid);
+                IsAutoGuid = isAuto && ColumnType == typeof(Guid);
                 IsAutoInc = isAuto && !IsAutoGuid;
 
                 Indices = Orm.GetIndices(prop);
                 if (!Indices.Any()
                     && !IsPK
                     && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
-                    && Name.EndsWith(Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
-                    )
+                    && Name.EndsWith(Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase))
                 {
-                    Indices = new[] {new IndexedAttribute()};
+                    Indices = new[] { new IndexedAttribute() };
                 }
                 IsNullable = !IsPK;
                 MaxStringLength = Orm.MaxStringLength(prop);
@@ -245,6 +244,7 @@ namespace SQLite.Net
             public string Collation { get; private set; }
 
             public bool IsAutoInc { get; private set; }
+
             public bool IsAutoGuid { get; private set; }
 
             public bool IsPK { get; private set; }
@@ -266,13 +266,16 @@ namespace SQLite.Net
             public void SetValue(object obj, object val)
             {
                 Type propType = _prop.PropertyType;
-                if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof (Nullable<>))
+
+
+
+                if (propType.GetTypeInfo().IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
                 {
-                    Type[] typeCol = propType.GetGenericArguments();
+                    Type[] typeCol = propType.GetTypeInfo().GenericTypeArguments;
                     if (typeCol.Length > 0)
                     {
                         Type nullableType = typeCol[0];
-                        if (nullableType.BaseType == typeof (Enum))
+                        if (nullableType.GetTypeInfo().BaseType == typeof(Enum))
                         {
                             object result = val == null ? null : Enum.Parse(nullableType, val.ToString(), false);
                             _prop.SetValue(obj, result, null);
