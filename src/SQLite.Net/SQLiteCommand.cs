@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using SQLite.Net.Interop;
+using System.Reflection;
 
 namespace SQLite.Net
 {
@@ -69,12 +70,12 @@ namespace SQLite.Net
 
         public IEnumerable<T> ExecuteDeferredQuery<T>()
         {
-            return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof (T)));
+            return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T)));
         }
 
         public List<T> ExecuteQuery<T>()
         {
-            return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof (T))).ToList();
+            return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))).ToList();
         }
 
         public List<T> ExecuteQuery<T>(TableMapping map)
@@ -127,7 +128,7 @@ namespace SQLite.Net
                         cols[i].SetValue(obj, val);
                     }
                     OnInstanceCreated(obj);
-                    yield return (T) obj;
+                    yield return (T)obj;
                 }
             }
             finally
@@ -150,7 +151,7 @@ namespace SQLite.Net
                 if (r == Result.Row)
                 {
                     ColType colType = _sqlitePlatform.SQLiteApi.ColumnType(stmt, 0);
-                    val = (T) ReadCol(stmt, 0, colType, typeof (T));
+                    val = (T)ReadCol(stmt, 0, colType, typeof(T));
                 }
                 else if (r == Result.Done)
                 {
@@ -226,7 +227,7 @@ namespace SQLite.Net
         }
 
         internal static void BindParameter(ISQLiteApi isqLite3Api, IDbStatement stmt, int index, object value,
-            bool storeDateTimeAsTicks, IBlobSerializer serializer)
+                                           bool storeDateTimeAsTicks, IBlobSerializer serializer)
         {
             if (value == null)
             {
@@ -236,7 +237,7 @@ namespace SQLite.Net
             {
                 if (value is Int32)
                 {
-                    isqLite3Api.BindInt(stmt, index, (int) value);
+                    isqLite3Api.BindInt(stmt, index, (int)value);
                 }
                 else if (value is ISerializable<int>)
                 {
@@ -244,7 +245,7 @@ namespace SQLite.Net
                 }
                 else if (value is String)
                 {
-                    isqLite3Api.BindText16(stmt, index, (string) value, -1, NegativePointer);
+                    isqLite3Api.BindText16(stmt, index, (string)value, -1, NegativePointer);
                 }
                 else if (value is ISerializable<String>)
                 {
@@ -272,7 +273,7 @@ namespace SQLite.Net
                 }
                 else if (value is Boolean)
                 {
-                    isqLite3Api.BindInt(stmt, index, (bool) value ? 1 : 0);
+                    isqLite3Api.BindInt(stmt, index, (bool)value ? 1 : 0);
                 }
                 else if (value is ISerializable<Boolean>)
                 {
@@ -308,7 +309,7 @@ namespace SQLite.Net
                 }
                 else if (value is TimeSpan)
                 {
-                    isqLite3Api.BindInt64(stmt, index, ((TimeSpan) value).Ticks);
+                    isqLite3Api.BindInt64(stmt, index, ((TimeSpan)value).Ticks);
                 }
                 else if (value is ISerializable<TimeSpan>)
                 {
@@ -318,11 +319,11 @@ namespace SQLite.Net
                 {
                     if (storeDateTimeAsTicks)
                     {
-                        isqLite3Api.BindInt64(stmt, index, ((DateTime) value).Ticks);
+                        isqLite3Api.BindInt64(stmt, index, ((DateTime)value).Ticks);
                     }
                     else
                     {
-                        isqLite3Api.BindText16(stmt, index, ((DateTime) value).ToString("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+                        isqLite3Api.BindText16(stmt, index, ((DateTime)value).ToString("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
                     }
                 }
                 else if (value is ISerializable<DateTime>)
@@ -336,13 +337,13 @@ namespace SQLite.Net
                         isqLite3Api.BindText16(stmt, index, ((ISerializable<DateTime>)value).Serialize().ToString("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
                     }
                 }
-                else if (value.GetType().IsEnum)
+                else if (value.GetType().GetTypeInfo().IsEnum)
                 {
                     isqLite3Api.BindInt(stmt, index, Convert.ToInt32(value));
                 }
                 else if (value is byte[])
                 {
-                    isqLite3Api.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
+                    isqLite3Api.BindBlob(stmt, index, (byte[])value, ((byte[])value).Length, NegativePointer);
                 }
                 else if (value is ISerializable<byte[]>)
                 {
@@ -350,7 +351,7 @@ namespace SQLite.Net
                 }
                 else if (value is Guid)
                 {
-                    isqLite3Api.BindText16(stmt, index, ((Guid) value).ToString(), 72, NegativePointer);
+                    isqLite3Api.BindText16(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
                 }
                 else if (value is ISerializable<Guid>)
                 {
@@ -370,65 +371,67 @@ namespace SQLite.Net
 
         private object ReadCol(IDbStatement stmt, int index, ColType type, Type clrType)
         {
+            var interfaces = clrType.GetTypeInfo().ImplementedInterfaces.ToList();
+
             if (type == ColType.Null)
             {
                 return null;
             }
-            if (clrType == typeof (String))
+            if (clrType == typeof(String))
             {
                 return _sqlitePlatform.SQLiteApi.ColumnText16(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<string>)))
+            if (interfaces.Contains(typeof(ISerializable<string>)))
             {
                 var value = _sqlitePlatform.SQLiteApi.ColumnText16(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (Int32))
+            if (clrType == typeof(Int32))
             {
                 return _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<Int32>)))
+            if (interfaces.Contains(typeof(ISerializable<Int32>)))
             {
                 var value = _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (Boolean))
+            if (clrType == typeof(Boolean))
             {
                 return _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index) == 1;
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<Boolean>)))
+            if (interfaces.Contains(typeof(ISerializable<Boolean>)))
             {
                 var value = _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index) == 1;
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (double))
+            if (clrType == typeof(double))
             {
                 return _sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<double>)))
+            if (interfaces.Contains(typeof(ISerializable<double>)))
             {
                 var value = _sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (float))
+            if (clrType == typeof(float))
             {
-                return (float) _sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
+                return (float)_sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<float>)))
+            if (interfaces.Contains(typeof(ISerializable<float>)))
             {
-                var value = (float) _sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
+                var value = (float)_sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (TimeSpan))
+            if (clrType == typeof(TimeSpan))
             {
                 return new TimeSpan(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index));
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<TimeSpan>)))
+            if (interfaces.Contains(typeof(ISerializable<TimeSpan>)))
             {
                 var value = new TimeSpan(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index));
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (DateTime))
+            if (clrType == typeof(DateTime))
             {
                 if (_conn.StoreDateTimeAsTicks)
                 {
@@ -436,7 +439,7 @@ namespace SQLite.Net
                 }
                 return DateTime.Parse(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index));
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<DateTime>)))
+            if (interfaces.Contains(typeof(ISerializable<DateTime>)))
             {
                 DateTime value;
                 if (_conn.StoreDateTimeAsTicks)
@@ -449,87 +452,87 @@ namespace SQLite.Net
                 }
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType.IsEnum)
+            if (clrType.GetType().GetTypeInfo().IsEnum)
             {
                 return _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
             }
-            if (clrType == typeof (Int64))
+            if (clrType == typeof(Int64))
             {
                 return _sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<Int64>)))
+            if (interfaces.Contains(typeof(ISerializable<Int64>)))
             {
                 var value = _sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (UInt32))
+            if (clrType == typeof(UInt32))
             {
-                return (uint) _sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index);
+                return (uint)_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<Int64>)))
+            if (interfaces.Contains(typeof(ISerializable<Int64>)))
             {
-                var value = (uint) _sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index);
+                var value = (uint)_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (decimal))
+            if (clrType == typeof(decimal))
             {
-                return (decimal) _sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
+                return (decimal)_sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<decimal>)))
+            if (interfaces.Contains(typeof(ISerializable<decimal>)))
             {
-                var value = (decimal) _sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
+                var value = (decimal)_sqlitePlatform.SQLiteApi.ColumnDouble(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (Byte))
+            if (clrType == typeof(Byte))
             {
-                return (byte) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                return (byte)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<Byte>)))
+            if (interfaces.Contains(typeof(ISerializable<Byte>)))
             {
-                var value = (byte) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                var value = (byte)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (UInt16))
+            if (clrType == typeof(UInt16))
             {
-                return (ushort) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                return (ushort)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<UInt16>)))
+            if (interfaces.Contains(typeof(ISerializable<UInt16>)))
             {
-                var value = (ushort) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                var value = (ushort)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (Int16))
+            if (clrType == typeof(Int16))
             {
-                return (short) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                return (short)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<Int16>)))
+            if (interfaces.Contains(typeof(ISerializable<Int16>)))
             {
-                var value = (short) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                var value = (short)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (sbyte))
+            if (clrType == typeof(sbyte))
             {
-                return (sbyte) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                return (sbyte)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<sbyte>)))
+            if (interfaces.Contains(typeof(ISerializable<sbyte>)))
             {
-                var value = (sbyte) _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
+                var value = (sbyte)_sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (byte[]))
+            if (clrType == typeof(byte[]))
             {
                 return _sqlitePlatform.SQLiteApi.ColumnByteArray(stmt, index);
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<byte[]>)))
+            if (interfaces.Contains(typeof(ISerializable<byte[]>)))
             {
                 var value = _sqlitePlatform.SQLiteApi.ColumnByteArray(stmt, index);
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType == typeof (Guid))
+            if (clrType == typeof(Guid))
             {
                 return new Guid(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index));
             }
-            if (clrType.GetInterfaces().Contains(typeof(ISerializable<Guid>)))
+            if (interfaces.Contains(typeof(ISerializable<Guid>)))
             {
                 var value = new Guid(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index));
                 return Activator.CreateInstance(clrType, new object[]{ value });
