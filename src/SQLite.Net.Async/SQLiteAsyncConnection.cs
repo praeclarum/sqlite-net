@@ -52,44 +52,44 @@ namespace SQLite.Net.Async
             return _sqliteConnectionFunc();
         }
 
-        public Task<CreateTablesResult> CreateTableAsync<T>()
+        public Task<CreateTablesResult> CreateTableAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
         {
-            return CreateTablesAsync(typeof(T));
+            return CreateTablesAsync(cancellationToken, typeof(T));
         }
 
-        public Task<CreateTablesResult> CreateTablesAsync<T, T2>()
+        public Task<CreateTablesResult> CreateTablesAsync<T, T2>(CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
             where T2 : new()
         {
-            return CreateTablesAsync(typeof(T), typeof(T2));
+            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2));
         }
 
-        public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3>()
+        public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3>(CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
             where T2 : new()
             where T3 : new()
         {
-            return CreateTablesAsync(typeof(T), typeof(T2), typeof(T3));
+            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3));
         }
 
-        public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4>()
+        public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4>(CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
             where T2 : new()
             where T3 : new()
             where T4 : new()
         {
-            return CreateTablesAsync(typeof(T), typeof(T2), typeof(T3), typeof(T4));
+            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3), typeof(T4));
         }
 
-        public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5>()
+        public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5>(CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
             where T2 : new()
             where T3 : new()
             where T4 : new()
             where T5 : new()
         {
-            return CreateTablesAsync(typeof(T), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
+            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
         }
 
         public class CreateTablesResult
@@ -103,6 +103,11 @@ namespace SQLite.Net.Async
         }
 
         public Task<CreateTablesResult> CreateTablesAsync(params Type[] types)
+        {
+            return CreateTablesAsync(CancellationToken.None, types);
+        }
+
+        public Task<CreateTablesResult> CreateTablesAsync(CancellationToken cancellationToken, params Type[] types)
         {
             if (types == null)
             {
@@ -121,10 +126,10 @@ namespace SQLite.Net.Async
                     }
                 }
                 return result;
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> DropTableAsync<T>()
+        public Task<int> DropTableAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
         {
             return Task.Factory.StartNew(() =>
@@ -134,10 +139,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.DropTable<T>();
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> InsertAsync(object item)
+        public Task<int> InsertAsync(object item, CancellationToken cancellationToken = default (CancellationToken))
         {
             if (item == null)
             {
@@ -150,10 +155,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.Insert(item);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> UpdateAsync(object item)
+        public Task<int> UpdateAsync(object item, CancellationToken cancellationToken = default (CancellationToken))
         {
             if (item == null)
             {
@@ -166,10 +171,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.Update(item);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> InsertOrReplaceAsync(object item)
+        public Task<int> InsertOrReplaceAsync(object item, CancellationToken cancellationToken = default (CancellationToken))
         {
             if (item == null)
             {
@@ -182,10 +187,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.InsertOrReplace(item);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> DeleteAsync(object item)
+        public Task<int> DeleteAsync(object item, CancellationToken cancellationToken = default (CancellationToken))
         {
             if (item == null)
             {
@@ -198,10 +203,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.Delete(item);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> DeleteAllAsync<T>()
+        public Task<int> DeleteAllAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
@@ -210,10 +215,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.DeleteAll<T>();
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> DeleteAsync<T>(object pk)
+        public Task<int> DeleteAsync<T>(object pk, CancellationToken cancellationToken = default (CancellationToken))
         {
             if (pk == null)
             {
@@ -226,7 +231,7 @@ namespace SQLite.Net.Async
                 {
                     return conn.Delete<T>(pk);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> GetAsync<T>(object pk, CancellationToken cancellationToken = default(CancellationToken))
@@ -264,13 +269,7 @@ namespace SQLite.Net.Async
                     cancellationToken.ThrowIfCancellationRequested();
                     return conn.Find<T>(pk);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
-        }
-
-        public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate)
-            where T : new()
-        {
-            return GetAsync<T>(CancellationToken.None, predicate);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default (CancellationToken))
@@ -292,13 +291,7 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate)
-            where T : new()
-        {
-            return FindAsync<T>(CancellationToken.None, predicate);
-        }
-
-        public Task<T> FindAsync<T>(CancellationToken cancellationToken, Expression<Func<T, bool>> predicate)
+        public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default(CancellationToken))
             where T : new()
         {
             if (predicate == null)
@@ -314,10 +307,15 @@ namespace SQLite.Net.Async
                     cancellationToken.ThrowIfCancellationRequested();
                     return conn.Find(predicate);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<int> ExecuteAsync(string query, params object[] args)
+        {
+            return ExecuteAsync(CancellationToken.None, query, args);
+        }
+
+        public Task<int> ExecuteAsync(CancellationToken cancellationToken, string query, params object[] args)
         {
             if (query == null)
             {
@@ -334,10 +332,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.Execute(query, args);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> InsertAllAsync(IEnumerable items)
+        public Task<int> InsertAllAsync(IEnumerable items, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (items == null)
             {
@@ -350,10 +348,10 @@ namespace SQLite.Net.Async
                 {
                     return conn.InsertAll(items);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> InsertOrReplaceAllAsync(IEnumerable items)
+        public Task<int> InsertOrReplaceAllAsync(IEnumerable items, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (items == null)
             {
@@ -366,13 +364,13 @@ namespace SQLite.Net.Async
                 {
                     return conn.InsertOrReplaceAll(items);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         [Obsolete(
             "Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead."
             )]
-        public Task RunInTransactionAsync(Action<SQLiteAsyncConnection> action)
+        public Task RunInTransactionAsync(Action<SQLiteAsyncConnection> action, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (action == null)
             {
@@ -395,10 +393,10 @@ namespace SQLite.Net.Async
                         throw;
                     }
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task RunInTransactionAsync(Action<SQLiteConnection> action, CancellationToken cancellationToken)
+        public Task RunInTransactionAsync(Action<SQLiteConnection> action, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (action == null)
             {
@@ -423,7 +421,7 @@ namespace SQLite.Net.Async
                         throw;
                     }
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public AsyncTableQuery<T> Table<T>()
