@@ -452,7 +452,7 @@ namespace SQLite.Net
                 }
                 return Activator.CreateInstance(clrType, new object[]{ value });
             }
-            if (clrType.GetType().GetTypeInfo().IsEnum)
+            if (clrType.GetTypeInfo().IsEnum)
             {
                 return _sqlitePlatform.SQLiteApi.ColumnInt(stmt, index);
             }
