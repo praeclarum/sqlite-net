@@ -158,37 +158,37 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-		public Task<T> FirstAsync()
-		{
-			return FirstAsync (CancellationToken.None);
-		}
+        public Task<T> FirstAsync()
+        {
+            return FirstAsync (CancellationToken.None);
+        }
 
-		public Task<T> FirstAsync(CancellationToken cancellationToken)
+        public Task<T> FirstAsync(CancellationToken cancellationToken)
         {
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
-					cancellationToken.ThrowIfCancellationRequested();
+                    cancellationToken.ThrowIfCancellationRequested();
                     return _innerQuery.First();
                 }
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-		public Task<T> FirstOrDefaultAsync()
-		{
-			return FirstOrDefaultAsync(CancellationToken.None);
-		}
+        public Task<T> FirstOrDefaultAsync()
+        {
+            return FirstOrDefaultAsync(CancellationToken.None);
+        }
 
-		public Task<T> FirstOrDefaultAsync(CancellationToken cancellationToken)
+        public Task<T> FirstOrDefaultAsync(CancellationToken cancellationToken)
         {
             return Task.Factory.StartNew(() =>
             {
-				cancellationToken.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
                 {
-					cancellationToken.ThrowIfCancellationRequested();
+                    cancellationToken.ThrowIfCancellationRequested();
                     return _innerQuery.FirstOrDefault();
                 }
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
