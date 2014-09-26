@@ -232,21 +232,10 @@ namespace SQLite.Net.Async
         public Task<T> GetAsync<T>(object pk)
             where T : new()
         {
-            if (pk == null)
-            {
-                throw new ArgumentNullException("pk");
-            }
-            return Task.Factory.StartNew(() =>
-            {
-                SQLiteConnectionWithLock conn = GetConnection();
-                using (conn.Lock())
-                {
-                    return conn.Get<T>(pk);
-                }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            return GetAsync<T>(CancellationToken.None, pk);
         }
 
-        public Task<T> FindAsync<T>(object pk)
+        public Task<T> GetAsync<T>(CancellationToken cancellationToken, object pk)
             where T : new()
         {
             if (pk == null)
@@ -255,9 +244,36 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return conn.Get<T>(pk);
+                }
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
+
+        public Task<T> FindAsync<T>(object pk)
+            where T : new()
+        {
+            return FindAsync<T>(CancellationToken.None, pk);
+        }
+
+        public Task<T> FindAsync<T>(CancellationToken cancellationToken, object pk)
+            where T : new()
+        {
+            if (pk == null)
+            {
+                throw new ArgumentNullException("pk");
+            }
+            return Task.Factory.StartNew(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                SQLiteConnectionWithLock conn = GetConnection();
+                using (conn.Lock())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
                     return conn.Find<T>(pk);
                 }
             }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
@@ -266,21 +282,10 @@ namespace SQLite.Net.Async
         public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate)
             where T : new()
         {
-            if (predicate == null)
-            {
-                throw new ArgumentNullException("predicate");
-            }
-            return Task.Factory.StartNew(() =>
-            {
-                SQLiteConnectionWithLock conn = GetConnection();
-                using (conn.Lock())
-                {
-                    return conn.Get(predicate);
-                }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            return GetAsync<T>(CancellationToken.None, predicate);
         }
 
-        public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate)
+        public Task<T> GetAsync<T>(CancellationToken cancellationToken, Expression<Func<T, bool>> predicate)
             where T : new()
         {
             if (predicate == null)
@@ -289,9 +294,36 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return conn.Get(predicate);
+                }
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
+
+        public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate)
+            where T : new()
+        {
+            return FindAsync<T>(CancellationToken.None, predicate);
+        }
+
+        public Task<T> FindAsync<T>(CancellationToken cancellationToken, Expression<Func<T, bool>> predicate)
+            where T : new()
+        {
+            if (predicate == null)
+            {
+                throw new ArgumentNullException("predicate");
+            }
+            return Task.Factory.StartNew(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                SQLiteConnectionWithLock conn = GetConnection();
+                using (conn.Lock())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
                     return conn.Find(predicate);
                 }
             }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
@@ -380,15 +412,22 @@ namespace SQLite.Net.Async
 
         public Task RunInTransactionAsync(Action<SQLiteConnection> action)
         {
+            return RunInTransactionAsync(CancellationToken.None, action);
+        }
+
+        public Task RunInTransactionAsync(CancellationToken cancellationToken, Action<SQLiteConnection> action)
+        {
             if (action == null)
             {
                 throw new ArgumentNullException("action");
             }
             return Task.Factory.StartNew(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     conn.BeginTransaction();
                     try
                     {
@@ -417,6 +456,11 @@ namespace SQLite.Net.Async
 
         public Task<T> ExecuteScalarAsync<T>(string sql, params object[] args)
         {
+            return ExecuteScalarAsync<T>(CancellationToken.None, sql, args);
+        }
+
+        public Task<T> ExecuteScalarAsync<T>(CancellationToken cancellationToken, string sql, params object[] args)
+        {
             if (sql == null)
             {
                 throw new ArgumentNullException("sql");
@@ -427,16 +471,24 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     SQLiteCommand command = conn.CreateCommand(sql, args);
                     return command.ExecuteScalar<T>();
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<List<T>> QueryAsync<T>(string sql, params object[] args)
+            where T : new()
+        {
+            return QueryAsync<T> (CancellationToken.None, sql, args);
+        }
+
+        public Task<List<T>> QueryAsync<T>(CancellationToken cancellationToken, string sql, params object[] args)
             where T : new()
         {
             if (sql == null)
@@ -449,12 +501,14 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 SQLiteConnectionWithLock conn = GetConnection();
                 using (conn.Lock())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     return conn.Query<T>(sql, args);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
     }
 }
