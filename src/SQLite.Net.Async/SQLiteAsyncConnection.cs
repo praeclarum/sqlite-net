@@ -229,13 +229,7 @@ namespace SQLite.Net.Async
             }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<T> GetAsync<T>(object pk)
-            where T : new()
-        {
-            return GetAsync<T>(CancellationToken.None, pk);
-        }
-
-        public Task<T> GetAsync<T>(CancellationToken cancellationToken, object pk)
+        public Task<T> GetAsync<T>(object pk, CancellationToken cancellationToken = default(CancellationToken))
             where T : new()
         {
             if (pk == null)
@@ -254,13 +248,7 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<T> FindAsync<T>(object pk)
-            where T : new()
-        {
-            return FindAsync<T>(CancellationToken.None, pk);
-        }
-
-        public Task<T> FindAsync<T>(CancellationToken cancellationToken, object pk)
+        public Task<T> FindAsync<T>(object pk, CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
         {
             if (pk == null)
@@ -285,7 +273,7 @@ namespace SQLite.Net.Async
             return GetAsync<T>(CancellationToken.None, predicate);
         }
 
-        public Task<T> GetAsync<T>(CancellationToken cancellationToken, Expression<Func<T, bool>> predicate)
+        public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default (CancellationToken))
             where T : new()
         {
             if (predicate == null)
@@ -301,7 +289,7 @@ namespace SQLite.Net.Async
                     cancellationToken.ThrowIfCancellationRequested();
                     return conn.Get(predicate);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate)
@@ -410,12 +398,7 @@ namespace SQLite.Net.Async
             }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task RunInTransactionAsync(Action<SQLiteConnection> action)
-        {
-            return RunInTransactionAsync(CancellationToken.None, action);
-        }
-
-        public Task RunInTransactionAsync(CancellationToken cancellationToken, Action<SQLiteConnection> action)
+        public Task RunInTransactionAsync(Action<SQLiteConnection> action, CancellationToken cancellationToken)
         {
             if (action == null)
             {

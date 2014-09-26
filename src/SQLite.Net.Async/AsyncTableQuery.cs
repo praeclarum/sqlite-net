@@ -107,12 +107,7 @@ namespace SQLite.Net.Async
         }
 
 
-        public Task<List<T>> ToListAsync()
-        {
-            return ToListAsync(CancellationToken.None);
-        }
-
-        public Task<List<T>> ToListAsync(CancellationToken cancellationToken)
+        public Task<List<T>> ToListAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
@@ -124,12 +119,7 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> CountAsync()
-        {
-            return CountAsync (CancellationToken.None);
-        }
-
-        public Task<int> CountAsync(CancellationToken cancellationToken)
+        public Task<int> CountAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
@@ -141,12 +131,7 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<T> ElementAtAsync(int index)
-        {
-            return ElementAtAsync (CancellationToken.None, index);
-        }
-
-        public Task<T> ElementAtAsync(CancellationToken cancellationToken, int index)
+        public Task<T> ElementAtAsync(int index, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
@@ -158,17 +143,12 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<T> FirstAsync()
-        {
-            return FirstAsync (CancellationToken.None);
-        }
-
-        public Task<T> FirstAsync(CancellationToken cancellationToken)
+        public Task<T> FirstAsync(CancellationToken cancellationToken = default (CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     return _innerQuery.First();
@@ -176,12 +156,7 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<T> FirstOrDefaultAsync()
-        {
-            return FirstOrDefaultAsync(CancellationToken.None);
-        }
-
-        public Task<T> FirstOrDefaultAsync(CancellationToken cancellationToken)
+        public Task<T> FirstOrDefaultAsync(CancellationToken cancellationToken = default (CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
