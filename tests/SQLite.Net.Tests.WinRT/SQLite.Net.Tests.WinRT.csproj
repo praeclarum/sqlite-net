@@ -212,6 +212,7 @@
     <Compile Include="..\SerializableTest.cs">
       <Link>Tests\SerializableTest.cs</Link>
     </Compile>
+    <Compile Include="..\*.cs"/>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
