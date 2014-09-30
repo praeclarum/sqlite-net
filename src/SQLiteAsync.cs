@@ -46,6 +46,22 @@ namespace SQLite
             _connectionString = new SQLiteConnectionString(databasePath, storeDateTimeAsTicks);
         }
 
+        /// <summary>
+        /// Reset current connection
+        /// </summary>
+        public void Reset()
+        {
+            SQLiteConnectionPool.Shared.Reset(_connectionString);
+        }
+
+        /// <summary>
+        /// Reset all connections in the pool
+        /// </summary>
+        public void ResetAll()
+        {
+            SQLiteConnectionPool.Shared.Reset();
+        }
+
 		SQLiteConnectionWithLock GetConnection ()
 		{
 			return SQLiteConnectionPool.Shared.GetConnection (_connectionString, _openFlags);
@@ -458,6 +474,22 @@ namespace SQLite
 				_entries.Clear ();
 			}
 		}
+
+        /// <summary>
+        /// Closes specific connection
+        /// </summary>
+        public void Reset(SQLiteConnectionString connectionString)
+        {
+            lock (_entriesLock)
+            {
+                if (!_entries.ContainsKey(connectionString.ConnectionString))
+                    return;
+
+                var entry = _entries[connectionString.ConnectionString];
+                entry.OnApplicationSuspended();
+                _entries.Remove(connectionString.ConnectionString);
+            }
+        }
 
 		/// <summary>
 		/// Call this method when the application is suspended.
