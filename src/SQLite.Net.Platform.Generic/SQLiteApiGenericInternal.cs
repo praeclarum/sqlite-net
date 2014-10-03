@@ -149,7 +149,7 @@ namespace SQLite.Net.Platform.Generic
         [DllImport("sqlite3", EntryPoint = "sqlite3_column_name16", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr sqlite3_column_name16(IntPtr stmt, int index);
 
-        [DllImport("sqlite3", EntryPoint = "sqlite3_extended_errcode(", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("sqlite3", EntryPoint = "sqlite3_extended_errcode", CallingConvention = CallingConvention.Cdecl)]
         public static extern ExtendedResult sqlite3_extended_errcode(IntPtr db);
 
         [DllImport("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
