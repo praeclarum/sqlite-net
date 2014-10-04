@@ -53,7 +53,7 @@ namespace SQLite.Net
             var cols = new List<Column>();
             foreach (PropertyInfo p in props)
             {
-                bool ignore = p.GetType().GetTypeInfo().CustomAttributes.Count(attr => attr.AttributeType == typeof(IgnoreAttribute)) > 0;
+                bool ignore = p.GetCustomAttributes(typeof(IgnoreAttribute), true).Any();
 
                 if (p.CanWrite && !ignore)
                 {
