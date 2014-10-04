@@ -159,30 +159,7 @@ namespace SQLite.Net
 
         public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
         {
-            var indexedAttributes = new List<IndexedAttribute>();
-            foreach (var attribute in p.CustomAttributes)
-            {
-                if (attribute.AttributeType == typeof(IndexedAttribute))
-                {
-                    bool hasNamedArgumentName = attribute.NamedArguments.Any(a => a.MemberName == "Name");
-                    bool hasNamedArgumentOrder = attribute.NamedArguments.Any(a => a.MemberName == "Order");
-                    bool hasNamedArgumentUnique = attribute.NamedArguments.Any(a => a.MemberName == "Unique");
-
-                    var namedArgumentName = attribute.NamedArguments.FirstOrDefault(a => a.MemberName == "Name");
-                    var namedArgumentOrder = attribute.NamedArguments.FirstOrDefault(a => a.MemberName == "Order");
-                    var namedArgumentUnique = attribute.NamedArguments.FirstOrDefault(a => a.MemberName == "Unique");
-
-                    var arguments = attribute.ConstructorArguments;
-                    bool hasPositionalArgumentName = arguments.Count > 0;
-                    bool hasPositionalArgumentOrder = arguments.Count > 1;
-
-                    var name =  hasNamedArgumentName ? (string)namedArgumentName.TypedValue.Value : hasPositionalArgumentName ? (string)arguments[0].Value : null;
-                    var order = hasNamedArgumentOrder ? (int)namedArgumentOrder.TypedValue.Value : hasPositionalArgumentOrder ? (int)arguments[1].Value : 0;
-                    var unique = hasNamedArgumentUnique ? (bool)namedArgumentUnique.TypedValue.Value : false;
-                    indexedAttributes.Add(new IndexedAttribute(name, order) { Unique = unique });
-                }
-            }
-            return indexedAttributes;
+            return p.GetCustomAttributes<IndexedAttribute>();
         }
 
         public static int? MaxStringLength(PropertyInfo p)
