@@ -129,32 +129,21 @@ namespace SQLite.Net
 
         public static bool IsPK(MemberInfo p)
         {
-            foreach (var attribute in p.CustomAttributes)
-            {
-                if (attribute.AttributeType == typeof(PrimaryKeyAttribute))
-                    return true;
-            }
-            return false;
+            return p.GetCustomAttributes<PrimaryKeyAttribute>().Any();
         }
 
         public static string Collation(MemberInfo p)
         {
-            foreach (var attribute in p.CustomAttributes)
+            foreach (var attribute in p.CustomAttributes.Where(attribute => attribute.AttributeType == typeof(CollationAttribute)))
             {
-                if (attribute.AttributeType == typeof(CollationAttribute))
-                    return (string)attribute.ConstructorArguments[0].Value;
+                return (string)attribute.ConstructorArguments[0].Value;
             }
             return string.Empty;
         }
 
         public static bool IsAutoInc(MemberInfo p)
         {
-            foreach (var attribute in p.CustomAttributes)
-            {
-                if (attribute.AttributeType == typeof(AutoIncrementAttribute))
-                    return true;
-            }
-            return false;
+            return p.GetCustomAttributes<AutoIncrementAttribute>().Any();
         }
 
         public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
@@ -164,17 +153,16 @@ namespace SQLite.Net
 
         public static int? MaxStringLength(PropertyInfo p)
         {
-            foreach (var attribute in p.CustomAttributes)
+            foreach (var attribute in p.CustomAttributes.Where(a=>a.AttributeType==typeof(MaxLengthAttribute)))
             {
-                if (attribute.AttributeType == typeof(MaxLengthAttribute))
-                    return (int)attribute.ConstructorArguments[0].Value;
+                return (int) attribute.ConstructorArguments[0].Value;
             }
             return null;
         }
 
         public static bool IsMarkedNotNull(MemberInfo p)
         {
-            var attrs = p.GetCustomAttributes(typeof(NotNullAttribute), true);
+            var attrs = p.GetCustomAttributes<NotNullAttribute>(true);
             return attrs.Any();
         }
 

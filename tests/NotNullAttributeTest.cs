@@ -51,7 +51,7 @@ namespace SQLite.Net.Tests
                                  select new SQLiteConnection.ColumnInfo
                                  {
                                      Name = prop.Name,
-                                     notnull = ((prop.GetCustomAttributes(typeof(NotNullAttribute), true).Count() == 0) && (prop.GetCustomAttributes(typeof(PrimaryKeyAttribute), true).Count() == 0)) ? 0 : 1
+                                     notnull = ((!prop.GetCustomAttributes<NotNullAttribute>(true).Any()) && (!prop.GetCustomAttributes<PrimaryKeyAttribute>(true).Any())) ? 0 : 1
                                  };
 
             return expectedValues;

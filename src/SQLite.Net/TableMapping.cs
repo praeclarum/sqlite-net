@@ -53,7 +53,7 @@ namespace SQLite.Net
             var cols = new List<Column>();
             foreach (PropertyInfo p in props)
             {
-                bool ignore = p.GetCustomAttributes(typeof(IgnoreAttribute), true).Any();
+                bool ignore = p.GetCustomAttributes<IgnoreAttribute>(true).Any();
 
                 if (p.CanWrite && !ignore)
                 {
@@ -203,7 +203,7 @@ namespace SQLite.Net
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr =
-                    (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
+                    prop.GetCustomAttributes<ColumnAttribute>(true).FirstOrDefault();
 
                 _prop = prop;
                 Name = colAttr == null ? prop.Name : colAttr.Name;
