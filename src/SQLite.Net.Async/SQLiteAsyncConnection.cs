@@ -367,7 +367,7 @@ namespace SQLite.Net.Async
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
-        public Task<int> UpdateAllAsync(IEnumerable items)
+        public Task<int> UpdateAllAsync(IEnumerable items, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (items == null)
             {
@@ -380,7 +380,7 @@ namespace SQLite.Net.Async
                 {
                     return conn.UpdateAll(items);
                 }
-            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
 
         [Obsolete(
