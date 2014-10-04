@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net.Async-PCL</id>
-        <version>2.4.0</version>
+        <version>2.4.1</version>
         <title>SQLite.Net.Async PCL</title>
         <authors>Øystein Krog,Frank Krueger,Tim Heuer</authors>
         <owners>Øystein Krog</owners>
@@ -14,7 +14,8 @@ This is a fork of the original sqlite-net project, which aims to cleanup/improve
 This package is compatible with the following .net platforms: net4+sl5+wp8+win8+monotouch+monoAndroid</description>
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.
 This package provides Async extensions to the core SQLite.Net package.</summary>
-        <releaseNotes>v2.4.0: PCL projects now use profile 259.
+        <releaseNotes>v2.4.1: Bugfixes.
+v2.4.0: PCL projects now use profile 259.
 Many changes, please see commit log.</releaseNotes>
         <tags>sqlite pcl sql database async monotouch ios monodroid android win32 metro winrt</tags>
         <dependencies>
