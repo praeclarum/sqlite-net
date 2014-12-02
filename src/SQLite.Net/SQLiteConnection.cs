@@ -1142,20 +1142,31 @@ namespace SQLite.Net
         /// <param name="objects">
         ///     An <see cref="IEnumerable" /> of the objects to insert.
         /// </param>
+        /// <param name="runInTransaction">A boolean indicating if the inserts should be wrapped in a transaction.</param>
         /// <returns>
         ///     The number of rows added to the table.
         /// </returns>
         [PublicAPI]
-        public int InsertAll(IEnumerable objects)
+        public int InsertAll(IEnumerable objects, bool runInTransaction = true)
         {
             var c = 0;
-            RunInTransaction(() =>
+            if (runInTransaction)
+            {
+                RunInTransaction(() =>
+                {
+                    foreach (var r in objects)
+                    {
+                        c += Insert(r);
+                    }
+                });
+            }
+            else
             {
                 foreach (var r in objects)
                 {
                     c += Insert(r);
                 }
-            });
+            }
             return c;
         }
 
@@ -1168,20 +1179,31 @@ namespace SQLite.Net
         /// <param name="extra">
         ///     Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
         /// </param>
+        /// <param name="runInTransaction">A boolean indicating if the inserts should be wrapped in a transaction.</param>
         /// <returns>
         ///     The number of rows added to the table.
         /// </returns>
         [PublicAPI]
-        public int InsertAll(IEnumerable objects, string extra)
+        public int InsertAll(IEnumerable objects, string extra, bool runInTransaction = true)
         {
             var c = 0;
-            RunInTransaction(() =>
+            if (runInTransaction)
+            {
+                RunInTransaction(() =>
+                {
+                    foreach (var r in objects)
+                    {
+                        c += Insert(r, extra);
+                    }
+                });
+            }
+            else
             {
                 foreach (var r in objects)
                 {
                     c += Insert(r, extra);
                 }
-            });
+            }
             return c;
         }
 
@@ -1194,20 +1216,31 @@ namespace SQLite.Net
         /// <param name="objType">
         ///     The type of object to insert.
         /// </param>
+        /// <param name="runInTransaction">A boolean indicating if the inserts should be wrapped in a transaction.</param>
         /// <returns>
         ///     The number of rows added to the table.
         /// </returns>
         [PublicAPI]
-        public int InsertAll(IEnumerable objects, Type objType)
+        public int InsertAll(IEnumerable objects, Type objType, bool runInTransaction = true)
         {
             var c = 0;
-            RunInTransaction(() =>
+            if (runInTransaction)
+            {
+                RunInTransaction(() =>
+                {
+                    foreach (var r in objects)
+                    {
+                        c += Insert(r, objType);
+                    }
+                });
+            }
+            else
             {
                 foreach (var r in objects)
                 {
                     c += Insert(r, objType);
                 }
-            });
+            }
             return c;
         }
 
@@ -1549,20 +1582,31 @@ namespace SQLite.Net
         /// <param name="objects">
         ///     An <see cref="IEnumerable" /> of the objects to insert.
         /// </param>
+        /// <param name="runInTransaction">A boolean indicating if the inserts should be wrapped in a transaction.</param>
         /// <returns>
         ///     The number of rows modified.
         /// </returns>
         [PublicAPI]
-        public int UpdateAll(IEnumerable objects)
+        public int UpdateAll(IEnumerable objects, bool runInTransaction = true)
         {
             var c = 0;
-            RunInTransaction(() =>
+            if (runInTransaction)
+            {
+                RunInTransaction(() =>
+                {
+                    foreach (var r in objects)
+                    {
+                        c += Update(r);
+                    }
+                });
+            }
+            else
             {
                 foreach (var r in objects)
                 {
                     c += Update(r);
                 }
-            });
+            }
             return c;
         }
 
