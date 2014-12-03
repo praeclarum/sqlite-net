@@ -53,6 +53,11 @@ namespace SQLite.Net
             if (!string.IsNullOrEmpty(p.Collation))
             {
                 decl += "collate " + p.Collation + " ";
+                
+            }
+            if (p.DefaultValue != null)
+            {
+                decl += "default('" + p.DefaultValue + "') ";
             }
 
             return decl;
@@ -156,6 +161,29 @@ namespace SQLite.Net
             foreach (var attribute in p.CustomAttributes.Where(a=>a.AttributeType==typeof(MaxLengthAttribute)))
             {
                 return (int) attribute.ConstructorArguments[0].Value;
+            }
+            return null;
+        }
+
+        public static object GetDefaultValue(PropertyInfo p)
+        {
+            foreach (var attribute in p.CustomAttributes.Where(a => a.AttributeType == typeof (DefaultAttribute)))
+            {
+                try
+                {
+                    var useProp = (bool) attribute.ConstructorArguments[0].Value;
+
+                    if (!useProp)
+                        return Convert.ChangeType(attribute.ConstructorArguments[0].Value, p.PropertyType);
+
+                    var obj = Activator.CreateInstance(p.DeclaringType);
+                    return p.GetValue(obj);
+
+                }
+                catch (Exception exception)
+                {
+                    throw new Exception("Unable to convert " + attribute.ConstructorArguments[0].Value + " to type " + p.PropertyType, exception);
+                }
             }
             return null;
         }
