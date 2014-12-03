@@ -70,16 +70,16 @@ namespace SQLite.Net.Tests
                 string failed = string.Empty;
                 foreach (var col in db.GetMapping<WithDefaultValue>().Columns)
                 {
-                    if (col.PropertyName == "TestInt" && col.DefaultValue.Equals(WithDefaultValue.IntVal))
+                    if (col.PropertyName == "TestInt" && !col.DefaultValue.Equals(WithDefaultValue.IntVal))
                         failed += " , TestInt does not equal " + WithDefaultValue.IntVal;
 
-                    if (col.PropertyName == "TestDecimal" && col.DefaultValue.Equals(WithDefaultValue.DecimalVal))
+                    if (col.PropertyName == "TestDecimal" && !col.DefaultValue.Equals(WithDefaultValue.DecimalVal))
                         failed += "TestDecimal does not equal " + WithDefaultValue.DecimalVal;
 
-                    if (col.PropertyName == "TestDateTime" && col.DefaultValue.Equals(WithDefaultValue.DateTimegVal))
+                    if (col.PropertyName == "TestDateTime" && !col.DefaultValue.Equals(WithDefaultValue.DateTimegVal))
                         failed += "TestDateTime does not equal " + WithDefaultValue.DateTimegVal;
 
-                    if (col.PropertyName == "TestString" && col.DefaultValue.Equals(WithDefaultValue.StringVal))
+                    if (col.PropertyName == "TestString" && !col.DefaultValue.Equals(WithDefaultValue.StringVal))
                         failed += "TestString does not equal " + WithDefaultValue.StringVal;
                 }
                 
