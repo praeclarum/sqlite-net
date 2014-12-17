@@ -1,0 +1,4 @@
+---
+build:
+  project:
+    SQLite.Net.OSS.sln
