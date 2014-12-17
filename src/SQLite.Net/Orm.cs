@@ -85,7 +85,8 @@ namespace SQLite.Net
             }
             if (clrType == typeof(UInt32) || clrType == typeof(Int64) ||
                 interfaces.Contains(typeof(ISerializable<UInt32>)) ||
-                interfaces.Contains(typeof(ISerializable<Int64>)))
+                interfaces.Contains(typeof(ISerializable<Int64>)) ||
+                interfaces.Contains(typeof(ISerializable<UInt64>)))
             {
                 return "bigint";
             }
