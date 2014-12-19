@@ -220,6 +220,8 @@ namespace SQLite.Net
                 IsAutoGuid = isAuto && ColumnType == typeof(Guid);
                 IsAutoInc = isAuto && !IsAutoGuid;
 
+                DefaultValue = Orm.GetDefaultValue(prop);
+
                 Indices = Orm.GetIndices(prop);
                 if (!Indices.Any()
                     && !IsPK
@@ -254,6 +256,7 @@ namespace SQLite.Net
             public bool IsNullable { get; private set; }
 
             public int? MaxStringLength { get; private set; }
+            public object DefaultValue { get; private set ; }
 
             /// <summary>
             ///     Set column value.
