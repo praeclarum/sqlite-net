@@ -34,9 +34,10 @@ namespace SQLite.Net
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
 
-        public static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer)
+        public static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer,
+                                     IDictionary<Type, string> extraTypeMappings)
         {
-            string decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks, serializer) + " ";
+            string decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks, serializer, extraTypeMappings) + " ";
 
             if (p.IsPK)
             {
@@ -58,10 +59,18 @@ namespace SQLite.Net
             return decl;
         }
 
-        public static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer)
+        public static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks,
+                                     IBlobSerializer serializer,
+                                     IDictionary<Type, string> extraTypeMappings)
         {
             Type clrType = p.ColumnType;
             var interfaces = clrType.GetTypeInfo().ImplementedInterfaces.ToList();
+
+            string extraMapping;
+            if (extraTypeMappings.TryGetValue(clrType, out extraMapping))
+            {
+                return extraMapping;
+            }
 
             if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) ||
                 clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32) ||
@@ -76,7 +85,8 @@ namespace SQLite.Net
             }
             if (clrType == typeof(UInt32) || clrType == typeof(Int64) ||
                 interfaces.Contains(typeof(ISerializable<UInt32>)) ||
-                interfaces.Contains(typeof(ISerializable<Int64>)))
+                interfaces.Contains(typeof(ISerializable<Int64>)) ||
+                interfaces.Contains(typeof(ISerializable<UInt64>)))
             {
                 return "bigint";
             }

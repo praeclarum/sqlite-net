@@ -87,9 +87,13 @@ namespace SQLite.Net
         ///     Blob serializer to use for storing undefined and complex data structures. If left null
         ///     these types will thrown an exception as usual.
         /// </param>
-        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null)
+        /// <param name="extraTypeMappings">
+        ///     Any extra type mappings that you wish to use for overriding the default for creating
+        ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
+        /// </param>
+        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null, IDictionary<Type, string> extraTypeMappings = null)
             : this(
-                sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, serializer)
+                sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, serializer, extraTypeMappings)
         {
         }
 
@@ -112,11 +116,16 @@ namespace SQLite.Net
         ///     Blob serializer to use for storing undefined and complex data structures. If left null
         ///     these types will thrown an exception as usual.
         /// </param>
+        /// <param name="extraTypeMappings">
+        ///     Any extra type mappings that you wish to use for overriding the default for creating
+        ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
+        /// </param>
         public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
-                                bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null)
+                                bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null,
+                                IDictionary<Type, string> extraTypeMappings = null)
         {
+            ExtraTypeMappings = extraTypeMappings ?? new Dictionary<Type, string>();
             Serializer = serializer;
-
             Platform = sqlitePlatform;
 
             if (string.IsNullOrEmpty(databasePath))
@@ -153,6 +162,8 @@ namespace SQLite.Net
         public ITraceListener TraceListener { get; set; }
 
         public bool StoreDateTimeAsTicks { get; private set; }
+
+        public IDictionary<Type, string> ExtraTypeMappings { get; private set; }
 
         /// <summary>
         ///     Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -305,7 +316,7 @@ namespace SQLite.Net
             }
             string query = "create table if not exists \"" + map.TableName + "\"(\n";
 
-            IEnumerable<string> decls = map.Columns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer));
+            IEnumerable<string> decls = map.Columns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer, this.ExtraTypeMappings));
             string decl = string.Join(",\n", decls.ToArray());
             query += decl;
             query += ")";
@@ -474,7 +485,7 @@ namespace SQLite.Net
             foreach (TableMapping.Column p in toBeAdded)
             {
                 string addCol = "alter table \"" + map.TableName + "\" add column " +
-                                Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer);
+                                Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer, this.ExtraTypeMappings);
                 Execute(addCol);
             }
         }
