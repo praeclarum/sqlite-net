@@ -24,3 +24,6 @@ copy ..\src\SQLite.Net.Platform.XamarinAndroid\bin\Release\SQLite.Net.Platform.X
 
 mkdir SQLite.Net.Platform.XamarinIOS
 copy ..\src\SQLite.Net.Platform.XamarinIOS\bin\iPhone\Release\SQLite.Net.Platform.XamarinIOS.dll SQLite.Net.Platform.XamarinIOS
+
+mkdir SQLite.Net.Platform.XamarinIOS.Unified
+copy ..\src\SQLite.Net.Platform.XamarinIOS.Unified\bin\iPhone\Release\SQLite.Net.Platform.XamarinIOS.Unified.dll SQLite.Net.Platform.XamarinIOS.Unified
