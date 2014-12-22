@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net.Platform.XamarinIOS</id>
@@ -21,5 +21,6 @@ Many changes, please see commit log.</releaseNotes>
     </metadata>
     <files>
         <file src="SQLite.Net.Platform.XamarinIOS\SQLite.Net.Platform.XamarinIOS.dll" target="lib\monotouch\SQLite.Net.Platform.XamarinIOS.dll" />
+	<file src="SQLite.Net.Platform.XamarinIOS.Unified\SQLite.Net.Platform.XamarinIOS.Unified.dll" target="lib\Xamarin.iOS10\SQLite.Net.Platform.XamarinIOS.Unified.dll" />
     </files>
 </package>
