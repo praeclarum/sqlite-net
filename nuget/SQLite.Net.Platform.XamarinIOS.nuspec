@@ -13,12 +13,12 @@
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database monotouch xamarin ios touch</tags>
-		<dependencies>
-		  <dependency id="SQLite.Net-PCL" />
-		</dependencies>
+        <dependencies>
+            <dependency id="SQLite.Net-PCL" version="2.5"/>
+        </dependencies>
     </metadata>
     <files>
         <file src="SQLite.Net.Platform.XamarinIOS\SQLite.Net.Platform.XamarinIOS.dll" target="lib\monotouch\SQLite.Net.Platform.XamarinIOS.dll" />
-	<file src="SQLite.Net.Platform.XamarinIOS.Unified\SQLite.Net.Platform.XamarinIOS.Unified.dll" target="lib\Xamarin.iOS10\SQLite.Net.Platform.XamarinIOS.Unified.dll" />
+        <file src="SQLite.Net.Platform.XamarinIOS.Unified\SQLite.Net.Platform.XamarinIOS.Unified.dll" target="lib\Xamarin.iOS10\SQLite.Net.Platform.XamarinIOS.Unified.dll" />
     </files>
 </package>

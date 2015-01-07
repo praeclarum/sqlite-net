@@ -13,9 +13,9 @@
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database monodroid xamarin android</tags>
-		<dependencies>
-		  <dependency id="SQLite.Net-PCL" />
-		</dependencies>
+        <dependencies>
+            <dependency id="SQLite.Net-PCL" version="2.5"/>
+        </dependencies>
     </metadata>
     <files>
         <file src="SQLite.Net.Platform.XamarinAndroid\SQLite.Net.Platform.XamarinAndroid.dll" target="lib\MonoAndroid\SQLite.Net.Platform.XamarinAndroid.dll" />

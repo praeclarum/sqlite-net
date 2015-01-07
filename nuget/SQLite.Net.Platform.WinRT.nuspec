@@ -14,8 +14,8 @@
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql winrt database</tags>
         <dependencies>
-          <dependency id="SQLite.Net-PCL" />
-          <dependency id="SQLite.WinRT.redist" />
+          <dependency id="SQLite.Net-PCL" version="2.5"/>
+          <dependency id="SQLite.WinRT.redist" version="1.0.2"/>
         </dependencies>
     </metadata>
     <files>

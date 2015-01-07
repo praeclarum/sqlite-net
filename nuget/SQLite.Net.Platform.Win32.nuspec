@@ -13,10 +13,10 @@
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql win32 database</tags>
-		<dependencies>
-		  <dependency id="SQLite.Net-PCL" />
-		  <dependency id="System.Data.SQLite.Core" />
-		</dependencies>
+        <dependencies>
+            <dependency id="SQLite.Net-PCL" version="2.5"/>
+            <dependency id="System.Data.SQLite.Core" version="1.0.94"/>
+        </dependencies>
     </metadata>
     <files>
         <file src="SQLite.Net.Platform.Win32\SQLite.Net.Platform.Win32.dll" target="lib\net4\SQLite.Net.Platform.Win32.dll" />

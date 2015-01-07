@@ -14,7 +14,7 @@
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database</tags>
         <dependencies>
-            <dependency id="SQLite.Net-PCL" />
+            <dependency id="SQLite.Net-PCL" version="2.5"/>
         </dependencies>
     </metadata>
     <files>
