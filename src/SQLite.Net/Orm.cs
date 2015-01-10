@@ -29,12 +29,12 @@ using SQLite.Net.Attributes;
 
 namespace SQLite.Net
 {
-    public static class Orm
+    internal static class Orm
     {
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
 
-        public static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer,
+        internal static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer,
                                      IDictionary<Type, string> extraTypeMappings)
         {
             string decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks, serializer, extraTypeMappings) + " ";
@@ -64,7 +64,7 @@ namespace SQLite.Net
             return decl;
         }
 
-        public static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks,
+        private static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks,
                                      IBlobSerializer serializer,
                                      IDictionary<Type, string> extraTypeMappings)
         {
@@ -142,12 +142,12 @@ namespace SQLite.Net
             throw new NotSupportedException("Don't know about " + clrType);
         }
 
-        public static bool IsPK(MemberInfo p)
+        internal static bool IsPK(MemberInfo p)
         {
             return p.GetCustomAttributes<PrimaryKeyAttribute>().Any();
         }
 
-        public static string Collation(MemberInfo p)
+        internal static string Collation(MemberInfo p)
         {
             foreach (var attribute in p.CustomAttributes.Where(attribute => attribute.AttributeType == typeof(CollationAttribute)))
             {
@@ -156,17 +156,17 @@ namespace SQLite.Net
             return string.Empty;
         }
 
-        public static bool IsAutoInc(MemberInfo p)
+        internal static bool IsAutoInc(MemberInfo p)
         {
             return p.GetCustomAttributes<AutoIncrementAttribute>().Any();
         }
 
-        public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
+        internal static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
         {
             return p.GetCustomAttributes<IndexedAttribute>();
         }
 
-        public static int? MaxStringLength(PropertyInfo p)
+        internal static int? MaxStringLength(PropertyInfo p)
         {
             foreach (var attribute in p.CustomAttributes.Where(a=>a.AttributeType==typeof(MaxLengthAttribute)))
             {
@@ -175,7 +175,7 @@ namespace SQLite.Net
             return null;
         }
 
-        public static object GetDefaultValue(PropertyInfo p)
+        internal static object GetDefaultValue(PropertyInfo p)
         {
             foreach (var attribute in p.CustomAttributes.Where(a => a.AttributeType == typeof (DefaultAttribute)))
             {
@@ -198,7 +198,7 @@ namespace SQLite.Net
             return null;
         }
 
-        public static bool IsMarkedNotNull(MemberInfo p)
+        internal static bool IsMarkedNotNull(MemberInfo p)
         {
             var attrs = p.GetCustomAttributes<NotNullAttribute>(true);
             return attrs.Any();
