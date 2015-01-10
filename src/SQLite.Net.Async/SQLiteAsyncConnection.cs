@@ -92,16 +92,6 @@ namespace SQLite.Net.Async
             return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
         }
 
-        public class CreateTablesResult
-        {
-            public Dictionary<Type, int> Results { get; private set; }
-
-            internal CreateTablesResult()
-            {
-                this.Results = new Dictionary<Type, int>();
-            }
-        }
-
         public Task<CreateTablesResult> CreateTablesAsync(params Type[] types)
         {
             return CreateTablesAsync(CancellationToken.None, types);
