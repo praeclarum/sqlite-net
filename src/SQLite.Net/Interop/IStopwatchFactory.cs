@@ -19,8 +19,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using JetBrains.Annotations;
+
 namespace SQLite.Net.Interop
 {
+    [PublicAPI]
     public interface IStopwatchFactory
     {
         IStopwatch Create();

@@ -21,10 +21,12 @@
 // THE SOFTWARE.
 
 using System;
+using JetBrains.Annotations;
 using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {
+    [PublicAPI]
     public class SQLiteException : Exception
     {
         protected SQLiteException(Result r, string message) : base(message)
@@ -32,8 +34,10 @@ namespace SQLite.Net
             Result = r;
         }
 
+        [PublicAPI]
         public Result Result { get; private set; }
 
+        [PublicAPI]
         public static SQLiteException New(Result r, string message)
         {
             return new SQLiteException(r, message);

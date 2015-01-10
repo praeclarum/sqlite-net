@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace SQLite.Net
 {
@@ -23,6 +24,7 @@ namespace SQLite.Net
         ///     Default Initializer for a new instance of the <see cref="ContractResolver" /> class.
         ///     This constructor sets the resolver to the .NET Refection based Activator.CreateInstance method
         /// </summary>
+        [PublicAPI]
         public ContractResolver() : this(t => true, Activator.CreateInstance)
         {
         }
@@ -34,6 +36,7 @@ namespace SQLite.Net
         /// </summary>
         /// <param name="canCreate">The can create.</param>
         /// <param name="create">The create.</param>
+        [PublicAPI]
         public ContractResolver(Func<Type, bool> canCreate, Func<Type, object[], object> create)
         {
             if (canCreate == null)
@@ -53,6 +56,7 @@ namespace SQLite.Net
         ///     behavior of the library prior to the addition of this functionality
         /// </summary>
         /// <value>The current.</value>
+        [PublicAPI]
         public static ContractResolver Current
         {
             get { return _current ?? (_current = new ContractResolver()); }
@@ -66,6 +70,7 @@ namespace SQLite.Net
         ///     Returns true if the type can be resolved.  Note, if the default constructor is used, this will always return
         ///     true
         /// </value>
+        [PublicAPI]
         public Func<Type, bool> CanCreate
         {
             get { return _canCreate; }
@@ -78,6 +83,7 @@ namespace SQLite.Net
         ///     if the resolve supports it.
         /// </summary>
         /// <value>The create.</value>
+        [PublicAPI]
         public Func<Type, object[], object> Create
         {
             get { return _create; }
@@ -89,6 +95,7 @@ namespace SQLite.Net
         /// <param name="type">The type.</param>
         /// <param name="constructorArgs">The constructor arguments.</param>
         /// <returns>System.Object.</returns>
+        [PublicAPI]
         public object CreateObject(Type type, object[] constructorArgs = null)
         {
             if (CanCreate == null || CanCreate(type))

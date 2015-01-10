@@ -22,9 +22,11 @@
 //
 
 using System;
+using JetBrains.Annotations;
 
 namespace SQLite.Net.Attributes
 {
+    [PublicAPI]
     [AttributeUsage(AttributeTargets.Property)]
     public class NotNullAttribute : Attribute
     {

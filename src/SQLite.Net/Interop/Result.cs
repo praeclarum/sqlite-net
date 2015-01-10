@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace SQLite.Net.Interop
 {
+    [PublicAPI]
     public enum Result
     {
         OK = 0,

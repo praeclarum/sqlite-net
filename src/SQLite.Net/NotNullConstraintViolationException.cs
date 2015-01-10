@@ -22,10 +22,12 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {
+    [PublicAPI]
     public class NotNullConstraintViolationException : SQLiteException
     {
         protected NotNullConstraintViolationException(Result r, string message, TableMapping mapping = null, object obj = null)
@@ -39,6 +41,7 @@ namespace SQLite.Net
             }
         }
 
+        [PublicAPI]
         public IEnumerable<TableMapping.Column> Columns { get; protected set; }
 
         internal new static NotNullConstraintViolationException New(Result r, string message)
