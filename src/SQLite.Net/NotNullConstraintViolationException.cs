@@ -28,12 +28,7 @@ namespace SQLite.Net
 {
     public class NotNullConstraintViolationException : SQLiteException
     {
-        protected NotNullConstraintViolationException(Result r, string message)
-            : this(r, message, null, null)
-        {
-        }
-
-        protected NotNullConstraintViolationException(Result r, string message, TableMapping mapping, object obj)
+        protected NotNullConstraintViolationException(Result r, string message, TableMapping mapping = null, object obj = null)
             : base(r, message)
         {
             if (mapping != null && obj != null)
