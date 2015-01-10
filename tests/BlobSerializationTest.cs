@@ -2,8 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
+using SQLite.Net.Attributes;
 
 #if __WIN32__
 using SQLitePlatformTest = SQLite.Net.Platform.Win32.SQLitePlatformWin32;
@@ -19,15 +18,7 @@ using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndr
 using SQLitePlatformTest = SQLite.Net.Platform.Generic.SQLitePlatformGeneric;
 #endif
 
-#if WINDOWS_PHONE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
 using NUnit.Framework;
-using SQLite.Net.Interop;
-using SQLite.Net.Attributes;
-#endif
 
 namespace SQLite.Net.Tests
 {
