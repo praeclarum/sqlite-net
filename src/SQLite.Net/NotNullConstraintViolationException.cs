@@ -41,17 +41,17 @@ namespace SQLite.Net
 
         public IEnumerable<TableMapping.Column> Columns { get; protected set; }
 
-        public new static NotNullConstraintViolationException New(Result r, string message)
+        internal new static NotNullConstraintViolationException New(Result r, string message)
         {
             return new NotNullConstraintViolationException(r, message);
         }
 
-        public static NotNullConstraintViolationException New(Result r, string message, TableMapping mapping, object obj)
+        internal static NotNullConstraintViolationException New(Result r, string message, TableMapping mapping, object obj)
         {
             return new NotNullConstraintViolationException(r, message, mapping, obj);
         }
 
-        public static NotNullConstraintViolationException New(SQLiteException exception, TableMapping mapping, object obj)
+        internal static NotNullConstraintViolationException New(SQLiteException exception, TableMapping mapping, object obj)
         {
             return new NotNullConstraintViolationException(exception.Result, exception.Message, mapping, obj);
         }
