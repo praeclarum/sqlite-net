@@ -331,7 +331,14 @@ namespace SQLite.Net
             }
             string query = "create table if not exists \"" + map.TableName + "\"(\n";
 
-            IEnumerable<string> decls = map.Columns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer, this.ExtraTypeMappings));
+            var mapColumns = map.Columns;
+
+            if(!mapColumns.Any())
+            {
+                throw new Exception("Table has no (public) columns");
+            }
+
+            IEnumerable<string> decls = mapColumns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer, this.ExtraTypeMappings));
             string decl = string.Join(",\n", decls.ToArray());
             query += decl;
             query += ")";
@@ -346,7 +353,7 @@ namespace SQLite.Net
             }
 
             var indexes = new Dictionary<string, IndexInfo>();
-            foreach (TableMapping.Column c in map.Columns)
+            foreach (TableMapping.Column c in mapColumns)
             {
                 foreach (IndexedAttribute i in c.Indices)
                 {
