@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>1.0.9-alpha</version>
+    <version>1.0.10</version>
     <authors>Frank A. Krueger</authors>
     <owners>Frank A. Krueger</owners>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
@@ -10,15 +10,15 @@
     <summary>The official portable class library version of sqlite-net: the easy way to access sqlite.</summary>
     <licenseUrl>https://github.com/praeclarum/sqlite-net/blob/master/license.md</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>SQLite-net is an open source, easy and light weight library for .NET, Mono, and Xamarin applications to store data in SQLite databases. This version uses SQLitePCL.raw to provide platform independent versions of SQLite.</description>
+    <description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCL.raw_basic to provide platform independent versions of SQLite.</description>
     <tags>sqlite pcl database orm </tags>
     <releaseNotes>
     <![CDATA[
-    v1.0.9: Update with commits through 13-JUN-2014.
+    v1.0.10: Update with commits through 22-JAN-2015. Adds async support. Out of prerelease. .raw bumped to 0.7.1.
     ]]>
     </releaseNotes>
     <dependencies>
-      <dependency id="SQLitePCL.raw_basic" version="0.3.0-alpha" />
+      <dependency id="SQLitePCL.raw_basic" version="0.7.1" />
     </dependencies>
   </metadata>
   <files>
