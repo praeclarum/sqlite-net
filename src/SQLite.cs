@@ -169,6 +169,8 @@ namespace SQLite
 		/// absolutely do want to store them as Ticks in all new projects. The default of false is
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
+		/// the storeDateTimeAsTicks parameter.
 		/// </param>
 		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false)
 			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
@@ -186,6 +188,8 @@ namespace SQLite
 		/// absolutely do want to store them as Ticks in all new projects. The default of false is
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
+		/// the storeDateTimeAsTicks parameter.
 		/// </param>
 		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
 		{
