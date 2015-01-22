@@ -2317,7 +2317,7 @@ namespace SQLite
 						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
 					}
 					else {
-						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+                        SQLite3.BindText(stmt, index, ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ssK"), -1, NegativePointer);
 					}
 				} else if (value is DateTimeOffset) {
 					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
