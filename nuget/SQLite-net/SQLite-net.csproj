@@ -40,17 +40,20 @@
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\SQLiteAsync.cs">
+      <Link>SQLiteAsync.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="SQLitePCL.raw">
-      <HintPath>packages\SQLitePCL.raw_basic.0.3.0-alpha\lib\portable-net45+netcore45+wpa81+wp8+MonoAndroid+MonoTouch\SQLitePCL.raw.dll</HintPath>
+      <HintPath>packages\SQLitePCL.raw_basic.0.7.1\lib\portable-net45+netcore45+wpa81+wp8+MonoAndroid10+MonoTouch10+Xamarin.iOS10\SQLitePCL.raw.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
