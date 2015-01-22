@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2014 Krueger Systems, Inc.
+// Copyright (c) 2009-2015 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,12 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 #endif
 using System.Collections.Generic;
-using System.Collections.Concurrent;
+#if NO_CONCURRENT
+using ConcurrentStringDictionary = System.Collections.Generic.Dictionary<string, object>;
+using SQLite.Extensions;
+#else
+using ConcurrentStringDictionary = System.Collections.Concurrent.ConcurrentDictionary<string, object>;
+#endif
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
@@ -1804,7 +1809,7 @@ namespace SQLite
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
-			_insertCommandMap = new ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> ();
+			_insertCommandMap = new ConcurrentStringDictionary ();
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -1845,21 +1850,23 @@ namespace SQLite
 			var exact = Columns.FirstOrDefault (c => c.Name == columnName);
 			return exact;
 		}
-		
-		ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> _insertCommandMap;
+
+        ConcurrentStringDictionary _insertCommandMap;
 
 		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
 		{
-			PreparedSqlLiteInsertCommand prepCmd;
-			if (!_insertCommandMap.TryGetValue (extra, out prepCmd)) {
-				prepCmd = CreateInsertCommand (conn, extra);
+			object prepCmdO;
+            
+			if (!_insertCommandMap.TryGetValue (extra, out prepCmdO)) {
+				var prepCmd = CreateInsertCommand (conn, extra);
+				prepCmdO = prepCmd;
 				if (!_insertCommandMap.TryAdd (extra, prepCmd)) {
 					// Concurrent add attempt beat us.
 					prepCmd.Dispose ();
-					_insertCommandMap.TryGetValue (extra, out prepCmd);
+					_insertCommandMap.TryGetValue (extra, out prepCmdO);
 				}
 			}
-			return prepCmd;
+			return (PreparedSqlLiteInsertCommand)prepCmdO;
 		}
 		
 		PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
@@ -1894,7 +1901,7 @@ namespace SQLite
 		protected internal void Dispose()
 		{
 			foreach (var pair in _insertCommandMap) {
-				pair.Value.Dispose ();
+                ((PreparedSqlLiteInsertCommand)pair.Value).Dispose ();
 			}
 			_insertCommandMap = null;
 		}
@@ -3445,3 +3452,24 @@ namespace SQLite
 		}
 	}
 }
+
+#if NO_CONCURRENT
+namespace SQLite.Extensions
+{
+    public static class ListEx
+    {
+        public static bool TryAdd<TKey, TValue> (this IDictionary<TKey, TValue> dict, TKey key, TValue value)
+        {
+            try {
+                dict.Add (key, value);
+                return true;
+            }
+            catch (ArgumentException) {
+                return false;
+            }
+        }
+    }
+}
+#endif
+
+
