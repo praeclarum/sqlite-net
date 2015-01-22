@@ -159,6 +159,18 @@ namespace SQLite
 			});
 		}
 
+        public Task<int> DeleteAllAsync<T>()
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.DeleteAll<T>();
+                }
+            });
+        }
+
         public Task<T> GetAsync<T>(object pk)
             where T : new()
         {
