@@ -118,14 +118,14 @@ namespace SQLite.Net.Tests
 
     public class TestDb : SQLiteConnection
     {
-        public TestDb(bool storeDateTimeAsTicks = false, IContractResolver resolver = null)
+        public TestDb(bool storeDateTimeAsTicks = true, IContractResolver resolver = null)
             : base(
                 new SQLitePlatformTest(), TestPath.GetTempFileName(), storeDateTimeAsTicks, null,
                 extraTypeMappings: null,
                 resolver: resolver)
-        {
+		{
             TraceListener = DebugTraceListener.Instance;
-        }
+		}
     }
 
     public class TestPath

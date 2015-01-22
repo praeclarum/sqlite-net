@@ -102,7 +102,7 @@ namespace SQLite.Net
         public SQLiteConnection(
             ISQLitePlatform sqlitePlatform,
             string databasePath,
-            bool storeDateTimeAsTicks = false,
+            bool storeDateTimeAsTicks = true,
             IBlobSerializer serializer = null,
             IDictionary<string, TableMapping> tableMappings = null,
             IDictionary<Type, string> extraTypeMappings = null,
@@ -144,7 +144,7 @@ namespace SQLite.Net
         /// </param>
         [PublicAPI]
         public SQLiteConnection([JetBrains.Annotations.NotNull] ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
-            bool storeDateTimeAsTicks = false, [CanBeNull] IBlobSerializer serializer = null, [CanBeNull] IDictionary<string, TableMapping> tableMappings = null,
+            bool storeDateTimeAsTicks = true, [CanBeNull] IBlobSerializer serializer = null, [CanBeNull] IDictionary<string, TableMapping> tableMappings = null,
             [CanBeNull] IDictionary<Type, string> extraTypeMappings = null, IContractResolver resolver = null)
         {
             if (sqlitePlatform == null)
