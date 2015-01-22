@@ -20,6 +20,7 @@ namespace SQLite.Tests
 			[PrimaryKey, AutoIncrement]
 			public int Id { get; set; }
 			public int Datum { get; set; }
+			public string Test { get; set;}
 		}
 
 		const int Count = 100;
@@ -29,7 +30,7 @@ namespace SQLite.Tests
 			var db = new TestDb ();
 			db.CreateTable<TestTable> ();
 			var items = from i in Enumerable.Range (0, Count)
-				select new TestTable { Datum = 1000+i };
+			            select new TestTable { Datum = 1000+i, Test = "Hello World" };
 			db.InsertAll (items);
 			Assert.AreEqual (Count, db.Table<TestTable> ().Count ());
 			return db;
@@ -77,6 +78,29 @@ namespace SQLite.Tests
 
 			Assert.AreEqual (Count, r);
 			Assert.AreEqual (0, db.Table<TestTable> ().Count ());
+		}
+
+		[Test]
+		public void DeleteAllWithPredicate()
+		{
+			var db = CreateDb();
+
+			var r = db.Table<TestTable>().Delete(p => p.Test == "Hello World");
+
+			Assert.AreEqual (Count, r);
+			Assert.AreEqual (0, db.Table<TestTable> ().Count ());
+		}
+
+		[Test]
+		public void DeleteAllWithPredicateHalf()
+		{
+			var db = CreateDb();
+			db.Insert(new TestTable() { Datum = 1, Test = "Hello World 2" }); 
+
+			var r = db.Table<TestTable>().Delete(p => p.Test == "Hello World");
+
+			Assert.AreEqual (Count, r);
+			Assert.AreEqual (1, db.Table<TestTable> ().Count ());
 		}
 	}
 }

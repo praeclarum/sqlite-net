@@ -2557,6 +2557,24 @@ namespace SQLite
 			}
 		}
 
+		public int Delete(Expression<Func<T, bool>> predExpr)
+		{
+			if (predExpr.NodeType == ExpressionType.Lambda) {
+				var lambda = (LambdaExpression)predExpr;
+				var pred = lambda.Body;
+				var args = new List<object> ();
+				var w = CompileExpr (pred, args);
+				var cmdText = "delete from \"" + Table.TableName + "\"";
+				cmdText += " where " + w.CommandText;
+				var command = Connection.CreateCommand (cmdText, args.ToArray ());
+
+				int result = command.ExecuteNonQuery();
+				return result;
+			} else {
+				throw new NotSupportedException ("Must be a predicate");
+			}
+		}
+
 		public TableQuery<T> Take (int n)
 		{
 			var q = Clone<T> ();
