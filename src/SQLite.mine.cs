@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2015 Krueger Systems, Inc.
+// Copyright (c) 2009-2012 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,22 +23,10 @@
 #define USE_CSHARP_SQLITE
 #endif
 
-#if NETFX_CORE
-#define USE_NEW_REFLECTION_API
-#endif
-
 using System;
 using System.Diagnostics;
-#if !USE_SQLITEPCL_RAW
 using System.Runtime.InteropServices;
-#endif
 using System.Collections.Generic;
-#if NO_CONCURRENT
-using ConcurrentStringDictionary = System.Collections.Generic.Dictionary<string, object>;
-using SQLite.Extensions;
-#else
-using ConcurrentStringDictionary = System.Collections.Concurrent.ConcurrentDictionary<string, object>;
-#endif
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
@@ -52,10 +40,6 @@ using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 using Sqlite3 = Sqlite.Sqlite3;
 using Sqlite3DatabaseHandle = Sqlite.Database;
 using Sqlite3Statement = Sqlite.Statement;
-#elif USE_SQLITEPCL_RAW
-using Sqlite3DatabaseHandle = SQLitePCL.sqlite3;
-using Sqlite3Statement = SQLitePCL.sqlite3_stmt;
-using Sqlite3 = SQLitePCL.raw;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
@@ -128,13 +112,12 @@ namespace SQLite
     [Flags]
     public enum CreateFlags
     {
-        None                = 0x000,
-        ImplicitPK          = 0x001,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
-        ImplicitIndex       = 0x002,    // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
-        AllImplicit         = 0x003,    // do both above
-        AutoIncPK           = 0x004,    // force PK field to be auto inc
-        FullTextSearch3     = 0x100,    // create virtual table using FTS3
-        FullTextSearch4     = 0x200     // create virtual table using FTS4
+        None = 0,
+        ImplicitPK = 1,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
+        ImplicitIndex = 2, // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
+        AllImplicit = 3,   // do both above
+
+        AutoIncPK = 4      // force PK field to be auto inc
     }
 
 	/// <summary>
@@ -171,13 +154,11 @@ namespace SQLite
 		/// </param>
 		/// <param name="storeDateTimeAsTicks">
 		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-		/// absolutely do want to store them as Ticks in all new projects. The value of false is
+		/// absolutely do want to store them as Ticks in all new projects. The default of false is
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
-		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
-		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true)
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false)
 			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
 		{
 		}
@@ -190,13 +171,11 @@ namespace SQLite
 		/// </param>
 		/// <param name="storeDateTimeAsTicks">
 		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-		/// absolutely do want to store them as Ticks in all new projects. The value of false is
+		/// absolutely do want to store them as Ticks in all new projects. The default of false is
 		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
 		/// down sides, when setting storeDateTimeAsTicks = true.
-		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
-		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
 		{
 			if (string.IsNullOrEmpty (databasePath))
 				throw new ArgumentException ("Must be specified", "databasePath");
@@ -209,7 +188,7 @@ namespace SQLite
 
 			Sqlite3DatabaseHandle handle;
 
-#if SILVERLIGHT || USE_CSHARP_SQLITE || USE_SQLITEPCL_RAW
+#if SILVERLIGHT || USE_CSHARP_SQLITE
             var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
 #else
 			// open using the byte[]
@@ -230,7 +209,6 @@ namespace SQLite
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 		
-#if __IOS__
 		static SQLiteConnection ()
 		{
 			if (_preserveDuringLinkMagic) {
@@ -239,14 +217,6 @@ namespace SQLite
 			}
 		}
 
-   		/// <summary>
-		/// Used to list some code that we want the MonoTouch linker
-		/// to see, but that we never want to actually execute.
-		/// </summary>
-		static bool _preserveDuringLinkMagic;
-#endif
-
-#if !USE_SQLITEPCL_RAW
         public void EnableLoadExtension(int onoff)
         {
             SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
@@ -255,9 +225,7 @@ namespace SQLite
 				throw SQLiteException.New (r, msg);
 			}
         }
-#endif
 
-#if !USE_SQLITEPCL_RAW
 		static byte[] GetNullTerminatedUtf8 (string s)
 		{
 			var utf8Length = System.Text.Encoding.UTF8.GetByteCount (s);
@@ -265,9 +233,14 @@ namespace SQLite
 			utf8Length = System.Text.Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
 			return bytes;
 		}
-#endif
+		
+		/// <summary>
+		/// Used to list some code that we want the MonoTouch linker
+		/// to see, but that we never want to actually execute.
+		/// </summary>
+		static bool _preserveDuringLinkMagic;
 
-        /// <summary>
+		/// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
 		/// The handler will sleep multiple times until a total time of <see cref="BusyTimeout"/> has accumulated.
 		/// </summary>
@@ -390,16 +363,8 @@ namespace SQLite
 				map = GetMapping (ty, createFlags);
 				_tables.Add (ty.FullName, map);
 			}
-
-            // Facilitate virtual tables a.k.a. full-text search.
-		    bool fts3 = (createFlags & CreateFlags.FullTextSearch3) != 0;
-		    bool fts4 = (createFlags & CreateFlags.FullTextSearch4) != 0;
-		    bool fts = fts3 || fts4;
-            var @virtual = fts ? "virtual " : string.Empty;
-		    var @using = fts3 ? "using fts3 " : fts4 ? "using fts4 " : string.Empty;
-
-            // Build query.
-			var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
+			var query = "create table if not exists \"" + map.TableName + "\"(\n";
+			
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
@@ -888,7 +853,7 @@ namespace SQLite
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public T FindWithQuery<T> (string query, params object[] args) where T : new()
+		public T Find<T> (string query, params object[] args) where T : new()
 		{
 			return Query<T> (query, args).FirstOrDefault ();
 		}
@@ -1048,7 +1013,7 @@ namespace SQLite
 				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
 					if (0 <= depth && depth < _transactionDepth) {
-#if NETFX_CORE || USE_SQLITEPCL_RAW
+#if NETFX_CORE
                         Volatile.Write (ref _transactionDepth, depth);
 #elif SILVERLIGHT
 						_transactionDepth = depth;
@@ -1102,27 +1067,18 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, bool runInTransaction=true)
+		public int InsertAll (System.Collections.IEnumerable objects)
 		{
 			var c = 0;
-			if (runInTransaction) {
-				RunInTransaction(() => {
-					foreach (var r in objects) {
-						c += Insert (r);
-					}
-				});
-			}
-			else {
+			RunInTransaction(() => {
 				foreach (var r in objects) {
 					c += Insert (r);
 				}
-			}
+			});
 			return c;
 		}
 
@@ -1135,27 +1091,17 @@ namespace SQLite
 		/// <param name="extra">
 		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
 		/// </param>
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction.
-		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, string extra, bool runInTransaction=true)
+		public int InsertAll (System.Collections.IEnumerable objects, string extra)
 		{
 			var c = 0;
-			if (runInTransaction) {
-				RunInTransaction (() => {
-					foreach (var r in objects) {
-						c += Insert (r, extra);
-					}
-				});
-			}
-			else {
+			RunInTransaction (() => {
 				foreach (var r in objects) {
-					c+= Insert (r);
+					c += Insert (r, extra);
 				}
-			}
+			});
 			return c;
 		}
 
@@ -1168,27 +1114,17 @@ namespace SQLite
 		/// <param name="objType">
 		/// The type of object to insert.
 		/// </param>
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction.
-		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, Type objType, bool runInTransaction=true)
+		public int InsertAll (System.Collections.IEnumerable objects, Type objType)
 		{
 			var c = 0;
-			if (runInTransaction) {
-				RunInTransaction (() => {
-					foreach (var r in objects) {
-						c += Insert (r, objType);
-					}
-				});
-			}
-			else {
+			RunInTransaction (() => {
 				foreach (var r in objects) {
 					c += Insert (r, objType);
 				}
-			}
+			});
 			return c;
 		}
 		
@@ -1316,7 +1252,7 @@ namespace SQLite
             
 			var map = GetMapping (objType);
 
-#if USE_NEW_REFLECTION_API
+#if NETFX_CORE
             if (map.PK != null && map.PK.IsAutoGuid)
             {
                 // no GetProperty so search our way up the inheritance chain till we find it
@@ -1360,23 +1296,23 @@ namespace SQLite
 			var insertCmd = map.GetInsertCommand (this, extra);
 			int count;
 
-			lock (insertCmd) {
-				// We lock here to protect the prepared statement returned via GetInsertCommand.
-				// A SQLite prepared statement can be bound for only one operation at a time.
-				try {
-					count = insertCmd.ExecuteNonQuery (vals);
-				} catch (SQLiteException ex) {
-					if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-						throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
-					}
-					throw;
-				}
-
-				if (map.HasAutoIncPK) {
-					var id = SQLite3.LastInsertRowid (Handle);
-					map.SetAutoIncPK (obj, id);
-				}
+			try {
+				count = insertCmd.ExecuteNonQuery (vals);
 			}
+			catch (SQLiteException ex) {
+
+				if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+					throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
+				}
+				throw;
+			}
+
+            if (map.HasAutoIncPK)
+            {
+				var id = SQLite3.LastInsertRowid (Handle);
+				map.SetAutoIncPK (obj, id);
+			}
+
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Insert);
 
@@ -1465,27 +1401,17 @@ namespace SQLite
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
 		/// </param>
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction
-		/// </param>
 		/// <returns>
 		/// The number of rows modified.
 		/// </returns>
-		public int UpdateAll (System.Collections.IEnumerable objects, bool runInTransaction=true)
+		public int UpdateAll (System.Collections.IEnumerable objects)
 		{
 			var c = 0;
-			if (runInTransaction) {
-				RunInTransaction (() => {
-					foreach (var r in objects) {
-						c += Update (r);
-					}
-				});
-			}
-			else {
+			RunInTransaction (() => {
 				foreach (var r in objects) {
 					c += Update (r);
 				}
-			}
+			});
 			return c;
 		}
 
@@ -1763,7 +1689,7 @@ namespace SQLite
 		{
 			MappedType = type;
 
-#if USE_NEW_REFLECTION_API
+#if NETFX_CORE
 			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
                 .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
 #else
@@ -1772,7 +1698,7 @@ namespace SQLite
 
 			TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
 
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
 #else
 			var props = from p in MappedType.GetRuntimeProperties()
@@ -1781,7 +1707,7 @@ namespace SQLite
 #endif
 			var cols = new List<Column> ();
 			foreach (var p in props) {
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
@@ -1809,7 +1735,6 @@ namespace SQLite
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
-			_insertCommandMap = new ConcurrentStringDictionary ();
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -1850,23 +1775,22 @@ namespace SQLite
 			var exact = Columns.FirstOrDefault (c => c.Name == columnName);
 			return exact;
 		}
-
-        ConcurrentStringDictionary _insertCommandMap;
+		
+		PreparedSqlLiteInsertCommand _insertCommand;
+		string _insertCommandExtra;
 
 		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
 		{
-			object prepCmdO;
-            
-			if (!_insertCommandMap.TryGetValue (extra, out prepCmdO)) {
-				var prepCmd = CreateInsertCommand (conn, extra);
-				prepCmdO = prepCmd;
-				if (!_insertCommandMap.TryAdd (extra, prepCmd)) {
-					// Concurrent add attempt beat us.
-					prepCmd.Dispose ();
-					_insertCommandMap.TryGetValue (extra, out prepCmdO);
-				}
+			if (_insertCommand == null) {
+				_insertCommand = CreateInsertCommand(conn, extra);
+				_insertCommandExtra = extra;
 			}
-			return (PreparedSqlLiteInsertCommand)prepCmdO;
+			else if (_insertCommandExtra != extra) {
+				_insertCommand.Dispose();
+				_insertCommand = CreateInsertCommand(conn, extra);
+				_insertCommandExtra = extra;
+			}
+			return _insertCommand;
 		}
 		
 		PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
@@ -1900,10 +1824,10 @@ namespace SQLite
 		
 		protected internal void Dispose()
 		{
-			foreach (var pair in _insertCommandMap) {
-                ((PreparedSqlLiteInsertCommand)pair.Value).Dispose ();
+			if (_insertCommand != null) {
+				_insertCommand.Dispose();
+				_insertCommand = null;
 			}
-			_insertCommandMap = null;
 		}
 
 		public class Column
@@ -2020,7 +1944,7 @@ namespace SQLite
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
 			} else if (clrType == typeof(DateTimeOffset)) {
 				return "bigint";
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 			} else if (clrType.IsEnum) {
 #else
 			} else if (clrType.GetTypeInfo().IsEnum) {
@@ -2038,7 +1962,7 @@ namespace SQLite
 		public static bool IsPK (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 			return attrs.Length > 0;
 #else
 			return attrs.Count() > 0;
@@ -2048,7 +1972,7 @@ namespace SQLite
 		public static string Collation (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(CollationAttribute), true);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 			if (attrs.Length > 0) {
 				return ((CollationAttribute)attrs [0]).Value;
 #else
@@ -2063,7 +1987,7 @@ namespace SQLite
 		public static bool IsAutoInc (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 			return attrs.Length > 0;
 #else
 			return attrs.Count() > 0;
@@ -2079,7 +2003,7 @@ namespace SQLite
 		public static int? MaxStringLength(PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 			if (attrs.Length > 0)
 				return ((MaxLengthAttribute)attrs [0]).Value;
 #else
@@ -2093,7 +2017,7 @@ namespace SQLite
 		public static bool IsMarkedNotNull(MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof (NotNullAttribute), true);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 			return attrs.Length > 0;
 #else
 	return attrs.Count() > 0;
@@ -2321,7 +2245,7 @@ namespace SQLite
 					}
 				} else if (value is DateTimeOffset) {
 					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 				} else if (value.GetType().IsEnum) {
 #else
 				} else if (value.GetType().GetTypeInfo().IsEnum) {
@@ -2373,7 +2297,7 @@ namespace SQLite
 					}
 				} else if (clrType == typeof(DateTimeOffset)) {
 					return new DateTimeOffset(SQLite3.ColumnInt64 (stmt, index),TimeSpan.Zero);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 				} else if (clrType.IsEnum) {
 #else
 				} else if (clrType.GetTypeInfo().IsEnum) {
@@ -2564,24 +2488,6 @@ namespace SQLite
 			}
 		}
 
-		public int Delete(Expression<Func<T, bool>> predExpr)
-		{
-			if (predExpr.NodeType == ExpressionType.Lambda) {
-				var lambda = (LambdaExpression)predExpr;
-				var pred = lambda.Body;
-				var args = new List<object> ();
-				var w = CompileExpr (pred, args);
-				var cmdText = "delete from \"" + Table.TableName + "\"";
-				cmdText += " where " + w.CommandText;
-				var command = Connection.CreateCommand (cmdText, args.ToArray ());
-
-				int result = command.ExecuteNonQuery();
-				return result;
-			} else {
-				throw new NotSupportedException ("Must be a predicate");
-			}
-		}
-
 		public TableQuery<T> Take (int n)
 		{
 			var q = Clone<T> ();
@@ -2749,18 +2655,7 @@ namespace SQLite
 				else
 					text = "(" + leftr.CommandText + " " + GetSqlName(bin) + " " + rightr.CommandText + ")";
 				return new CompileResult { CommandText = text };
-			} else if (expr.NodeType == ExpressionType.Not) {
-                var operandExpr = ((UnaryExpression)expr).Operand;
-                var opr = CompileExpr(operandExpr, queryArgs);
-                object val = opr.Value;
-                if (val is bool)
-                    val = !((bool) val);
-                return new CompileResult
-                {
-                    CommandText = "NOT(" + opr.CommandText + ")",
-                    Value = val
-                };
-            } else if (expr.NodeType == ExpressionType.Call) {
+			} else if (expr.NodeType == ExpressionType.Call) {
 				
 				var call = (MethodCallExpression)expr;
 				var args = new CompileResult[call.Arguments.Count];
@@ -2846,14 +2741,14 @@ namespace SQLite
 					//
 					object val = null;
 					
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 					if (mem.Member.MemberType == MemberTypes.Property) {
 #else
 					if (mem.Member is PropertyInfo) {
 #endif
 						var m = (PropertyInfo)mem.Member;
 						val = m.GetValue (obj, null);
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 					} else if (mem.Member.MemberType == MemberTypes.Field) {
 #else
 					} else if (mem.Member is FieldInfo) {
@@ -2865,7 +2760,7 @@ namespace SQLite
 						val = m.GetValue (obj);
 #endif
 					} else {
-#if !USE_NEW_REFLECTION_API
+#if !NETFX_CORE
 						throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType);
 #else
 						throw new NotSupportedException ("MemberExpr: " + mem.Member.DeclaringType);
@@ -3086,10 +2981,7 @@ namespace SQLite
 			Serialized = 3
 		}
 
-#if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
-		[DllImport("sqlite3", EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
-		public static extern int Threadsafe ();
-
+#if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db);
 
@@ -3279,7 +3171,7 @@ namespace SQLite
 		public static Sqlite3Statement Prepare2(Sqlite3DatabaseHandle db, string query)
 		{
 			Sqlite3Statement stmt = default(Sqlite3Statement);
-#if USE_WP8_NATIVE_SQLITE || USE_SQLITEPCL_RAW
+#if USE_WP8_NATIVE_SQLITE
 			var r = Sqlite3.sqlite3_prepare_v2(db, query, out stmt);
 #else
 			stmt = new Sqlite3Statement();
@@ -3346,8 +3238,6 @@ namespace SQLite
 		{
 #if USE_WP8_NATIVE_SQLITE
 			return Sqlite3.sqlite3_bind_text(stmt, index, val, n);
-#elif USE_SQLITEPCL_RAW
-			return Sqlite3.sqlite3_bind_text(stmt, index, val);
 #else
 			return Sqlite3.sqlite3_bind_text(stmt, index, val, n, null);
 #endif
@@ -3357,8 +3247,6 @@ namespace SQLite
 		{
 #if USE_WP8_NATIVE_SQLITE
 			return Sqlite3.sqlite3_bind_blob(stmt, index, val, n);
-#elif USE_SQLITEPCL_RAW
-			return Sqlite3.sqlite3_bind_blob(stmt, index, val);
 #else
 			return Sqlite3.sqlite3_bind_blob(stmt, index, val, n, null);
 #endif
@@ -3429,12 +3317,10 @@ namespace SQLite
 			return ColumnBlob(stmt, index);
 		}
 
-#if !USE_SQLITEPCL_RAW
 		public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
 		{
 			return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
 		}
-#endif
 
 		public static ExtendedResult ExtendedErrCode(Sqlite3DatabaseHandle db)
 		{
@@ -3452,24 +3338,3 @@ namespace SQLite
 		}
 	}
 }
-
-#if NO_CONCURRENT
-namespace SQLite.Extensions
-{
-    public static class ListEx
-    {
-        public static bool TryAdd<TKey, TValue> (this IDictionary<TKey, TValue> dict, TKey key, TValue value)
-        {
-            try {
-                dict.Add (key, value);
-                return true;
-            }
-            catch (ArgumentException) {
-                return false;
-            }
-        }
-    }
-}
-#endif
-
-

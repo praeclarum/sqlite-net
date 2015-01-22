@@ -35,12 +35,12 @@ namespace SQLite
 		SQLiteConnectionString _connectionString;
         SQLiteOpenFlags _openFlags;
 
-        public SQLiteAsyncConnection(string databasePath, bool storeDateTimeAsTicks = false)
+        public SQLiteAsyncConnection(string databasePath, bool storeDateTimeAsTicks = true)
             : this(databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
         {
         }
         
-        public SQLiteAsyncConnection(string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
+        public SQLiteAsyncConnection(string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
         {
             _openFlags = openFlags;
             _connectionString = new SQLiteConnectionString(databasePath, storeDateTimeAsTicks);
