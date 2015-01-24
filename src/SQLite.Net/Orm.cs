@@ -80,21 +80,18 @@ namespace SQLite.Net
 
             if (clrType == typeof (bool) || clrType == typeof (byte) || clrType == typeof (ushort) ||
                 clrType == typeof (sbyte) || clrType == typeof (short) || clrType == typeof (int) ||
+                clrType == typeof (uint) || clrType == typeof (long) ||
                 interfaces.Contains(typeof (ISerializable<bool>)) ||
                 interfaces.Contains(typeof (ISerializable<byte>)) ||
                 interfaces.Contains(typeof (ISerializable<ushort>)) ||
                 interfaces.Contains(typeof (ISerializable<sbyte>)) ||
                 interfaces.Contains(typeof (ISerializable<short>)) ||
-                interfaces.Contains(typeof (ISerializable<int>)))
-            {
-                return "integer";
-            }
-            if (clrType == typeof (uint) || clrType == typeof (long) ||
+                interfaces.Contains(typeof (ISerializable<int>)) ||
                 interfaces.Contains(typeof (ISerializable<uint>)) ||
                 interfaces.Contains(typeof (ISerializable<long>)) ||
                 interfaces.Contains(typeof (ISerializable<ulong>)))
             {
-                return "bigint";
+                return "integer";
             }
             if (clrType == typeof (float) || clrType == typeof (double) || clrType == typeof (decimal) ||
                 interfaces.Contains(typeof (ISerializable<float>)) ||
