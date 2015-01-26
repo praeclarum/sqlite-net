@@ -59,7 +59,9 @@ namespace SQLite.Net
         private IStopwatch _sw;
         private Dictionary<string, TableMapping> _tables;
 
-        private int _transactionDepth;
+	    private IContractResolver _resolver;
+
+		private int _transactionDepth;
 
         static SQLiteConnection()
         {
@@ -70,63 +72,76 @@ namespace SQLite.Net
             }
         }
 
-        /// <summary>
-        ///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
-        /// </summary>
-        /// <param name="sqlitePlatform"></param>
-        /// <param name="databasePath">
-        ///     Specifies the path to the database file.
-        /// </param>
-        /// <param name="storeDateTimeAsTicks">
-        ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-        ///     absolutely do want to store them as Ticks in all new projects. The default of false is
-        ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
-        ///     down sides, when setting storeDateTimeAsTicks = true.
-        /// </param>
-        /// <param name="serializer">
-        ///     Blob serializer to use for storing undefined and complex data structures. If left null
-        ///     these types will thrown an exception as usual.
-        /// </param>
-        /// <param name="extraTypeMappings">
-        ///     Any extra type mappings that you wish to use for overriding the default for creating
-        ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
-        /// </param>
-        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null, IDictionary<Type, string> extraTypeMappings = null)
-            : this(
-                sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, serializer, extraTypeMappings)
-        {
-        }
+	    /// <summary>
+	    ///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+	    /// </summary>
+	    /// <param name="sqlitePlatform"></param>
+	    /// <param name="databasePath">
+	    ///     Specifies the path to the database file.
+	    /// </param>
+	    /// <param name="storeDateTimeAsTicks">
+	    ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+	    ///     absolutely do want to store them as Ticks in all new projects. The default of false is
+	    ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
+	    ///     down sides, when setting storeDateTimeAsTicks = true.
+	    /// </param>
+	    /// <param name="serializer">
+	    ///     Blob serializer to use for storing undefined and complex data structures. If left null
+	    ///     these types will thrown an exception as usual.
+	    /// </param>
+	    /// <param name="extraTypeMappings">
+	    ///     Any extra type mappings that you wish to use for overriding the default for creating
+	    ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
+	    /// </param>
+	    /// <param name="resolver">
+	    ///		A contract resovler for resolving interfaces to concreate types during object creation
+	    /// </param>
+	    public SQLiteConnection(
+		    ISQLitePlatform sqlitePlatform,
+		    string databasePath,
+		    bool storeDateTimeAsTicks = false,
+		    IBlobSerializer serializer = null,
+		    IDictionary<Type, string> extraTypeMappings = null,
+		    IContractResolver resolver = null)
+		    : this(sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, 
+						serializer, extraTypeMappings, resolver)
+	    {
+	    }
 
 
-        /// <summary>
-        ///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
-        /// </summary>
-        /// <param name="sqlitePlatform"></param>
-        /// <param name="databasePath">
-        ///     Specifies the path to the database file.
-        /// </param>
-        /// <param name="openFlags"></param>
-        /// <param name="storeDateTimeAsTicks">
-        ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-        ///     absolutely do want to store them as Ticks in all new projects. The default of false is
-        ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
-        ///     down sides, when setting storeDateTimeAsTicks = true.
-        /// </param>
-        /// <param name="serializer">
-        ///     Blob serializer to use for storing undefined and complex data structures. If left null
-        ///     these types will thrown an exception as usual.
-        /// </param>
-        /// <param name="extraTypeMappings">
-        ///     Any extra type mappings that you wish to use for overriding the default for creating
-        ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
-        /// </param>
-        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
+	    /// <summary>
+		///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		/// </summary>
+		/// <param name="sqlitePlatform"></param>
+		/// <param name="databasePath">
+		///     Specifies the path to the database file.
+		/// </param>
+		/// <param name="openFlags"></param>
+		/// <param name="storeDateTimeAsTicks">
+		///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		///     absolutely do want to store them as Ticks in all new projects. The default of false is
+		///     only here for backwards compatibility. There is a *significant* speed advantage, with no
+		///     down sides, when setting storeDateTimeAsTicks = true.
+		/// </param>
+		/// <param name="serializer">
+		///     Blob serializer to use for storing undefined and complex data structures. If left null
+		///     these types will thrown an exception as usual.
+		/// </param>
+		/// <param name="extraTypeMappings">
+		///     Any extra type mappings that you wish to use for overriding the default for creating
+		///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
+		/// </param>
+		/// <param name="resolver">
+		///		A contract resovler for resolving interfaces to concreate types during object creation
+		/// </param>
+		public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
                                 bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null,
-                                IDictionary<Type, string> extraTypeMappings = null)
+                                IDictionary<Type, string> extraTypeMappings = null, IContractResolver resolver = null)
         {
             ExtraTypeMappings = extraTypeMappings ?? new Dictionary<Type, string>();
             Serializer = serializer;
             Platform = sqlitePlatform;
+			Resolver = resolver ?? ContractResolver.Current;
 
             if (string.IsNullOrEmpty(databasePath))
             {
@@ -164,6 +179,8 @@ namespace SQLite.Net
         public bool StoreDateTimeAsTicks { get; private set; }
 
         public IDictionary<Type, string> ExtraTypeMappings { get; private set; }
+
+		public IContractResolver Resolver { get; private set; }
 
         /// <summary>
         ///     Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -614,7 +631,7 @@ namespace SQLite.Net
         /// <returns>
         ///     An enumerable with one result for each row returned by the query.
         /// </returns>
-        public List<T> Query<T>(string query, params object[] args) where T : new()
+        public List<T> Query<T>(string query, params object[] args) where T : class
         {
             SQLiteCommand cmd = CreateCommand(query, args);
             return cmd.ExecuteQuery<T>();
@@ -637,7 +654,7 @@ namespace SQLite.Net
         ///     The enumerator will call sqlite3_step on each call to MoveNext, so the database
         ///     connection must remain open for the lifetime of the enumerator.
         /// </returns>
-        public IEnumerable<T> DeferredQuery<T>(string query, params object[] args) where T : new()
+        public IEnumerable<T> DeferredQuery<T>(string query, params object[] args) where T : class
         {
             SQLiteCommand cmd = CreateCommand(query, args);
             return cmd.ExecuteDeferredQuery<T>();
@@ -704,7 +721,7 @@ namespace SQLite.Net
         ///     A queryable object that is able to translate Where, OrderBy, and Take
         ///     queries into native SQL.
         /// </returns>
-        public TableQuery<T> Table<T>() where T : new()
+        public TableQuery<T> Table<T>() where T : class
         {
             return new TableQuery<T>(Platform, this);
         }
@@ -721,7 +738,7 @@ namespace SQLite.Net
         ///     The object with the given primary key. Throws a not found exception
         ///     if the object is not found.
         /// </returns>
-        public T Get<T>(object pk) where T : new()
+        public T Get<T>(object pk) where T : class
         {
             TableMapping map = GetMapping(typeof(T));
             return Query<T>(map.GetByPrimaryKeySql, pk).First();
@@ -738,7 +755,7 @@ namespace SQLite.Net
         ///     The object that matches the given predicate. Throws a not found exception
         ///     if the object is not found.
         /// </returns>
-        public T Get<T>(Expression<Func<T, bool>> predicate) where T : new()
+        public T Get<T>(Expression<Func<T, bool>> predicate) where T : class
         {
             return Table<T>().Where(predicate).First();
         }
@@ -755,7 +772,7 @@ namespace SQLite.Net
         ///     The object with the given primary key or null
         ///     if the object is not found.
         /// </returns>
-        public T Find<T>(object pk) where T : new()
+        public T Find<T>(object pk) where T : class
         {
             TableMapping map = GetMapping(typeof(T));
             return Query<T>(map.GetByPrimaryKeySql, pk).FirstOrDefault();
@@ -792,7 +809,7 @@ namespace SQLite.Net
         ///     The object that matches the given predicate or null
         ///     if the object is not found.
         /// </returns>
-        public T Find<T>(Expression<Func<T, bool>> predicate) where T : new()
+        public T Find<T>(Expression<Func<T, bool>> predicate) where T : class
         {
             return Table<T>().Where(predicate).FirstOrDefault();
         }

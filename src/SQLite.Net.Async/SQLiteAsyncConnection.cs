@@ -53,41 +53,41 @@ namespace SQLite.Net.Async
         }
 
         public Task<CreateTablesResult> CreateTableAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
+            where T : class
         {
             return CreateTablesAsync(cancellationToken, typeof(T));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2>(CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
-            where T2 : new()
+            where T : class
+            where T2 : class
         {
             return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3>(CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
-            where T2 : new()
-            where T3 : new()
+            where T : class
+            where T2 : class
+            where T3 : class
         {
             return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4>(CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
-            where T2 : new()
-            where T3 : new()
-            where T4 : new()
+            where T : class
+            where T2 : class
+            where T3 : class
+            where T4 : class
         {
             return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3), typeof(T4));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5>(CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
-            where T2 : new()
-            where T3 : new()
-            where T4 : new()
-            where T5 : new()
+            where T : class
+            where T2 : class
+            where T3 : class
+            where T4 : class
+            where T5 : class
         {
             return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
         }
@@ -130,7 +130,7 @@ namespace SQLite.Net.Async
         }
 
         public Task<int> DropTableAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
+            where T : class
         {
             return Task.Factory.StartNew(() =>
             {
@@ -235,7 +235,7 @@ namespace SQLite.Net.Async
         }
 
         public Task<T> GetAsync<T>(object pk, CancellationToken cancellationToken = default(CancellationToken))
-            where T : new()
+            where T : class
         {
             if (pk == null)
             {
@@ -254,7 +254,7 @@ namespace SQLite.Net.Async
         }
 
         public Task<T> FindAsync<T>(object pk, CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
+            where T : class
         {
             if (pk == null)
             {
@@ -273,7 +273,7 @@ namespace SQLite.Net.Async
         }
 
         public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default (CancellationToken))
-            where T : new()
+            where T : class
         {
             if (predicate == null)
             {
@@ -292,7 +292,7 @@ namespace SQLite.Net.Async
         }
 
         public Task<T> FindAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default(CancellationToken))
-            where T : new()
+            where T : class
         {
             if (predicate == null)
             {
@@ -441,7 +441,7 @@ namespace SQLite.Net.Async
         }
 
         public AsyncTableQuery<T> Table<T>()
-            where T : new()
+            where T : class
         {
             //
             // This isn't async as the underlying connection doesn't go out to the database
@@ -480,13 +480,13 @@ namespace SQLite.Net.Async
         }
 
         public Task<List<T>> QueryAsync<T>(string sql, params object[] args)
-            where T : new()
+            where T : class
         {
             return QueryAsync<T> (CancellationToken.None, sql, args);
         }
 
         public Task<List<T>> QueryAsync<T>(CancellationToken cancellationToken, string sql, params object[] args)
-            where T : new()
+            where T : class
         {
             if (sql == null)
             {

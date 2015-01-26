@@ -24,7 +24,7 @@ using System;
 
 namespace SQLite.Net.Attributes
 {
-    [AttributeUsage(AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
     public class TableAttribute : Attribute
     {
         public TableAttribute(string name)
