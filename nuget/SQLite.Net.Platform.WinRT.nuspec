@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
-  <metadata>
+  <metadata minClientVersion="2.8.1">
         <id>SQLite.Net.Platform.WinRT</id>
         <version>2.5</version>
         <title>SQLite.Net PCL - WinRT Platform</title>
-        <authors>Micah Lewis,Øystein Krog,Frank Krueger,Tim Heuer,Nick Cipollina</authors>
-        <owners>Micah Lewis,Øystein Krog</owners>
+        <authors>Micah Lewis,Ã˜ystein Krog,Frank Krueger,Tim Heuer,Nick Cipollina</authors>
+        <owners>Micah Lewis,Ã˜ystein Krog</owners>
         <licenseUrl>https://raw.github.com/oysteinkrog/SQLite.Net-PCL/master/LICENSE.txt</licenseUrl>
         <projectUrl>https://github.com/oysteinkrog/SQLite.Net-PCL</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -15,10 +15,10 @@
         <tags>sqlite pcl sql winrt database</tags>
         <dependencies>
           <dependency id="SQLite.Net-PCL" version="2.5"/>
-          <dependency id="SQLite.WinRT.redist" version="1.0.2"/>
         </dependencies>
     </metadata>
     <files>
         <file src="SQLite.Net.Platform.WinRT\SQLite.Net.Platform.WinRT.dll" target="lib\Windows8" />
+        <file src="SQLite.Net.Platform.WinRT\SQLite.Net.Platform.WinRT.dll" target="lib\portable-win81+wpa81" />
     </files>
 </package>
