@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net.Platform.Generic</id>
-        <version>2.5</version>
+        <version>2.5.1</version>
         <title>SQLite.Net PCL - Generic Platform</title>
         <authors>Øystein Krog,Frank Krueger,Tim Heuer,James Ottaway</authors>
         <owners>Øystein Krog</owners>
@@ -14,7 +14,7 @@
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database</tags>
         <dependencies>
-            <dependency id="SQLite.Net-PCL" version="2.5"/>
+            <dependency id="SQLite.Net-PCL" version="2.5.1"/>
         </dependencies>
     </metadata>
     <files>
