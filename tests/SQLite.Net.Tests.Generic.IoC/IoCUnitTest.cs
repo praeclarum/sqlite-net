@@ -53,9 +53,10 @@ namespace SQLite.Net.Tests.Generic.IoC
 
 
 		[TestMethod]
+		[TestCategory("IoC - TinyIoC")]
 		public void BulkInsertAndSelect()
 		{
-			var db = new TestDb(false, new TinyIoCContractResolver(_container));
+			var db = new TestDb(false, new ContractResolver(t => _container.CanResolve(t), (t, op) => _container.Resolve(t)));
 
 			db.CreateTable<IProduct>();
 			db.CreateTable<IOrder>();
@@ -85,24 +86,5 @@ namespace SQLite.Net.Tests.Generic.IoC
 			Assert.AreEqual(data.First().UnitPrice, results.First().UnitPrice);
 			Assert.AreEqual(data.Last().UnitPrice, results.Last().UnitPrice);
 		}
-	}
-
-	public class TinyIoCContractResolver : IContractResolver
-	{
-		private TinyIoC.TinyIoCContainer _container;
-
-		public TinyIoCContractResolver(TinyIoC.TinyIoCContainer container)
-		{
-			_container = container;
-
-			CanCreate = _container.CanResolve;
-			Create = (t, op) =>
-				{
-					return _container.Resolve(t);
-				};
-		}
-
-		public Func<Type, bool> CanCreate { get; set; }
-		public Func<Type, object[], object> Create { get; set; }
 	}
 }

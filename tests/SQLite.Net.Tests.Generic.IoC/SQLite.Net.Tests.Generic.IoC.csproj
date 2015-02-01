@@ -56,7 +56,7 @@
       <Link>TestDb.cs</Link>
     </Compile>
     <Compile Include="TinyIoC.cs" />
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="IoCUnitTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
