@@ -120,13 +120,17 @@ namespace SQLite.Net
         public TableQuery<T> Take(int n)
         {
             TableQuery<T> q = Clone<T>();
-            q._limit = n;
+
+            // If there is already a limit then the limit will be the minimum
+            // of the current limit and n.
+            q._limit = Math.Min(q._limit ?? int.MaxValue, n);
             return q;
         }
 
         public TableQuery<T> Skip(int n)
         {
             TableQuery<T> q = Clone<T>();
+
             q._offset = n + (q._offset ?? 0);
             return q;
         }
