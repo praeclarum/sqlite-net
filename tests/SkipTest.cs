@@ -76,5 +76,32 @@ namespace SQLite.Net.Tests
             Assert.AreEqual(n - 5, s5.Count);
             Assert.AreEqual(6, s5[0].Order);
         }
+
+
+        [Test]
+        public void MultipleSkipsWillSkipTheSumOfTheSkips()
+        {
+            int n = 100;
+
+            IEnumerable<TestObj> cq = from i in Enumerable.Range(1, n)
+                                      select new TestObj
+                                      {
+                                          Order = i
+                                      };
+            TestObj[] objs = cq.ToArray();
+            var db = new TestDb(TestPath.GetTempFileName());
+
+            int numIn = db.InsertAll(objs);
+            Assert.AreEqual(numIn, n, "Num inserted must = num objects");
+
+            TableQuery<TestObj> q = from o in db.Table<TestObj>()
+                                    orderby o.Order
+                                    select o;
+
+            TableQuery<TestObj> qs1 = q.Skip(1).Skip(5);
+            List<TestObj> s1 = qs1.ToList();
+            Assert.AreEqual(n - 6, s1.Count,"Should have skipped 5 + 1 = 6 objects.");
+            Assert.AreEqual(7, s1[0].Order);
+        }
     }
 }

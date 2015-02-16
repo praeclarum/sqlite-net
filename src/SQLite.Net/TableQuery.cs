@@ -127,7 +127,7 @@ namespace SQLite.Net
         public TableQuery<T> Skip(int n)
         {
             TableQuery<T> q = Clone<T>();
-            q._offset = n;
+            q._offset = n + (q._offset ?? 0);
             return q;
         }
 
