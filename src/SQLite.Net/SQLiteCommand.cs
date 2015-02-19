@@ -159,7 +159,6 @@ namespace SQLite.Net
                 {
                     ColType colType = _sqlitePlatform.SQLiteApi.ColumnType(stmt, 0);
                     var clrType = Nullable.GetUnderlyingType(typeof (T)) ?? typeof (T);
-                    val = (T)ReadCol(stmt, 0, colType, clrType);
                     if (colType != ColType.Null)
                     {
                         val = (T) ReadCol(stmt, 0, colType, clrType);

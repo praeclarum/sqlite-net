@@ -122,6 +122,17 @@ namespace SQLite.Net.Tests
         }
 
         [Test]
+        public void NullableSumTest()
+        {
+            SQLiteConnection db = new TestDb();
+            db.CreateTable<NullableIntClass>();
+
+            var r = db.ExecuteScalar<int>("SELECT SUM(NullableInt) FROM NullableIntClass WHERE 1 = 0");
+
+            Assert.AreEqual(0, r);
+        }
+
+        [Test]
         [Description("Create a table with a nullable int column then insert and select against it")]
         public void NullableFloat()
         {
