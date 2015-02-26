@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) 2012 Krueger Systems, Inc.
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -150,9 +150,9 @@ namespace SQLite.Net
 
         internal static string Collation(MemberInfo p)
         {
-            foreach (var attribute in p.CustomAttributes.Where(attribute => attribute.AttributeType == typeof (CollationAttribute)))
+            foreach (var attribute in p.GetCustomAttributes<CollationAttribute>())
             {
-                return (string) attribute.ConstructorArguments[0].Value;
+                return attribute.Value;
             }
             return string.Empty;
         }
