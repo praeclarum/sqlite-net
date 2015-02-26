@@ -15,9 +15,9 @@ namespace SQLite.Net.Attributes
         /// <param name="value">The value to set as default if usePropertyValue is false</param>
         public DefaultAttribute(bool usePropertyValue = true, object value = null)
         {
+            UseProperty = usePropertyValue;
             Value = value;
         }
-
         public bool UseProperty { get; set; }
         public object Value { get; private set; }
     }

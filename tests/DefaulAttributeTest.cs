@@ -28,7 +28,7 @@ namespace SQLite.Net.Tests
         private class WithDefaultValue
         {
 
-            public static int IntVal = 666;
+            public const int IntVal = 666;
             public static decimal DecimalVal = 666.666m;
             public static string StringVal = "Working String";
             public static DateTime DateTimegVal = new DateTime(2014, 2, 13);
@@ -57,6 +57,21 @@ namespace SQLite.Net.Tests
             [Default]
             public string TestString { get; set; }
 
+
+            [Default(value: IntVal, usePropertyValue: false)]
+            public int DefaultValueInAttributeTestInt { get; set; }
+
+            public class Default666Attribute : DefaultAttribute
+            {
+                public Default666Attribute() :base(usePropertyValue:false, value:IntVal)
+                {
+                    
+                }
+            }
+
+            [Default666]
+            public int TestIntWithSubtypeOfDefault { get; set; }
+
         }
 
         [Test]
@@ -73,6 +88,7 @@ namespace SQLite.Net.Tests
                     if (col.PropertyName == "TestInt" && !col.DefaultValue.Equals(WithDefaultValue.IntVal))
                         failed += " , TestInt does not equal " + WithDefaultValue.IntVal;
 
+
                     if (col.PropertyName == "TestDecimal" && !col.DefaultValue.Equals(WithDefaultValue.DecimalVal))
                         failed += "TestDecimal does not equal " + WithDefaultValue.DecimalVal;
 
@@ -81,8 +97,15 @@ namespace SQLite.Net.Tests
 
                     if (col.PropertyName == "TestString" && !col.DefaultValue.Equals(WithDefaultValue.StringVal))
                         failed += "TestString does not equal " + WithDefaultValue.StringVal;
+
+                    if (col.PropertyName == "DefaultValueInAttributeTestInt" && !col.DefaultValue.Equals(WithDefaultValue.IntVal))
+                        failed += " , DefaultValueInAttributeTestInt does not equal " + WithDefaultValue.IntVal;
+
+                    if (col.PropertyName == "TestIntWithSubtypeOfDefault" && !col.DefaultValue.Equals(WithDefaultValue.IntVal))
+                        failed += " , TestIntWithSubtypeOfDefault does not equal " + WithDefaultValue.IntVal;
+
                 }
-                
+
                 Assert.True(string.IsNullOrWhiteSpace(failed), failed);
 
             }
