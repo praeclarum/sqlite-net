@@ -401,6 +401,8 @@ namespace SQLite
             // Build query.
 			var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
+			var foreignKeyDecls = map.Columns.Where(c => c.IsForeignKey).Select(Orm.SqlForeignKey);
+			decls = decls.Union(foreignKeyDecls);
 			var decl = string.Join (",\n", decls.ToArray ());
 			query += decl;
 			query += ")";
@@ -1679,6 +1681,23 @@ namespace SQLite
 	{
 	}
 
+
+	[AttributeUsage(AttributeTargets.Property)]
+	public class ForeignKeyAttribute : IndexedAttribute
+	{
+
+		public string ReferencedTable { get; private set; }
+		
+		public string ReferencedAttribute { get; private set; }
+
+		public ForeignKeyAttribute(string referencedTable, string referencedAttribute)
+		{
+			ReferencedTable = referencedTable;
+			ReferencedAttribute = referencedAttribute;
+		}
+
+	}
+
 	[AttributeUsage (AttributeTargets.Property)]
 	public class AutoIncrementAttribute : Attribute
 	{
@@ -1929,6 +1948,11 @@ namespace SQLite
 
 			public int? MaxStringLength { get; private set; }
 
+			public bool IsForeignKey { get { return ForeignKey != null; } }
+
+			public ForeignKeyAttribute ForeignKey { get; private set; }
+
+
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
@@ -1958,6 +1982,8 @@ namespace SQLite
                 }
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
+
+				ForeignKey = Orm.GetForeignKey(prop);
             }
 
 			public void SetValue (object obj, object val)
@@ -2035,9 +2061,34 @@ namespace SQLite
 			}
 		}
 
+		public static string SqlForeignKey(TableMapping.Column p)
+		{
+			string decl = "FOREIGN KEY(";
+			//decl += "\"" + p.Name + "\")";
+			decl += p.Name + ")";
+			decl += " REFERENCES ";
+			decl += p.ForeignKey.ReferencedTable;
+			decl += "(";
+			decl += p.ForeignKey.ReferencedAttribute;
+            decl += ")";
+
+			return decl;
+		}
+
 		public static bool IsPK (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
+#if !USE_NEW_REFLECTION_API
+			return attrs.Length > 0;
+#else
+			return attrs.Count() > 0;
+#endif
+		}
+
+
+		public static bool IsForeignKey(MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes(typeof(ForeignKeyAttribute), true);
 #if !USE_NEW_REFLECTION_API
 			return attrs.Length > 0;
 #else
@@ -2075,7 +2126,13 @@ namespace SQLite
 			var attrs = p.GetCustomAttributes(typeof(IndexedAttribute), true);
 			return attrs.Cast<IndexedAttribute>();
 		}
-		
+
+		public static ForeignKeyAttribute GetForeignKey(MemberInfo p)
+		{
+			var attrs = p.GetCustomAttributes(typeof(ForeignKeyAttribute), true).Cast<ForeignKeyAttribute>();
+			return attrs.FirstOrDefault();
+		}
+
 		public static int? MaxStringLength(PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
