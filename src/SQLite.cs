@@ -114,6 +114,25 @@ namespace SQLite
 		}
 	}
 
+	public class ForeignKeyContraintViolationException : Exception
+	{		
+
+		public ForeignKeyContraintViolationException(SQLite3.Result r, string message)
+			: base(message)
+		{
+		}
+
+	}
+
+	public class MappingException : Exception
+	{
+		public MappingException(string message)
+			: base(message)
+        {
+		}		
+
+	}	
+
 	[Flags]
 	public enum SQLiteOpenFlags {
 		ReadOnly = 1, ReadWrite = 2, Create = 4,
@@ -228,7 +247,10 @@ namespace SQLite
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
-		}
+
+			//enable foreign key support (otherwise SQLite will not guarntee integrity of foreign keys)
+			Execute("PRAGMA foreign_keys = ON;");
+        }
 		
 #if __IOS__
 		static SQLiteConnection ()
@@ -311,7 +333,7 @@ namespace SQLite
 			}
 			TableMapping map;
 			if (!_mappings.TryGetValue (type.FullName, out map)) {
-				map = new TableMapping (type, createFlags);
+				map = new TableMapping (type, this, createFlags);
 				_mappings [type.FullName] = map;
 			}
 			return map;
@@ -401,9 +423,8 @@ namespace SQLite
             // Build query.
 			var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
 			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
-			var foreignKeyDecls = map.Columns.Where(c => c.IsForeignKey).Select(Orm.SqlForeignKey);
-			decls = decls.Union(foreignKeyDecls);
-			var decl = string.Join (",\n", decls.ToArray ());
+			var foreingKeysDecls = map.ForeignKeys.Select(f => Orm.SqlForeignKey(f));		
+			var decl = string.Join (",\n", decls.Union(foreingKeysDecls).ToArray ());
 			query += decl;
 			query += ")";
 			
@@ -1368,8 +1389,13 @@ namespace SQLite
 				try {
 					count = insertCmd.ExecuteNonQuery (vals);
 				} catch (SQLiteException ex) {
-					if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-						throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
+					if (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
+					{
+						throw NotNullConstraintViolationException.New(ex.Result, ex.Message, map, obj);
+					}
+					else if (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintForeignKey)
+					{
+						throw new ForeignKeyContraintViolationException(ex.Result, ex.Message);
 					}
 					throw;
 				}
@@ -1682,19 +1708,33 @@ namespace SQLite
 	}
 
 
-	[AttributeUsage(AttributeTargets.Property)]
+	[AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
 	public class ForeignKeyAttribute : IndexedAttribute
 	{
+		public string ReferencedTableName { get; private set; }		
 
-		public string ReferencedTable { get; private set; }
-		
-		public string ReferencedAttribute { get; private set; }
+		public string ReferencedColumn { get; private set; }
 
-		public ForeignKeyAttribute(string referencedTable, string referencedAttribute)
+		public Type ReferencedType { get; private set; }
+
+		public string ReferencedProperty { get; private set; }
+
+
+		public ForeignKeyAttribute(string referencedTable, string referencedColumn)
 		{
-			ReferencedTable = referencedTable;
-			ReferencedAttribute = referencedAttribute;
+			ReferencedTableName = referencedTable;
+			ReferencedColumn = referencedColumn;
+			ReferencedType = null;
+			ReferencedProperty = null; 
 		}
+
+		public ForeignKeyAttribute(Type referencedType, string referencedProperty)
+		{
+			ReferencedTableName = null;
+			ReferencedColumn = null;
+			ReferencedType = referencedType;
+			ReferencedProperty = referencedProperty;
+        }
 
 	}
 
@@ -1772,13 +1812,15 @@ namespace SQLite
 
 		public Column PK { get; private set; }
 
-		public string GetByPrimaryKeySql { get; private set; }
+		public ForeignKeyMapping[] ForeignKeys { get; private set; }
+
+		public string GetByPrimaryKeySql { get; private set; }		
 
 		Column _autoPk;
 		Column[] _insertColumns;
 		Column[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping(Type type, SQLiteConnection db, CreateFlags createFlags = CreateFlags.None)
 		{
 			MappedType = type;
 
@@ -1820,6 +1862,17 @@ namespace SQLite
 			}
 			
 			HasAutoIncPK = _autoPk != null;
+
+			var foreignKeys = new List<ForeignKeyMapping>();
+			foreach (var p in props)
+			{
+				var attr = Orm.GetForeignKey(p);
+				if (attr != null)
+				{
+					foreignKeys.Add(new ForeignKeyMapping(this, p, attr, db));
+				}
+			}
+			ForeignKeys = foreignKeys.ToArray();
 
 			if (PK != null) {
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" where \"{1}\" = ?", TableName, PK.Name);
@@ -1947,12 +2000,7 @@ namespace SQLite
 			public bool IsNullable { get; private set; }
 
 			public int? MaxStringLength { get; private set; }
-
-			public bool IsForeignKey { get { return ForeignKey != null; } }
-
-			public ForeignKeyAttribute ForeignKey { get; private set; }
-
-
+	
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
@@ -1983,7 +2031,7 @@ namespace SQLite
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
 
-				ForeignKey = Orm.GetForeignKey(prop);
+			
             }
 
 			public void SetValue (object obj, object val)
@@ -1994,6 +2042,55 @@ namespace SQLite
 			public object GetValue (object obj)
 			{
 				return _prop.GetValue (obj, null);
+			}
+		}
+
+		public class ForeignKeyMapping
+		{
+
+			public Column Column { get; private set; }
+
+			public TableMapping ReferencedTable { get; private set; }
+
+			public Column ReferencedColumn { get; private set; }
+
+
+			public ForeignKeyMapping(TableMapping table, PropertyInfo prop, ForeignKeyAttribute foreignKeyAttribute, SQLiteConnection db)
+			{
+				Column = table.FindColumnWithPropertyName(prop.Name);
+				if (Column == null)
+				{
+					throw new MappingException(String.Format("Could not find column for property '{0}' in table '{1}'",
+						prop.Name, table.TableName));
+				}			
+									
+				if (foreignKeyAttribute.ReferencedTableName != null)
+				{
+					ReferencedTable = db.TableMappings.FirstOrDefault(t => t.TableName == foreignKeyAttribute.ReferencedTableName);
+					if (ReferencedTable == null)
+					{
+						throw new MappingException(String.Format("Could not find mapping for table '{0}'", foreignKeyAttribute.ReferencedTableName));
+					}
+
+					ReferencedColumn = ReferencedTable.FindColumn(foreignKeyAttribute.ReferencedColumn);
+					if (ReferencedColumn == null)
+					{
+						throw new MappingException(String.Format("Could not find column '{0}' in table '{1}'",							
+                            foreignKeyAttribute.ReferencedColumn,
+							ReferencedTable.TableName));
+					}
+				}
+				else
+				{
+					ReferencedTable = db.GetMapping(foreignKeyAttribute.ReferencedType);
+					ReferencedColumn = ReferencedTable.FindColumnWithPropertyName(foreignKeyAttribute.ReferencedProperty);
+					if (ReferencedColumn == null)
+					{
+						throw new MappingException(String.Format("Could not find column for property '{0}' in table '{1}'",
+							foreignKeyAttribute.ReferencedProperty,
+							ReferencedTable.TableName));
+					}
+				}			
 			}
 		}
 	}
@@ -2061,16 +2158,14 @@ namespace SQLite
 			}
 		}
 
-		public static string SqlForeignKey(TableMapping.Column p)
+		public static string SqlForeignKey(TableMapping.ForeignKeyMapping foreignKey)
 		{
 			string decl = "FOREIGN KEY(";
-			//decl += "\"" + p.Name + "\")";
-			decl += p.Name + ")";
+			decl += "\"" + foreignKey.Column.Name + "\")";		
 			decl += " REFERENCES ";
-			decl += p.ForeignKey.ReferencedTable;
+			decl += "\"" + foreignKey.ReferencedTable.TableName + "\"";
 			decl += "(";
-			decl += p.ForeignKey.ReferencedAttribute;
-            decl += ")";
+			decl += "\"" +  foreignKey.ReferencedColumn.Name + "\")";			
 
 			return decl;
 		}
