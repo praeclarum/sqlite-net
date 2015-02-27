@@ -1349,7 +1349,7 @@ namespace SQLite
 			var map = GetMapping (objType);
 
 #if USE_NEW_REFLECTION_API
-            if (map.PK.Length == 1 && map.PK[0].IsAutoGuid) {
+            if (map.PK.Length == 1 && map.PK[0].IsAutoGuid) 
             {
                 // no GetProperty so search our way up the inheritance chain till we find it
                 PropertyInfo prop;
