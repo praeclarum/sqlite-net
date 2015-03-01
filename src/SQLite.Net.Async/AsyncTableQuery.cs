@@ -31,14 +31,16 @@ namespace SQLite.Net.Async
         where T : class
     {
         private readonly TableQuery<T> _innerQuery;
-        private readonly TaskScheduler _taskScheduler;
         private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.None;
+        private readonly TaskScheduler _taskScheduler;
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="innerQuery"></param>
-        /// <param name="taskScheduler">If null this parameter will be TaskScheduler.Default (evaluated when used in each method, not in ctor)</param>
+        /// <param name="taskScheduler">
+        ///     If null this parameter will be TaskScheduler.Default (evaluated when used in each method,
+        ///     not in ctor)
+        /// </param>
         /// <param name="taskCreationOptions">Defaults to DenyChildAttach</param>
         public AsyncTableQuery(TableQuery<T> innerQuery, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.None)
         {
@@ -106,13 +108,12 @@ namespace SQLite.Net.Async
             return new AsyncTableQuery<T>(_innerQuery.ThenByDescending(orderExpr), _taskScheduler ?? TaskScheduler.Default, _taskCreationOptions);
         }
 
-
         public Task<List<T>> ToListAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ToList();
                 }
@@ -124,7 +125,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.Count();
                 }
@@ -136,7 +137,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     return _innerQuery.ElementAt(index);
                 }
@@ -161,7 +162,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock())
+                using (((SQLiteConnectionWithLock) _innerQuery.Connection).Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     return _innerQuery.FirstOrDefault();

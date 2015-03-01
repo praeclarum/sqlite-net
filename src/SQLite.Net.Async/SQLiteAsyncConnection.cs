@@ -31,16 +31,20 @@ namespace SQLite.Net.Async
     public class SQLiteAsyncConnection
     {
         private readonly Func<SQLiteConnectionWithLock> _sqliteConnectionFunc;
-        private readonly TaskScheduler _taskScheduler;
         private readonly TaskCreationOptions _taskCreationOptions = TaskCreationOptions.None;
+        private readonly TaskScheduler _taskScheduler;
 
         /// <summary>
-        /// Create a new async connection
+        ///     Create a new async connection
         /// </summary>
         /// <param name="sqliteConnectionFunc"></param>
-        /// <param name="taskScheduler">If null this parameter will be TaskScheduler.Default (evaluated when used in each method, not in ctor)</param>
+        /// <param name="taskScheduler">
+        ///     If null this parameter will be TaskScheduler.Default (evaluated when used in each method,
+        ///     not in ctor)
+        /// </param>
         /// <param name="taskCreationOptions">Defaults to DenyChildAttach</param>
-        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc, TaskScheduler taskScheduler = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.None)
+        public SQLiteAsyncConnection(Func<SQLiteConnectionWithLock> sqliteConnectionFunc, TaskScheduler taskScheduler = null,
+            TaskCreationOptions taskCreationOptions = TaskCreationOptions.None)
         {
             _sqliteConnectionFunc = sqliteConnectionFunc;
             _taskCreationOptions = taskCreationOptions;
@@ -55,14 +59,14 @@ namespace SQLite.Net.Async
         public Task<CreateTablesResult> CreateTableAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
             where T : class
         {
-            return CreateTablesAsync(cancellationToken, typeof(T));
+            return CreateTablesAsync(cancellationToken, typeof (T));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2>(CancellationToken cancellationToken = default (CancellationToken))
             where T : class
             where T2 : class
         {
-            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2));
+            return CreateTablesAsync(cancellationToken, typeof (T), typeof (T2));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3>(CancellationToken cancellationToken = default (CancellationToken))
@@ -70,7 +74,7 @@ namespace SQLite.Net.Async
             where T2 : class
             where T3 : class
         {
-            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3));
+            return CreateTablesAsync(cancellationToken, typeof (T), typeof (T2), typeof (T3));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4>(CancellationToken cancellationToken = default (CancellationToken))
@@ -79,7 +83,7 @@ namespace SQLite.Net.Async
             where T3 : class
             where T4 : class
         {
-            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3), typeof(T4));
+            return CreateTablesAsync(cancellationToken, typeof (T), typeof (T2), typeof (T3), typeof (T4));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5>(CancellationToken cancellationToken = default (CancellationToken))
@@ -89,7 +93,7 @@ namespace SQLite.Net.Async
             where T4 : class
             where T5 : class
         {
-            return CreateTablesAsync(cancellationToken, typeof(T), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
+            return CreateTablesAsync(cancellationToken, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
         }
 
         public Task<CreateTablesResult> CreateTablesAsync(params Type[] types)
@@ -106,12 +110,12 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 var result = new CreateTablesResult();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
-                    foreach (Type type in types)
+                    foreach (var type in types)
                     {
-                        int aResult = conn.CreateTable(type);
+                        var aResult = conn.CreateTable(type);
                         result.Results[type] = aResult;
                     }
                 }
@@ -124,7 +128,7 @@ namespace SQLite.Net.Async
         {
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.DropTable<T>();
@@ -140,7 +144,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Insert(item);
@@ -156,7 +160,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Update(item);
@@ -172,7 +176,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.InsertOrReplace(item);
@@ -188,7 +192,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Delete(item);
@@ -200,7 +204,7 @@ namespace SQLite.Net.Async
         {
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.DeleteAll<T>();
@@ -216,7 +220,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Delete<T>(pk);
@@ -234,7 +238,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -253,7 +257,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -272,7 +276,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -291,7 +295,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -317,7 +321,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.Execute(query, args);
@@ -333,7 +337,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.InsertAll(items);
@@ -349,7 +353,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     return conn.InsertOrReplaceAll(items);
@@ -384,7 +388,7 @@ namespace SQLite.Net.Async
             }
             return Task.Factory.StartNew(() =>
             {
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     conn.BeginTransaction();
@@ -411,7 +415,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -437,7 +441,7 @@ namespace SQLite.Net.Async
             // This isn't async as the underlying connection doesn't go out to the database
             // until the query is performed. The Async methods are on the query iteself.
             //
-            SQLiteConnectionWithLock conn = GetConnection();
+            var conn = GetConnection();
             return new AsyncTableQuery<T>(conn.Table<T>(), _taskScheduler, _taskCreationOptions);
         }
 
@@ -459,11 +463,11 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    SQLiteCommand command = conn.CreateCommand(sql, args);
+                    var command = conn.CreateCommand(sql, args);
                     return command.ExecuteScalar<T>();
                 }
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
@@ -472,7 +476,7 @@ namespace SQLite.Net.Async
         public Task<List<T>> QueryAsync<T>(string sql, params object[] args)
             where T : class
         {
-            return QueryAsync<T> (CancellationToken.None, sql, args);
+            return QueryAsync<T>(CancellationToken.None, sql, args);
         }
 
         public Task<List<T>> QueryAsync<T>(CancellationToken cancellationToken, string sql, params object[] args)
@@ -489,7 +493,7 @@ namespace SQLite.Net.Async
             return Task.Factory.StartNew(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                SQLiteConnectionWithLock conn = GetConnection();
+                var conn = GetConnection();
                 using (conn.Lock())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
