@@ -1,19 +1,16 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace SQLite.Net.Tests.Generic.IoC
+namespace SQLite.Net.Tests
 {
-	using System.Collections.Generic;
-	using System.IO;
-	using System.Linq;
-	using System.Reflection;
-
-	[TestClass]
+	[TestFixture]
 	public class IoCUnitTests
 	{
 		private TinyIoC.TinyIoCContainer _container;
 
-		[TestInitialize]
+		[SetUp]
 		public void Initialize()
 		{
 			_container = new TinyIoC.TinyIoCContainer();
@@ -38,7 +35,7 @@ namespace SQLite.Net.Tests.Generic.IoC
 			Assert.AreEqual(lo.Id, l.Id);
 		}
 
-		[TestMethod]
+		[Test]
 		public void CreateThemByInterface()
 		{
 			var db = new TestDb();
@@ -52,8 +49,8 @@ namespace SQLite.Net.Tests.Generic.IoC
 		}
 
 
-		[TestMethod]
-		[TestCategory("IoC - TinyIoC")]
+		[Test]
+		[Category("IoC.TinyIoC")]
 		public void BulkInsertAndSelect()
 		{
 			var db = new TestDb(false, new ContractResolver(t => _container.CanResolve(t), (t, op) => _container.Resolve(t)));
