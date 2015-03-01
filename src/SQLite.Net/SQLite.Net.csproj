@@ -67,6 +67,8 @@
     <Compile Include="BaseTableQuery.cs" />
     <Compile Include="BlobSerializerDelegate.cs" />
     <Compile Include="CreateTablesResult.cs" />
+    <Compile Include="ContractResolver.cs" />
+    <Compile Include="IContractResolver.cs" />
     <Compile Include="Interop\ColType.cs" />
     <Compile Include="Interop\ConfigOption.cs" />
     <Compile Include="Interop\ExtendedResult.cs" />

@@ -26,6 +26,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <DefineConstants>
+    </DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

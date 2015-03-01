@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.22512.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{59584026-7610-4CD5-A74E-D2B0A2E1CE87}"
 EndProject
@@ -336,7 +338,9 @@ Global
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|ARM.ActiveCfg = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|ARM.Build.0 = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|iPhone.Build.0 = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{F662E15A-8753-468E-A67E-3FCF45F12B89}.Release|x64.ActiveCfg = Release|Any CPU

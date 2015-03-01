@@ -28,7 +28,7 @@ using System.Threading.Tasks;
 namespace SQLite.Net.Async
 {
     public class AsyncTableQuery<T>
-        where T : new()
+        where T : class
     {
         private readonly TableQuery<T> _innerQuery;
         private readonly TaskScheduler _taskScheduler;
