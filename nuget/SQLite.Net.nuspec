@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net-PCL</id>
@@ -11,13 +11,49 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases.
 This is a fork of the original sqlite-net project, which aims to cleanup/improve the code and deliver the package as PCL assemblies with some additional platform-specific implementations.
-To use this package you will need to install one of the platform packages or write your own implementation of ISQLitePlatform.
-This package is compatible with the following .net platforms: net4+sl4+wp7+win8+monotouch+MonoAndroid</description>
+This package is compatible with the following .net platforms: Xamarin.iOS (Classic), Xamarin.iOS (Unified), Xamarin.Android, Windows Phone 8.1, Windows Phone 8.0, Windows 8.1, Windows 8.0, Win32, Generic, PCL(net4+sl4+wp7+win8+monotouch+MonoAndroid)</description>
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database monotouch ios monodroid android win32 metro winrt</tags>
     </metadata>
     <files>
+        <!-- Xamarin.iOS (Classic)-->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\monotouch\SQLite.Net.dll" />        
+        <file src="SQLite.Net.Platform.XamarinIOS\SQLite.Net.Platform.XamarinIOS.dll" target="lib\monotouch\SQLite.Net.Platform.XamarinIOS.dll" />
+        
+        <!-- Xamarin.iOS (Unified)-->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\Xamarin.iOS10\SQLite.Net.dll" />  
+        <file src="SQLite.Net.Platform.XamarinIOS.Unified\SQLite.Net.Platform.XamarinIOS.Unified.dll" target="lib\Xamarin.iOS10\SQLite.Net.Platform.XamarinIOS.Unified.dll" />
+        
+        <!-- Xamarin.Android -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\MonoAndroid\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.XamarinAndroid\SQLite.Net.Platform.XamarinAndroid.dll" target="lib\MonoAndroid\SQLite.Net.Platform.XamarinAndroid.dll" />
+        
+        <!-- Windows Phone & Windows 8.1 -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\portable-win81+wpa81\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.WinRT\SQLite.Net.Platform.WinRT.dll" target="lib\portable-win81+wpa81\SQLite.Net.Platform.WinRT.dll" />
+        
+        <!-- Windows 8.0 -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\Windows8\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.WinRT\SQLite.Net.Platform.WinRT.dll" target="lib\Windows8\SQLite.Net.dll" />
+        
+        <!-- Windows Phone 8.0 (ARM) -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\windowsphone8\ARM\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.WindowsPhone8\ARM\SQLite.Net.Platform.WindowsPhone8.dll" target="lib\windowsphone8\ARM\SQLite.Net.Platform.WindowsPhone8.dll" />
+        
+        <!-- Windows Phone 8.0 (x86) -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\windowsphone8\x86\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.WindowsPhone8\x86\SQLite.Net.Platform.WindowsPhone8.dll" target="lib\windowsphone8\x86\SQLite.Net.Platform.WindowsPhone8.dll" />
+        
+        <!-- Win32 -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\net4\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.Win32\SQLite.Net.Platform.Win32.dll" target="lib\net4\SQLite.Net.Platform.Win32.dll" />
+        
+        <!-- Generic -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\net40\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.Generic\SQLite.Net.Platform.Generic.dll" target="lib\net40\SQLite.Net.Platform.Generic.dll"/>
+        
+        <!-- PCL -->
         <file src="SQLite.Net\SQLite.Net.dll" target="lib\portable-win8+net45+wp8+wpa81+MonoAndroid1+MonoTouch1\SQLite.Net.dll" />
     </files>
 </package>
