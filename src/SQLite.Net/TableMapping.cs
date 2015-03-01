@@ -39,21 +39,21 @@ namespace SQLite.Net
         private Column[] _insertOrReplaceColumns;
 
         public TableMapping(ISQLitePlatform platformImplementation, Type type,
-                            CreateFlags createFlags = CreateFlags.None)
+            CreateFlags createFlags = CreateFlags.None)
         {
             _sqlitePlatform = platformImplementation;
             MappedType = type;
 
-            var tableAttr = type.GetTypeInfo().CustomAttributes.FirstOrDefault(data => data.AttributeType == typeof(TableAttribute));
+            var tableAttr = type.GetTypeInfo().CustomAttributes.FirstOrDefault(data => data.AttributeType == typeof (TableAttribute));
 
-            TableName = tableAttr != null ? (string)tableAttr.ConstructorArguments.FirstOrDefault().Value : MappedType.Name;
+            TableName = tableAttr != null ? (string) tableAttr.ConstructorArguments.FirstOrDefault().Value : MappedType.Name;
 
-            IEnumerable<PropertyInfo> props = _sqlitePlatform.ReflectionService.GetPublicInstanceProperties(MappedType);
+            var props = _sqlitePlatform.ReflectionService.GetPublicInstanceProperties(MappedType);
 
             var cols = new List<Column>();
-            foreach (PropertyInfo p in props)
+            foreach (var p in props)
             {
-                bool ignore = p.GetCustomAttributes<IgnoreAttribute>(true).Any();
+                var ignore = p.GetCustomAttributes<IgnoreAttribute>(true).Any();
 
                 if (p.CanWrite && !ignore)
                 {
@@ -61,7 +61,7 @@ namespace SQLite.Net
                 }
             }
             Columns = cols.ToArray();
-            foreach (Column c in Columns)
+            foreach (var c in Columns)
             {
                 if (c.IsAutoInc && c.IsPK)
                 {
@@ -87,15 +87,10 @@ namespace SQLite.Net
         }
 
         public Type MappedType { get; private set; }
-
         public string TableName { get; private set; }
-
         public Column[] Columns { get; private set; }
-
         public Column PK { get; private set; }
-
         public string GetByPrimaryKeySql { get; private set; }
-
         public bool HasAutoIncPK { get; private set; }
 
         public Column[] InsertColumns
@@ -132,13 +127,13 @@ namespace SQLite.Net
 
         public Column FindColumnWithPropertyName(string propertyName)
         {
-            Column exact = Columns.FirstOrDefault(c => c.PropertyName == propertyName);
+            var exact = Columns.FirstOrDefault(c => c.PropertyName == propertyName);
             return exact;
         }
 
         public Column FindColumn(string columnName)
         {
-            Column exact = Columns.FirstOrDefault(c => c.Name == columnName);
+            var exact = Columns.FirstOrDefault(c => c.Name == columnName);
             return exact;
         }
 
@@ -160,7 +155,7 @@ namespace SQLite.Net
 
         private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
         {
-            Column[] cols = InsertColumns;
+            var cols = InsertColumns;
             string insertSql;
             if (!cols.Any() && Columns.Count() == 1 && Columns[0].IsAutoInc)
             {
@@ -168,7 +163,7 @@ namespace SQLite.Net
             }
             else
             {
-                bool replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
+                var replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 
                 if (replacing)
                 {
@@ -177,9 +172,9 @@ namespace SQLite.Net
 
                 insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
                     string.Join(",", (from c in cols
-                                                     select "\"" + c.Name + "\"").ToArray()),
+                        select "\"" + c.Name + "\"").ToArray()),
                     string.Join(",", (from c in cols
-                                                     select "?").ToArray()), extra);
+                        select "?").ToArray()), extra);
             }
 
             var insertCommand = new PreparedSqlLiteInsertCommand(_sqlitePlatform, conn);
@@ -212,12 +207,12 @@ namespace SQLite.Net
                 Collation = Orm.Collation(prop);
 
                 IsPK = Orm.IsPK(prop) ||
-                (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
-                string.Compare(prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
+                       (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
+                        string.Compare(prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
-                bool isAuto = Orm.IsAutoInc(prop) ||
-                              (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
-                IsAutoGuid = isAuto && ColumnType == typeof(Guid);
+                var isAuto = Orm.IsAutoInc(prop) ||
+                             (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+                IsAutoGuid = isAuto && ColumnType == typeof (Guid);
                 IsAutoInc = isAuto && !IsAutoGuid;
 
                 DefaultValue = Orm.GetDefaultValue(prop);
@@ -228,7 +223,7 @@ namespace SQLite.Net
                     && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
                     && Name.EndsWith(Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase))
                 {
-                    Indices = new[] { new IndexedAttribute() };
+                    Indices = new[] {new IndexedAttribute()};
                 }
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
@@ -242,21 +237,14 @@ namespace SQLite.Net
             }
 
             public Type ColumnType { get; private set; }
-
             public string Collation { get; private set; }
-
             public bool IsAutoInc { get; private set; }
-
             public bool IsAutoGuid { get; private set; }
-
             public bool IsPK { get; private set; }
-
             public IEnumerable<IndexedAttribute> Indices { get; set; }
-
             public bool IsNullable { get; private set; }
-
             public int? MaxStringLength { get; private set; }
-            public object DefaultValue { get; private set ; }
+            public object DefaultValue { get; private set; }
 
             /// <summary>
             ///     Set column value.
@@ -268,19 +256,18 @@ namespace SQLite.Net
             /// </remarks>
             public void SetValue(object obj, object val)
             {
-                Type propType = _prop.PropertyType;
+                var propType = _prop.PropertyType;
 
 
-
-                if (propType.GetTypeInfo().IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                if (propType.GetTypeInfo().IsGenericType && propType.GetGenericTypeDefinition() == typeof (Nullable<>))
                 {
-                    Type[] typeCol = propType.GetTypeInfo().GenericTypeArguments;
+                    var typeCol = propType.GetTypeInfo().GenericTypeArguments;
                     if (typeCol.Length > 0)
                     {
-                        Type nullableType = typeCol[0];
-                        if (nullableType.GetTypeInfo().BaseType == typeof(Enum))
+                        var nullableType = typeCol[0];
+                        if (nullableType.GetTypeInfo().BaseType == typeof (Enum))
                         {
-                            object result = val == null ? null : Enum.Parse(nullableType, val.ToString(), false);
+                            var result = val == null ? null : Enum.Parse(nullableType, val.ToString(), false);
                             _prop.SetValue(obj, result, null);
                         }
                         else

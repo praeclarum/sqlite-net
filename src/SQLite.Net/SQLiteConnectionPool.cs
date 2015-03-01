@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2012 Krueger Systems, Inc.
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -42,7 +42,7 @@ namespace SQLite.Net
             lock (_entriesLock)
             {
                 Entry entry;
-                string key = connectionString.ConnectionString;
+                var key = connectionString.ConnectionString;
 
                 if (!_entries.TryGetValue(key, out entry))
                 {
@@ -61,7 +61,7 @@ namespace SQLite.Net
         {
             lock (_entriesLock)
             {
-                foreach (Entry entry in _entries.Values)
+                foreach (var entry in _entries.Values)
                 {
                     entry.OnApplicationSuspended();
                 }

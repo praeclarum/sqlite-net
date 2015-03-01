@@ -1,10 +1,7 @@
-﻿using System;
-
-namespace SQLite.Net
+﻿namespace SQLite.Net
 {
     public interface ISerializable<T>
     {
         T Serialize();
     }
 }
-

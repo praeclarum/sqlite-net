@@ -26,79 +26,49 @@ namespace SQLite.Net.Interop
     public interface ISQLiteApi
     {
         Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zvfs);
-
         //        Result Open16(string filename, out IDbHandle db);
 
         ExtendedResult ExtendedErrCode(IDbHandle db);
-
         int LibVersionNumber();
-
         Result EnableLoadExtension(IDbHandle db, int onoff);
-
         Result Close(IDbHandle db);
-
         Result Initialize();
         Result Shutdown();
         Result Config(ConfigOption option);
-
         //        int SetDirectory(uint directoryType, string directoryPath);
 
         Result BusyTimeout(IDbHandle db, int milliseconds);
-
         int Changes(IDbHandle db);
-
         //        Result Prepare2(IDbHandle db, string sql, int numBytes, out IDbStatement stmt, IntPtr pzTail);
 
         IDbStatement Prepare2(IDbHandle db, string query);
-
         Result Step(IDbStatement stmt);
-
         Result Reset(IDbStatement stmt);
-
         Result Finalize(IDbStatement stmt);
-
         long LastInsertRowid(IDbHandle db);
-
         string Errmsg16(IDbHandle db);
-
         //        string GetErrmsg(IDbHandle db);
 
         int BindParameterIndex(IDbStatement stmt, string name);
-
         int BindNull(IDbStatement stmt, int index);
-
         int BindInt(IDbStatement stmt, int index, int val);
-
         int BindInt64(IDbStatement stmt, int index, long val);
-
         int BindDouble(IDbStatement stmt, int index, double val);
-
         int BindText16(IDbStatement stmt, int index, string val, int n, IntPtr free);
-
         int BindBlob(IDbStatement stmt, int index, byte[] val, int n, IntPtr free);
-
         int ColumnCount(IDbStatement stmt);
-
         //        string ColumnName(IDbStatement stmt, int index);
 
         string ColumnName16(IDbStatement stmt, int index);
-
         ColType ColumnType(IDbStatement stmt, int index);
-
         int ColumnInt(IDbStatement stmt, int index);
-
         long ColumnInt64(IDbStatement stmt, int index);
-
         double ColumnDouble(IDbStatement stmt, int index);
-
         //        string ColumnText(IDbStatement stmt, int index);
 
         string ColumnText16(IDbStatement stmt, int index);
-
         byte[] ColumnBlob(IDbStatement stmt, int index);
-
         int ColumnBytes(IDbStatement stmt, int index);
-
         //        string ColumnText(IDbStatement stmt, int index);
 
         byte[] ColumnByteArray(IDbStatement stmt, int index);

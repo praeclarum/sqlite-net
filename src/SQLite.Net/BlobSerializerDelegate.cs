@@ -4,15 +4,15 @@ namespace SQLite.Net
 {
     public class BlobSerializerDelegate : IBlobSerializer
     {
-        public delegate byte[] SerializeDelegate(object obj);
-
         public delegate bool CanSerializeDelegate(Type type);
 
         public delegate object DeserializeDelegate(byte[] data, Type type);
 
-        private readonly SerializeDelegate _serializeDelegate;
-        private readonly DeserializeDelegate _deserializeDelegate;
+        public delegate byte[] SerializeDelegate(object obj);
+
         private readonly CanSerializeDelegate _canDeserializeDelegate;
+        private readonly DeserializeDelegate _deserializeDelegate;
+        private readonly SerializeDelegate _serializeDelegate;
 
         public BlobSerializerDelegate(SerializeDelegate serializeDelegate,
             DeserializeDelegate deserializeDelegate,

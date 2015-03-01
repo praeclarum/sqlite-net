@@ -35,7 +35,6 @@ namespace SQLite.Net
     {
         private readonly ISQLitePlatform _sqlitePlatform;
         private bool _deferred;
-
         private BaseTableQuery _joinInner;
         private Expression _joinInnerKeySelector;
         private BaseTableQuery _joinOuter;
@@ -44,7 +43,6 @@ namespace SQLite.Net
         private int? _limit;
         private int? _offset;
         private List<Ordering> _orderBys;
-
         private Expression _selector;
         private Expression _where;
 
@@ -63,7 +61,6 @@ namespace SQLite.Net
         }
 
         public SQLiteConnection Connection { get; private set; }
-
         public TableMapping Table { get; private set; }
 
         public IEnumerator<T> GetEnumerator()
@@ -106,20 +103,17 @@ namespace SQLite.Net
             if (predExpr.NodeType == ExpressionType.Lambda)
             {
                 var lambda = (LambdaExpression) predExpr;
-                Expression pred = lambda.Body;
-                TableQuery<T> q = Clone<T>();
+                var pred = lambda.Body;
+                var q = Clone<T>();
                 q.AddWhere(pred);
                 return q;
             }
-            else
-            {
-                throw new NotSupportedException("Must be a predicate");
-            }
+            throw new NotSupportedException("Must be a predicate");
         }
 
         public TableQuery<T> Take(int n)
         {
-            TableQuery<T> q = Clone<T>();
+            var q = Clone<T>();
 
             // If there is already a limit then the limit will be the minimum
             // of the current limit and n.
@@ -129,7 +123,7 @@ namespace SQLite.Net
 
         public TableQuery<T> Skip(int n)
         {
-            TableQuery<T> q = Clone<T>();
+            var q = Clone<T>();
 
             q._offset = n + (q._offset ?? 0);
             return q;
@@ -142,7 +136,7 @@ namespace SQLite.Net
 
         public TableQuery<T> Deferred()
         {
-            TableQuery<T> q = Clone<T>();
+            var q = Clone<T>();
             q._deferred = true;
             return q;
         }
@@ -159,12 +153,12 @@ namespace SQLite.Net
 
         public TableQuery<T> ThenBy<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
-            return AddOrderBy<TValue>(orderExpr, true);
+            return AddOrderBy(orderExpr, true);
         }
 
         public TableQuery<T> ThenByDescending<TValue>(Expression<Func<T, TValue>> orderExpr)
         {
-            return AddOrderBy<TValue>(orderExpr, false);
+            return AddOrderBy(orderExpr, false);
         }
 
         private TableQuery<T> AddOrderBy<TValue>(Expression<Func<T, TValue>> orderExpr, bool asc)
@@ -187,7 +181,7 @@ namespace SQLite.Net
 
                 if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter))
                 {
-                    TableQuery<T> q = Clone<T>();
+                    var q = Clone<T>();
                     if (q._orderBys == null)
                     {
                         q._orderBys = new List<Ordering>();
@@ -199,15 +193,9 @@ namespace SQLite.Net
                     });
                     return q;
                 }
-                else
-                {
-                    throw new NotSupportedException("Order By does not support: " + orderExpr);
-                }
+                throw new NotSupportedException("Order By does not support: " + orderExpr);
             }
-            else
-            {
-                throw new NotSupportedException("Must be a predicate");
-            }
+            throw new NotSupportedException("Must be a predicate");
         }
 
         private void AddWhere(Expression pred)
@@ -239,14 +227,14 @@ namespace SQLite.Net
                 _joinOuterKeySelector = outerKeySelector,
                 _joinInner = inner,
                 _joinInnerKeySelector = innerKeySelector,
-                _joinSelector = resultSelector,
+                _joinSelector = resultSelector
             };
             return q;
         }
 
         public TableQuery<TResult> Select<TResult>(Expression<Func<T, TResult>> selector)
         {
-            TableQuery<TResult> q = Clone<TResult>();
+            var q = Clone<TResult>();
             q._selector = selector;
             return q;
         }
@@ -257,35 +245,32 @@ namespace SQLite.Net
             {
                 throw new NotSupportedException("Joins are not supported.");
             }
-            else
+            var cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
+            var args = new List<object>();
+            if (_where != null)
             {
-                string cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
-                var args = new List<object>();
-                if (_where != null)
-                {
-                    CompileResult w = CompileExpr(_where, args);
-                    cmdText += " where " + w.CommandText;
-                }
-                if ((_orderBys != null) && (_orderBys.Count > 0))
-                {
-                    string t = string.Join(", ",
-                        _orderBys.Select(o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray());
-                    cmdText += " order by " + t;
-                }
-                if (_limit.HasValue)
-                {
-                    cmdText += " limit " + _limit.Value;
-                }
-                if (_offset.HasValue)
-                {
-                    if (!_limit.HasValue)
-                    {
-                        cmdText += " limit -1 ";
-                    }
-                    cmdText += " offset " + _offset.Value;
-                }
-                return Connection.CreateCommand(cmdText, args.ToArray());
+                var w = CompileExpr(_where, args);
+                cmdText += " where " + w.CommandText;
             }
+            if ((_orderBys != null) && (_orderBys.Count > 0))
+            {
+                var t = string.Join(", ",
+                    _orderBys.Select(o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray());
+                cmdText += " order by " + t;
+            }
+            if (_limit.HasValue)
+            {
+                cmdText += " limit " + _limit.Value;
+            }
+            if (_offset.HasValue)
+            {
+                if (!_limit.HasValue)
+                {
+                    cmdText += " limit -1 ";
+                }
+                cmdText += " offset " + _offset.Value;
+            }
+            return Connection.CreateCommand(cmdText, args.ToArray());
         }
 
         private CompileResult CompileExpr(Expression expr, List<object> queryArgs)
@@ -294,12 +279,12 @@ namespace SQLite.Net
             {
                 throw new NotSupportedException("Expression is NULL");
             }
-            else if (expr is BinaryExpression)
+            if (expr is BinaryExpression)
             {
                 var bin = (BinaryExpression) expr;
 
-                CompileResult leftr = CompileExpr(bin.Left, queryArgs);
-                CompileResult rightr = CompileExpr(bin.Right, queryArgs);
+                var leftr = CompileExpr(bin.Left, queryArgs);
+                var rightr = CompileExpr(bin.Right, queryArgs);
 
                 //If either side is a parameter and is null, then handle the other side specially (for "is null"/"is not null")
                 string text;
@@ -320,18 +305,18 @@ namespace SQLite.Net
                     CommandText = text
                 };
             }
-            else if (expr.NodeType == ExpressionType.Call)
+            if (expr.NodeType == ExpressionType.Call)
             {
                 var call = (MethodCallExpression) expr;
                 var args = new CompileResult[call.Arguments.Count];
-                CompileResult obj = call.Object != null ? CompileExpr(call.Object, queryArgs) : null;
+                var obj = call.Object != null ? CompileExpr(call.Object, queryArgs) : null;
 
-                for (int i = 0; i < args.Length; i++)
+                for (var i = 0; i < args.Length; i++)
                 {
                     args[i] = CompileExpr(call.Arguments[i], queryArgs);
                 }
 
-                string sqlCall = "";
+                var sqlCall = "";
 
                 if (call.Method.Name == "Like" && args.Length == 2)
                 {
@@ -367,7 +352,7 @@ namespace SQLite.Net
                 else if (call.Method.Name == "ToLower")
                 {
                     sqlCall = "(lower(" + obj.CommandText + "))";
-                } 
+                }
                 else if (call.Method.Name == "ToUpper")
                 {
                     sqlCall = "(upper(" + obj.CommandText + "))";
@@ -382,7 +367,7 @@ namespace SQLite.Net
                     CommandText = sqlCall
                 };
             }
-            else if (expr.NodeType == ExpressionType.Constant)
+            if (expr.NodeType == ExpressionType.Constant)
             {
                 var c = (ConstantExpression) expr;
                 queryArgs.Add(c.Value);
@@ -392,18 +377,18 @@ namespace SQLite.Net
                     Value = c.Value
                 };
             }
-            else if (expr.NodeType == ExpressionType.Convert)
+            if (expr.NodeType == ExpressionType.Convert)
             {
                 var u = (UnaryExpression) expr;
-                Type ty = u.Type;
-                CompileResult valr = CompileExpr(u.Operand, queryArgs);
+                var ty = u.Type;
+                var valr = CompileExpr(u.Operand, queryArgs);
                 return new CompileResult
                 {
                     CommandText = valr.CommandText,
                     Value = valr.Value != null ? ConvertTo(valr.Value, ty) : null
                 };
             }
-            else if (expr.NodeType == ExpressionType.MemberAccess)
+            if (expr.NodeType == ExpressionType.MemberAccess)
             {
                 var mem = (MemberExpression) expr;
 
@@ -413,73 +398,67 @@ namespace SQLite.Net
                     // This is a column of our table, output just the column name
                     // Need to translate it if that column name is mapped
                     //
-                    string columnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name;
+                    var columnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name;
                     return new CompileResult
                     {
                         CommandText = "\"" + columnName + "\""
                     };
                 }
-                else
+                object obj = null;
+                if (mem.Expression != null)
                 {
-                    object obj = null;
-                    if (mem.Expression != null)
+                    var r = CompileExpr(mem.Expression, queryArgs);
+                    if (r.Value == null)
                     {
-                        CompileResult r = CompileExpr(mem.Expression, queryArgs);
-                        if (r.Value == null)
-                        {
-                            throw new NotSupportedException("Member access failed to compile expression");
-                        }
-                        if (r.CommandText == "?")
-                        {
-                            queryArgs.RemoveAt(queryArgs.Count - 1);
-                        }
-                        obj = r.Value;
+                        throw new NotSupportedException("Member access failed to compile expression");
                     }
-
-                    //
-                    // Get the member value
-                    //
-                    object val = _sqlitePlatform.ReflectionService.GetMemberValue(obj, expr, mem.Member);
-
-                    //
-                    // Work special magic for enumerables
-                    //
-                    if (val != null && val is System.Collections.IEnumerable && !(val is string) && !(val is System.Collections.Generic.IEnumerable<byte>))
+                    if (r.CommandText == "?")
                     {
-                        var sb = new StringBuilder();
-                        sb.Append("(");
-                        string head = "";
-                        foreach (object a in (IEnumerable) val)
-                        {
-                            queryArgs.Add(a);
-                            sb.Append(head);
-                            sb.Append("?");
-                            head = ",";
-                        }
-                        sb.Append(")");
-                        return new CompileResult
-                        {
-                            CommandText = sb.ToString(),
-                            Value = val
-                        };
+                        queryArgs.RemoveAt(queryArgs.Count - 1);
                     }
-                    else
-                    {
-                        queryArgs.Add(val);
-                        return new CompileResult
-                        {
-                            CommandText = "?",
-                            Value = val
-                        };
-                    }
+                    obj = r.Value;
                 }
+
+                //
+                // Get the member value
+                //
+                var val = _sqlitePlatform.ReflectionService.GetMemberValue(obj, expr, mem.Member);
+
+                //
+                // Work special magic for enumerables
+                //
+                if (val != null && val is IEnumerable && !(val is string) && !(val is IEnumerable<byte>))
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("(");
+                    var head = "";
+                    foreach (var a in (IEnumerable) val)
+                    {
+                        queryArgs.Add(a);
+                        sb.Append(head);
+                        sb.Append("?");
+                        head = ",";
+                    }
+                    sb.Append(")");
+                    return new CompileResult
+                    {
+                        CommandText = sb.ToString(),
+                        Value = val
+                    };
+                }
+                queryArgs.Add(val);
+                return new CompileResult
+                {
+                    CommandText = "?",
+                    Value = val
+                };
             }
-            throw new NotSupportedException("Cannot compile: " + expr.NodeType.ToString());
+            throw new NotSupportedException("Cannot compile: " + expr.NodeType);
         }
 
         private object ConvertTo(object obj, Type t)
         {
-            Type nut = Nullable.GetUnderlyingType(t);
+            var nut = Nullable.GetUnderlyingType(t);
 
             if (nut != null)
             {
@@ -489,10 +468,7 @@ namespace SQLite.Net
                 }
                 return Convert.ChangeType(obj, nut, CultureInfo.CurrentCulture);
             }
-            else
-            {
-                return Convert.ChangeType(obj, t, CultureInfo.CurrentCulture);
-            }
+            return Convert.ChangeType(obj, t, CultureInfo.CurrentCulture);
         }
 
         /// <summary>
@@ -506,64 +482,58 @@ namespace SQLite.Net
             {
                 return "(" + parameter.CommandText + " is ?)";
             }
-            else if (expression.NodeType == ExpressionType.NotEqual)
+            if (expression.NodeType == ExpressionType.NotEqual)
             {
                 return "(" + parameter.CommandText + " is not ?)";
             }
-            else
-            {
-                throw new NotSupportedException("Cannot compile Null-BinaryExpression with type " +
-                                                expression.NodeType.ToString());
-            }
+            throw new NotSupportedException("Cannot compile Null-BinaryExpression with type " +
+                                            expression.NodeType);
         }
 
         private string GetSqlName(Expression expr)
         {
-            ExpressionType n = expr.NodeType;
+            var n = expr.NodeType;
             if (n == ExpressionType.GreaterThan)
             {
                 return ">";
             }
-            else if (n == ExpressionType.GreaterThanOrEqual)
+            if (n == ExpressionType.GreaterThanOrEqual)
             {
                 return ">=";
             }
-            else if (n == ExpressionType.LessThan)
+            if (n == ExpressionType.LessThan)
             {
                 return "<";
             }
-            else if (n == ExpressionType.LessThanOrEqual)
+            if (n == ExpressionType.LessThanOrEqual)
             {
                 return "<=";
             }
-            else if (n == ExpressionType.And)
+            if (n == ExpressionType.And)
             {
                 return "&";
             }
-            else if (n == ExpressionType.AndAlso)
+            if (n == ExpressionType.AndAlso)
             {
                 return "and";
             }
-            else if (n == ExpressionType.Or)
+            if (n == ExpressionType.Or)
             {
                 return "|";
             }
-            else if (n == ExpressionType.OrElse)
+            if (n == ExpressionType.OrElse)
             {
                 return "or";
             }
-            else if (n == ExpressionType.Equal)
+            if (n == ExpressionType.Equal)
             {
                 return "=";
             }
-            else if (n == ExpressionType.NotEqual)
+            if (n == ExpressionType.NotEqual)
             {
                 return "!=";
             }
-            else
-            {
-                throw new NotSupportedException("Cannot get SQL for: " + n);
-            }
+            throw new NotSupportedException("Cannot get SQL for: " + n);
         }
 
         public int Count()
@@ -578,20 +548,19 @@ namespace SQLite.Net
 
         public T First()
         {
-            TableQuery<T> query = Take(1);
-            return query.ToList<T>().First();
+            var query = Take(1);
+            return query.ToList().First();
         }
 
         public T FirstOrDefault()
         {
-            TableQuery<T> query = Take(1);
-            return query.ToList<T>().FirstOrDefault();
+            var query = Take(1);
+            return query.ToList().FirstOrDefault();
         }
 
         private class CompileResult
         {
             public string CommandText { get; set; }
-
             public object Value { get; set; }
         }
     }

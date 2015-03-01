@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2012 Krueger Systems, Inc.
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -22,7 +22,6 @@
 //
 
 using System;
-using System.Diagnostics;
 using SQLite.Net.Interop;
 
 namespace SQLite.Net
@@ -42,11 +41,8 @@ namespace SQLite.Net
         }
 
         public bool Initialized { get; set; }
-
         protected SQLiteConnection Connection { get; set; }
-
         public string CommandText { get; set; }
-
         protected IDbStatement Statement { get; set; }
 
         public void Dispose()
@@ -70,7 +66,7 @@ namespace SQLite.Net
             //bind the values.
             if (source != null)
             {
-                for (int i = 0; i < source.Length; i++)
+                for (var i = 0; i < source.Length; i++)
                 {
                     SQLiteCommand.BindParameter(_sqlitePlatform.SQLiteApi, Statement, i + 1, source[i],
                         Connection.StoreDateTimeAsTicks, Connection.Serializer);
@@ -80,17 +76,17 @@ namespace SQLite.Net
 
             if (r == Result.Done)
             {
-                int rowsAffected = _sqlitePlatform.SQLiteApi.Changes(Connection.Handle);
+                var rowsAffected = _sqlitePlatform.SQLiteApi.Changes(Connection.Handle);
                 _sqlitePlatform.SQLiteApi.Reset(Statement);
                 return rowsAffected;
             }
             if (r == Result.Error)
             {
-                string msg = _sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle);
+                var msg = _sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle);
                 _sqlitePlatform.SQLiteApi.Reset(Statement);
                 throw SQLiteException.New(r, msg);
             }
-            else if (r == Result.Constraint && _sqlitePlatform.SQLiteApi.ExtendedErrCode(Connection.Handle) == ExtendedResult.ConstraintNotNull)
+            if (r == Result.Constraint && _sqlitePlatform.SQLiteApi.ExtendedErrCode(Connection.Handle) == ExtendedResult.ConstraintNotNull)
             {
                 _sqlitePlatform.SQLiteApi.Reset(Statement);
                 throw NotNullConstraintViolationException.New(r, _sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle));
@@ -101,7 +97,7 @@ namespace SQLite.Net
 
         protected virtual IDbStatement Prepare()
         {
-            IDbStatement stmt = _sqlitePlatform.SQLiteApi.Prepare2(Connection.Handle, CommandText);
+            var stmt = _sqlitePlatform.SQLiteApi.Prepare2(Connection.Handle, CommandText);
             return stmt;
         }
 

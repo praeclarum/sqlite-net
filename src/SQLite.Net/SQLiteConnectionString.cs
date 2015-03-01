@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2012 Krueger Systems, Inc.
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -30,20 +30,20 @@ namespace SQLite.Net
     {
         public SQLiteConnectionString(string databasePath, bool storeDateTimeAsTicks,
             IBlobSerializer serializer = null,
-			IContractResolver resolver = null)
+            IContractResolver resolver = null)
         {
             ConnectionString = databasePath;
             StoreDateTimeAsTicks = storeDateTimeAsTicks;
 
             DatabasePath = databasePath;
             Serializer = serializer;
-	        Resolver = resolver ?? ContractResolver.Current;
+            Resolver = resolver ?? ContractResolver.Current;
         }
 
         public string ConnectionString { get; private set; }
         public string DatabasePath { get; private set; }
         public bool StoreDateTimeAsTicks { get; private set; }
         public IBlobSerializer Serializer { get; private set; }
-		public IContractResolver Resolver { get; private set; }
+        public IContractResolver Resolver { get; private set; }
     }
 }

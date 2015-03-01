@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2012 Krueger Systems, Inc.
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -24,7 +24,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -46,20 +45,17 @@ namespace SQLite.Net
         ///     Used to list some code that we want the MonoTouch linker
         ///     to see, but that we never want to actually execute.
         /// </summary>
-        #pragma warning disable 649
+#pragma warning disable 649
         private static bool _preserveDuringLinkMagic;
-        #pragma warning restore 649
-
+#pragma warning restore 649
         private readonly Random _rand = new Random();
-
         private TimeSpan _busyTimeout;
         private long _elapsedMilliseconds;
         private Dictionary<string, TableMapping> _mappings;
         private bool _open;
         private IStopwatch _sw;
         private Dictionary<string, TableMapping> _tables;
-
-		private int _transactionDepth;
+        private int _transactionDepth;
 
         static SQLiteConnection()
         {
@@ -70,76 +66,75 @@ namespace SQLite.Net
             }
         }
 
-	    /// <summary>
-	    ///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
-	    /// </summary>
-	    /// <param name="sqlitePlatform"></param>
-	    /// <param name="databasePath">
-	    ///     Specifies the path to the database file.
-	    /// </param>
-	    /// <param name="storeDateTimeAsTicks">
-	    ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-	    ///     absolutely do want to store them as Ticks in all new projects. The default of false is
-	    ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
-	    ///     down sides, when setting storeDateTimeAsTicks = true.
-	    /// </param>
-	    /// <param name="serializer">
-	    ///     Blob serializer to use for storing undefined and complex data structures. If left null
-	    ///     these types will thrown an exception as usual.
-	    /// </param>
-	    /// <param name="extraTypeMappings">
-	    ///     Any extra type mappings that you wish to use for overriding the default for creating
-	    ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
-	    /// </param>
-	    /// <param name="resolver">
-	    ///		A contract resovler for resolving interfaces to concreate types during object creation
-	    /// </param>
-	    public SQLiteConnection(
-		    ISQLitePlatform sqlitePlatform,
-		    string databasePath,
-		    bool storeDateTimeAsTicks = false,
-		    IBlobSerializer serializer = null,
-		    IDictionary<Type, string> extraTypeMappings = null,
-		    IContractResolver resolver = null)
-		    : this(sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, 
-						serializer, extraTypeMappings, resolver)
-	    {
-	    }
+        /// <summary>
+        ///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+        /// </summary>
+        /// <param name="sqlitePlatform"></param>
+        /// <param name="databasePath">
+        ///     Specifies the path to the database file.
+        /// </param>
+        /// <param name="storeDateTimeAsTicks">
+        ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+        ///     absolutely do want to store them as Ticks in all new projects. The default of false is
+        ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
+        ///     down sides, when setting storeDateTimeAsTicks = true.
+        /// </param>
+        /// <param name="serializer">
+        ///     Blob serializer to use for storing undefined and complex data structures. If left null
+        ///     these types will thrown an exception as usual.
+        /// </param>
+        /// <param name="extraTypeMappings">
+        ///     Any extra type mappings that you wish to use for overriding the default for creating
+        ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
+        /// </param>
+        /// <param name="resolver">
+        ///     A contract resovler for resolving interfaces to concreate types during object creation
+        /// </param>
+        public SQLiteConnection(
+            ISQLitePlatform sqlitePlatform,
+            string databasePath,
+            bool storeDateTimeAsTicks = false,
+            IBlobSerializer serializer = null,
+            IDictionary<Type, string> extraTypeMappings = null,
+            IContractResolver resolver = null)
+            : this(sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks,
+                serializer, extraTypeMappings, resolver)
+        {
+        }
 
-
-	    /// <summary>
-		///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
-		/// </summary>
-		/// <param name="sqlitePlatform"></param>
-		/// <param name="databasePath">
-		///     Specifies the path to the database file.
-		/// </param>
-		/// <param name="openFlags"></param>
-		/// <param name="storeDateTimeAsTicks">
-		///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-		///     absolutely do want to store them as Ticks in all new projects. The default of false is
-		///     only here for backwards compatibility. There is a *significant* speed advantage, with no
-		///     down sides, when setting storeDateTimeAsTicks = true.
-		/// </param>
-		/// <param name="serializer">
-		///     Blob serializer to use for storing undefined and complex data structures. If left null
-		///     these types will thrown an exception as usual.
-		/// </param>
-		/// <param name="extraTypeMappings">
-		///     Any extra type mappings that you wish to use for overriding the default for creating
-		///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
-		/// </param>
-		/// <param name="resolver">
-		///		A contract resovler for resolving interfaces to concreate types during object creation
-		/// </param>
-		public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
-                                bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null,
-                                IDictionary<Type, string> extraTypeMappings = null, IContractResolver resolver = null)
+        /// <summary>
+        ///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+        /// </summary>
+        /// <param name="sqlitePlatform"></param>
+        /// <param name="databasePath">
+        ///     Specifies the path to the database file.
+        /// </param>
+        /// <param name="openFlags"></param>
+        /// <param name="storeDateTimeAsTicks">
+        ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+        ///     absolutely do want to store them as Ticks in all new projects. The default of false is
+        ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
+        ///     down sides, when setting storeDateTimeAsTicks = true.
+        /// </param>
+        /// <param name="serializer">
+        ///     Blob serializer to use for storing undefined and complex data structures. If left null
+        ///     these types will thrown an exception as usual.
+        /// </param>
+        /// <param name="extraTypeMappings">
+        ///     Any extra type mappings that you wish to use for overriding the default for creating
+        ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
+        /// </param>
+        /// <param name="resolver">
+        ///     A contract resovler for resolving interfaces to concreate types during object creation
+        /// </param>
+        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
+            bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null,
+            IDictionary<Type, string> extraTypeMappings = null, IContractResolver resolver = null)
         {
             ExtraTypeMappings = extraTypeMappings ?? new Dictionary<Type, string>();
             Serializer = serializer;
             Platform = sqlitePlatform;
-			Resolver = resolver ?? ContractResolver.Current;
+            Resolver = resolver ?? ContractResolver.Current;
 
             if (string.IsNullOrEmpty(databasePath))
             {
@@ -149,13 +144,13 @@ namespace SQLite.Net
             DatabasePath = databasePath;
 
             IDbHandle handle;
-            byte[] databasePathAsBytes = GetNullTerminatedUtf8(DatabasePath);
-            Result r = Platform.SQLiteApi.Open(databasePathAsBytes, out handle, (int)openFlags, IntPtr.Zero);
+            var databasePathAsBytes = GetNullTerminatedUtf8(DatabasePath);
+            var r = Platform.SQLiteApi.Open(databasePathAsBytes, out handle, (int) openFlags, IntPtr.Zero);
 
             Handle = handle;
             if (r != Result.OK)
             {
-                throw SQLiteException.New(r, String.Format("Could not open database file: {0} ({1})", DatabasePath, r));
+                throw SQLiteException.New(r, string.Format("Could not open database file: {0} ({1})", DatabasePath, r));
             }
             _open = true;
 
@@ -165,20 +160,13 @@ namespace SQLite.Net
         }
 
         public IBlobSerializer Serializer { get; private set; }
-
         public IDbHandle Handle { get; private set; }
-
         public string DatabasePath { get; private set; }
-
         public bool TimeExecution { get; set; }
-
         public ITraceListener TraceListener { get; set; }
-
         public bool StoreDateTimeAsTicks { get; private set; }
-
         public IDictionary<Type, string> ExtraTypeMappings { get; private set; }
-
-		public IContractResolver Resolver { get; private set; }
+        public IContractResolver Resolver { get; private set; }
 
         /// <summary>
         ///     Sets a busy handler to sleep the specified amount of time when a table is locked.
@@ -192,7 +180,7 @@ namespace SQLite.Net
                 _busyTimeout = value;
                 if (Handle != NullHandle)
                 {
-                    Platform.SQLiteApi.BusyTimeout(Handle, (int)_busyTimeout.TotalMilliseconds);
+                    Platform.SQLiteApi.BusyTimeout(Handle, (int) _busyTimeout.TotalMilliseconds);
                 }
             }
         }
@@ -224,17 +212,17 @@ namespace SQLite.Net
 
         public void EnableLoadExtension(int onoff)
         {
-            Result r = Platform.SQLiteApi.EnableLoadExtension(Handle, onoff);
+            var r = Platform.SQLiteApi.EnableLoadExtension(Handle, onoff);
             if (r != Result.OK)
             {
-                string msg = Platform.SQLiteApi.Errmsg16(Handle);
+                var msg = Platform.SQLiteApi.Errmsg16(Handle);
                 throw SQLiteException.New(r, msg);
             }
         }
 
         private static byte[] GetNullTerminatedUtf8(string s)
         {
-            int utf8Length = Encoding.UTF8.GetByteCount(s);
+            var utf8Length = Encoding.UTF8.GetByteCount(s);
             var bytes = new byte[utf8Length + 1];
             utf8Length = Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
             return bytes;
@@ -277,7 +265,7 @@ namespace SQLite.Net
         /// </returns>
         public TableMapping GetMapping<T>()
         {
-            return GetMapping(typeof(T));
+            return GetMapping(typeof (T));
         }
 
         /// <summary>
@@ -285,9 +273,9 @@ namespace SQLite.Net
         /// </summary>
         public int DropTable<T>()
         {
-            TableMapping map = GetMapping(typeof(T));
+            var map = GetMapping(typeof (T));
 
-            string query = string.Format("drop table if exists \"{0}\"", map.TableName);
+            var query = string.Format("drop table if exists \"{0}\"", map.TableName);
 
             return Execute(query);
         }
@@ -303,7 +291,7 @@ namespace SQLite.Net
         /// </returns>
         public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None)
         {
-            return CreateTable(typeof(T), createFlags);
+            return CreateTable(typeof (T), createFlags);
         }
 
         /// <summary>
@@ -329,21 +317,21 @@ namespace SQLite.Net
                 map = GetMapping(ty, createFlags);
                 _tables.Add(ty.FullName, map);
             }
-            string query = "create table if not exists \"" + map.TableName + "\"(\n";
+            var query = "create table if not exists \"" + map.TableName + "\"(\n";
 
             var mapColumns = map.Columns;
 
-            if(!mapColumns.Any())
+            if (!mapColumns.Any())
             {
                 throw new Exception("Table has no (public) columns");
             }
 
-            IEnumerable<string> decls = mapColumns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer, this.ExtraTypeMappings));
-            string decl = string.Join(",\n", decls.ToArray());
+            var decls = mapColumns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks, Serializer, ExtraTypeMappings));
+            var decl = string.Join(",\n", decls.ToArray());
             query += decl;
             query += ")";
 
-            int count = Execute(query);
+            var count = Execute(query);
 
             if (count == 0)
             {
@@ -353,11 +341,11 @@ namespace SQLite.Net
             }
 
             var indexes = new Dictionary<string, IndexInfo>();
-            foreach (TableMapping.Column c in mapColumns)
+            foreach (var c in mapColumns)
             {
-                foreach (IndexedAttribute i in c.Indices)
+                foreach (var i in c.Indices)
                 {
-                    string iname = i.Name ?? map.TableName + "_" + c.Name;
+                    var iname = i.Name ?? map.TableName + "_" + c.Name;
                     IndexInfo iinfo;
                     if (!indexes.TryGetValue(iname, out iinfo))
                     {
@@ -396,7 +384,7 @@ namespace SQLite.Net
         }
 
         /// <summary>
-        /// Creates an index for the specified table and columns.
+        ///     Creates an index for the specified table and columns.
         /// </summary>
         /// <param name="indexName">Name of the index to create</param>
         /// <param name="tableName">Name of the database table</param>
@@ -405,12 +393,12 @@ namespace SQLite.Net
         public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
         {
             const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
-            var sql = String.Format(sqlFormat, tableName, string.Join("\", \"", columnNames), unique ? "unique" : "", indexName);
+            var sql = string.Format(sqlFormat, tableName, string.Join("\", \"", columnNames), unique ? "unique" : "", indexName);
             return Execute(sql);
         }
 
         /// <summary>
-        /// Creates an index for the specified table and column.
+        ///     Creates an index for the specified table and column.
         /// </summary>
         /// <param name="indexName">Name of the index to create</param>
         /// <param name="tableName">Name of the database table</param>
@@ -418,11 +406,11 @@ namespace SQLite.Net
         /// <param name="unique">Whether the index should be unique</param>
         public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
         {
-            return CreateIndex(indexName, tableName, new string[] { columnName }, unique);
+            return CreateIndex(indexName, tableName, new[] {columnName}, unique);
         }
 
         /// <summary>
-        /// Creates an index for the specified table and column.
+        ///     Creates an index for the specified table and column.
         /// </summary>
         /// <param name="tableName">Name of the database table</param>
         /// <param name="columnName">Name of the column to index</param>
@@ -433,7 +421,7 @@ namespace SQLite.Net
         }
 
         /// <summary>
-        /// Creates an index for the specified table and columns.
+        ///     Creates an index for the specified table and columns.
         /// </summary>
         /// <param name="tableName">Name of the database table</param>
         /// <param name="columnNames">An array of column names to index</param>
@@ -455,7 +443,7 @@ namespace SQLite.Net
             MemberExpression mx;
             if (property.Body.NodeType == ExpressionType.Convert)
             {
-                mx = ((UnaryExpression)property.Body).Operand as MemberExpression;
+                mx = ((UnaryExpression) property.Body).Operand as MemberExpression;
             }
             else
             {
@@ -467,30 +455,30 @@ namespace SQLite.Net
                 throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
             }
 
-            string propName = propertyInfo.Name;
+            var propName = propertyInfo.Name;
 
-            TableMapping map = GetMapping<T>();
-            string colName = map.FindColumnWithPropertyName(propName).Name;
+            var map = GetMapping<T>();
+            var colName = map.FindColumnWithPropertyName(propName).Name;
 
             CreateIndex(map.TableName, colName, unique);
         }
 
         public List<ColumnInfo> GetTableInfo(string tableName)
         {
-            string query = "pragma table_info(\"" + tableName + "\")";
+            var query = "pragma table_info(\"" + tableName + "\")";
             return Query<ColumnInfo>(query);
         }
 
         private void MigrateTable(TableMapping map)
         {
-            List<ColumnInfo> existingCols = GetTableInfo(map.TableName);
+            var existingCols = GetTableInfo(map.TableName);
 
             var toBeAdded = new List<TableMapping.Column>();
 
-            foreach (TableMapping.Column p in map.Columns)
+            foreach (var p in map.Columns)
             {
-                bool found = false;
-                foreach (ColumnInfo c in existingCols)
+                var found = false;
+                foreach (var c in existingCols)
                 {
                     found = (string.Compare(p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0);
                     if (found)
@@ -504,10 +492,10 @@ namespace SQLite.Net
                 }
             }
 
-            foreach (TableMapping.Column p in toBeAdded)
+            foreach (var p in toBeAdded)
             {
-                string addCol = "alter table \"" + map.TableName + "\" add column " +
-                                Orm.SqlDecl(p, StoreDateTimeAsTicks, this.Serializer, this.ExtraTypeMappings);
+                var addCol = "alter table \"" + map.TableName + "\" add column " +
+                             Orm.SqlDecl(p, StoreDateTimeAsTicks, Serializer, ExtraTypeMappings);
                 Execute(addCol);
             }
         }
@@ -541,9 +529,9 @@ namespace SQLite.Net
                 throw SQLiteException.New(Result.Error, "Cannot create commands from unopened database");
             }
 
-            SQLiteCommand cmd = NewCommand();
+            var cmd = NewCommand();
             cmd.CommandText = cmdText;
-            foreach (object o in args)
+            foreach (var o in args)
             {
                 cmd.Bind(o);
             }
@@ -569,7 +557,7 @@ namespace SQLite.Net
         /// </returns>
         public int Execute(string query, params object[] args)
         {
-            SQLiteCommand cmd = CreateCommand(query, args);
+            var cmd = CreateCommand(query, args);
 
             if (TimeExecution)
             {
@@ -581,14 +569,14 @@ namespace SQLite.Net
                 _sw.Start();
             }
 
-            int r = cmd.ExecuteNonQuery();
+            var r = cmd.ExecuteNonQuery();
 
             if (TimeExecution)
             {
                 _sw.Stop();
                 _elapsedMilliseconds += _sw.ElapsedMilliseconds;
 
-                this.TraceListener.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0);
+                TraceListener.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds/1000.0);
             }
 
             return r;
@@ -596,7 +584,7 @@ namespace SQLite.Net
 
         public T ExecuteScalar<T>(string query, params object[] args)
         {
-            SQLiteCommand cmd = CreateCommand(query, args);
+            var cmd = CreateCommand(query, args);
 
             if (TimeExecution)
             {
@@ -615,7 +603,7 @@ namespace SQLite.Net
                 _sw.Stop();
                 _elapsedMilliseconds += _sw.ElapsedMilliseconds;
 
-                this.TraceListener.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0);
+                TraceListener.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds/1000.0);
             }
 
             return r;
@@ -638,7 +626,7 @@ namespace SQLite.Net
         /// </returns>
         public List<T> Query<T>(string query, params object[] args) where T : class
         {
-            SQLiteCommand cmd = CreateCommand(query, args);
+            var cmd = CreateCommand(query, args);
             return cmd.ExecuteQuery<T>();
         }
 
@@ -661,7 +649,7 @@ namespace SQLite.Net
         /// </returns>
         public IEnumerable<T> DeferredQuery<T>(string query, params object[] args) where T : class
         {
-            SQLiteCommand cmd = CreateCommand(query, args);
+            var cmd = CreateCommand(query, args);
             return cmd.ExecuteDeferredQuery<T>();
         }
 
@@ -687,7 +675,7 @@ namespace SQLite.Net
         /// </returns>
         public List<object> Query(TableMapping map, string query, params object[] args)
         {
-            SQLiteCommand cmd = CreateCommand(query, args);
+            var cmd = CreateCommand(query, args);
             return cmd.ExecuteQuery<object>(map);
         }
 
@@ -715,7 +703,7 @@ namespace SQLite.Net
         /// </returns>
         public IEnumerable<object> DeferredQuery(TableMapping map, string query, params object[] args)
         {
-            SQLiteCommand cmd = CreateCommand(query, args);
+            var cmd = CreateCommand(query, args);
             return cmd.ExecuteDeferredQuery<object>(map);
         }
 
@@ -745,7 +733,7 @@ namespace SQLite.Net
         /// </returns>
         public T Get<T>(object pk) where T : class
         {
-            TableMapping map = GetMapping(typeof(T));
+            var map = GetMapping(typeof (T));
             return Query<T>(map.GetByPrimaryKeySql, pk).First();
         }
 
@@ -779,7 +767,7 @@ namespace SQLite.Net
         /// </returns>
         public T Find<T>(object pk) where T : class
         {
-            TableMapping map = GetMapping(typeof(T));
+            var map = GetMapping(typeof (T));
             return Query<T>(map.GetByPrimaryKeySql, pk).FirstOrDefault();
         }
 
@@ -883,8 +871,8 @@ namespace SQLite.Net
         /// <returns>A string naming the savepoint.</returns>
         public string SaveTransactionPoint()
         {
-            int depth = Interlocked.Increment(ref _transactionDepth) - 1;
-            string retVal = "S" + _rand.Next(short.MaxValue) + "D" + depth;
+            var depth = Interlocked.Increment(ref _transactionDepth) - 1;
+            var retVal = "S" + _rand.Next(short.MaxValue) + "D" + depth;
 
             try
             {
@@ -952,7 +940,7 @@ namespace SQLite.Net
             //    and leaves the transaction stack empty.   
             try
             {
-                if (String.IsNullOrEmpty(savepoint))
+                if (string.IsNullOrEmpty(savepoint))
                 {
                     if (Interlocked.Exchange(ref _transactionDepth, 0) > 0)
                     {
@@ -992,11 +980,11 @@ namespace SQLite.Net
         private void DoSavePointExecute(string savepoint, string cmd)
         {
             // Validate the savepoint
-            int firstLen = savepoint.IndexOf('D');
+            var firstLen = savepoint.IndexOf('D');
             if (firstLen >= 2 && savepoint.Length > firstLen + 1)
             {
                 int depth;
-                if (Int32.TryParse(savepoint.Substring(firstLen + 1), out depth))
+                if (int.TryParse(savepoint.Substring(firstLen + 1), out depth))
                 {
                     // TODO: Mild race here, but inescapable without locking almost everywhere.
                     if (0 <= depth && depth < _transactionDepth)
@@ -1042,7 +1030,7 @@ namespace SQLite.Net
         {
             try
             {
-                string savePoint = SaveTransactionPoint();
+                var savePoint = SaveTransactionPoint();
                 action();
                 Release(savePoint);
             }
@@ -1064,10 +1052,10 @@ namespace SQLite.Net
         /// </returns>
         public int InsertAll(IEnumerable objects)
         {
-            int c = 0;
+            var c = 0;
             RunInTransaction(() =>
             {
-                foreach (object r in objects)
+                foreach (var r in objects)
                 {
                     c += Insert(r);
                 }
@@ -1089,10 +1077,10 @@ namespace SQLite.Net
         /// </returns>
         public int InsertAll(IEnumerable objects, string extra)
         {
-            int c = 0;
+            var c = 0;
             RunInTransaction(() =>
             {
-                foreach (object r in objects)
+                foreach (var r in objects)
                 {
                     c += Insert(r, extra);
                 }
@@ -1114,10 +1102,10 @@ namespace SQLite.Net
         /// </returns>
         public int InsertAll(IEnumerable objects, Type objType)
         {
-            int c = 0;
+            var c = 0;
             RunInTransaction(() =>
             {
-                foreach (object r in objects)
+                foreach (var r in objects)
                 {
                     c += Insert(r, objType);
                 }
@@ -1168,7 +1156,7 @@ namespace SQLite.Net
 
         /// <summary>
         ///     Inserts all specified objects.
-        ///     For each insertion, if a UNIQUE 
+        ///     For each insertion, if a UNIQUE
         ///     constraint violation occurs with
         ///     some pre-existing object, this function
         ///     deletes the old object.
@@ -1181,10 +1169,10 @@ namespace SQLite.Net
         /// </returns>
         public int InsertOrReplaceAll(IEnumerable objects)
         {
-            int c = 0;
+            var c = 0;
             RunInTransaction(() =>
             {
-                foreach (object r in objects)
+                foreach (var r in objects)
                 {
                     c += InsertOrReplace(r);
                 }
@@ -1233,7 +1221,7 @@ namespace SQLite.Net
 
         /// <summary>
         ///     Inserts all specified objects.
-        ///     For each insertion, if a UNIQUE 
+        ///     For each insertion, if a UNIQUE
         ///     constraint violation occurs with
         ///     some pre-existing object, this function
         ///     deletes the old object.
@@ -1249,10 +1237,10 @@ namespace SQLite.Net
         /// </returns>
         public int InsertOrReplaceAll(IEnumerable objects, Type objType)
         {
-            int c = 0;
+            var c = 0;
             RunInTransaction(() =>
             {
-                foreach (object r in objects)
+                foreach (var r in objects)
                 {
                     c += InsertOrReplace(r, objType);
                 }
@@ -1306,11 +1294,11 @@ namespace SQLite.Net
             }
 
 
-            TableMapping map = GetMapping(objType);
+            var map = GetMapping(objType);
 
             if (map.PK != null && map.PK.IsAutoGuid)
             {
-                PropertyInfo prop = objType.GetRuntimeProperty(map.PK.PropertyName);
+                var prop = objType.GetRuntimeProperty(map.PK.PropertyName);
                 if (prop != null)
                 {
                     if (prop.GetValue(obj, null).Equals(Guid.Empty))
@@ -1320,16 +1308,16 @@ namespace SQLite.Net
                 }
             }
 
-            bool replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
+            var replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 
-            TableMapping.Column[] cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
+            var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
             var vals = new object[cols.Length];
-            for (int i = 0; i < vals.Length; i++)
+            for (var i = 0; i < vals.Length; i++)
             {
                 vals[i] = cols[i].GetValue(obj);
             }
 
-            PreparedSqlLiteInsertCommand insertCmd = map.GetInsertCommand(this, extra);
+            var insertCmd = map.GetInsertCommand(this, extra);
             int count;
             try
             {
@@ -1337,7 +1325,7 @@ namespace SQLite.Net
             }
             catch (SQLiteException ex)
             {
-                if (Platform.SQLiteApi.ExtendedErrCode(this.Handle) == ExtendedResult.ConstraintNotNull)
+                if (Platform.SQLiteApi.ExtendedErrCode(Handle) == ExtendedResult.ConstraintNotNull)
                 {
                     throw NotNullConstraintViolationException.New(ex.Result, ex.Message, map, obj);
                 }
@@ -1346,7 +1334,7 @@ namespace SQLite.Net
 
             if (map.HasAutoIncPK)
             {
-                long id = Platform.SQLiteApi.LastInsertRowid(Handle);
+                var id = Platform.SQLiteApi.LastInsertRowid(Handle);
                 map.SetAutoIncPK(obj, id);
             }
 
@@ -1389,31 +1377,31 @@ namespace SQLite.Net
         /// </returns>
         public int Update(object obj, Type objType)
         {
-            int rowsAffected = 0;
+            var rowsAffected = 0;
             if (obj == null || objType == null)
             {
                 return 0;
             }
 
-            TableMapping map = GetMapping(objType);
+            var map = GetMapping(objType);
 
-            TableMapping.Column pk = map.PK;
+            var pk = map.PK;
 
             if (pk == null)
             {
                 throw new NotSupportedException("Cannot update " + map.TableName + ": it has no PK");
             }
 
-            IEnumerable<TableMapping.Column> cols = from p in map.Columns
-                                                             where p != pk
-                                                             select p;
-            IEnumerable<object> vals = from c in cols
-                                                select c.GetValue(obj);
+            var cols = from p in map.Columns
+                where p != pk
+                select p;
+            var vals = from c in cols
+                select c.GetValue(obj);
             var ps = new List<object>(vals);
             ps.Add(pk.GetValue(obj));
-            string q = string.Format("update \"{0}\" set {1} where {2} = ? ", map.TableName,
-                           string.Join(",", (from c in cols
-                                              select "\"" + c.Name + "\" = ? ").ToArray()), pk.Name);
+            var q = string.Format("update \"{0}\" set {1} where {2} = ? ", map.TableName,
+                string.Join(",", (from c in cols
+                    select "\"" + c.Name + "\" = ? ").ToArray()), pk.Name);
             try
             {
                 rowsAffected = Execute(q, ps.ToArray());
@@ -1442,10 +1430,10 @@ namespace SQLite.Net
         /// </returns>
         public int UpdateAll(IEnumerable objects)
         {
-            int c = 0;
+            var c = 0;
             RunInTransaction(() =>
             {
-                foreach (object r in objects)
+                foreach (var r in objects)
                 {
                     c += Update(r);
                 }
@@ -1464,13 +1452,13 @@ namespace SQLite.Net
         /// </returns>
         public int Delete(object objectToDelete)
         {
-            TableMapping map = GetMapping(objectToDelete.GetType());
-            TableMapping.Column pk = map.PK;
+            var map = GetMapping(objectToDelete.GetType());
+            var pk = map.PK;
             if (pk == null)
             {
                 throw new NotSupportedException("Cannot delete " + map.TableName + ": it has no PK");
             }
-            string q = string.Format("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
+            var q = string.Format("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
             return Execute(q, pk.GetValue(objectToDelete));
         }
 
@@ -1488,13 +1476,13 @@ namespace SQLite.Net
         /// </typeparam>
         public int Delete<T>(object primaryKey)
         {
-            TableMapping map = GetMapping(typeof(T));
-            TableMapping.Column pk = map.PK;
+            var map = GetMapping(typeof (T));
+            var pk = map.PK;
             if (pk == null)
             {
                 throw new NotSupportedException("Cannot delete " + map.TableName + ": it has no PK");
             }
-            string q = string.Format("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
+            var q = string.Format("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
             return Execute(q, primaryKey);
         }
 
@@ -1511,8 +1499,8 @@ namespace SQLite.Net
         /// </typeparam>
         public int DeleteAll<T>()
         {
-            TableMapping map = GetMapping(typeof(T));
-            string query = string.Format("delete from \"{0}\"", map.TableName);
+            var map = GetMapping(typeof (T));
+            var query = string.Format("delete from \"{0}\"", map.TableName);
             return Execute(query);
         }
 
@@ -1534,15 +1522,15 @@ namespace SQLite.Net
                 {
                     if (_mappings != null)
                     {
-                        foreach (TableMapping sqlInsertCommand in _mappings.Values)
+                        foreach (var sqlInsertCommand in _mappings.Values)
                         {
                             sqlInsertCommand.Dispose();
                         }
                     }
-                    Result r = Platform.SQLiteApi.Close(Handle);
+                    var r = Platform.SQLiteApi.Close(Handle);
                     if (r != Result.OK)
                     {
-                        string msg = Platform.SQLiteApi.Errmsg16(Handle);
+                        var msg = Platform.SQLiteApi.Errmsg16(Handle);
                         throw SQLiteException.New(r, msg);
                     }
                 }
@@ -1565,7 +1553,6 @@ namespace SQLite.Net
             //			public string ColumnType { get; set; }
 
             public int notnull { get; set; }
-
             //			public string dflt_value { get; set; }
 
             //			public int pk { get; set; }

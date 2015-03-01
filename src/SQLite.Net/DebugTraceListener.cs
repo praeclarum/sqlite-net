@@ -9,7 +9,7 @@ namespace SQLite.Net
         private DebugTraceListener()
         {
         }
-            
+
         public void Receive(string message)
         {
             Debug.WriteLine(message);

@@ -13,6 +13,5 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyCopyright("Copyright © Øystein Krog, Krueger Systems Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-
 [assembly: InternalsVisibleTo("SQLite.Net.Tests")]
 [assembly: InternalsVisibleTo("SQLite.Net.Async")]

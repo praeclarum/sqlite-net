@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2012 Krueger Systems, Inc.
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -35,9 +35,9 @@ namespace SQLite.Net
         public const string ImplicitIndexSuffix = "Id";
 
         internal static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer,
-                                     IDictionary<Type, string> extraTypeMappings)
+            IDictionary<Type, string> extraTypeMappings)
         {
-            string decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks, serializer, extraTypeMappings) + " ";
+            var decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks, serializer, extraTypeMappings) + " ";
 
             if (p.IsPK)
             {
@@ -54,7 +54,6 @@ namespace SQLite.Net
             if (!string.IsNullOrEmpty(p.Collation))
             {
                 decl += "collate " + p.Collation + " ";
-                
             }
             if (p.DefaultValue != null)
             {
@@ -65,10 +64,10 @@ namespace SQLite.Net
         }
 
         private static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks,
-                                     IBlobSerializer serializer,
-                                     IDictionary<Type, string> extraTypeMappings)
+            IBlobSerializer serializer,
+            IDictionary<Type, string> extraTypeMappings)
         {
-            Type clrType = p.ColumnType;
+            var clrType = p.ColumnType;
             var interfaces = clrType.GetTypeInfo().ImplementedInterfaces.ToList();
 
             string extraMapping;
@@ -77,49 +76,51 @@ namespace SQLite.Net
                 return extraMapping;
             }
 
-            if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) ||
-                clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32) ||
-                interfaces.Contains(typeof(ISerializable<Boolean>)) ||
-                interfaces.Contains(typeof(ISerializable<Byte>)) ||
-                interfaces.Contains(typeof(ISerializable<UInt16>)) ||
-                interfaces.Contains(typeof(ISerializable<SByte>)) ||
-                interfaces.Contains(typeof(ISerializable<Int16>)) ||
-                interfaces.Contains(typeof(ISerializable<Int32>)))
+            if (clrType == typeof (bool) || clrType == typeof (byte) || clrType == typeof (ushort) ||
+                clrType == typeof (sbyte) || clrType == typeof (short) || clrType == typeof (int) ||
+                interfaces.Contains(typeof (ISerializable<bool>)) ||
+                interfaces.Contains(typeof (ISerializable<byte>)) ||
+                interfaces.Contains(typeof (ISerializable<ushort>)) ||
+                interfaces.Contains(typeof (ISerializable<sbyte>)) ||
+                interfaces.Contains(typeof (ISerializable<short>)) ||
+                interfaces.Contains(typeof (ISerializable<int>)))
             {
                 return "integer";
             }
-            if (clrType == typeof(UInt32) || clrType == typeof(Int64) ||
-                interfaces.Contains(typeof(ISerializable<UInt32>)) ||
-                interfaces.Contains(typeof(ISerializable<Int64>)) ||
-                interfaces.Contains(typeof(ISerializable<UInt64>)))
+            if (clrType == typeof (uint) || clrType == typeof (long) ||
+                interfaces.Contains(typeof (ISerializable<uint>)) ||
+                interfaces.Contains(typeof (ISerializable<long>)) ||
+                interfaces.Contains(typeof (ISerializable<ulong>)))
             {
                 return "bigint";
             }
-            if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal) ||
-                interfaces.Contains(typeof(ISerializable<Single>)) ||
-                interfaces.Contains(typeof(ISerializable<Double>)) ||
-                interfaces.Contains(typeof(ISerializable<Decimal>)))
+            if (clrType == typeof (float) || clrType == typeof (double) || clrType == typeof (decimal) ||
+                interfaces.Contains(typeof (ISerializable<float>)) ||
+                interfaces.Contains(typeof (ISerializable<double>)) ||
+                interfaces.Contains(typeof (ISerializable<decimal>)))
             {
                 return "float";
             }
-            if (clrType == typeof(String) || interfaces.Contains(typeof(ISerializable<String>)))
+            if (clrType == typeof (string) || interfaces.Contains(typeof (ISerializable<string>)))
             {
-                int? len = p.MaxStringLength;
+                var len = p.MaxStringLength;
 
                 if (len.HasValue)
+                {
                     return "varchar(" + len.Value + ")";
+                }
 
                 return "varchar";
             }
-            if (clrType == typeof(TimeSpan) || interfaces.Contains(typeof(ISerializable<TimeSpan>)))
+            if (clrType == typeof (TimeSpan) || interfaces.Contains(typeof (ISerializable<TimeSpan>)))
             {
                 return "bigint";
             }
-            if (clrType == typeof(DateTime) || interfaces.Contains(typeof(ISerializable<DateTime>)))
+            if (clrType == typeof (DateTime) || interfaces.Contains(typeof (ISerializable<DateTime>)))
             {
                 return storeDateTimeAsTicks ? "bigint" : "datetime";
             }
-            if (clrType == typeof(DateTimeOffset))
+            if (clrType == typeof (DateTimeOffset))
             {
                 return "bigint";
             }
@@ -127,11 +128,11 @@ namespace SQLite.Net
             {
                 return "integer";
             }
-            if (clrType == typeof(byte[]) || interfaces.Contains(typeof(ISerializable<byte[]>)))
+            if (clrType == typeof (byte[]) || interfaces.Contains(typeof (ISerializable<byte[]>)))
             {
                 return "blob";
             }
-            if (clrType == typeof(Guid) || interfaces.Contains(typeof(ISerializable<Guid>)))
+            if (clrType == typeof (Guid) || interfaces.Contains(typeof (ISerializable<Guid>)))
             {
                 return "varchar(36)";
             }
@@ -149,9 +150,9 @@ namespace SQLite.Net
 
         internal static string Collation(MemberInfo p)
         {
-            foreach (var attribute in p.CustomAttributes.Where(attribute => attribute.AttributeType == typeof(CollationAttribute)))
+            foreach (var attribute in p.CustomAttributes.Where(attribute => attribute.AttributeType == typeof (CollationAttribute)))
             {
-                return (string)attribute.ConstructorArguments[0].Value;
+                return (string) attribute.ConstructorArguments[0].Value;
             }
             return string.Empty;
         }
@@ -168,7 +169,7 @@ namespace SQLite.Net
 
         internal static int? MaxStringLength(PropertyInfo p)
         {
-            foreach (var attribute in p.CustomAttributes.Where(a=>a.AttributeType==typeof(MaxLengthAttribute)))
+            foreach (var attribute in p.CustomAttributes.Where(a => a.AttributeType == typeof (MaxLengthAttribute)))
             {
                 return (int) attribute.ConstructorArguments[0].Value;
             }
@@ -184,11 +185,12 @@ namespace SQLite.Net
                     var useProp = (bool) attribute.ConstructorArguments[0].Value;
 
                     if (!useProp)
+                    {
                         return Convert.ChangeType(attribute.ConstructorArguments[0].Value, p.PropertyType);
+                    }
 
                     var obj = Activator.CreateInstance(p.DeclaringType);
                     return p.GetValue(obj);
-
                 }
                 catch (Exception exception)
                 {
@@ -203,6 +205,5 @@ namespace SQLite.Net
             var attrs = p.GetCustomAttributes<NotNullAttribute>(true);
             return attrs.Any();
         }
-
     }
 }
