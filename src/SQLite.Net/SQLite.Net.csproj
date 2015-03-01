@@ -116,6 +116,7 @@
     <Compile Include="TraceListenerExtensions.cs" />
     <Compile Include="DebugTraceListener.cs" />
     <Compile Include="ISerializable.cs" />
+    <Compile Include="Interop\IDbBackupHandle.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
