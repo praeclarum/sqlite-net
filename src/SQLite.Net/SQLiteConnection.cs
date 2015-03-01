@@ -59,8 +59,6 @@ namespace SQLite.Net
         private IStopwatch _sw;
         private Dictionary<string, TableMapping> _tables;
 
-	    private IContractResolver _resolver;
-
 		private int _transactionDepth;
 
         static SQLiteConnection()
