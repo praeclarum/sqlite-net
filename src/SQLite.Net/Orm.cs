@@ -169,9 +169,9 @@ namespace SQLite.Net
 
         internal static int? MaxStringLength(PropertyInfo p)
         {
-            foreach (var attribute in p.CustomAttributes.Where(a => a.AttributeType == typeof (MaxLengthAttribute)))
+            foreach (var attribute in p.GetCustomAttributes<MaxLengthAttribute>())
             {
-                return (int) attribute.ConstructorArguments[0].Value;
+                return attribute.Value;
             }
             return null;
         }
