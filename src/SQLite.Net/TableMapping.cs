@@ -44,9 +44,9 @@ namespace SQLite.Net
             _sqlitePlatform = platformImplementation;
             MappedType = type;
 
-            var tableAttr = type.GetTypeInfo().CustomAttributes.FirstOrDefault(data => data.AttributeType == typeof (TableAttribute));
+            var tableAttr = type.GetTypeInfo().GetCustomAttributes<TableAttribute>().FirstOrDefault();
 
-            TableName = tableAttr != null ? (string) tableAttr.ConstructorArguments.FirstOrDefault().Value : MappedType.Name;
+            TableName = tableAttr != null ?  tableAttr.Name : MappedType.Name;
 
             var props = _sqlitePlatform.ReflectionService.GetPublicInstanceProperties(MappedType);
 
