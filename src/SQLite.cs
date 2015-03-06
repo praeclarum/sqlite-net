@@ -25,6 +25,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Reflection;
@@ -182,8 +183,10 @@ namespace SQLite
 
 			DatabasePath = databasePath;
 
+      
 #if NETFX_CORE
-			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
+			//SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
+		  SQLite3.SetDirectory( /*temp directory type*/2, PCLStorage.FileSystem.Current.LocalStorage.Path);
 #endif
 
 			Sqlite3DatabaseHandle handle;
@@ -997,13 +1000,14 @@ namespace SQLite
 				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
 					if (0 <= depth && depth < _transactionDepth) {
-#if NETFX_CORE
-                        Volatile.Write (ref _transactionDepth, depth);
-#elif SILVERLIGHT
-						_transactionDepth = depth;
-#else
-                        Thread.VolatileWrite (ref _transactionDepth, depth);
-#endif
+            Volatile.Write(ref _transactionDepth, depth);
+//#if NETFX_CORE
+//                        Volatile.Write (ref _transactionDepth, depth);
+//#elif SILVERLIGHT
+//						_transactionDepth = depth;
+//#else
+                        //Thread.VolatileWrite (ref _transactionDepth, depth);
+//#endif
                         Execute (cmd + savepoint);
 						return;
 					}
@@ -1546,7 +1550,8 @@ namespace SQLite
 		public bool StoreDateTimeAsTicks { get; private set; }
 
 #if NETFX_CORE
-		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+		//static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+    static readonly string MetroStyleDataPath = PCLStorage.FileSystem.Current.LocalStorage.Path;
 #endif
 
 		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
@@ -1656,6 +1661,7 @@ namespace SQLite
 	public class TableMapping
 	{
 		public Type MappedType { get; private set; }
+    public TypeInfo MappedTypeInfo { get; private set; }
 
 		public string TableName { get; private set; }
 
@@ -1669,33 +1675,34 @@ namespace SQLite
 		Column[] _insertColumns;
 		Column[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+    public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
 			MappedType = type;
+      MappedTypeInfo = type.GetTypeInfo();
 
 #if NETFX_CORE
 			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
                 .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
 #else
-			var tableAttr = (TableAttribute)type.GetCustomAttributes (typeof (TableAttribute), true).FirstOrDefault ();
+			var tableAttr = type.GetTypeInfo().GetCustomAttribute<TableAttribute>(true);
 #endif
 
 			TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
 
-#if !NETFX_CORE
-			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
-#else
+//#if !NETFX_CORE
+//			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
+//#else
 			var props = from p in MappedType.GetRuntimeProperties()
 						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
 						select p;
-#endif
+//#endif
 			var cols = new List<Column> ();
 			foreach (var p in props) {
-#if !NETFX_CORE
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
-#else
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
-#endif
+//#if !NETFX_CORE
+	//			var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
+//#else
+				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Any();
+//#endif
 				if (p.CanWrite && !ignore) {
 					cols.Add (new Column (p, createFlags));
 				}
@@ -1946,11 +1953,11 @@ namespace SQLite
 		public static bool IsPK (MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-#if !NETFX_CORE
-			return attrs.Length > 0;
-#else
-			return attrs.Count() > 0;
-#endif
+//#if !NETFX_CORE
+//			return attrs.Length > 0;
+//#else
+			return attrs.Any();
+//#endif
 		}
 
 		public static string Collation (MemberInfo p)
@@ -1987,13 +1994,13 @@ namespace SQLite
 		public static int? MaxStringLength(PropertyInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
-#if !NETFX_CORE
-			if (attrs.Length > 0)
-				return ((MaxLengthAttribute)attrs [0]).Value;
-#else
-			if (attrs.Count() > 0)
+//#if !NETFX_CORE
+//			if (attrs.Length > 0)
+//				return ((MaxLengthAttribute)attrs [0]).Value;
+//#else
+			if (attrs.Any())
 				return ((MaxLengthAttribute)attrs.First()).Value;
-#endif
+//#endif
 
 			return null;
 		}
@@ -2001,11 +2008,11 @@ namespace SQLite
 		public static bool IsMarkedNotNull(MemberInfo p)
 		{
 			var attrs = p.GetCustomAttributes (typeof (NotNullAttribute), true);
-#if !NETFX_CORE
-			return attrs.Length > 0;
-#else
-	return attrs.Count() > 0;
-#endif
+//#if !NETFX_CORE
+//			return attrs.Length > 0;
+//#else
+	return attrs.Any();
+//#endif
 		}
 	}
 
