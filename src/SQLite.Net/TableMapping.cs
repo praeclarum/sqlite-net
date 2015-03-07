@@ -215,8 +215,6 @@ namespace SQLite.Net
                 IsAutoGuid = isAuto && ColumnType == typeof (Guid);
                 IsAutoInc = isAuto && !IsAutoGuid;
 
-                IsEnum = prop.PropertyType.GetTypeInfo().BaseType == typeof(Enum);
-
                 DefaultValue = Orm.GetDefaultValue(prop);
 
                 Indices = Orm.GetIndices(prop);
@@ -244,7 +242,6 @@ namespace SQLite.Net
             public bool IsAutoInc { get; private set; }
             public bool IsAutoGuid { get; private set; }
             public bool IsPK { get; private set; }
-            public bool IsEnum { get; private set; }
             public IEnumerable<IndexedAttribute> Indices { get; set; }
             public bool IsNullable { get; private set; }
             public int? MaxStringLength { get; private set; }
@@ -263,11 +260,7 @@ namespace SQLite.Net
                 var propType = _prop.PropertyType;
                 var typeInfo = propType.GetTypeInfo();
 
-                if (IsEnum)
-                {
-                    _prop.SetValue(obj, Enum.ToObject(propType, val), null);
-                }
-                else if (typeInfo.IsGenericType && propType.GetGenericTypeDefinition() == typeof (Nullable<>))
+                if (typeInfo.IsGenericType && propType.GetGenericTypeDefinition() == typeof (Nullable<>))
                 {
                     var typeCol = propType.GetTypeInfo().GenericTypeArguments;
                     if (typeCol.Length > 0)
@@ -284,6 +277,10 @@ namespace SQLite.Net
                             _prop.SetValue(obj, val, null);
                         }
                     }
+                }
+                else if (typeInfo.BaseType == typeof (Enum))
+                {
+                    _prop.SetValue(obj, Enum.ToObject(propType, val), null);
                 }
                 else
                 {
