@@ -67,10 +67,11 @@ namespace SQLite.Net
                     string.Join(",", (from c in cols
                         select "?").ToArray()), extra);
             }
-
-            var insertCommand = new PreparedSqlLiteInsertCommand(conn.Platform, conn);
-            insertCommand.CommandText = insertSql;
-            return insertCommand;
+            
+            return new PreparedSqlLiteInsertCommand(conn)
+            {
+                CommandText = insertSql
+            };
         }
     }
 }
