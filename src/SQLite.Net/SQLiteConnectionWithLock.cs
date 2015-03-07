@@ -31,11 +31,7 @@ namespace SQLite.Net
         private readonly object _lockPoint = new object();
 
         public SQLiteConnectionWithLock(ISQLitePlatform sqlitePlatform, SQLiteConnectionString connectionString)
-            : base(
-                sqlitePlatform, connectionString.DatabasePath, connectionString.StoreDateTimeAsTicks, connectionString.Serializer, null,
-                connectionString.Resolver)
-        {
-        }
+            : base(sqlitePlatform, connectionString.DatabasePath, connectionString.StoreDateTimeAsTicks, connectionString.Serializer, null, null, connectionString.Resolver) { }
 
         public IDisposable Lock()
         {
