@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace SQLite.Net
 {
-    public class ActiveInsertCommand
+    internal class ActiveInsertCommand
     {
         private readonly TableMapping _tableMapping;
         private PreparedSqlLiteInsertCommand _insertCommand;
