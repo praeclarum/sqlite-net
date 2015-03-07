@@ -28,6 +28,7 @@
 #endif
 
 using System;
+using System.Collections;
 using System.Diagnostics;
 #if !USE_SQLITEPCL_RAW
 using System.Runtime.InteropServices;
@@ -204,7 +205,9 @@ namespace SQLite
 			DatabasePath = databasePath;
 
 #if NETFX_CORE
-			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
+			var tempPath = Windows.Storage.ApplicationData.Current.TemporaryFolder.Path;
+			var tempPathAsBytes = GetNullTerminatedUtf8(tempPath);
+			SQLite3.SetDirectory(/*temp directory type*/2, tempPathAsBytes);
 #endif
 
 			Sqlite3DatabaseHandle handle;
@@ -1231,6 +1234,41 @@ namespace SQLite
 			return Insert (obj, "OR REPLACE", obj.GetType ());
 		}
 
+        public int InsertOrIgnore(object obj)
+        {
+            if (obj == null)
+            {
+                return 0;
+            }
+            return Insert(obj, "OR IGNORE", obj.GetType());
+        }
+
+        public int InsertOrReplaceAll(IEnumerable objects)
+        {
+            var c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (var r in objects)
+                {
+                    c += InsertOrReplace(r);
+                }
+            });
+            return c;
+        }
+
+        public int InsertOrIgnoreAll(IEnumerable objects)
+        {
+            var c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (var r in objects)
+                {
+                    c += InsertOrIgnore(r);
+                }
+            });
+            return c;
+        }
+
 		/// <summary>
 		/// Inserts the given object and retrieves its
 		/// auto incremented primary key if it has one.
@@ -1269,6 +1307,11 @@ namespace SQLite
 		{
 			return Insert (obj, "OR REPLACE", objType);
 		}
+
+        public int InsertOrIgnore(object obj, Type objType)
+        {
+            return Insert(obj, "OR IGNORE", objType);
+        }
 		
 		/// <summary>
 		/// Inserts the given object and retrieves its
@@ -3116,8 +3159,8 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
-		public static extern int SetDirectory (uint directoryType, string directoryPath);
+		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl)]
+		public static extern int SetDirectory (uint directoryType, byte[] directoryPathBytes);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_busy_timeout", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
