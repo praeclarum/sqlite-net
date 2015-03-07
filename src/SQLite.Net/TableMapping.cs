@@ -229,6 +229,7 @@ namespace SQLite.Net
                 MaxStringLength = Orm.MaxStringLength(prop);
             }
 
+
             public string Name { get; private set; }
 
             public string PropertyName
@@ -257,17 +258,18 @@ namespace SQLite.Net
             public void SetValue(object obj, object val)
             {
                 var propType = _prop.PropertyType;
+                var typeInfo = propType.GetTypeInfo();
 
-
-                if (propType.GetTypeInfo().IsGenericType && propType.GetGenericTypeDefinition() == typeof (Nullable<>))
+                if (typeInfo.IsGenericType && propType.GetGenericTypeDefinition() == typeof (Nullable<>))
                 {
                     var typeCol = propType.GetTypeInfo().GenericTypeArguments;
                     if (typeCol.Length > 0)
                     {
                         var nullableType = typeCol[0];
-                        if (nullableType.GetTypeInfo().BaseType == typeof (Enum))
+                        var baseType = nullableType.GetTypeInfo().BaseType;
+                        if (baseType == typeof (Enum))
                         {
-                            var result = val == null ? null : Enum.Parse(nullableType, val.ToString(), false);
+                            var result = Enum.ToObject(nullableType, val);
                             _prop.SetValue(obj, result, null);
                         }
                         else
@@ -275,6 +277,10 @@ namespace SQLite.Net
                             _prop.SetValue(obj, val, null);
                         }
                     }
+                }
+                else if (typeInfo.BaseType == typeof (Enum))
+                {
+                    _prop.SetValue(obj, Enum.ToObject(propType, val), null);
                 }
                 else
                 {
