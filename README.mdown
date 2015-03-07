@@ -8,6 +8,10 @@ I welcome pull requests, but keep in mind that this library is in heavy use and 
 - Backwards-compatible (don't change database defaults).
 - Well tested (please add unit tests).
 
+# Versioning
+
+This project uses semantic versioning.
+
 # API Changes
 
 As part of the cleanup there are now some API changes.
