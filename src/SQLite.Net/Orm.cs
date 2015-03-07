@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) 2012 Krueger Systems, Inc.
 // Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
 // 
@@ -150,9 +150,9 @@ namespace SQLite.Net
 
         internal static string Collation(MemberInfo p)
         {
-            foreach (var attribute in p.CustomAttributes.Where(attribute => attribute.AttributeType == typeof (CollationAttribute)))
+            foreach (var attribute in p.GetCustomAttributes<CollationAttribute>())
             {
-                return (string) attribute.ConstructorArguments[0].Value;
+                return attribute.Value;
             }
             return string.Empty;
         }
@@ -178,23 +178,19 @@ namespace SQLite.Net
 
         internal static object GetDefaultValue(PropertyInfo p)
         {
-            foreach (var attribute in p.CustomAttributes.Where(a => a.AttributeType == typeof (DefaultAttribute)))
+            foreach (var attribute in p.GetCustomAttributes<DefaultAttribute>())
             {
                 try
                 {
-                    var useProp = (bool) attribute.ConstructorArguments[0].Value;
-
-                    if (!useProp)
-                    {
-                        return Convert.ChangeType(attribute.ConstructorArguments[0].Value, p.PropertyType);
-                    }
+                    if (!attribute.UseProperty)
+                        return Convert.ChangeType(attribute.Value, p.PropertyType);
 
                     var obj = Activator.CreateInstance(p.DeclaringType);
                     return p.GetValue(obj);
                 }
                 catch (Exception exception)
                 {
-                    throw new Exception("Unable to convert " + attribute.ConstructorArguments[0].Value + " to type " + p.PropertyType, exception);
+                    throw new Exception("Unable to convert " + attribute.Value + " to type " + p.PropertyType, exception);
                 }
             }
             return null;
