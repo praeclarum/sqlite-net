@@ -318,12 +318,8 @@ namespace SQLite.Net
         /// </returns>
         public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
         {
-            TableMapping map;
-            if (!_tableMappings.TryGetValue(ty.FullName, out map))
-            {
-                map = GetMapping(ty, createFlags);
-                _tableMappings.Add(ty.FullName, map);
-            }
+            var map = GetMapping(ty, createFlags);
+
             var query = "create table if not exists \"" + map.TableName + "\"(\n";
 
             var mapColumns = map.Columns;
