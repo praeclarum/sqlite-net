@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2012 Krueger Systems, Inc.
-// Copyright (c) 2013 Øystein Krog (oystein.krog@gmail.com)
+// Copyright (c) 2013 Ã˜ystein Krog (oystein.krog@gmail.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -269,7 +269,9 @@ namespace SQLite.Net
                         var baseType = nullableType.GetTypeInfo().BaseType;
                         if (baseType == typeof (Enum))
                         {
-                            var result = Enum.ToObject(nullableType, val);
+                            var result = val;
+                            if (result != null)
+                                result = Enum.ToObject(nullableType, result);
                             _prop.SetValue(obj, result, null);
                         }
                         else
