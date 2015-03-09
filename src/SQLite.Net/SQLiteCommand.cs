@@ -56,9 +56,8 @@ namespace SQLite.Net
         {
             _conn.TraceListener.WriteLine("Executing: {0}", this);
 
-            var r = Result.OK;
             var stmt = Prepare();
-            r = _sqlitePlatform.SQLiteApi.Step(stmt);
+            var r = _sqlitePlatform.SQLiteApi.Step(stmt);
             Finalize(stmt);
             if (r == Result.Done)
             {

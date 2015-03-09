@@ -1482,7 +1482,7 @@ namespace SQLite.Net
         [PublicAPI]
         public int Update(object obj, Type objType)
         {
-            var rowsAffected = 0;
+            int rowsAffected;
             if (obj == null || objType == null)
             {
                 return 0;

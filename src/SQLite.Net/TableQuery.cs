@@ -184,7 +184,7 @@ namespace SQLite.Net
             {
                 var lambda = (LambdaExpression) orderExpr;
 
-                MemberExpression mem = null;
+                MemberExpression mem;
 
                 var unary = lambda.Body as UnaryExpression;
                 if (unary != null && unary.NodeType == ExpressionType.Convert)

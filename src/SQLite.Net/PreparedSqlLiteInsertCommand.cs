@@ -68,8 +68,6 @@ namespace SQLite.Net
         {
             Connection.TraceListener.WriteLine("Executing: {0}", CommandText);
 
-            var r = Result.OK;
-
             if (!Initialized)
             {
                 Statement = Prepare();
@@ -86,7 +84,7 @@ namespace SQLite.Net
                         Connection.StoreDateTimeAsTicks, Connection.Serializer);
                 }
             }
-            r = sqlitePlatform.SQLiteApi.Step(Statement);
+            var r = sqlitePlatform.SQLiteApi.Step(Statement);
 
             if (r == Result.Done)
             {
