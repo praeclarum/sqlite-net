@@ -32,7 +32,7 @@ namespace SQLite.Net
     /// </summary>
     public class PreparedSqlLiteInsertCommand : IDisposable
     {
-        internal static readonly IDbStatement NullStatement = default(IDbStatement);
+        private static readonly IDbStatement NullStatement = default(IDbStatement);
 
         internal PreparedSqlLiteInsertCommand(SQLiteConnection conn)
         {
