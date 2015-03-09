@@ -32,7 +32,7 @@ namespace SQLite.Net
 {
     public class SQLiteCommand
     {
-        internal static IntPtr NegativePointer = new IntPtr(-1);
+        private static readonly IntPtr NegativePointer = new IntPtr(-1);
 
         [NotNull]
         private readonly List<Binding> _bindings;
