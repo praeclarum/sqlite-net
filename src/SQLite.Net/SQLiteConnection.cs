@@ -1051,20 +1051,20 @@ namespace SQLite.Net
             DoSavePointExecute(savepoint, "release ");
         }
 
-        private void DoSavePointExecute(string savepoint, string cmd)
+        private void DoSavePointExecute(string savePoint, string cmd)
         {
             // Validate the savepoint
-            var firstLen = savepoint.IndexOf('D');
-            if (firstLen >= 2 && savepoint.Length > firstLen + 1)
+            var firstLen = savePoint.IndexOf('D');
+            if (firstLen >= 2 && savePoint.Length > firstLen + 1)
             {
                 int depth;
-                if (int.TryParse(savepoint.Substring(firstLen + 1), out depth))
+                if (int.TryParse(savePoint.Substring(firstLen + 1), out depth))
                 {
                     // TODO: Mild race here, but inescapable without locking almost everywhere.
                     if (0 <= depth && depth < _transactionDepth)
                     {
                         Platform.VolatileService.Write(ref _transactionDepth, depth);
-                        Execute(cmd + savepoint);
+                        Execute(cmd + savePoint);
                         return;
                     }
                 }
