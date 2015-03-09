@@ -312,47 +312,5 @@ namespace SQLite.Net.Tests
                 Assert.Fail("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
             }
         }
-
-        [Test]
-        public void ExecuteNonQueryWithNullThrowsException()
-        {
-            using (TestDb db = new TestDb())
-            {
-                TableMapping map;
-
-                db.CreateTable<NotNullNoPK>();
-
-                try
-                {
-                    NotNullNoPK obj = new NotNullNoPK()
-                    {
-                        AnotherRequiredStringProp = "Another required prop",
-                        RequiredIntProp = 123,
-                        RequiredStringProp = "Required string prop"
-                    };
-                    db.Insert(obj);
-
-                    map = db.GetMapping<NotNullNoPK>();
-                    map.GetInsertCommand(db, "OR REPLACE").ExecuteNonQuery(new object[] { 1, null, 123, null, null, null });
-                }
-                catch (NotNullConstraintViolationException)
-                {
-                    return;
-                }
-                catch (SQLiteException ex)
-                {
-                    if (db.Platform.SQLiteApi.LibVersionNumber() < 3007017 && ex.Result == Result.Constraint)
-                    {
-                        Assert.Inconclusive("Detailed constraint information is only available in SQLite3 version 3.7.17 and above.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Assert.Fail("Expected an exception of type NotNullConstraintViolationException to be thrown. An exception of type {0} was thrown instead.", ex.GetType().Name);
-                }
-            }
-            Assert.Fail("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
-        }
-
     }
 }
