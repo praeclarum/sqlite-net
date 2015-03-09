@@ -32,23 +32,17 @@ namespace SQLite.Net
     public class TableMapping
     {
         private readonly Column _autoPk;
-        private readonly ISQLitePlatform _sqlitePlatform;
         private Column[] _insertColumns;
-        private PreparedSqlLiteInsertCommand _insertCommand;
-        private string _insertCommandExtra;
-        private Column[] _insertOrReplaceColumns;
 
-        public TableMapping(ISQLitePlatform platformImplementation, Type type,
-            CreateFlags createFlags = CreateFlags.None)
+        public TableMapping(Type type, IEnumerable<PropertyInfo> properties, CreateFlags createFlags = CreateFlags.None)
         {
-            _sqlitePlatform = platformImplementation;
             MappedType = type;
 
             var tableAttr = type.GetTypeInfo().CustomAttributes.FirstOrDefault(data => data.AttributeType == typeof (TableAttribute));
 
             TableName = tableAttr != null ? (string) tableAttr.ConstructorArguments.FirstOrDefault().Value : MappedType.Name;
 
-            var props = _sqlitePlatform.ReflectionService.GetPublicInstanceProperties(MappedType);
+            var props = properties;
 
             var cols = new List<Column>();
             foreach (var p in props)
@@ -95,26 +89,7 @@ namespace SQLite.Net
 
         public Column[] InsertColumns
         {
-            get
-            {
-                if (_insertColumns == null)
-                {
-                    _insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray();
-                }
-                return _insertColumns;
-            }
-        }
-
-        public Column[] InsertOrReplaceColumns
-        {
-            get
-            {
-                if (_insertOrReplaceColumns == null)
-                {
-                    _insertOrReplaceColumns = Columns.ToArray();
-                }
-                return _insertOrReplaceColumns;
-            }
+            get { return _insertColumns ?? (_insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray()); }
         }
 
         public void SetAutoIncPK(object obj, long id)
@@ -135,60 +110,6 @@ namespace SQLite.Net
         {
             var exact = Columns.FirstOrDefault(c => c.Name == columnName);
             return exact;
-        }
-
-        public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
-        {
-            if (_insertCommand == null)
-            {
-                _insertCommand = CreateInsertCommand(conn, extra);
-                _insertCommandExtra = extra;
-            }
-            else if (_insertCommandExtra != extra)
-            {
-                _insertCommand.Dispose();
-                _insertCommand = CreateInsertCommand(conn, extra);
-                _insertCommandExtra = extra;
-            }
-            return _insertCommand;
-        }
-
-        private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
-        {
-            var cols = InsertColumns;
-            string insertSql;
-            if (!cols.Any() && Columns.Count() == 1 && Columns[0].IsAutoInc)
-            {
-                insertSql = string.Format("insert {1} into \"{0}\" default values", TableName, extra);
-            }
-            else
-            {
-                var replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
-
-                if (replacing)
-                {
-                    cols = InsertOrReplaceColumns;
-                }
-
-                insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
-                    string.Join(",", (from c in cols
-                        select "\"" + c.Name + "\"").ToArray()),
-                    string.Join(",", (from c in cols
-                        select "?").ToArray()), extra);
-            }
-
-            var insertCommand = new PreparedSqlLiteInsertCommand(_sqlitePlatform, conn);
-            insertCommand.CommandText = insertSql;
-            return insertCommand;
-        }
-
-        protected internal void Dispose()
-        {
-            if (_insertCommand != null)
-            {
-                _insertCommand.Dispose();
-                _insertCommand = null;
-            }
         }
 
         public class Column
@@ -229,7 +150,6 @@ namespace SQLite.Net
                 MaxStringLength = Orm.MaxStringLength(prop);
             }
 
-
             public string Name { get; private set; }
 
             public string PropertyName
@@ -252,9 +172,6 @@ namespace SQLite.Net
             /// </summary>
             /// <param name="obj"></param>
             /// <param name="val"></param>
-            /// <remarks>
-            ///     Copied from: http://code.google.com/p/sqlite-net/issues/detail?id=47
-            /// </remarks>
             public void SetValue(object obj, object val)
             {
                 var propType = _prop.PropertyType;

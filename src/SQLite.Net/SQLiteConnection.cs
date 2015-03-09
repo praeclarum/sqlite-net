@@ -51,10 +51,10 @@ namespace SQLite.Net
         private readonly Random _rand = new Random();
         private TimeSpan _busyTimeout;
         private long _elapsedMilliseconds;
-        private Dictionary<string, TableMapping> _mappings;
         private bool _open;
         private IStopwatch _sw;
-        private Dictionary<string, TableMapping> _tables;
+        private readonly IDictionary<string, TableMapping> _tableMappings;
+        private IDictionary<TableMapping, ActiveInsertCommand> _insertCommandCache; 
         private int _transactionDepth;
 
         static SQLiteConnection()
@@ -83,6 +83,11 @@ namespace SQLite.Net
         ///     Blob serializer to use for storing undefined and complex data structures. If left null
         ///     these types will thrown an exception as usual.
         /// </param>
+        /// <param name="tableMappings">
+        ///     Exisiting table mapping that the connection can use. If its null, it creates the mappings,
+        ///     if and when required. The mappings are also created when an unknown type is used for the first
+        ///     time.
+        /// </param>
         /// <param name="extraTypeMappings">
         ///     Any extra type mappings that you wish to use for overriding the default for creating
         ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
@@ -95,10 +100,11 @@ namespace SQLite.Net
             string databasePath,
             bool storeDateTimeAsTicks = false,
             IBlobSerializer serializer = null,
+            IDictionary<string, TableMapping> tableMappings = null,
             IDictionary<Type, string> extraTypeMappings = null,
             IContractResolver resolver = null)
             : this(sqlitePlatform, databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks,
-                serializer, extraTypeMappings, resolver)
+                serializer, tableMappings, extraTypeMappings, resolver)
         {
         }
 
@@ -120,6 +126,11 @@ namespace SQLite.Net
         ///     Blob serializer to use for storing undefined and complex data structures. If left null
         ///     these types will thrown an exception as usual.
         /// </param>
+        /// <param name="tableMappings">
+        ///     Exisiting table mapping that the connection can use. If its null, it creates the mappings,
+        ///     if and when required. The mappings are also created when an unknown type is used for the first
+        ///     time.
+        /// </param>
         /// <param name="extraTypeMappings">
         ///     Any extra type mappings that you wish to use for overriding the default for creating
         ///     column definitions for SQLite DDL in the class Orm (snake in Swedish).
@@ -128,13 +139,14 @@ namespace SQLite.Net
         ///     A contract resovler for resolving interfaces to concreate types during object creation
         /// </param>
         public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
-            bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null,
-            IDictionary<Type, string> extraTypeMappings = null, IContractResolver resolver = null)
+            bool storeDateTimeAsTicks = false, IBlobSerializer serializer = null, IDictionary<string, TableMapping> tableMappings = null, IDictionary<Type, string> extraTypeMappings = null, IContractResolver resolver = null)
         {
             ExtraTypeMappings = extraTypeMappings ?? new Dictionary<Type, string>();
             Serializer = serializer;
             Platform = sqlitePlatform;
             Resolver = resolver ?? ContractResolver.Current;
+
+            _tableMappings = tableMappings ?? new Dictionary<string, TableMapping>();
 
             if (string.IsNullOrEmpty(databasePath))
             {
@@ -191,7 +203,7 @@ namespace SQLite.Net
         /// </summary>
         public IEnumerable<TableMapping> TableMappings
         {
-            get { return _tables != null ? _tables.Values : Enumerable.Empty<TableMapping>(); }
+            get { return _tableMappings.Values; }
         }
 
         /// <summary>
@@ -243,16 +255,15 @@ namespace SQLite.Net
         /// </returns>
         public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
         {
-            if (_mappings == null)
-            {
-                _mappings = new Dictionary<string, TableMapping>();
-            }
             TableMapping map;
-            if (!_mappings.TryGetValue(type.FullName, out map))
-            {
-                map = new TableMapping(Platform, type, createFlags);
-                _mappings[type.FullName] = map;
-            }
+            return _tableMappings.TryGetValue(type.FullName, out map) ? map : CreateAndSetMapping(type, createFlags, _tableMappings);
+        }
+
+        private TableMapping CreateAndSetMapping(Type type, CreateFlags createFlags, IDictionary<string, TableMapping> mapTable)
+        {
+            var props = Platform.ReflectionService.GetPublicInstanceProperties(type);
+            var map = new TableMapping(type, props, createFlags);
+            mapTable[type.FullName] = map;
             return map;
         }
 
@@ -307,16 +318,8 @@ namespace SQLite.Net
         /// </returns>
         public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
         {
-            if (_tables == null)
-            {
-                _tables = new Dictionary<string, TableMapping>();
-            }
-            TableMapping map;
-            if (!_tables.TryGetValue(ty.FullName, out map))
-            {
-                map = GetMapping(ty, createFlags);
-                _tables.Add(ty.FullName, map);
-            }
+            var map = GetMapping(ty, createFlags);
+
             var query = "create table if not exists \"" + map.TableName + "\"(\n";
 
             var mapColumns = map.Columns;
@@ -1293,7 +1296,6 @@ namespace SQLite.Net
                 return 0;
             }
 
-
             var map = GetMapping(objType);
 
             if (map.PK != null && map.PK.IsAutoGuid)
@@ -1310,14 +1312,14 @@ namespace SQLite.Net
 
             var replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 
-            var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
+            var cols = replacing ? map.Columns : map.InsertColumns;
             var vals = new object[cols.Length];
             for (var i = 0; i < vals.Length; i++)
             {
                 vals[i] = cols[i].GetValue(obj);
             }
 
-            var insertCmd = map.GetInsertCommand(this, extra);
+            var insertCmd = GetInsertCommand(map, extra);
             int count;
             try
             {
@@ -1339,6 +1341,24 @@ namespace SQLite.Net
             }
 
             return count;
+        }
+
+
+        private PreparedSqlLiteInsertCommand GetInsertCommand(TableMapping map, string extra)
+        {
+            ActiveInsertCommand cmd;
+            if (_insertCommandCache == null)
+            {
+                _insertCommandCache = new Dictionary<TableMapping, ActiveInsertCommand>();
+            }
+
+            if (!_insertCommandCache.TryGetValue(map, out cmd))
+            {
+                cmd = new ActiveInsertCommand(map);
+                _insertCommandCache[map] = cmd;
+            }
+
+            return cmd.GetCommand(this, extra);
         }
 
         /// <summary>
@@ -1520,9 +1540,9 @@ namespace SQLite.Net
             {
                 try
                 {
-                    if (_mappings != null)
+                    if (_insertCommandCache != null)
                     {
-                        foreach (var sqlInsertCommand in _mappings.Values)
+                        foreach (var sqlInsertCommand in _insertCommandCache.Values)
                         {
                             sqlInsertCommand.Dispose();
                         }

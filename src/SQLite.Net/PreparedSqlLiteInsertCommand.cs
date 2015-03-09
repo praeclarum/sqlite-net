@@ -32,23 +32,26 @@ namespace SQLite.Net
     public class PreparedSqlLiteInsertCommand : IDisposable
     {
         internal static readonly IDbStatement NullStatement = default(IDbStatement);
-        private readonly ISQLitePlatform _sqlitePlatform;
 
-        internal PreparedSqlLiteInsertCommand(ISQLitePlatform platformImplementation, SQLiteConnection conn)
+        internal PreparedSqlLiteInsertCommand(SQLiteConnection conn)
         {
-            _sqlitePlatform = platformImplementation;
             Connection = conn;
         }
 
         public bool Initialized { get; set; }
-        protected SQLiteConnection Connection { get; set; }
         public string CommandText { get; set; }
+        protected SQLiteConnection Connection { get; set; }
         protected IDbStatement Statement { get; set; }
 
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        ~PreparedSqlLiteInsertCommand()
+        {
+            Dispose(false);
         }
 
         public int ExecuteNonQuery(object[] source)
@@ -63,41 +66,42 @@ namespace SQLite.Net
                 Initialized = true;
             }
 
+            var sqlitePlatform = Connection.Platform;
             //bind the values.
             if (source != null)
             {
                 for (var i = 0; i < source.Length; i++)
                 {
-                    SQLiteCommand.BindParameter(_sqlitePlatform.SQLiteApi, Statement, i + 1, source[i],
+                    SQLiteCommand.BindParameter(sqlitePlatform.SQLiteApi, Statement, i + 1, source[i],
                         Connection.StoreDateTimeAsTicks, Connection.Serializer);
                 }
             }
-            r = _sqlitePlatform.SQLiteApi.Step(Statement);
+            r = sqlitePlatform.SQLiteApi.Step(Statement);
 
             if (r == Result.Done)
             {
-                var rowsAffected = _sqlitePlatform.SQLiteApi.Changes(Connection.Handle);
-                _sqlitePlatform.SQLiteApi.Reset(Statement);
+                var rowsAffected = sqlitePlatform.SQLiteApi.Changes(Connection.Handle);
+                sqlitePlatform.SQLiteApi.Reset(Statement);
                 return rowsAffected;
             }
             if (r == Result.Error)
             {
-                var msg = _sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle);
-                _sqlitePlatform.SQLiteApi.Reset(Statement);
+                var msg = sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle);
+                sqlitePlatform.SQLiteApi.Reset(Statement);
                 throw SQLiteException.New(r, msg);
             }
-            if (r == Result.Constraint && _sqlitePlatform.SQLiteApi.ExtendedErrCode(Connection.Handle) == ExtendedResult.ConstraintNotNull)
+            if (r == Result.Constraint && sqlitePlatform.SQLiteApi.ExtendedErrCode(Connection.Handle) == ExtendedResult.ConstraintNotNull)
             {
-                _sqlitePlatform.SQLiteApi.Reset(Statement);
-                throw NotNullConstraintViolationException.New(r, _sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle));
+                sqlitePlatform.SQLiteApi.Reset(Statement);
+                throw NotNullConstraintViolationException.New(r, sqlitePlatform.SQLiteApi.Errmsg16(Connection.Handle));
             }
-            _sqlitePlatform.SQLiteApi.Reset(Statement);
+            sqlitePlatform.SQLiteApi.Reset(Statement);
             throw SQLiteException.New(r, r.ToString());
         }
 
         protected virtual IDbStatement Prepare()
         {
-            var stmt = _sqlitePlatform.SQLiteApi.Prepare2(Connection.Handle, CommandText);
+            var stmt = Connection.Platform.SQLiteApi.Prepare2(Connection.Handle, CommandText);
             return stmt;
         }
 
@@ -107,7 +111,7 @@ namespace SQLite.Net
             {
                 try
                 {
-                    _sqlitePlatform.SQLiteApi.Finalize(Statement);
+                    Connection.Platform.SQLiteApi.Finalize(Statement);
                 }
                 finally
                 {
@@ -115,11 +119,6 @@ namespace SQLite.Net
                     Connection = null;
                 }
             }
-        }
-
-        ~PreparedSqlLiteInsertCommand()
-        {
-            Dispose(false);
         }
     }
 }
