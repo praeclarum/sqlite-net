@@ -142,10 +142,14 @@ namespace SQLite.Net
         ///     A contract resovler for resolving interfaces to concreate types during object creation
         /// </param>
         [PublicAPI]
-        public SQLiteConnection(ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
+        public SQLiteConnection([JetBrains.Annotations.NotNull] ISQLitePlatform sqlitePlatform, string databasePath, SQLiteOpenFlags openFlags,
             bool storeDateTimeAsTicks = false, [CanBeNull] IBlobSerializer serializer = null, [CanBeNull] IDictionary<string, TableMapping> tableMappings = null,
             [CanBeNull] IDictionary<Type, string> extraTypeMappings = null, IContractResolver resolver = null)
         {
+            if (sqlitePlatform == null)
+            {
+                throw new ArgumentNullException("sqlitePlatform");
+            }
             ExtraTypeMappings = extraTypeMappings ?? new Dictionary<Type, string>();
             Serializer = serializer;
             Platform = sqlitePlatform;
