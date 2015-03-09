@@ -22,6 +22,7 @@
 //
 
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using SQLite.Net.Interop;
 
 namespace SQLite.Net
@@ -32,11 +33,13 @@ namespace SQLite.Net
         private readonly object _entriesLock = new object();
         private readonly ISQLitePlatform _sqlitePlatform;
 
+        [PublicAPI]
         public SQLiteConnectionPool(ISQLitePlatform sqlitePlatform)
         {
             _sqlitePlatform = sqlitePlatform;
         }
 
+        [PublicAPI]
         public SQLiteConnectionWithLock GetConnection(SQLiteConnectionString connectionString)
         {
             lock (_entriesLock)
@@ -57,6 +60,7 @@ namespace SQLite.Net
         /// <summary>
         ///     Closes all connections managed by this pool.
         /// </summary>
+        [PublicAPI]
         public void Reset()
         {
             lock (_entriesLock)
@@ -73,6 +77,7 @@ namespace SQLite.Net
         ///     Call this method when the application is suspended.
         /// </summary>
         /// <remarks>Behaviour here is to close any open connections.</remarks>
+        [PublicAPI]
         public void ApplicationSuspended()
         {
             Reset();

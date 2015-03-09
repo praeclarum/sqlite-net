@@ -25,7 +25,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using JetBrains.Annotations;
 using SQLite.Net.Attributes;
+using NotNullAttribute = SQLite.Net.Attributes.NotNullAttribute;
 
 namespace SQLite.Net
 {
@@ -167,6 +169,7 @@ namespace SQLite.Net
             return p.GetCustomAttributes<IndexedAttribute>();
         }
 
+        [CanBeNull]
         internal static int? MaxStringLength(PropertyInfo p)
         {
             foreach (var attribute in p.CustomAttributes.Where(a => a.AttributeType == typeof (MaxLengthAttribute)))
@@ -176,6 +179,7 @@ namespace SQLite.Net
             return null;
         }
 
+        [CanBeNull]
         internal static object GetDefaultValue(PropertyInfo p)
         {
             foreach (var attribute in p.GetCustomAttributes<DefaultAttribute>())

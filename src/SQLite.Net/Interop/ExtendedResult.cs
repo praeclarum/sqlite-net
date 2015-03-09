@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace SQLite.Net.Interop
 {
+    [PublicAPI]
     public enum ExtendedResult
     {
         IOErrorRead = (Result.IOError | (1 << 8)),

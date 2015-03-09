@@ -23,9 +23,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using JetBrains.Annotations;
 
 namespace SQLite.Net.Interop
 {
+    [PublicAPI]
     public interface IReflectionService
     {
         IEnumerable<PropertyInfo> GetPublicInstanceProperties(Type mappedType);

@@ -21,9 +21,11 @@
 //
 
 using System;
+using JetBrains.Annotations;
 
 namespace SQLite.Net.Interop
 {
+    [PublicAPI]
     [Flags]
     public enum SQLiteOpenFlags
     {
