@@ -63,6 +63,7 @@ namespace SQLite.Net
         {
             if (_preserveDuringLinkMagic)
             {
+                // ReSharper disable once UseObjectOrCollectionInitializer
                 var ti = new ColumnInfo();
                 ti.Name = "magic";
             }
@@ -1555,8 +1556,10 @@ namespace SQLite.Net
                 select p;
             var vals = from c in cols
                 select c.GetValue(obj);
-            var ps = new List<object>(vals);
-            ps.Add(pk.GetValue(obj));
+            var ps = new List<object>(vals)
+            {
+                pk.GetValue(obj)
+            };
             var q = string.Format("update \"{0}\" set {1} where {2} = ? ", map.TableName,
                 string.Join(",", (from c in cols
                     select "\"" + c.Name + "\" = ? ").ToArray()), pk.Name);

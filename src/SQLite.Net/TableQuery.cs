@@ -88,22 +88,20 @@ namespace SQLite.Net
         [PublicAPI]
         public TableQuery<U> Clone<U>()
         {
-            var q = new TableQuery<U>(_sqlitePlatform, Connection, Table);
-            q._where = _where;
-            q._deferred = _deferred;
-            if (_orderBys != null)
+            return new TableQuery<U>(_sqlitePlatform, Connection, Table)
             {
-                q._orderBys = new List<Ordering>(_orderBys);
-            }
-            q._limit = _limit;
-            q._offset = _offset;
-            q._joinInner = _joinInner;
-            q._joinInnerKeySelector = _joinInnerKeySelector;
-            q._joinOuter = _joinOuter;
-            q._joinOuterKeySelector = _joinOuterKeySelector;
-            q._joinSelector = _joinSelector;
-            q._selector = _selector;
-            return q;
+                _where = _where,
+                _deferred = _deferred,
+                _limit = _limit,
+                _offset = _offset,
+                _joinInner = _joinInner,
+                _joinInnerKeySelector = _joinInnerKeySelector,
+                _joinOuter = _joinOuter,
+                _joinOuterKeySelector = _joinOuterKeySelector,
+                _joinSelector = _joinSelector,
+                _selector = _selector,
+                _orderBys = _orderBys == null ? null : new List<Ordering>(_orderBys)
+            };
         }
 
         [PublicAPI]
