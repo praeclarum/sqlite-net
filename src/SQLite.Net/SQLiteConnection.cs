@@ -51,12 +51,12 @@ namespace SQLite.Net
         private static bool _preserveDuringLinkMagic;
 #pragma warning restore 649
         private readonly Random _rand = new Random();
+        private readonly IDictionary<string, TableMapping> _tableMappings;
         private TimeSpan _busyTimeout;
         private long _elapsedMilliseconds;
+        private IDictionary<TableMapping, ActiveInsertCommand> _insertCommandCache;
         private bool _open;
         private IStopwatch _sw;
-        private readonly IDictionary<string, TableMapping> _tableMappings;
-        private IDictionary<TableMapping, ActiveInsertCommand> _insertCommandCache; 
         private int _transactionDepth;
 
         static SQLiteConnection()
