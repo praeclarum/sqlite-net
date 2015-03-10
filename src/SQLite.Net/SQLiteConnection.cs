@@ -852,6 +852,7 @@ namespace SQLite.Net
         ///     The object that matches the given predicate or null
         ///     if the object is not found.
         /// </returns>
+        [PublicAPI]
         public T FindWithQuery<T>(string query, params object[] args) where T : class
         {
             return Query<T>(query, args).FirstOrDefault();
