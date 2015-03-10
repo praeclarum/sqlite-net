@@ -107,17 +107,21 @@ namespace SQLite.Net
         }
 
         [PublicAPI]
-        public TableQuery<T> Where(Expression<Func<T, bool>> predExpr)
+        public TableQuery<T> Where([NotNull] Expression<Func<T, bool>> predExpr)
         {
-            if (predExpr.NodeType == ExpressionType.Lambda)
+            if (predExpr == null)
             {
-                var lambda = (LambdaExpression) predExpr;
-                var pred = lambda.Body;
-                var q = Clone<T>();
-                q.AddWhere(pred);
-                return q;
+                throw new ArgumentNullException("predExpr");
             }
-            throw new NotSupportedException("Must be a predicate");
+            if (predExpr.NodeType != ExpressionType.Lambda)
+            {
+                throw new NotSupportedException("Must be a predicate");
+            }
+            var lambda = (LambdaExpression) predExpr;
+            var pred = lambda.Body;
+            var q = Clone<T>();
+            q.AddWhere(pred);
+            return q;
         }
 
         [PublicAPI]
@@ -201,45 +205,53 @@ namespace SQLite.Net
             return AddOrderBy(orderExpr, false);
         }
 
-        private TableQuery<T> AddOrderBy<TValue>(Expression<Func<T, TValue>> orderExpr, bool asc)
+        private TableQuery<T> AddOrderBy<TValue>([NotNull] Expression<Func<T, TValue>> orderExpr, bool asc)
         {
-            if (orderExpr.NodeType == ExpressionType.Lambda)
+            if (orderExpr == null)
             {
-                var lambda = (LambdaExpression) orderExpr;
+                throw new ArgumentNullException("orderExpr");
+            }
+            if (orderExpr.NodeType != ExpressionType.Lambda)
+            {
+                throw new NotSupportedException("Must be a predicate");
+            }
+            var lambda = (LambdaExpression) orderExpr;
 
-                MemberExpression mem;
+            MemberExpression mem;
 
-                var unary = lambda.Body as UnaryExpression;
-                if (unary != null && unary.NodeType == ExpressionType.Convert)
-                {
-                    mem = unary.Operand as MemberExpression;
-                }
-                else
-                {
-                    mem = lambda.Body as MemberExpression;
-                }
+            var unary = lambda.Body as UnaryExpression;
+            if (unary != null && unary.NodeType == ExpressionType.Convert)
+            {
+                mem = unary.Operand as MemberExpression;
+            }
+            else
+            {
+                mem = lambda.Body as MemberExpression;
+            }
 
-                if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter))
-                {
-                    var q = Clone<T>();
-                    if (q._orderBys == null)
-                    {
-                        q._orderBys = new List<Ordering>();
-                    }
-                    q._orderBys.Add(new Ordering
-                    {
-                        ColumnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name,
-                        Ascending = asc
-                    });
-                    return q;
-                }
+            if (mem == null || (mem.Expression.NodeType != ExpressionType.Parameter))
+            {
                 throw new NotSupportedException("Order By does not support: " + orderExpr);
             }
-            throw new NotSupportedException("Must be a predicate");
+            var q = Clone<T>();
+            if (q._orderBys == null)
+            {
+                q._orderBys = new List<Ordering>();
+            }
+            q._orderBys.Add(new Ordering
+            {
+                ColumnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name,
+                Ascending = asc
+            });
+            return q;
         }
 
-        private void AddWhere(Expression pred)
+        private void AddWhere([NotNull] Expression pred)
         {
+            if (pred == null)
+            {
+                throw new ArgumentNullException("pred");
+            }
             if (_limit != null || _offset != null)
             {
                 throw new NotSupportedException("Cannot call where after a skip or a take");
@@ -274,15 +286,23 @@ namespace SQLite.Net
         }
 
         [PublicAPI]
-        public TableQuery<TResult> Select<TResult>(Expression<Func<T, TResult>> selector)
+        public TableQuery<TResult> Select<TResult>([NotNull] Expression<Func<T, TResult>> selector)
         {
+            if (selector == null)
+            {
+                throw new ArgumentNullException("selector");
+            }
             var q = Clone<TResult>();
             q._selector = selector;
             return q;
         }
 
-        private SQLiteCommand GenerateCommand(string selectionList)
+        private SQLiteCommand GenerateCommand([NotNull] string selectionList)
         {
+            if (selectionList == null)
+            {
+                throw new ArgumentNullException("selectionList");
+            }
             if (_joinInner != null && _joinOuter != null)
             {
                 throw new NotSupportedException("Joins are not supported.");
@@ -315,7 +335,7 @@ namespace SQLite.Net
             return Connection.CreateCommand(cmdText, args.ToArray());
         }
 
-        private CompileResult CompileExpr(Expression expr, List<object> queryArgs)
+        private CompileResult CompileExpr([NotNull] Expression expr, List<object> queryArgs)
         {
             if (expr == null)
             {
@@ -601,8 +621,12 @@ namespace SQLite.Net
         }
 
         [PublicAPI]
-        public int Count(Expression<Func<T, bool>> predExpr)
+        public int Count([NotNull] Expression<Func<T, bool>> predExpr)
         {
+            if (predExpr == null)
+            {
+                throw new ArgumentNullException("predExpr");
+            }
             return Where(predExpr).Count();
         }
 
