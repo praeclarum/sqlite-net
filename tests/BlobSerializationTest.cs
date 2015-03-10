@@ -32,7 +32,7 @@ namespace SQLite.Net.Tests
         public class BlobDatabase : SQLiteConnection
         {
             public BlobDatabase(IBlobSerializer serializer) :
-                base(new SQLitePlatformTest(), TestPath.GetTempFileName(), false, serializer)
+                base(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase(), false, serializer)
             {
                 DropTable<ComplexOrder>();
             }

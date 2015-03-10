@@ -63,7 +63,7 @@ namespace SQLite.Net.Tests
                                              Data = i,
                                          };
 
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
             db.InsertAll(cq);
 
             TableQuery<TestObjInt> results = db.Table<TestObjInt>().Where(o => o.Data + 10 >= n);
@@ -81,7 +81,7 @@ namespace SQLite.Net.Tests
                                              Data = i,
                                          };
 
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
             db.InsertAll(cq);
 
             TableQuery<TestObjInt> results = db.Table<TestObjInt>().Where(o => o.Data - 10 >= 0);
@@ -99,7 +99,7 @@ namespace SQLite.Net.Tests
                                                 Data = i.ToString(),
                                             };
 
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
             db.InsertAll(cq);
 
             TableQuery<TestObjString> results = db.Table<TestObjString>().Where(o => o.Data + "1" == "11");

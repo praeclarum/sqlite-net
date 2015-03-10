@@ -33,7 +33,7 @@ namespace SQLite.Net.Tests
 
         public class TestDb : SQLiteConnection
         {
-            public TestDb() : base(new SQLitePlatformTest(), TestPath.GetTempFileName())
+            public TestDb() : base(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase())
             {
                 TraceListener = DebugTraceListener.Instance;
             }

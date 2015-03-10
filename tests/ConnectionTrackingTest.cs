@@ -56,7 +56,7 @@ namespace SQLite.Net.Tests
         public class TestDb : SQLiteConnection
         {
             public TestDb(ISQLitePlatform sqlitePlatform)
-                : base(sqlitePlatform, TestPath.GetTempFileName())
+                : base(sqlitePlatform, TestPath.CreateTemporaryDatabase())
             {
                 CreateTable<Product>();
                 CreateTable<OrderLine>();

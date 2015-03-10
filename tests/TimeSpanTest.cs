@@ -52,7 +52,7 @@ namespace SQLite.Net.Tests
         public async Task TestTimeSpan()
         {
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
-            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), true);
+            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.CreateTemporaryDatabase(), true);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
             await TestAsyncDateTime(db);
         }

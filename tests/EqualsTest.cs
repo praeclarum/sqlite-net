@@ -60,7 +60,7 @@ namespace SQLite.Net.Tests
                     Date = new DateTime(2013, 1, i)
                 };
 
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
             db.InsertAll(cq);
 
             TableQuery<TestObjString> results = db.Table<TestObjString>().Where(o => o.Data.Equals("10"));

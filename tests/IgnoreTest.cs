@@ -40,7 +40,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void NullableFloat()
         {
-            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.GetTempFileName());
+            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase());
             // if the Ignored property is not ignore this will cause an exception
             db.CreateTable<DummyClass>();
         }

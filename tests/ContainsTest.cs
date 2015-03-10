@@ -57,7 +57,7 @@ namespace SQLite.Net.Tests
                     Name = i.ToString()
                 };
 
-            var db = new TestDb(new SQLitePlatformTest(), TestPath.GetTempFileName());
+            var db = new TestDb(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase());
 
             db.InsertAll(cq);
 
@@ -82,7 +82,7 @@ namespace SQLite.Net.Tests
                     Name = i.ToString()
                 };
 
-            var db = new TestDb(new SQLitePlatformTest(), TestPath.GetTempFileName());
+            var db = new TestDb(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase());
 
             db.InsertAll(cq);
 

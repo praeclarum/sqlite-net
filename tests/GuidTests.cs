@@ -52,7 +52,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void AutoGuid_EmptyGuid()
         {
-            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.GetTempFileName());
+            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase());
             db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
 
             var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
@@ -82,7 +82,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void AutoGuid_HasGuid()
         {
-            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.GetTempFileName());
+            var db = new SQLiteConnection(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase());
             db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
 
             var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
@@ -110,7 +110,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void ShouldPersistAndReadGuid()
         {
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
 
             var obj1 = new TestObj
             {

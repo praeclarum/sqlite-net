@@ -94,7 +94,7 @@ namespace SQLite.Net.Tests
                 } //Null should be supported
             };
 
-            var database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
+            var database = new SQLiteConnection(_sqlite3Platform, TestPath.CreateTemporaryDatabase());
             database.CreateTable<ByteArrayClass>();
 
             //Insert all of the ByteArrayClass
@@ -129,7 +129,7 @@ namespace SQLite.Net.Tests
                 new ByteArrayClass() { bytes = null } //Null should be supported
             };
 
-            var database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
+            var database = new SQLiteConnection(_sqlite3Platform, TestPath.CreateTemporaryDatabase());
             database.CreateTable<ByteArrayClass>();
 
             byte[] criterion = new byte[] { 1, 0, 1 };
@@ -166,7 +166,7 @@ namespace SQLite.Net.Tests
                 new ByteArrayClass() { bytes = null } //Null should be supported
             };
 
-            var database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
+            var database = new SQLiteConnection(_sqlite3Platform, TestPath.CreateTemporaryDatabase());
             database.CreateTable<ByteArrayClass>();
 
             byte[] criterion = null;
@@ -205,7 +205,7 @@ namespace SQLite.Net.Tests
                 bytes = bytes
             };
 
-            var database = new SQLiteConnection(_sqlite3Platform, TestPath.GetTempFileName());
+            var database = new SQLiteConnection(_sqlite3Platform, TestPath.CreateTemporaryDatabase());
             database.CreateTable<ByteArrayClass>();
 
             //Insert the ByteArrayClass

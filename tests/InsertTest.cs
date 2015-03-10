@@ -30,7 +30,7 @@ namespace SQLite.Net.Tests
         [SetUp]
         public void Setup()
         {
-            _db = new TestDb(TestPath.GetTempFileName());
+            _db = new TestDb(TestPath.CreateTemporaryDatabase());
         }
 
         [TearDown]

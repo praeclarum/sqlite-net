@@ -45,7 +45,7 @@ namespace SQLite.Net.Tests
         public void AsyncAsTicks ()
         {
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
-            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), false);
+            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.CreateTemporaryDatabase(), false);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
             TestAsyncDateTimeOffset (db);
         }

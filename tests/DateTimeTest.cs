@@ -94,7 +94,7 @@ namespace SQLite.Net.Tests
         public async Task AsyncAsString()
         {
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
-            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), false);
+            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.CreateTemporaryDatabase(), false);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
             await TestAsyncDateTime(db, sqLiteConnectionString.StoreDateTimeAsTicks);
         }
@@ -103,7 +103,7 @@ namespace SQLite.Net.Tests
         public async Task AsyncAsTicks()
         {
             var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
-            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.GetTempFileName(), true);
+            var sqLiteConnectionString = new SQLiteConnectionString(TestPath.CreateTemporaryDatabase(), true);
             var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
             await TestAsyncDateTime(db, sqLiteConnectionString.StoreDateTimeAsTicks);
         }

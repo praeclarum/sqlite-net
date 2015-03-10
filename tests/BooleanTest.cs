@@ -63,7 +63,7 @@ namespace SQLite.Net.Tests
         public void TestBoolean()
         {
             var sqlite3Platform = new SQLitePlatformTest();
-            string tmpFile = TestPath.GetTempFileName();
+            string tmpFile = TestPath.CreateTemporaryDatabase();
             var db = new DbAcs(sqlite3Platform, tmpFile);
             db.buildTable();
             for (int i = 0; i < 10; i++)

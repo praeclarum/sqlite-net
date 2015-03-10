@@ -67,7 +67,7 @@ namespace SQLite.Net.Tests
                 CollateNoCase = "Alpha ",
             };
 
-            var db = new TestDb(new SQLitePlatformTest(), TestPath.GetTempFileName());
+            var db = new TestDb(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase());
 
             db.Insert(obj);
 
@@ -159,7 +159,7 @@ namespace SQLite.Net.Tests
                 CollateNoCase = "Alpha ",
             };
 
-            var db = new TestDbSubtype(new SQLitePlatformTest(), TestPath.GetTempFileName());
+            var db = new TestDbSubtype(new SQLitePlatformTest(), TestPath.CreateTemporaryDatabase());
 
             db.Insert(obj);
 

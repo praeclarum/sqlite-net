@@ -59,7 +59,7 @@ namespace SQLite.Net.Tests
         [Test]
         public void SelectWorks()
         {
-            using (var db = new TestDb(TestPath.GetTempFileName()))
+            using (var db = new TestDb(TestPath.CreateTemporaryDatabase()))
             {
                 db.Insert(new TestObj() {Order = 5});
                 try

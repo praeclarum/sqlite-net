@@ -59,7 +59,7 @@ namespace SQLite.Net.Tests
                                           Order = i
                                       };
             TestObj[] objs = cq.ToArray();
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
 
             int numIn = db.InsertAll(objs);
             Assert.AreEqual(numIn, n, "Num inserted must = num objects");
@@ -91,7 +91,7 @@ namespace SQLite.Net.Tests
                                           Order = i
                                       };
             TestObj[] objs = cq.ToArray();
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
 
             int numIn = db.InsertAll(objs);
             Assert.AreEqual(numIn, n, "Num inserted must = num objects");
@@ -131,7 +131,7 @@ namespace SQLite.Net.Tests
                                           Order = i
                                       };
             TestObj[] objs = cq.ToArray();
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = new TestDb(TestPath.CreateTemporaryDatabase());
 
             int numIn = db.InsertAll(objs);
             Assert.AreEqual(numIn, n, "Num inserted must = num objects");
