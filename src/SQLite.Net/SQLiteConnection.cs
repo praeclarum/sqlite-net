@@ -504,6 +504,10 @@ namespace SQLite.Net
             {
                 mx = (property.Body as MemberExpression);
             }
+            if (mx == null)
+            {
+                throw new ArgumentException("Expression is not supported", "property");
+            }
             var propertyInfo = mx.Member as PropertyInfo;
             if (propertyInfo == null)
             {
