@@ -125,7 +125,7 @@ namespace SQLite.Net.Tests
             var found = _db.Get<ComplexType>(m => m.ID == model.ID);
             var endOfPreviousSecond = value.AddMilliseconds(-value.Millisecond - 1);
             var startOfNextSecond = value.AddMilliseconds(1000 - value.Millisecond + 1);
-            Assert.That(found.DateTimeValue.InnerValue, Is.InRange(endOfPreviousSecond, startOfNextSecond));
+            Assert.That(found.DateTimeValue.InnerValue.ToUniversalTime(), Is.InRange(endOfPreviousSecond, startOfNextSecond));
         }
 
         [Test]
