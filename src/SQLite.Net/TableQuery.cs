@@ -131,25 +131,27 @@ namespace SQLite.Net
             return q;
         }
 
-        public int Delete(Expression<Func<T, bool>> predExpr)
+        [PublicAPI]
+        public int Delete([NotNull] Expression<Func<T, bool>> predExpr)
         {
-            if (predExpr.NodeType == ExpressionType.Lambda)
+            if (predExpr == null)
             {
-                var lambda = (LambdaExpression) predExpr;
-                var pred = lambda.Body;
-                var args = new List<object>();
-                var w = CompileExpr(pred, args);
-                var cmdText = "delete from \"" + Table.TableName + "\"";
-                cmdText += " where " + w.CommandText;
-                var command = Connection.CreateCommand(cmdText, args.ToArray());
-
-                var result = command.ExecuteNonQuery();
-                return result;
+                throw new ArgumentNullException("predExpr");
             }
-            else
+            if (predExpr.NodeType != ExpressionType.Lambda)
             {
                 throw new NotSupportedException("Must be a predicate");
             }
+            var lambda = (LambdaExpression) predExpr;
+            var pred = lambda.Body;
+            var args = new List<object>();
+            var w = CompileExpr(pred, args);
+            var cmdText = "delete from \"" + Table.TableName + "\"";
+            cmdText += " where " + w.CommandText;
+            var command = Connection.CreateCommand(cmdText, args.ToArray());
+
+            var result = command.ExecuteNonQuery();
+            return result;
         }
 
         [PublicAPI]
@@ -349,9 +351,11 @@ namespace SQLite.Net
             {
                 var operandExpr = ((UnaryExpression) expr).Operand;
                 var opr = CompileExpr(operandExpr, queryArgs);
-                object val = opr.Value;
+                var val = opr.Value;
                 if (val is bool)
+                {
                     val = !((bool) val);
+                }
                 return new CompileResult
                 {
                     CommandText = "NOT(" + opr.CommandText + ")",
