@@ -1578,7 +1578,7 @@ namespace SQLite.Net
                     throw NotNullConstraintViolationException.New(ex, map, obj);
                 }
 
-                throw ex;
+                throw;
             }
 
             return rowsAffected;
