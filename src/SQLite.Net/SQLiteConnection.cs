@@ -278,7 +278,7 @@ namespace SQLite.Net
         {
             var utf8Length = Encoding.UTF8.GetByteCount(s);
             var bytes = new byte[utf8Length + 1];
-            utf8Length = Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
+            Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
             return bytes;
         }
 
