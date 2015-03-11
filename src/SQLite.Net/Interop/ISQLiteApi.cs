@@ -74,21 +74,5 @@ namespace SQLite.Net.Interop
         //        string ColumnText(IDbStatement stmt, int index);
 
         byte[] ColumnByteArray(IDbStatement stmt, int index);
-
-        #region Backup
-        
-        IDbBackupHandle BackupInit(IDbHandle destHandle, string destName, IDbHandle srcHandle, string srcName);
-        
-        Result BackupStep(IDbBackupHandle handle, int pageCount);
-        
-        Result BackupFinish(IDbBackupHandle handle);
-        
-        int BackupRemaining(IDbBackupHandle handle);
-        
-        int BackupPagecount(IDbBackupHandle handle);
-        
-        int Sleep(int millis);
-        
-        #endregion
     }
 }

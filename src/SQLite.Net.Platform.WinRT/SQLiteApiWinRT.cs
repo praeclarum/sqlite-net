@@ -7,7 +7,7 @@ using Sqlite3Statement = System.IntPtr;
 
 namespace SQLite.Net.Platform.WinRT
 {
-    public class SQLiteApiWinRT : ISQLiteApi
+    public class SQLiteApiWinRT : ISQLiteApiExt
     {
         public int BindBlob(IDbStatement stmt, int index, byte[] val, int n, IntPtr free)
         {
@@ -214,6 +214,75 @@ namespace SQLite.Net.Platform.WinRT
             return (Result)SQLite3.Step(dbStatement.InternalStmt);
         }
 
+        #region Backup
+
+        public IDbBackupHandle BackupInit(IDbHandle destHandle, string destName, IDbHandle srcHandle, string srcName)
+        {
+            var internalDestDb = (DbHandle)destHandle;
+            var internalSrcDb = (DbHandle)srcHandle;
+
+            IntPtr p = SQLite3.sqlite3_backup_init(internalDestDb.InternalDbHandle,
+                                                                  destName,
+                                                                  internalSrcDb.InternalDbHandle,
+                                                                  srcName);
+
+            if (p == IntPtr.Zero)
+            {
+                return null;
+            }
+            else
+            {
+                return new DbBackupHandle(p);
+            }
+        }
+
+        public Result BackupStep(IDbBackupHandle handle, int pageCount)
+        {
+            var internalBackup = (DbBackupHandle)handle;
+            return SQLite3.sqlite3_backup_step(internalBackup.DbBackupPtr, pageCount);
+        }
+
+        public Result BackupFinish(IDbBackupHandle handle)
+        {
+            var internalBackup = (DbBackupHandle)handle;
+            return SQLite3.sqlite3_backup_finish(internalBackup.DbBackupPtr);
+        }
+
+        public int BackupRemaining(IDbBackupHandle handle)
+        {
+            var internalBackup = (DbBackupHandle)handle;
+            return SQLite3.sqlite3_backup_remaining(internalBackup.DbBackupPtr);
+        }
+
+        public int BackupPagecount(IDbBackupHandle handle)
+        {
+            var internalBackup = (DbBackupHandle)handle;
+            return SQLite3.sqlite3_backup_pagecount(internalBackup.DbBackupPtr);
+        }
+
+        public int Sleep(int millis)
+        {
+            return SQLite3.sqlite3_sleep(millis);
+        }
+
+        private struct DbBackupHandle : IDbBackupHandle
+        {
+            public DbBackupHandle(IntPtr dbBackupPtr)
+                : this()
+            {
+                DbBackupPtr = dbBackupPtr;
+            }
+
+            internal IntPtr DbBackupPtr { get; set; }
+
+            public bool Equals(IDbBackupHandle other)
+            {
+                return other is DbBackupHandle && DbBackupPtr == ((DbBackupHandle)other).DbBackupPtr;
+            }
+        }
+
+        #endregion
+
         private struct DbHandle : IDbHandle
         {
             public DbHandle(Sqlite3DatabaseHandle internalDbHandle)
@@ -376,5 +445,30 @@ namespace SQLite.Net.Platform.WinRT
 
         [DllImport("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_libversion_number();
+
+        #region Backup
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_backup_init", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr sqlite3_backup_init(IntPtr destDB,
+                                                        [MarshalAs(UnmanagedType.LPStr)] string destName,
+                                                        IntPtr srcDB,
+                                                        [MarshalAs(UnmanagedType.LPStr)] string srcName);
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_backup_step", CallingConvention = CallingConvention.Cdecl)]
+        public static extern Result sqlite3_backup_step(IntPtr backup, int pageCount);
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_backup_finish", CallingConvention = CallingConvention.Cdecl)]
+        public static extern Result sqlite3_backup_finish(IntPtr backup);
+        
+        [DllImport("sqlite3", EntryPoint = "sqlite3_backup_remaining", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int sqlite3_backup_remaining(IntPtr backup);
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_backup_pagecount", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int sqlite3_backup_pagecount(IntPtr backup);
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_sleep", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int sqlite3_sleep(int millis);
+
+        #endregion
     }
 }

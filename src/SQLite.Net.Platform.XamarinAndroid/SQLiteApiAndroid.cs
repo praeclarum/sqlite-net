@@ -4,7 +4,7 @@ using SQLite.Net.Interop;
 
 namespace SQLite.Net.Platform.XamarinAndroid
 {
-    public class SQLiteApiAndroid : ISQLiteApi
+    public class SQLiteApiAndroid : ISQLiteApiExt
     {
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zvfs)
         {

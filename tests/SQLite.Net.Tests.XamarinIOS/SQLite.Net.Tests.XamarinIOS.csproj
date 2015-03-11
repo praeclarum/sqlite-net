@@ -77,9 +77,6 @@
     <Compile Include="AppDelegate.cs" />
     <None Include="Info.plist" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="..\BackupTest.cs">
-      <Link>BackupTest.cs</Link>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <BundleResource Include="Resources\Default.png" />

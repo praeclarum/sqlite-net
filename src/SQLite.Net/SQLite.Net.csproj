@@ -81,6 +81,7 @@
     <Compile Include="Interop\ExtendedResult.cs" />
     <Compile Include="Interop\IDbHandle.cs" />
     <Compile Include="Interop\IReflectionService.cs" />
+    <Compile Include="Interop\ISQLiteApiExt.cs" />
     <Compile Include="Interop\ISQLiteApi.cs" />
     <Compile Include="Interop\ISQLitePlatform.cs" />
     <Compile Include="Interop\IStopwatch.cs" />

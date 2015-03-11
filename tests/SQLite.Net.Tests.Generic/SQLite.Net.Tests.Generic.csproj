@@ -39,9 +39,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\*.cs">
     </Compile>
-    <Compile Include="..\BackupTest.cs">
-      <Link>BackupTest.cs</Link>
-    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

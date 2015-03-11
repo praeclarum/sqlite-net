@@ -227,6 +227,7 @@
     <Compile Include="..\BackupTest.cs">
       <Link>BackupTest.cs</Link>
     </Compile>
+    <Compile Include="..\*.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>

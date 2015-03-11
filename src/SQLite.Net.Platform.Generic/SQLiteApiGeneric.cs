@@ -4,7 +4,7 @@ using SQLite.Net.Interop;
 
 namespace SQLite.Net.Platform.Generic
 {
-    public class SQLiteApiGeneric : ISQLiteApi
+    public class SQLiteApiGeneric : ISQLiteApiExt
     {
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zvfs)
         {
