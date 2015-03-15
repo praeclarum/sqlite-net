@@ -35,7 +35,7 @@ This package is compatible with the following .net platforms: Xamarin.iOS (Class
         
         <!-- Windows 8.0 -->
         <file src="SQLite.Net\SQLite.Net.dll" target="lib\Windows8\SQLite.Net.dll" />
-        <file src="SQLite.Net.Platform.WinRT\SQLite.Net.Platform.WinRT.dll" target="lib\Windows8\SQLite.Net.dll" />
+        <file src="SQLite.Net.Platform.WinRT\SQLite.Net.Platform.WinRT.dll" target="lib\Windows8\SQLite.Net.Platform.WinRT.dll" />
         
         <!-- Windows Phone 8.0 (ARM) -->
         <file src="SQLite.Net\SQLite.Net.dll" target="lib\windowsphone8\ARM\SQLite.Net.dll" />
