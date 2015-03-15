@@ -14,7 +14,7 @@ This is a fork of the original sqlite-net project, which aims to cleanup/improve
 This package is compatible with the following .net platforms: Xamarin.iOS (Classic), Xamarin.iOS (Unified), Xamarin.Android, Windows Phone 8.1, Windows Phone 8.0, Windows 8.1, Windows 8.0, Win32, Generic, PCL(net4+sl4+wp7+win8+monotouch+MonoAndroid)</description>
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
-        <tags>sqlite pcl sql database monotouch ios monodroid android win32 metro winrt</tags>
+        <tags>sqlite pcl sql database ios android windows metro winrt xamarin monotouch monodroid win32 windowsphone wp wp8 wp8.1</tags>
     </metadata>
     <files>
         <!-- Xamarin.iOS (Classic)-->

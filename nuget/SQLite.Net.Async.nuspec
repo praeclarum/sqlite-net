@@ -15,7 +15,7 @@ This package is compatible with the following .net platforms: net4+sl5+wp8+win8+
         <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.
 This package provides Async extensions to the core SQLite.Net package.</summary>
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
-        <tags>sqlite pcl sql database async monotouch ios monodroid android win32 metro winrt</tags>
+        <tags>sqlite pcl sql database ios android windows metro winrt xamarin monotouch monodroid win32 windowsphone wp wp8 wp8.1</tags>
         <dependencies>
             <dependency id="SQLite.Net-PCL" version="2.5.1"/>
         </dependencies>
