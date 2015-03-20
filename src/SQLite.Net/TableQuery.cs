@@ -44,7 +44,6 @@ namespace SQLite.Net
         private int? _limit;
         private int? _offset;
         private List<Ordering> _orderBys;
-        private Expression _selector;
         private Expression _where;
 
         private TableQuery(ISQLitePlatform platformImplementation, SQLiteConnection conn, TableMapping table)
@@ -99,7 +98,6 @@ namespace SQLite.Net
                 _joinOuter = _joinOuter,
                 _joinOuterKeySelector = _joinOuterKeySelector,
                 _joinSelector = _joinSelector,
-                _selector = _selector,
                 _orderBys = _orderBys == null ? null : new List<Ordering>(_orderBys)
             };
         }
@@ -280,18 +278,6 @@ namespace SQLite.Net
                 _joinInnerKeySelector = innerKeySelector,
                 _joinSelector = resultSelector
             };
-            return q;
-        }
-
-        [PublicAPI]
-        public TableQuery<TResult> Select<TResult>([NotNull] Expression<Func<T, TResult>> selector)
-        {
-            if (selector == null)
-            {
-                throw new ArgumentNullException("selector");
-            }
-            var q = Clone<TResult>();
-            q._selector = selector;
             return q;
         }
 
