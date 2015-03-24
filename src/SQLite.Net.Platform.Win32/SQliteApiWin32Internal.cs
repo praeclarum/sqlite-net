@@ -11,7 +11,7 @@ namespace SQLite.Net.Platform.Win32
         static SQLiteApiWin32Internal()
         {
             // load native library
-            int ptrSize = Marshal.SizeOf(typeof (IntPtr));
+            int ptrSize = IntPtr.Size;
             string relativePath = ptrSize == 8 ? @"x64\SQLite.Interop.dll" : @"x86\SQLite.Interop.dll";
             string assemblyCurrentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string assemblyInteropPath = Path.Combine(assemblyCurrentPath, relativePath);
