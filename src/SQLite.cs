@@ -2176,11 +2176,54 @@ namespace SQLite
 			// Can be overridden.
 		}
 
+#if DEBUG
+        // Wrapped in #if...#endif because the output is all Debug.WriteLine so no point
+        // in having the code if it doesn't output anything!
+        private void ExplainQueryPlan()
+        {
+            // Dervied from https://sqlite.org/eqp.html
+            var explain = String.Format("EXPLAIN QUERY PLAN {0}", CommandText);
+            Debug.WriteLine(explain);
+            var stmt = SQLite3.Prepare2(_conn.Handle, explain);
+            BindAll(stmt);
+            try
+            {
+                while (SQLite3.Step(stmt) == SQLite3.Result.Row)
+                {
+                    var colType = SQLite3.ColumnType(stmt, 0);
+                    var iSelectid = ReadCol(stmt, 0, colType, typeof(int));
+
+                    colType = SQLite3.ColumnType(stmt, 1);
+                    var iOrder = ReadCol(stmt, 1, colType, typeof(int));
+
+                    colType = SQLite3.ColumnType(stmt, 2);
+                    var iFrom = ReadCol(stmt, 2, colType, typeof(int));
+
+                    colType = SQLite3.ColumnType(stmt, 3);
+                    var zDetail = ReadCol(stmt, 3, colType, typeof(string));
+
+                    Debug.WriteLine("{0} {1} {2} {3}", iSelectid, iOrder, iFrom, zDetail);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("ExplainQueryPlan failed with {0}", ex.Message);
+            }
+            finally
+            {
+                SQLite3.Finalize(stmt);
+            }
+        }
+#endif
+
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
+#if DEBUG
 			if (_conn.Trace) {
 				Debug.WriteLine ("Executing Query: " + this);
+                ExplainQueryPlan();
 			}
+#endif
 
 			var stmt = Prepare ();
 			try
