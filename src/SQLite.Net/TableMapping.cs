@@ -39,16 +39,16 @@ namespace SQLite.Net
         {
             MappedType = type;
 
-            var tableAttr = type.GetTypeInfo().CustomAttributes.FirstOrDefault(data => data.AttributeType == typeof (TableAttribute));
+            var tableAttr = type.GetTypeInfo().CustomAttributes.FirstOrDefault(data => data.AttributeType == typeof(TableAttribute));
 
-            TableName = tableAttr != null ? (string) tableAttr.ConstructorArguments.FirstOrDefault().Value : MappedType.Name;
+            TableName = tableAttr != null ? (string)tableAttr.ConstructorArguments.FirstOrDefault().Value : MappedType.Name;
 
             var props = properties;
 
             var cols = new List<Column>();
             foreach (var p in props)
             {
-                var ignore = p.GetCustomAttributes<IgnoreAttribute>(true).Any();
+                var ignore = p.IsDefined(typeof(IgnoreAttribute), true);
 
                 if (p.CanWrite && !ignore)
                 {
@@ -150,7 +150,7 @@ namespace SQLite.Net
 
                 var isAuto = Orm.IsAutoInc(prop) ||
                              (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
-                IsAutoGuid = isAuto && ColumnType == typeof (Guid);
+                IsAutoGuid = isAuto && ColumnType == typeof(Guid);
                 IsAutoInc = isAuto && !IsAutoGuid;
 
                 DefaultValue = Orm.GetDefaultValue(prop);
@@ -161,7 +161,7 @@ namespace SQLite.Net
                     && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
                     && Name.EndsWith(Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase))
                 {
-                    Indices = new[] {new IndexedAttribute()};
+                    Indices = new[] { new IndexedAttribute() };
                 }
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
@@ -214,19 +214,16 @@ namespace SQLite.Net
                 var propType = _prop.PropertyType;
                 var typeInfo = propType.GetTypeInfo();
 
-                if (typeInfo.IsGenericType && propType.GetGenericTypeDefinition() == typeof (Nullable<>))
+                if (typeInfo.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
                 {
                     var typeCol = propType.GetTypeInfo().GenericTypeArguments;
                     if (typeCol.Length > 0)
                     {
                         var nullableType = typeCol[0];
                         var baseType = nullableType.GetTypeInfo().BaseType;
-                        if (baseType == typeof (Enum))
+                        if (baseType == typeof(Enum))
                         {
-                            var result = val;
-                            if (result != null)
-                                result = Enum.ToObject(nullableType, result);
-                            _prop.SetValue(obj, result, null);
+                            SetEnumValue(obj, nullableType, val);
                         }
                         else
                         {
@@ -234,14 +231,22 @@ namespace SQLite.Net
                         }
                     }
                 }
-                else if (typeInfo.BaseType == typeof (Enum))
+                else if (typeInfo.BaseType == typeof(Enum))
                 {
-                    _prop.SetValue(obj, Enum.ToObject(propType, val), null);
+                    SetEnumValue(obj, propType, val);
                 }
                 else
                 {
                     _prop.SetValue(obj, val, null);
                 }
+            }
+
+            private void SetEnumValue(object obj, Type type, object value)
+            {
+                var result = value;
+                if (result != null)
+                    result = Enum.ToObject(type, result);
+                _prop.SetValue(obj, result, null);
             }
 
             [PublicAPI]
