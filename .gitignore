@@ -11,3 +11,4 @@ TestResults
 *.nupkg
 /packages
 /SQLite.Net.sln.ide
+/.vs
