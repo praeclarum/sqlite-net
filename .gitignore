@@ -10,3 +10,4 @@ test-results
 TestResults
 *.nupkg
 /packages
+/SQLite.Net.sln.ide
