@@ -184,7 +184,9 @@ namespace SQLite.Net
                 try
                 {
                     if (!attribute.UseProperty)
+                    {
                         return Convert.ChangeType(attribute.Value, p.PropertyType);
+                    }
 
                     var obj = Activator.CreateInstance(p.DeclaringType);
                     return p.GetValue(obj);

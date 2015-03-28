@@ -1685,13 +1685,14 @@ namespace SQLite.Net
         }
 
         #region Backup
-        
-        public string CreateDatabaseBackup(ISQLitePlatform platform) {
+
+        public string CreateDatabaseBackup(ISQLitePlatform platform)
+        {
             ISQLiteApiExt sqliteApi = platform.SQLiteApi as ISQLiteApiExt;
 
             if (sqliteApi == null)
             {
-                return null;    
+                return null;
             }
 
             string destDBPath = this.DatabasePath + "." + DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss-fff");
@@ -1699,7 +1700,7 @@ namespace SQLite.Net
             IDbHandle destDB;
             byte[] databasePathAsBytes = GetNullTerminatedUtf8(destDBPath);
             Result r = sqliteApi.Open(databasePathAsBytes, out destDB,
-                                                (int)(SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite), IntPtr.Zero);
+                (int) (SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite), IntPtr.Zero);
 
             if (r != Result.OK)
             {
@@ -1743,11 +1744,11 @@ namespace SQLite.Net
             }
 
             // Close the database connection 
-            sqliteApi.Close(destDB);            
+            sqliteApi.Close(destDB);
 
             return destDBPath;
         }
-        
+
         #endregion
 
         ~SQLiteConnection()
