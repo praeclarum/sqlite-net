@@ -245,8 +245,10 @@ namespace SQLite.Net
             {
                 var result = value;
                 if (result != null)
+                {
                     result = Enum.ToObject(type, result);
-                _prop.SetValue(obj, result, null);
+                    _prop.SetValue(obj, result, null);
+                }
             }
 
             [PublicAPI]
