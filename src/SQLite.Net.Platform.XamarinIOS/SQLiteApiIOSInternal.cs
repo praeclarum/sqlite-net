@@ -156,5 +156,30 @@ namespace SQLite.Net.Platform.XamarinIOS
 
         [DllImport("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_libversion_number();
+
+        #region Backup
+        
+        [DllImport(DllName, EntryPoint = "sqlite3_backup_init", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr sqlite3_backup_init(IntPtr destDB,
+                                                        [MarshalAs(UnmanagedType.LPStr)] string  destName, 
+                                                        IntPtr srcDB,
+                                                        [MarshalAs(UnmanagedType.LPStr)] string srcName);
+        
+        [DllImport(DllName, EntryPoint = "sqlite3_backup_step", CallingConvention = CallingConvention.Cdecl)]
+        public static extern Result sqlite3_backup_step(IntPtr backup, int pageCount);
+        
+        [DllImport(DllName, EntryPoint = "sqlite3_backup_finish", CallingConvention = CallingConvention.Cdecl)]
+        public static extern Result sqlite3_backup_finish(IntPtr backup);
+        
+        [DllImport(DllName, EntryPoint = "sqlite3_backup_remaining", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int sqlite3_backup_remaining(IntPtr backup);
+        
+        [DllImport(DllName, EntryPoint = "sqlite3_backup_pagecount", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int sqlite3_backup_pagecount(IntPtr backup);
+        
+        [DllImport(DllName, EntryPoint = "sqlite3_sleep", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int sqlite3_sleep(int millis);
+        
+        #endregion
     }
 }

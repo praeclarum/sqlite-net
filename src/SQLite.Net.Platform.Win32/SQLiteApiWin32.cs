@@ -4,7 +4,7 @@ using SQLite.Net.Interop;
 
 namespace SQLite.Net.Platform.Win32
 {
-    public class SQLiteApiWin32 : ISQLiteApi
+    public class SQLiteApiWin32 : ISQLiteApiExt
     {
         public Result Open(byte[] filename, out IDbHandle db, int flags, IntPtr zvfs)
         {
@@ -208,7 +208,63 @@ namespace SQLite.Net.Platform.Win32
             return SQLiteApiWin32Internal.ColumnByteArray(internalStmt.StmtPtr, index);
         }
 
-        private struct DbHandle : IDbHandle
+        #region Backup
+        
+        public IDbBackupHandle BackupInit(IDbHandle destHandle, string destName, IDbHandle srcHandle, string srcName) {
+        	var internalDestDb = (DbHandle)destHandle;
+        	var internalSrcDb = (DbHandle)srcHandle;
+        
+        	IntPtr p = SQLiteApiWin32Internal.sqlite3_backup_init(internalDestDb.DbPtr, 
+        	                                                      destName, 
+        	                                                      internalSrcDb.DbPtr, 
+        	                                                      srcName);
+        
+        	if(p == IntPtr.Zero) {
+        		return null;
+        	} else {
+        		return new DbBackupHandle(p);
+        	}
+        }
+        
+        public Result BackupStep(IDbBackupHandle handle, int pageCount) {
+        	var internalBackup = (DbBackupHandle)handle;
+        	return SQLiteApiWin32Internal.sqlite3_backup_step(internalBackup.DbBackupPtr, pageCount);
+        }
+        
+        public Result BackupFinish(IDbBackupHandle handle) {
+        	var internalBackup = (DbBackupHandle)handle;
+        	return SQLiteApiWin32Internal.sqlite3_backup_finish(internalBackup.DbBackupPtr);
+        }
+        
+        public int BackupRemaining(IDbBackupHandle handle) {
+        	var internalBackup = (DbBackupHandle)handle;
+        	return SQLiteApiWin32Internal.sqlite3_backup_remaining(internalBackup.DbBackupPtr);
+        }
+        
+        public int BackupPagecount(IDbBackupHandle handle) {
+        	var internalBackup = (DbBackupHandle)handle;
+        	return SQLiteApiWin32Internal.sqlite3_backup_pagecount(internalBackup.DbBackupPtr);
+        }
+        
+        public int Sleep(int millis) {
+        	return SQLiteApiWin32Internal.sqlite3_sleep(millis);
+        }
+        
+        private struct DbBackupHandle : IDbBackupHandle {
+        	public DbBackupHandle(IntPtr dbBackupPtr) : this() {
+        		DbBackupPtr = dbBackupPtr;
+        	}
+        
+        	internal IntPtr DbBackupPtr { get; set; }
+        
+        	public bool Equals(IDbBackupHandle other) {
+        		return other is DbBackupHandle && DbBackupPtr == ((DbBackupHandle)other).DbBackupPtr;
+        	}
+        }
+        
+        #endregion
+
+		private struct DbHandle : IDbHandle
         {
             public DbHandle(IntPtr dbPtr) : this()
             {

@@ -1684,6 +1684,73 @@ namespace SQLite.Net
             return Execute(query);
         }
 
+        #region Backup
+
+        public string CreateDatabaseBackup(ISQLitePlatform platform)
+        {
+            ISQLiteApiExt sqliteApi = platform.SQLiteApi as ISQLiteApiExt;
+
+            if (sqliteApi == null)
+            {
+                return null;
+            }
+
+            string destDBPath = this.DatabasePath + "." + DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss-fff");
+
+            IDbHandle destDB;
+            byte[] databasePathAsBytes = GetNullTerminatedUtf8(destDBPath);
+            Result r = sqliteApi.Open(databasePathAsBytes, out destDB,
+                (int) (SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite), IntPtr.Zero);
+
+            if (r != Result.OK)
+            {
+                throw SQLiteException.New(r, String.Format("Could not open backup database file: {0} ({1})", destDBPath, r));
+            }
+
+            /* Open the backup object used to accomplish the transfer */
+            IDbBackupHandle bHandle = sqliteApi.BackupInit(destDB, "main", this.Handle, "main");
+
+            if (bHandle == null)
+            {
+                // Close the database connection 
+                sqliteApi.Close(destDB);
+
+                throw SQLiteException.New(r, String.Format("Could not initiate backup process: {0}", destDBPath));
+            }
+
+            /* Each iteration of this loop copies 5 database pages from database
+            ** pDb to the backup database. If the return value of backup_step()
+            ** indicates that there are still further pages to copy, sleep for
+            ** 250 ms before repeating. */
+            do
+            {
+                r = sqliteApi.BackupStep(bHandle, 5);
+
+                if (r == Result.OK || r == Result.Busy || r == Result.Locked)
+                {
+                    sqliteApi.Sleep(250);
+                }
+            } while (r == Result.OK || r == Result.Busy || r == Result.Locked);
+
+            /* Release resources allocated by backup_init(). */
+            r = sqliteApi.BackupFinish(bHandle);
+
+            if (r != Result.OK)
+            {
+                // Close the database connection 
+                sqliteApi.Close(destDB);
+
+                throw SQLiteException.New(r, String.Format("Could not finish backup process: {0} ({1})", destDBPath, r));
+            }
+
+            // Close the database connection 
+            sqliteApi.Close(destDB);
+
+            return destDBPath;
+        }
+
+        #endregion
+
         ~SQLiteConnection()
         {
             Dispose(false);

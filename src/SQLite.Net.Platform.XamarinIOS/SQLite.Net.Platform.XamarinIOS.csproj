@@ -46,16 +46,16 @@
     <Compile Include="VolatileServiceIOS.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SQLite.Net\SQLite.Net.csproj">
-      <Project>{ABF3D656-3D1C-45D1-B6FD-41B088E5A533}</Project>
-      <Name>SQLite.Net</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="monotouch" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLite.Net\SQLite.Net.csproj">
+      <Project>{4971d437-0694-4297-a8cc-146ce08c3bd9}</Project>
+      <Name>SQLite.Net</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
 </Project>
