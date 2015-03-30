@@ -9,6 +9,11 @@ namespace SQLite.Net.Platform.WinRT
 {
     public class SQLiteApiWinRT : ISQLiteApiExt
     {
+        public SQLiteApiWinRT()
+        {
+            SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
+        }
+
         public int BindBlob(IDbStatement stmt, int index, byte[] val, int n, IntPtr free)
         {
             var dbStatement = (DbStatement)stmt;
