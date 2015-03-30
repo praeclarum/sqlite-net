@@ -17,7 +17,13 @@
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database ios android windows metro winrt xamarin monotouch monodroid win32 windowsphone wp wp8 wp8.1</tags>
         <dependencies>
+            <group>
             <dependency id="SQLite.Net-PCL" version="3.0.0"/>
+            </group>
+            <group targetFramework="MonoAndroid">
+                <!-- Workaround for compile error -->
+                <dependency id="JetBrains.Annotations" version="9.1.1"/>
+            </group>
         </dependencies>
     </metadata>
     <files>
