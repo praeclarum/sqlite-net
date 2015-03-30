@@ -78,7 +78,7 @@ namespace SQLite.Net
         /// </param>
         /// <param name="storeDateTimeAsTicks">
         ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-        ///     absolutely do want to store them as Ticks in all new projects. The default of false is
+        ///     absolutely do want to store them as Ticks in all new projects. The option to set false is
         ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
         ///     down sides, when setting storeDateTimeAsTicks = true.
         /// </param>
@@ -122,7 +122,7 @@ namespace SQLite.Net
         /// <param name="openFlags"></param>
         /// <param name="storeDateTimeAsTicks">
         ///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-        ///     absolutely do want to store them as Ticks in all new projects. The default of false is
+        ///     absolutely do want to store them as Ticks in all new projects. The option to set false is
         ///     only here for backwards compatibility. There is a *significant* speed advantage, with no
         ///     down sides, when setting storeDateTimeAsTicks = true.
         /// </param>
