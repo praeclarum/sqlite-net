@@ -1478,7 +1478,7 @@ namespace SQLite
 			var q = string.Format ("update \"{0}\" set {1} where {2} ", 
 				map.TableName, 
 				string.Join (",", (from c in cols select "\"" + c.Name + "\" = ? ").ToArray ()), 
-				string.Join(" and ", pk.Select(c => String.Format(" {0} = ? ")).ToArray()));
+				string.Join(" and ", pk.Select(c => String.Format(" \"{0}\" = ? ", c.Name)).ToArray()));
 
 			try {
 				rowsAffected = Execute (q, ps.ToArray ());
