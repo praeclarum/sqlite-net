@@ -864,7 +864,7 @@ namespace SQLite
 		/// The object with the given primary key or null
 		/// if the object is not found.
 		/// </returns>
-		public T Find<T> (object pk) where T : new ()
+		public T Find<T> (params object[] pk) where T : new ()
 		{
 			var map = GetMapping (typeof (T));
 			return Query<T> (map.GetByPrimaryKeySql, pk).FirstOrDefault ();
