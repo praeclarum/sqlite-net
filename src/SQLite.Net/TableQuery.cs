@@ -142,8 +142,20 @@ namespace SQLite.Net
             {
                 throw new NotSupportedException("Must be a predicate");
             }
+            if (_limit != null)
+            {
+                throw new NotSupportedException("Cannot delete if a limit has been specified");
+            }
+            if (_offset != null)
+            {
+                throw new NotSupportedException("Cannot delete if an offset has been specified");
+            }
             var lambda = (LambdaExpression) predExpr;
             var pred = lambda.Body;
+            if (_where != null)
+            {
+                pred = Expression.AndAlso(pred, _where);
+            }
             var args = new List<object>();
             var w = CompileExpr(pred, args);
             var cmdText = "delete from \"" + Table.TableName + "\"";
