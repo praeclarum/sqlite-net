@@ -144,6 +144,8 @@ namespace SQLite.Net
             }
             if (_limit != null)
             {
+                //SQLite provides a limit to deletions so this would be possible to implement in the future
+                //You would need to take care that the correct order was being applied.
                 throw new NotSupportedException("Cannot delete if a limit has been specified");
             }
             if (_offset != null)
