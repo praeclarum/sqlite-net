@@ -552,7 +552,7 @@ namespace SQLite.Net
                                             expression.NodeType);
         }
 
-        private string GetSqlName(Expression expr)
+        private string GetSqlName(BinaryExpression expr)
         {
             var n = expr.NodeType;
             if (n == ExpressionType.GreaterThan)
@@ -595,6 +595,20 @@ namespace SQLite.Net
             {
                 return "!=";
             }
+            if (n == ExpressionType.Add)
+            {
+                if (expr.Left.Type == typeof(string))
+                {
+                    return "||";
+                }
+                return "+";
+
+            }
+            if (n == ExpressionType.Subtract)
+            {
+                return "-";
+            }
+
             throw new NotSupportedException("Cannot get SQL for: " + n);
         }
 
