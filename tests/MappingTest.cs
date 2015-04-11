@@ -63,5 +63,34 @@ namespace SQLite.Net.Tests
             Assert.AreEqual(69, ordered[0].Bar);
             Assert.AreEqual(42, ordered[1].Bar);
         }
+
+        private class PluralisedTableAttribute : TableAttribute
+        {
+            public PluralisedTableAttribute(string name) : base(name + "s")
+            {
+            }
+        }
+
+        [PluralisedTable("Cat")]
+        public class Cat
+        {
+           public string Breed { get; set; }
+        }
+
+        [Test]
+        public void CanUseSubtypeOfTableAttribute()
+        {
+            var db = new TestDb();
+            db.CreateTable<Cat>();
+
+            db.Insert(new Cat()
+            {
+                Breed = "Siamese"
+            });
+
+            int numCats = db.ExecuteScalar<int>("select count(*) from Cats");
+
+            Assert.That(numCats,Is.EqualTo(1), "The resulting num cats should be 1.");
+        }
     }
 }
