@@ -74,6 +74,30 @@ namespace SQLite.Net.Tests
         }
 
         [Test]
+        public void DeleteWithWhereAndPredicate()
+        {
+            var db = CreateDb();
+            var testString = "TestData";
+            var first = db.Insert(new TestTable
+            {
+                Datum = 3,
+                Test = testString
+
+            });
+            var second = db.Insert(new TestTable
+            {
+                Datum = 4,
+                Test = testString
+            });
+
+            //Should only delete first
+            var r = db.Table<TestTable>().Where(t => t.Datum == 3).Delete(t => t.Test == testString);
+
+            Assert.AreEqual(1, r);
+            Assert.AreEqual(Count + 1, db.Table<TestTable>().Count());
+        }
+
+        [Test]
         public void DeleteEntityOne()
         {
             var db = CreateDb();
