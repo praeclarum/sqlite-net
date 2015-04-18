@@ -2735,8 +2735,18 @@ namespace SQLite
 				throw new NotSupportedException ("Expression is NULL");
 			} else if (expr is BinaryExpression) {
 				var bin = (BinaryExpression)expr;
-				
-				var leftr = CompileExpr (bin.Left, queryArgs);
+
+                // VB turns 'x=="foo"' into 'CompareString(x,"foo",true/false)==0', so we need to unwrap it
+                // http://blogs.msdn.com/b/vbteam/archive/2007/09/18/vb-expression-trees-string-comparisons.aspx
+                if (bin.Left.NodeType == ExpressionType.Call) { 
+                    var call = (MethodCallExpression)bin.Left;
+                    if (call.Method.DeclaringType.FullName == "Microsoft.VisualBasic.CompilerServices.Operators"
+                        && call.Method.Name == "CompareString")
+                        bin = Expression.MakeBinary(bin.NodeType, call.Arguments[0], call.Arguments[1]);
+                }
+
+
+                var leftr = CompileExpr (bin.Left, queryArgs);
 				var rightr = CompileExpr (bin.Right, queryArgs);
 
 				//If either side is a parameter and is null, then handle the other side specially (for "is null"/"is not null")
