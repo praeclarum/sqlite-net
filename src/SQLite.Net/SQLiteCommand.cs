@@ -479,7 +479,7 @@ namespace SQLite.Net
                 DateTime value;
                 if (_conn.StoreDateTimeAsTicks)
                 {
-                    value = new DateTime(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index));
+                    value = new DateTime(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index), DateTimeKind.Utc);
                 }
                 else
                 {
