@@ -119,13 +119,20 @@ namespace SQLite.Net.Tests
         [Test]
         public void SupportsSerializableDateTime()
         {
-            DateTime value = DateTime.UtcNow;
-            var model = new ComplexType { DateTimeValue = new SerializableDateTime(value) };
+            DateTime value1 = DateTime.UtcNow;
+            DateTime value2 = DateTime.Now;
+            var model = new ComplexType
+            {
+                DateTimeValue = new SerializableDateTime(value1),
+                DateTimeValue2 = new SerializableDateTime(value2)
+            };
             _db.Insert(model);
-            var found = _db.Get<ComplexType>(m => m.ID == model.ID);
-            var endOfPreviousSecond = value.AddMilliseconds(-value.Millisecond - 1);
-            var startOfNextSecond = value.AddMilliseconds(1000 - value.Millisecond + 1);
-            Assert.That(found.DateTimeValue.InnerValue.ToUniversalTime(), Is.InRange(endOfPreviousSecond, startOfNextSecond));
+            ComplexType found = _db.Get<ComplexType>(m => m.ID == model.ID);
+            Assert.That(found.DateTimeValue.InnerValue.ToUniversalTime(), Is.EqualTo(value1.ToUniversalTime()));
+            Assert.That(found.DateTimeValue2.InnerValue.ToUniversalTime(), Is.EqualTo(value2.ToUniversalTime()));
+
+            Assert.That(found.DateTimeValue.InnerValue.ToLocalTime(), Is.EqualTo(value1.ToLocalTime()));
+            Assert.That(found.DateTimeValue2.InnerValue.ToLocalTime(), Is.EqualTo(value2.ToLocalTime()));
         }
 
         [Test]
@@ -164,6 +171,7 @@ namespace SQLite.Net.Tests
             public SerializableDecimal DecimalValue { get; set; }
             public SerializableTimeSpan TimeSpanValue { get; set; }
             public SerializableDateTime DateTimeValue { get; set; }
+            public SerializableDateTime DateTimeValue2 { get; set; }
             public SerializableByteArray ByteArrayValue { get; set; }
             public SerializableGuid GuidValue { get; set; }
         }

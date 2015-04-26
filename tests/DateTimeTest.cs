@@ -30,7 +30,8 @@ namespace SQLite.Net.Tests
             public int Id { get; set; }
 
             public string Name { get; set; }
-            public DateTime ModifiedTime { get; set; }
+            public DateTime Time1 { get; set; }
+            public DateTime Time2 { get; set; }
         }
 
 
@@ -38,42 +39,39 @@ namespace SQLite.Net.Tests
         {
             await db.CreateTableAsync<TestObj>();
 
-            TestObj o, o2;
-
-            //
-            // Ticks
-            //
-            o = new TestObj
+            var org = new TestObj
             {
-                ModifiedTime = DateTime.UtcNow,
+                Time1 = DateTime.UtcNow,
+                Time2 = DateTime.Now,
             };
-            await db.InsertAsync(o);
-            o2 = await db.GetAsync<TestObj>(o.Id);
-            Assert.AreEqual(o.ModifiedTime, o2.ModifiedTime.ToUniversalTime());
+            await db.InsertAsync(org);
+            var fromDb = await db.GetAsync<TestObj>(org.Id);
+            Assert.AreEqual(fromDb.Time1.ToUniversalTime(), org.Time1.ToUniversalTime());
+            Assert.AreEqual(fromDb.Time2.ToUniversalTime(), org.Time2.ToUniversalTime());
 
-            var expectedTimeZone = storeDateTimeAsTicks ? DateTimeKind.Utc : DateTimeKind.Local;
-            Assert.AreEqual(o2.ModifiedTime.Kind, expectedTimeZone);
+            Assert.AreEqual(fromDb.Time1.ToLocalTime(), org.Time1.ToLocalTime());
+            Assert.AreEqual(fromDb.Time2.ToLocalTime(), org.Time2.ToLocalTime());
         }
 
         private void TestDateTime(TestDb db)
         {
             db.CreateTable<TestObj>();
 
-            TestObj o, o2;
-
             //
             // Ticks
             //
-            o = new TestObj
+            var org = new TestObj
             {
-                ModifiedTime = DateTime.UtcNow,
+                Time1 = DateTime.UtcNow,
+                Time2 = DateTime.Now,
             };
-            db.Insert(o);
-            o2 = db.Get<TestObj>(o.Id);
-            Assert.AreEqual(o.ModifiedTime, o2.ModifiedTime.ToUniversalTime());
+            db.Insert(org);
+            var fromDb = db.Get<TestObj>(org.Id);
+            Assert.AreEqual(fromDb.Time1.ToUniversalTime(), org.Time1.ToUniversalTime());
+            Assert.AreEqual(fromDb.Time2.ToUniversalTime(), org.Time2.ToUniversalTime());
 
-            var expectedTimeZone = db.StoreDateTimeAsTicks ? DateTimeKind.Utc : DateTimeKind.Local;
-            Assert.AreEqual(o2.ModifiedTime.Kind, expectedTimeZone);
+            Assert.AreEqual(fromDb.Time1.ToLocalTime(), org.Time1.ToLocalTime());
+            Assert.AreEqual(fromDb.Time2.ToLocalTime(), org.Time2.ToLocalTime());
         }
 
         [Test]
