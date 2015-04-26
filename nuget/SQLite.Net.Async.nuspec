@@ -18,7 +18,6 @@
         <tags>sqlite pcl sql database ios android windows metro winrt xamarin monotouch monodroid win32 windowsphone wp wp8 wp8.1</tags>
         <dependencies>
             <dependency id="SQLite.Net-PCL" version="3.0.4-beta"/>
-            <dependency id="JetBrains.Annotations" version="9.1.1"/>
         </dependencies>
     </metadata>
     <files>
