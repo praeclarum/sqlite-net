@@ -32,7 +32,7 @@ namespace SQLite.Net
         private readonly object _lockPoint = new object();
 
         [PublicAPI]
-        public SQLiteConnectionWithLock(ISQLitePlatform sqlitePlatform, SQLiteConnectionString connectionString)
+        public SQLiteConnectionWithLock([NotNull] ISQLitePlatform sqlitePlatform, [NotNull] SQLiteConnectionString connectionString)
             : base(sqlitePlatform, connectionString.DatabasePath, connectionString.StoreDateTimeAsTicks, connectionString.Serializer, null, null, connectionString.Resolver) { }
 
         [PublicAPI]
@@ -45,7 +45,7 @@ namespace SQLite.Net
         {
             private readonly object _lockPoint;
 
-            public LockWrapper(object lockPoint)
+            public LockWrapper([NotNull] object lockPoint)
             {
                 _lockPoint = lockPoint;
                 Monitor.Enter(_lockPoint);
