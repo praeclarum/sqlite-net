@@ -16,6 +16,9 @@
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database ios android windows metro winrt xamarin monotouch monodroid win32 windowsphone wp wp8 wp8.1</tags>
         <dependencies>
+            <group targetFramework="wp8">
+                <dependency id="sqlite-net-wp8" version="3.8.5"/>
+            </group>
         </dependencies>
     </metadata>
     <files>
