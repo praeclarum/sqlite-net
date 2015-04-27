@@ -25,6 +25,11 @@ namespace SQLite.Net.Platform.XamarinAndroid
             return SQLiteApiAndroidInternal.sqlite3_libversion_number();
         }
 
+        public string SourceID()
+        {
+			return Marshal.PtrToStringAuto(SQLiteApiAndroidInternal.sqlite3_sourceid());            
+        }                
+
         public Result EnableLoadExtension(IDbHandle db, int onoff)
         {
             var internalDbHandle = (DbHandle) db;
