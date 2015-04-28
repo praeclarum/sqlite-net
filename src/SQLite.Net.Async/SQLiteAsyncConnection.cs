@@ -142,12 +142,18 @@ namespace SQLite.Net.Async
         public Task<int> DropTableAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
             where T : class
         {
+            return DropTableAsync(typeof (T), cancellationToken);
+        }
+
+        [PublicAPI]
+        public Task<int> DropTableAsync(Type t, CancellationToken cancellationToken = default (CancellationToken))
+        {
             return Task.Factory.StartNew(() =>
             {
                 var conn = GetConnection();
                 using (conn.Lock())
                 {
-                    return conn.DropTable<T>();
+                    return conn.DropTable(t);
                 }
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
@@ -223,12 +229,18 @@ namespace SQLite.Net.Async
         [PublicAPI]
         public Task<int> DeleteAllAsync<T>(CancellationToken cancellationToken = default (CancellationToken))
         {
+            return DeleteAllAsync(typeof(T), cancellationToken);
+        }
+
+        [PublicAPI]
+        public Task<int> DeleteAllAsync(Type t, CancellationToken cancellationToken = default (CancellationToken))
+        {
             return Task.Factory.StartNew(() =>
             {
                 var conn = GetConnection();
                 using (conn.Lock())
                 {
-                    return conn.DeleteAll<T>();
+                    return conn.DeleteAll(t);
                 }
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
