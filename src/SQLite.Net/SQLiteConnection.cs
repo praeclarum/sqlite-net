@@ -324,7 +324,16 @@ namespace SQLite.Net
         [PublicAPI]
         public int DropTable<T>()
         {
-            var map = GetMapping(typeof (T));
+            return DropTable(typeof (T));
+        }
+
+        /// <summary>
+        ///     Executes a "drop table" on the database.  This is non-recoverable.
+        /// </summary>
+        [PublicAPI]
+        public int DropTable(Type t)
+        {
+            var map = GetMapping(t);
 
             var query = string.Format("drop table if exists \"{0}\"", map.TableName);
 
