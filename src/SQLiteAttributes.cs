@@ -6,12 +6,6 @@ namespace SQLite
     [AttributeUsage(AttributeTargets.Property)]
     public class EncryptAttribute : Attribute
     {
-        public string Name { get; set; }
-
-        public EncryptAttribute(string name)
-        {
-            Name = name;
-        }
     }
 
     

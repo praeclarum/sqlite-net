@@ -62,7 +62,14 @@ namespace SQLite.Tests
 			[PrimaryKey]
 			public int Id { get; set; }
 		}
+        public class EncryptedObj
+        {
+            [AutoIncrement, PrimaryKey]
+            public int Id { get; set; }
+            [Encrypt]
+            public String Text { get; set; }
 
+        }
         public class TestDb : SQLiteConnection
         {
             public TestDb(String path)
@@ -72,6 +79,7 @@ namespace SQLite.Tests
                 CreateTable<TestObj2>();
                 CreateTable<OneColumnObj>();
 				CreateTable<UniqueObj>();
+                CreateTable<EncryptedObj>();
             }
         }
 		
@@ -259,5 +267,24 @@ namespace SQLite.Tests
 			Assert.AreEqual (20, r.Count);
 			Assert.AreEqual ("Foo", r[4].Text);
 		}
+
+        [Test]
+        public void InsertWithEncryption()
+        {
+            var obj1 = new EncryptedObj() { Text = "Sensitive Data" };
+            _db.Insert(obj1);
+
+            var result = _db.Query<EncryptedObj>("select * from EncryptedObj").ToList();
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(result[0].Text, obj1.Text);
+
+            var result1 = _db.Get<EncryptedObj>(result[0].Id);
+            Assert.AreEqual(result1.Text, obj1.Text);
+
+            var result2 = _db.Table<EncryptedObj>().First();
+            Assert.AreEqual(result2.Text, obj1.Text);
+
+
+        }
     }
 }
