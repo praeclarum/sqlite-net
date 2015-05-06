@@ -503,6 +503,7 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
         {
+            // TODO: Should not index encrypted columns
             MemberExpression mx;
             if (property.Body.NodeType == ExpressionType.Convert)
             {
@@ -1652,97 +1653,6 @@ namespace SQLite
 		}
 	}
 
-    [AttributeUsage (AttributeTargets.Class)]
-	public class TableAttribute : Attribute
-	{
-		public string Name { get; set; }
-
-		public TableAttribute (string name)
-		{
-			Name = name;
-		}
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class ColumnAttribute : Attribute
-	{
-		public string Name { get; set; }
-
-		public ColumnAttribute (string name)
-		{
-			Name = name;
-		}
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class PrimaryKeyAttribute : Attribute
-	{
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class AutoIncrementAttribute : Attribute
-	{
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class IndexedAttribute : Attribute
-	{
-		public string Name { get; set; }
-		public int Order { get; set; }
-		public virtual bool Unique { get; set; }
-		
-		public IndexedAttribute()
-		{
-		}
-		
-		public IndexedAttribute(string name, int order)
-		{
-			Name = name;
-			Order = order;
-		}
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class IgnoreAttribute : Attribute
-	{
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class UniqueAttribute : IndexedAttribute
-	{
-		public override bool Unique {
-			get { return true; }
-			set { /* throw?  */ }
-		}
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class MaxLengthAttribute : Attribute
-	{
-		public int Value { get; private set; }
-
-		public MaxLengthAttribute (int length)
-		{
-			Value = length;
-		}
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class CollationAttribute: Attribute
-	{
-		public string Value { get; private set; }
-
-		public CollationAttribute (string collation)
-		{
-			Value = collation;
-		}
-	}
-
-	[AttributeUsage (AttributeTargets.Property)]
-	public class NotNullAttribute : Attribute
-	{
-	}
-
 	public class TableMapping
 	{
 		public Type MappedType { get; private set; }
@@ -1962,12 +1872,35 @@ namespace SQLite
 
 			public void SetValue (object obj, object val)
 			{
-				_prop.SetValue (obj, val, null);
+                // TODO: If encrypted, decrypt on the way in
+                if(Orm.IsEncrypted(_prop))
+                {
+                    var valAsString = val.ToString();
+                    valAsString = valAsString.Substring(1);
+                    _prop.SetValue(obj, valAsString, null);
+
+                }
+                else
+                {
+                    _prop.SetValue(obj, val, null);
+                }
 			}
 
 			public object GetValue (object obj)
 			{
-				return _prop.GetValue (obj, null);
+                // TODO: Encrypt
+                if(Orm.IsEncrypted(_prop))
+                {
+                    var valueAsString = "E" + _prop.GetValue(obj).ToString();
+
+                    return valueAsString;
+
+                } 
+                else
+                {
+                    return _prop.GetValue(obj, null);
+
+                }
 			}
 		}
 	}
@@ -2000,6 +1933,7 @@ namespace SQLite
 
 		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
+            // TODO: Encrypted column should be ??? type
 			var clrType = p.ColumnType;
             if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32) || clrType == typeof(UInt32) || clrType == typeof(Int64))
             {
@@ -2068,6 +2002,15 @@ namespace SQLite
 			return attrs.Count() > 0;
 #endif
 		}
+        public static bool IsEncrypted(MemberInfo p)
+        {
+            var attrs = p.GetCustomAttributes(typeof(EncryptAttribute), true);
+#if !USE_NEW_REFLECTION_API
+			return attrs.Length > 0;
+#else
+            return attrs.Count() > 0;
+#endif
+        }
 
 		public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
 		{
@@ -2351,6 +2294,9 @@ namespace SQLite
 				return null;
 			} else {
 				if (clrType == typeof(String)) {
+                    // TODO: Decrypt?
+                    //clrType.GetRuntimeProperties().First().GetCustomAttribute<EncryptAttribute>();
+
 					return SQLite3.ColumnString (stmt, index);
 				} else if (clrType == typeof(Int32)) {
 					return (int)SQLite3.ColumnInt (stmt, index);
