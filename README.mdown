@@ -1,5 +1,5 @@
 
-# sqlite-net
+# sqlite-net with encryption
 
 sqlite-net is an open source, minimal library to allow .NET and Mono applications to store data in [http://www.sqlite.org SQLite 3 databases]. It is written in C# and is meant to be simply compiled in with your projects. It was first designed to work with [MonoTouch](http://xamarin.com) on the iPhone, but has grown up to work on all the platforms (Mono for Android, .NET, Silverlight, WP7, WinRT, Azure, etc.).
 
@@ -153,6 +153,30 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 		{
 			Debug.WriteLine(string.Format("Found '{0}' stock items.", t.Result));
 		});
+
+
+
+## Encryption
+
+Basic property-level encryption support is provided by adding the [Encrypt] attribut to a string property.  Only string types are supported for now.
+
+In addition, an encryption provider must be set to SQLite.Encryption.Provider which implements the IEncryptionProvider.  A WinRT encryption provider is included (SQLiteWinRTCryptoProvider).
+
+Example Usage:
+    
+    public class Employee {
+    	public int Id { get; set; }
+    	
+    	[Encrypt]
+    	public string SSN { get; set; }
+    }
+    
+    ...
+    
+     SQLiteWinRTCryptoProvider cryptoProvider = new SQLiteWinRTCryptoProvider("NEVER_STORE_YOUR_KEY_IN_CODE");
+     SQLite.Encryption.Provider = cryptoProvider;
+     
+Now use SQLite as usual and all data in the SSN property will be encrypted on the way into the database and decrypted on the way out.
 
 
 ## Special note on use within Windows Store Apps (Windows 8/WinRT)
