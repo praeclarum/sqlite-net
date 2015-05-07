@@ -22,6 +22,7 @@
 //
 
 using JetBrains.Annotations;
+using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {
@@ -33,7 +34,8 @@ namespace SQLite.Net
         [PublicAPI]
         public SQLiteConnectionString(string databasePath, bool storeDateTimeAsTicks,
             IBlobSerializer serializer = null,
-            IContractResolver resolver = null)
+            IContractResolver resolver = null,
+            SQLiteOpenFlags? openFlags = null)
         {
             ConnectionString = databasePath;
             StoreDateTimeAsTicks = storeDateTimeAsTicks;
@@ -41,6 +43,7 @@ namespace SQLite.Net
             DatabasePath = databasePath;
             Serializer = serializer;
             Resolver = resolver ?? ContractResolver.Current;
+            OpenFlags = openFlags ?? SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create;
         }
 
         [PublicAPI]
@@ -57,5 +60,8 @@ namespace SQLite.Net
 
         [PublicAPI]
         public IContractResolver Resolver { get; private set; }
+
+        [PublicAPI]
+        public SQLiteOpenFlags OpenFlags {get; private set; } 
     }
 }
