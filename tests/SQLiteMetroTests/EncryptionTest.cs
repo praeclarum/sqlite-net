@@ -34,6 +34,15 @@ namespace SQLite.Tests
             public String Text { get; set; }
 
         }
+        public class InvalidObj
+        {
+            [AutoIncrement, PrimaryKey]
+            public int Id { get; set; }
+            [Encrypt]
+            public int NotAString { get; set; }
+
+        }
+
         public class TestDb : SQLiteConnection
         {
             public TestDb(String path)
@@ -58,6 +67,8 @@ namespace SQLite.Tests
         [Test]
         public void EncryptionInsert()
         {
+            SQLite.Encryption.Provider = new TestEncryptionProvider();
+
             var obj1 = new EncryptedObj() { Text = "Sensitive Data" };
             _db.Insert(obj1);
 
@@ -77,6 +88,8 @@ namespace SQLite.Tests
         [Test]
         public void EncryptionUpdate()
         {
+            SQLite.Encryption.Provider = new TestEncryptionProvider();
+
             var obj1 = new EncryptedObj() { Text = "Sensitive Data" };
             _db.Insert(obj1);
 
@@ -87,6 +100,38 @@ namespace SQLite.Tests
             var actual = _db.Table<EncryptedObj>().First();
             Assert.AreEqual("Updated Sensitive Data", actual.Text);
 
+        }
+
+        [Test]
+        public void EncryptionInvalidType()
+        {
+            Assert.ThrowsException<Exception>(() => _db.CreateTable<InvalidObj>());
+        }
+
+        [Test]
+        public void EncryptMissingProvider()
+        {
+            SQLite.Encryption.Provider = null;
+
+            Assert.ThrowsException<Exception>(() => 
+            {
+                var obj1 = new EncryptedObj() { Text = "Sensitive Data" };
+                _db.Insert(obj1);
+            });
+        }
+    }
+
+    public class TestEncryptionProvider : IEncryptionProvider
+    {
+
+        public string EncryptString(string value)
+        {
+            return "E" + value;
+        }
+
+        public string DecryptString(string value)
+        {
+            return value.Substring(1);
         }
     }
 }

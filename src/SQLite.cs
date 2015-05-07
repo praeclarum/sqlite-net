@@ -503,7 +503,6 @@ namespace SQLite
         /// <param name="unique">Whether the index should be unique</param>
         public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
         {
-            // TODO: Should not index encrypted columns
             MemberExpression mx;
             if (property.Body.NodeType == ExpressionType.Convert)
             {
@@ -1837,6 +1836,8 @@ namespace SQLite
 
 			public bool IsNullable { get; private set; }
 
+            public bool IsEncrypted { get; private set; }
+
 			public int? MaxStringLength { get; private set; }
 
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
@@ -1868,17 +1869,16 @@ namespace SQLite
                 }
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
+
+                IsEncrypted = Orm.IsEncrypted(prop);
             }
 
 			public void SetValue (object obj, object val)
 			{
                 // TODO: If encrypted, decrypt on the way in
-                if(Orm.IsEncrypted(_prop))
+                if(IsEncrypted)
                 {
-                    var valAsString = val.ToString();
-                    valAsString = valAsString.Substring(1);
-                    _prop.SetValue(obj, valAsString, null);
-
+                    _prop.SetValue(obj, Encryption.Decrypt(val.ToString()), null);
                 }
                 else
                 {
@@ -1889,9 +1889,9 @@ namespace SQLite
 			public object GetValue (object obj)
 			{
                 // TODO: Encrypt
-                if(Orm.IsEncrypted(_prop))
+                if(IsEncrypted)
                 {
-                    var valueAsString = "E" + _prop.GetValue(obj).ToString();
+                    var valueAsString = Encryption.Encrypt(_prop.GetValue(obj).ToString());
 
                     return valueAsString;
 
@@ -1933,8 +1933,15 @@ namespace SQLite
 
 		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
-            // TODO: Encrypted column should be ??? type
+            
 			var clrType = p.ColumnType;
+            
+            // Encrypted columns must be String
+            if(p.IsEncrypted && clrType != typeof(String))
+            {
+                throw new System.Exception("Properties with the Encrypt attribute must be strings");
+            }
+
             if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32) || clrType == typeof(UInt32) || clrType == typeof(Int64))
             {
 				return "integer";
@@ -2935,6 +2942,49 @@ namespace SQLite
 			var query = Take (1);
 			return query.ToList<T>().FirstOrDefault ();
 		}
+    }
+
+
+    /// <summary>
+    /// Interface for injecting encryption providers.  Keeping it simple
+    /// </summary>
+    public interface IEncryptionProvider
+    {
+        string EncryptString(string value);
+        string DecryptString(string value);
+    }
+
+
+    public static class Encryption
+    {
+        public static IEncryptionProvider Provider { get; set; }
+
+        public static string Encrypt(string value)
+        {
+            
+            if (Encryption.Provider != null)
+            {
+                return Provider.EncryptString(value);
+            }
+            else
+            {
+                throw new Exception("An encryption provider must be specificed in the SQLite.Encryption.Provider.  Implement IEncryptionProvider");
+            }
+        }
+
+        public static string Decrypt(string value)
+        {
+
+            if (Encryption.Provider != null)
+            {
+                return Provider.DecryptString(value);
+            }
+            else
+            {
+                throw new Exception("An encryption provider must be specificed in the SQLite.Encryption.Provider.  Implement IEncryptionProvider");
+            }
+        }
+
     }
 
 	public static class SQLite3
