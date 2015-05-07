@@ -119,6 +119,35 @@ namespace SQLite.Tests
                 _db.Insert(obj1);
             });
         }
+
+        [Test]
+        public void EncryptWinRTCrypto()
+        {
+            SQLiteWinRTCryptoProvider cryptoProvider = new SQLiteWinRTCryptoProvider("NEVER_STORE_YOUR_KEY_IN_CODE");
+            
+            // Test just the provider
+            string expected = "Sensitive Data Which Needs Protected";
+            string actual = cryptoProvider.EncryptString(expected);
+            
+            Assert.AreNotEqual(expected, actual);
+
+            actual = cryptoProvider.DecryptString(actual);
+            Assert.AreEqual(expected, actual);
+
+            // Now with SQLite
+            SQLite.Encryption.Provider = cryptoProvider;
+            var obj1 = new EncryptedObj() { Text = expected };
+            _db.Insert(obj1);
+
+            var actualClear = _db.Table<EncryptedObj>().First();
+            Assert.AreEqual(expected, actualClear.Text);
+
+            // Now test that it is encrypted
+            SQLite.Encryption.Provider = new PassthroughEncryptionProvider();
+            actualClear = _db.Table<EncryptedObj>().First();
+            Assert.AreNotEqual(expected, actualClear.Text);
+
+        }
     }
 
     public class TestEncryptionProvider : IEncryptionProvider
@@ -134,4 +163,19 @@ namespace SQLite.Tests
             return value.Substring(1);
         }
     }
+
+    public class PassthroughEncryptionProvider : IEncryptionProvider
+    {
+
+        public string EncryptString(string value)
+        {
+            return value;
+        }
+
+        public string DecryptString(string value)
+        {
+            return value;
+        }
+    }
+
 }

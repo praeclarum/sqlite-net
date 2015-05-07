@@ -124,6 +124,9 @@
     <Compile Include="..\..\src\SQLiteAttributes.cs">
       <Link>SQLiteAttributes.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\SQLiteWinRTCryptoProvider.cs">
+      <Link>SQLiteWinRTCryptoProvider.cs</Link>
+    </Compile>
     <Compile Include="..\AsyncTests.cs">
       <Link>AsyncTests.cs</Link>
     </Compile>
