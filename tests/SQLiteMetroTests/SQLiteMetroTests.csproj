@@ -184,6 +184,7 @@
     <Compile Include="..\UniqueTest.cs">
       <Link>UniqueTest.cs</Link>
     </Compile>
+    <Compile Include="EncryptionTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

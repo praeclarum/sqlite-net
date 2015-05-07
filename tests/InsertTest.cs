@@ -268,23 +268,5 @@ namespace SQLite.Tests
 			Assert.AreEqual ("Foo", r[4].Text);
 		}
 
-        [Test]
-        public void InsertWithEncryption()
-        {
-            var obj1 = new EncryptedObj() { Text = "Sensitive Data" };
-            _db.Insert(obj1);
-
-            var result = _db.Query<EncryptedObj>("select * from EncryptedObj").ToList();
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(result[0].Text, obj1.Text);
-
-            var result1 = _db.Get<EncryptedObj>(result[0].Id);
-            Assert.AreEqual(result1.Text, obj1.Text);
-
-            var result2 = _db.Table<EncryptedObj>().First();
-            Assert.AreEqual(result2.Text, obj1.Text);
-
-
-        }
     }
 }
