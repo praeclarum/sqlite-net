@@ -158,7 +158,7 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 
 ## Encryption
 
-Basic property-level encryption support is provided by adding the [Encrypt] attribut to a string property.  Only string types are supported for now.
+Basic property-level encryption support is provided by adding the [Encrypt] attribute to a string property.  Only string types are supported for now.
 
 In addition, an encryption provider must be set to SQLite.Encryption.Provider which implements the IEncryptionProvider.  A WinRT encryption provider is included (SQLiteWinRTCryptoProvider).
 
