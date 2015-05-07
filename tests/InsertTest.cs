@@ -62,7 +62,14 @@ namespace SQLite.Tests
 			[PrimaryKey]
 			public int Id { get; set; }
 		}
+        public class EncryptedObj
+        {
+            [AutoIncrement, PrimaryKey]
+            public int Id { get; set; }
+            [Encrypt]
+            public String Text { get; set; }
 
+        }
         public class TestDb : SQLiteConnection
         {
             public TestDb(String path)
@@ -72,6 +79,7 @@ namespace SQLite.Tests
                 CreateTable<TestObj2>();
                 CreateTable<OneColumnObj>();
 				CreateTable<UniqueObj>();
+                CreateTable<EncryptedObj>();
             }
         }
 		
@@ -259,5 +267,6 @@ namespace SQLite.Tests
 			Assert.AreEqual (20, r.Count);
 			Assert.AreEqual ("Foo", r[4].Text);
 		}
+
     }
 }

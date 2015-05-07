@@ -121,6 +121,12 @@
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\SQLiteAttributes.cs">
+      <Link>SQLiteAttributes.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\SQLiteWinRTCryptoProvider.cs">
+      <Link>SQLiteWinRTCryptoProvider.cs</Link>
+    </Compile>
     <Compile Include="..\AsyncTests.cs">
       <Link>AsyncTests.cs</Link>
     </Compile>
@@ -141,6 +147,9 @@
     </Compile>
     <Compile Include="..\DropTableTest.cs">
       <Link>DropTableTest.cs</Link>
+    </Compile>
+    <Compile Include="..\EncryptionTest.cs">
+      <Link>EncryptionTest.cs</Link>
     </Compile>
     <Compile Include="..\ExceptionAssert.cs">
       <Link>ExceptionAssert.cs</Link>
