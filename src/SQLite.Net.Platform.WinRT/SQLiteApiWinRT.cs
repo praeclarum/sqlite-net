@@ -157,6 +157,11 @@ namespace SQLite.Net.Platform.WinRT
             return SQLite3.sqlite3_libversion_number();
         }
 
+        public string SourceID()
+        {
+            return Marshal.PtrToStringAuto(SQLite3.sqlite3_sourceid());  
+        }        
+
         public Result EnableLoadExtension(IDbHandle db, int onoff)
         {
             return (Result)1;
@@ -450,6 +455,9 @@ namespace SQLite.Net.Platform.WinRT
 
         [DllImport("sqlite3", EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
         public static extern int sqlite3_libversion_number();
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_sourceid", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr sqlite3_sourceid();
 
         #region Backup
 
