@@ -27,7 +27,7 @@ namespace SQLite.Net.Platform.Generic
 
         public string SourceID()
         {            
-			return Marshal.PtrToStringAuto(SQLiteApiGenericInternal.sqlite3_sourceid());
+			return Marshal.PtrToStringAnsi(SQLiteApiGenericInternal.sqlite3_sourceid());
         }        
 
         public Result EnableLoadExtension(IDbHandle db, int onoff)
