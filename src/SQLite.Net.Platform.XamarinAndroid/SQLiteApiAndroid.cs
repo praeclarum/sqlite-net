@@ -27,7 +27,7 @@ namespace SQLite.Net.Platform.XamarinAndroid
 
         public string SourceID()
         {
-			return Marshal.PtrToStringAuto(SQLiteApiAndroidInternal.sqlite3_sourceid());            
+			return Marshal.PtrToStringAnsi(SQLiteApiAndroidInternal.sqlite3_sourceid());            
         }                
 
         public Result EnableLoadExtension(IDbHandle db, int onoff)

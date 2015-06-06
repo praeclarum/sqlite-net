@@ -159,7 +159,7 @@ namespace SQLite.Net.Platform.WinRT
 
         public string SourceID()
         {
-            return Marshal.PtrToStringAuto(SQLite3.sqlite3_sourceid());  
+            return Marshal.PtrToStringAnsi(SQLite3.sqlite3_sourceid());  
         }        
 
         public Result EnableLoadExtension(IDbHandle db, int onoff)

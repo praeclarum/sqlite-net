@@ -27,7 +27,7 @@ namespace SQLite.Net.Platform.Win32
         
         public string SourceID()
         {
-			return Marshal.PtrToStringAuto(SQLiteApiWin32Internal.sqlite3_sourceid());            
+			return Marshal.PtrToStringAnsi(SQLiteApiWin32Internal.sqlite3_sourceid());            
         }                
 
         public Result EnableLoadExtension(IDbHandle db, int onoff)
