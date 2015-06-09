@@ -2316,7 +2316,7 @@ namespace SQLite
 						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
 					}
 					else {
-						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss.fff"), -1, NegativePointer); // modifed by zhangsichu
 					}
 				} else if (value is DateTimeOffset) {
 					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
@@ -2330,6 +2330,8 @@ namespace SQLite
                     SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
                 } else if (value is Guid) {
                     SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
+                } else if(value is TimeSpan){
+                    SQLite3.BindText(stmt, index, ((TimeSpan)value).ToString(), -1, NegativePointer); // modifed by zhangsichu
                 } else {
                     throw new NotSupportedException("Cannot store type: " + value.GetType());
                 }
@@ -2397,7 +2399,12 @@ namespace SQLite
 				} else if (clrType == typeof(Guid)) {
                   var text = SQLite3.ColumnString(stmt, index);
                   return new Guid(text);
-                } else{
+                } else if (clrType == typeof(TimeSpan)){ //zhangsichu
+                    var text = SQLite3.ColumnString(stmt, index);
+                    return TimeSpan.Parse(text);
+                }
+                else
+                {
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
 			}
