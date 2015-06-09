@@ -4,9 +4,9 @@ namespace SQLite.Net.Platform.Win32
 {
     public class SQLitePlatformWin32 : ISQLitePlatform
     {
-        public SQLitePlatformWin32()
+        public SQLitePlatformWin32(string nativeInteropSearchPath = null)
         {
-            SQLiteApi = new SQLiteApiWin32();
+            SQLiteApi = new SQLiteApiWin32(nativeInteropSearchPath);
             StopwatchFactory = new StopwatchFactoryWin32();
             ReflectionService = new ReflectionServiceWin32();
             VolatileService = new VolatileServiceWin32();
