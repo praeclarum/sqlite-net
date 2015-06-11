@@ -3085,11 +3085,7 @@ namespace SQLite
 			Serialized = 3
 		}
 
-		#if __IOS__
-		const string LibraryPath = "/usr/lib/sqlite3";
-		#else
 		const string LibraryPath = "sqlite3";
-		#endif
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
