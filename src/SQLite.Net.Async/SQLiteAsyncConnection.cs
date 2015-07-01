@@ -191,6 +191,32 @@ namespace SQLite.Net.Async
                 }
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
+        
+        [PublicAPI]
+        public Task<int> InsertOrIgnoreAsync (object item)
+        {
+            return Task.Factory.StartNew (() => {
+                SQLiteConnectionWithLock conn = GetConnection ();
+                using (conn.Lock ()) {
+                    return conn.InsertOrIgnore (item);
+                }
+            });
+        }
+
+        [PublicAPI]
+        public Task<int> InsertOrIgnoreAllAsync (IEnumerable objects, CancellationToken cancellationToken = default (CancellationToken))
+        {
+            if (objects == null) {
+                throw new ArgumentNullException ("objects");
+            }
+
+            return Task.Factory.StartNew (() => {
+                SQLiteConnectionWithLock conn = GetConnection ();
+                using (conn.Lock ()) {
+                    return conn.InsertOrIgnoreAll (objects);
+                }
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
 
         [PublicAPI]
         public Task<int> InsertOrReplaceAsync([NotNull] object item, CancellationToken cancellationToken = default (CancellationToken))
@@ -550,6 +576,17 @@ namespace SQLite.Net.Async
                     return conn.Query<T>(sql, args);
                 }
             }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
+
+        [PublicAPI]
+        public Task<TableMapping> GetMappingAsync<T> ()
+        {
+            return Task.Factory.StartNew (() => {
+                SQLiteConnectionWithLock conn = GetConnection ();
+                using (conn.Lock ()) {
+                    return conn.GetMapping (typeof(T));
+                }
+            }, CancellationToken.None, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
         }
     }
 }
