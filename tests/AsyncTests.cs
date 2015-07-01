@@ -57,6 +57,16 @@ namespace SQLite.Net.Tests
         public string Email { get; set; }
     }
 
+    [Table("AGoodTableName")]
+    public class AFunnyTableName
+    {
+        [PrimaryKey]
+        public int Id { get; set; }
+
+        [Column("AGoodColumnName")]
+        public string AFunnyColumnName { get; set; }
+    }
+
     /// <summary>
     ///     Defines tests that exercise async behaviour.
     /// </summary>
@@ -1092,6 +1102,23 @@ namespace SQLite.Net.Tests
                 var loaded = check.Get<Customer>(customer.Id);
                 Assert.AreEqual(newEmail, loaded.Email);
             }
+        }
+
+        [Test]
+        public async Task TestGetMappingAsync()
+        {
+            // connect...
+            string path = null;
+            SQLiteAsyncConnection conn = GetConnection (ref path);
+            await conn.CreateTableAsync<AFunnyTableName>();
+
+            // get mapping...
+            TableMapping mapping = await conn.GetMappingAsync<AFunnyTableName>();
+
+            // check...
+            Assert.AreEqual("AGoodTableName", mapping.TableName);
+            Assert.AreEqual("Id", mapping.Columns[0].Name);
+            Assert.AreEqual("AGoodColumnName", mapping.Columns[1].Name);
         }
     }
 }
