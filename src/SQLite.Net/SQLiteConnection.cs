@@ -1254,6 +1254,27 @@ namespace SQLite.Net
             return c;
         }
 
+        [PublicAPI]
+        public int InsertOrIgnoreAll (IEnumerable objects)
+        {
+            return InsertAll (objects, "OR IGNORE");
+        }
+
+        [PublicAPI]
+        public int InsertOrIgnore (object obj)
+        {
+            if (obj == null) {
+                return 0;
+            }
+            return Insert (obj, "OR IGNORE", obj.GetType ());
+        }
+
+        [PublicAPI]
+        public int InsertOrIgnore (object obj, Type objType)
+        {
+            return Insert (obj, "OR IGNORE", objType);
+        }
+
         /// <summary>
         ///     Inserts the given object and retrieves its
         ///     auto incremented primary key if it has one.
