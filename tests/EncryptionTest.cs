@@ -148,6 +148,19 @@ namespace SQLite.Tests
             Assert.AreNotEqual(expected, actualClear.Text);
 
         }
+
+        [Test]
+        public void EncryptionNullValueBugTest()
+        {
+            SQLite.Encryption.Provider = new TestEncryptionProvider();
+
+            var obj1 = new EncryptedObj(); // Encrypted field is null
+            _db.Insert(obj1);
+
+            var result = _db.Table<EncryptedObj>().First();
+            Assert.IsNull(result.Text);
+
+        }
     }
 
     public class TestEncryptionProvider : IEncryptionProvider
