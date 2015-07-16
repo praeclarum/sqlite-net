@@ -150,10 +150,37 @@ namespace SQLite.Tests
         }
 
         [Test]
+        public void EncryptEmptyStringWinRTProviderBug()
+        {
+            SQLiteWinRTCryptoProvider cryptoProvider = new SQLiteWinRTCryptoProvider("NEVER_STORE_YOUR_KEY_IN_CODE");
+            SQLite.Encryption.Provider = cryptoProvider;
+
+            // Test just the provider
+            string expected = "";
+            string actual = cryptoProvider.EncryptString(expected);
+
+            // Just passing through empty strings
+            Assert.AreEqual(expected, actual);
+
+            // Make sure it decrypts as well
+            actual = cryptoProvider.DecryptString("");
+            Assert.AreEqual(expected, actual);
+
+            // And now against the actual database
+            var testObject = new EncryptedObj() { Text = "" };
+            _db.Insert(testObject);
+
+            var actualObject = _db.Get<EncryptedObj>(o => o.Id == testObject.Id);
+
+            Assert.AreEqual(testObject.Text, actualObject.Text);
+
+        }
+
+        [Test]
         public void EncryptionNullValueBugTest()
         {
             SQLite.Encryption.Provider = new TestEncryptionProvider();
-
+            
             var obj1 = new EncryptedObj(); // Encrypted field is null
             _db.Insert(obj1);
 

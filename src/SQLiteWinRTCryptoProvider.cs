@@ -17,16 +17,31 @@ namespace SQLite
         }
         public string EncryptString(string value)
         {
-            var valueBuffer = CryptographicBuffer.ConvertStringToBinary(value, BinaryStringEncoding.Utf8);
-            var encryptedBuffer = CryptographicEngine.Encrypt(_CryptoKey,valueBuffer, null);
-            return CryptographicBuffer.EncodeToBase64String(encryptedBuffer);
+            if (value == String.Empty)
+            {
+                return value;
+            }
+            else
+            {
+                var valueBuffer = CryptographicBuffer.ConvertStringToBinary(value, BinaryStringEncoding.Utf8);
+                var encryptedBuffer = CryptographicEngine.Encrypt(_CryptoKey, valueBuffer, null);
+                return CryptographicBuffer.EncodeToBase64String(encryptedBuffer);
+            }
         }
 
         public string DecryptString(string value)
         {
-            return CryptographicBuffer.ConvertBinaryToString(BinaryStringEncoding.Utf8,
-                CryptographicEngine.Decrypt(_CryptoKey,
-                    CryptographicBuffer.DecodeFromBase64String(value), null));
+            if (value == String.Empty)
+            {
+                return value;
+            }
+            else
+            {
+                return CryptographicBuffer.ConvertBinaryToString(BinaryStringEncoding.Utf8,
+                    CryptographicEngine.Decrypt(_CryptoKey,
+                        CryptographicBuffer.DecodeFromBase64String(value), null));
+
+            }
         }
 
 
