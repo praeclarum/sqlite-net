@@ -69,7 +69,7 @@ namespace SQLite
 			where T2 : new ()
 			where T3 : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof (T2), typeof (T3));
+			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3));
 		}
 
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
@@ -78,7 +78,7 @@ namespace SQLite
 			where T3 : new ()
 			where T4 : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof (T2), typeof (T3), typeof (T4));
+			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4));
 		}
 
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
