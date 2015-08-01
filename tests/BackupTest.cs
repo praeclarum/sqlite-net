@@ -19,6 +19,9 @@ using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
 #elif __ANDROID__
 using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndroid;
 
+#elif __OSX__
+using SQLitePlatformTest = SQLite.Net.Platform.OSX.SQLitePlatformOSX;
+
 #else
 using SQLitePlatformTest = SQLite.Net.Platform.Generic.SQLitePlatformGeneric;
 #endif
