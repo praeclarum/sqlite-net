@@ -1,5 +1,6 @@
 mkdir SQLite.Net
 copy /y ..\src\SQLite.Net\bin\Release\SQLite.Net.dll SQLite.Net
+type nul >SQLite.Net\_._
 
 mkdir SQLite.Net.Async
 copy /y ..\src\SQLite.Net.Async\bin\Release\SQLite.Net.Async.dll SQLite.Net.Async

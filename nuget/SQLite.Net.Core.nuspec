@@ -1,9 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
-        <id>SQLite.Net.Async-PCL</id>
+        <id>SQLite.Net.Core-PCL</id>
         <version>3.0.5</version>
-        <title>SQLite.Net.Async PCL</title>
+        <title>SQLite.Net PCL</title>
         <authors>Øystein Krog,Frank Krueger,Tim Heuer</authors>
         <owners>Øystein Krog</owners>
         <licenseUrl>https://raw.github.com/oysteinkrog/SQLite.Net-PCL/master/LICENSE.txt</licenseUrl>
@@ -11,16 +11,15 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>SQLite.Net PCL is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases.
             This is a fork of the original sqlite-net project, which aims to cleanup/improve the code and deliver the package as PCL assemblies with some additional platform-specific implementations.
-            This package is compatible with the following .net platforms: net4+sl5+wp8+win8+monotouch+monoAndroid</description>
-        <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.
-            This package provides Async extensions to the core SQLite.Net package.</summary>
+            This package is compatible with the following .net platforms: Xamarin.iOS (Classic), Xamarin.iOS (Unified), Xamarin.Android, Windows Phone 8.1, Windows Phone 8.0, Windows 8.1, Windows 8.0, Win32, Generic, PCL(net4+sl4+wp7+win8+monotouch+MonoAndroid)</description>
+        <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
         <releaseNotes>https://github.com/oysteinkrog/SQLite.Net-PCL/commits</releaseNotes>
         <tags>sqlite pcl sql database ios android windows metro winrt xamarin monotouch monodroid win32 windowsphone wp wp8 wp8.1</tags>
         <dependencies>
-            <dependency id="SQLite.Net.Core-PCL" version="3.0.5"/>
         </dependencies>
     </metadata>
     <files>
-        <file src="SQLite.Net.Async\SQLite.Net.Async.dll" target="lib\portable-win8+net45+wp8+wpa81+MonoAndroid1+MonoTouch1\SQLite.Net.Async.dll" />
+        <!-- PCL -->
+        <file src="SQLite.Net\SQLite.Net.dll" target="lib\portable-win8+net45+wp8+wpa81+MonoAndroid1+MonoTouch1\SQLite.Net.dll" />
     </files>
 </package>
