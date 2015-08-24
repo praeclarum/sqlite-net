@@ -52,6 +52,7 @@
     <Compile Include="ReflectionServiceWin32.cs" />
     <Compile Include="SQLiteApiWin32.cs" />
     <Compile Include="SQLiteApiWin32Internal.cs" />
+    <Compile Include="SQLiteApiWin32InternalConfiguration.cs" />
     <Compile Include="SQLitePlatformWin32.cs" />
     <Compile Include="StopwatchFactoryWin32.cs" />
     <Compile Include="VolatileServiceWin32.cs" />
