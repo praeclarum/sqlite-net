@@ -18,6 +18,8 @@ using SQLitePlatformTest = SQLite.Net.Platform.WinRT.SQLitePlatformWinRT;
 using SQLitePlatformTest = SQLite.Net.Platform.XamarinIOS.SQLitePlatformIOS;
 #elif __ANDROID__
 using SQLitePlatformTest = SQLite.Net.Platform.XamarinAndroid.SQLitePlatformAndroid;
+#elif __OSX__
+using SQLitePlatformTest = SQLite.Net.Platform.OSX.SQLitePlatformOSX;
 #else
 using SQLitePlatformTest = SQLite.Net.Platform.Generic.SQLitePlatformGeneric;
 #endif
@@ -187,6 +189,7 @@ namespace SQLite.Net.Tests
                             FirstName = i.ToString(),
                         };
                         await conn.InsertAsync(obj);
+
                         if (obj.Id == 0)
                         {
                             lock (errors)
