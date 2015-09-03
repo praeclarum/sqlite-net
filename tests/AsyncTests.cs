@@ -44,6 +44,31 @@ namespace SQLite.Net.Tests
         public string Email { get; set; }
     }
 
+    public class Customer2
+    {
+        [PrimaryKey]
+        public int Id { get; set; }
+
+        [MaxLength(64)]
+        public string FirstName { get; set; }
+
+        [MaxLength(64)]
+        public string LastName { get; set; }
+
+        [MaxLength(64)]
+        public string Email { get; set; }
+    }
+
+    [Table("AGoodTableName")]
+    public class AFunnyTableName
+    {
+        [PrimaryKey]
+        public int Id { get; set; }
+
+        [Column("AGoodColumnName")]
+        public string AFunnyColumnName { get; set; }
+    }
+
     /// <summary>
     ///     Defines tests that exercise async behaviour.
     /// </summary>
@@ -846,6 +871,112 @@ namespace SQLite.Net.Tests
         }
 
         [Test]
+        public async Task TestInsertOrIgnoreAllAsync ()
+        {
+            const string originalFirstName = "foo";
+            const string originalLastName = "bar";
+            
+            // create a bunch of customers...
+            var customers = new List<Customer2> ();
+            for (int index = 0; index < 100; index++) {
+                var customer = new Customer2 ();
+                customer.Id = index;
+                customer.FirstName = originalFirstName;
+                customer.LastName = originalLastName;
+                customer.Email = Guid.NewGuid ().ToString ();
+                customers.Add (customer);
+            }
+
+            // connect...
+            string path = null;
+            SQLiteAsyncConnection conn = GetConnection (ref path);
+            await conn.CreateTableAsync<Customer2> ();
+
+            // insert them all...
+            await conn.InsertOrIgnoreAllAsync (customers);
+
+            // change the existing ones...
+            foreach (var customer in customers) {
+                customer.FirstName = "baz";
+                customer.LastName = "biz";
+            }
+
+            // ... and add a few more
+            for (int index = 100; index < 200; index++) {
+                var customer = new Customer2 ();
+                customer.Id = index;
+                customer.FirstName = originalFirstName;
+                customer.LastName = originalLastName;
+                customer.Email = Guid.NewGuid ().ToString ();
+                customers.Add (customer);
+            }
+
+            // insert them all, ignoring the already existing ones
+            await conn.InsertOrIgnoreAllAsync (customers);
+
+            // check...
+            using (var check = new SQLiteConnection (_sqlite3Platform, path)) {
+                for (int index = 0; index < customers.Count; index++) {
+                    // load it back and check...
+                    var loaded = check.Get<Customer2> (customers [index].Id);
+                    Assert.AreEqual (loaded.FirstName, originalFirstName);
+                    Assert.AreEqual (loaded.LastName, originalLastName);
+                    Assert.AreEqual (loaded.Email, customers [index].Email);
+                }
+            }
+
+        }
+
+        [Test]
+        public async Task TestInsertOrIgnoreAsync ()
+        {
+            const string originalFirstName = "foo";
+            const string originalLastName = "bar";
+
+            // create...
+            var customer = new Customer2 ();
+            customer.Id = 42;
+            customer.FirstName = originalFirstName;
+            customer.LastName = originalLastName;
+            customer.Email = Guid.NewGuid ().ToString ();
+
+            // connect...
+            string path = null;
+            SQLiteAsyncConnection conn = GetConnection (ref path);
+            await conn.CreateTableAsync<Customer2> ();
+
+            // run...
+            await conn.InsertOrIgnoreAsync (customer);
+
+            // check...
+            using (var check = new SQLiteConnection (_sqlite3Platform, path)) {
+                // load it back...
+                var loaded = check.Get<Customer2> (customer.Id);
+                Assert.AreEqual (loaded.Id, customer.Id);
+                Assert.AreEqual (loaded.FirstName, originalFirstName);
+                Assert.AreEqual (loaded.LastName, originalLastName);
+                Assert.AreEqual (loaded.Email, customer.Email);
+            }
+
+            // change ...
+            customer.FirstName = "baz";
+            customer.LastName = "biz";
+
+            // insert or ignore...
+            await conn.InsertOrIgnoreAsync (customer);
+
+            // check...
+            using (var check = new SQLiteConnection (_sqlite3Platform, path)) {
+                // load it back...
+                var loaded = check.Get<Customer2> (customer.Id);
+                Assert.AreEqual (loaded.Id, customer.Id);
+                Assert.AreEqual (loaded.FirstName, originalFirstName);
+                Assert.AreEqual (loaded.LastName, originalLastName);
+                Assert.AreEqual (loaded.Email, customer.Email);
+            }
+        }
+
+        [Test]
         public async Task TestQueryAsync()
         {
             // connect...
@@ -974,6 +1105,23 @@ namespace SQLite.Net.Tests
                 var loaded = check.Get<Customer>(customer.Id);
                 Assert.AreEqual(newEmail, loaded.Email);
             }
+        }
+
+        [Test]
+        public async Task TestGetMappingAsync()
+        {
+            // connect...
+            string path = null;
+            SQLiteAsyncConnection conn = GetConnection (ref path);
+            await conn.CreateTableAsync<AFunnyTableName>();
+
+            // get mapping...
+            TableMapping mapping = await conn.GetMappingAsync<AFunnyTableName>();
+
+            // check...
+            Assert.AreEqual("AGoodTableName", mapping.TableName);
+            Assert.AreEqual("Id", mapping.Columns[0].Name);
+            Assert.AreEqual("AGoodColumnName", mapping.Columns[1].Name);
         }
     }
 }

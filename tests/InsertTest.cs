@@ -243,6 +243,31 @@ namespace SQLite.Net.Tests
         }
 
         [Test]
+        public void InsertOrIgnore()
+        {
+            _db.TraceListener = DebugTraceListener.Instance;
+            _db.InsertOrIgnoreAll(from i in Enumerable.Range(1, 20)
+                select new TestObj2
+                {
+                    Id = i,
+                    Text = "#" + i
+                });
+
+            Assert.AreEqual(20, _db.Table<TestObj2>().Count());
+
+            var t = new TestObj2
+            {
+                Id = 5,
+                Text = "Foo",
+            };
+            _db.InsertOrIgnore(t);
+
+            List<TestObj2> r = (from x in _db.Table<TestObj2>() orderby x.Id select x).ToList();
+            Assert.AreEqual(20, r.Count);
+            Assert.AreEqual("#5", r[4].Text);
+        }
+
+        [Test]
         public void InsertTwoTimes()
         {
             var obj1 = new TestObj
