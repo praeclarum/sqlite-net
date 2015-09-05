@@ -21,12 +21,14 @@
 // THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using SQLite.Net.Interop;
 
 namespace SQLite.Net
 {
+    [Obsolete]
     public class SQLiteConnectionPool
     {
         private readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry>();
