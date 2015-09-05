@@ -44,9 +44,8 @@ namespace SQLite.Net.Tests
         [Test]
         public void AsyncAsTicks ()
         {
-            var sqLiteConnectionPool = new SQLiteConnectionPool(new SQLitePlatformTest());
             var sqLiteConnectionString = new SQLiteConnectionString(TestPath.CreateTemporaryDatabase(), false);
-            var db = new SQLiteAsyncConnection(() => sqLiteConnectionPool.GetConnection(sqLiteConnectionString));
+            var db = new SQLiteAsyncConnection(() => new SQLiteConnectionWithLock(new SQLitePlatformTest(), sqLiteConnectionString));
             TestAsyncDateTimeOffset (db);
         }
 

@@ -79,35 +79,28 @@ namespace SQLite.Net.Tests
         [SetUp]
         public void SetUp()
         {
-            if (_sqliteConnectionPool != null)
-            {
-                _sqliteConnectionPool.Reset();
-            }
             var databaseFile = TestPath.CreateTemporaryDatabase();
 
             _connectionParameters = new SQLiteConnectionString(databaseFile, false);
-            _sqliteConnectionPool = new SQLiteConnectionPool(_sqlite3Platform);
         }
 
         private SQLiteConnectionString _connectionParameters;
         private SQLitePlatformTest _sqlite3Platform;
-        private SQLiteConnectionPool _sqliteConnectionPool;
 
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
             _sqlite3Platform = new SQLitePlatformTest();
-            _sqliteConnectionPool = new SQLiteConnectionPool(_sqlite3Platform);
         }
 
         private SQLiteAsyncConnection GetAsyncConnection()
         {
-            return new SQLiteAsyncConnection(() => _sqliteConnectionPool.GetConnection(_connectionParameters));
+            return new SQLiteAsyncConnection(() => new SQLiteConnectionWithLock(_sqlite3Platform, _connectionParameters));
         }
 
         private SQLiteConnection GetSyncConnection()
         {
-            return _sqliteConnectionPool.GetConnection(_connectionParameters);
+            return new SQLiteConnectionWithLock(_sqlite3Platform, _connectionParameters);
         }
 
         private Customer CreateCustomer()
