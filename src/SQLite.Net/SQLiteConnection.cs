@@ -533,6 +533,19 @@ namespace SQLite.Net
             return Query<ColumnInfo>(query);
         }
 
+		[PublicAPI]
+		public void MigrateTable<T>()
+		{
+			MigrateTable(typeof(T));
+		}
+
+		[PublicAPI]
+		public void MigrateTable(Type t)
+		{
+			var map = GetMapping(t);
+			MigrateTable(map);
+		}
+
         private void MigrateTable(TableMapping map)
         {
             var existingCols = GetTableInfo(map.TableName);
