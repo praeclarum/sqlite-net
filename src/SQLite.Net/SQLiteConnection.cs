@@ -52,6 +52,7 @@ namespace SQLite.Net
 #pragma warning restore 649
         private readonly Random _rand = new Random();
         private readonly IDictionary<string, TableMapping> _tableMappings;
+		private readonly object _tableMappingsLocks;
         private TimeSpan _busyTimeout;
         private long _elapsedMilliseconds;
         private IDictionary<TableMapping, ActiveInsertCommand> _insertCommandCache;
@@ -152,6 +153,7 @@ namespace SQLite.Net
             Resolver = resolver ?? ContractResolver.Current;
 
             _tableMappings = tableMappings ?? new Dictionary<string, TableMapping>();
+			_tableMappingsLocks = new object();
 
             if (string.IsNullOrEmpty(databasePath))
             {
@@ -235,7 +237,13 @@ namespace SQLite.Net
         [JetBrains.Annotations.NotNull]
         public IEnumerable<TableMapping> TableMappings
         {
-            get { return _tableMappings.Values; }
+            get
+			{
+				lock (_tableMappingsLocks)
+				{
+					return _tableMappings.Values.ToList();
+				}
+			}
         }
 
         /// <summary>
@@ -293,16 +301,19 @@ namespace SQLite.Net
         [PublicAPI]
         public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
         {
-            TableMapping map;
-            return _tableMappings.TryGetValue(type.FullName, out map) ? map : CreateAndSetMapping(type, createFlags, _tableMappings);
+			lock (_tableMappingsLocks)
+			{
+				TableMapping map;
+				return _tableMappings.TryGetValue(type.FullName, out map) ? map : CreateAndSetMapping(type, createFlags, _tableMappings);
+			}
         }
 
         private TableMapping CreateAndSetMapping(Type type, CreateFlags createFlags, IDictionary<string, TableMapping> mapTable)
         {
             var props = Platform.ReflectionService.GetPublicInstanceProperties(type);
             var map = new TableMapping(type, props, createFlags);
-            mapTable[type.FullName] = map;
-            return map;
+	            mapTable[type.FullName] = map;
+            	return map;
         }
 
         /// <summary>
