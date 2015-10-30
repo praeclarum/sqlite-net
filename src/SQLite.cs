@@ -33,6 +33,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 #endif
 using System.Collections.Generic;
+using System.Globalization;
 #if NO_CONCURRENT
 using ConcurrentStringDictionary = System.Collections.Generic.Dictionary<string, object>;
 using SQLite.Extensions;
@@ -2018,7 +2019,7 @@ namespace SQLite
 			} else if (clrType == typeof(DateTime)) {
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
 			} else if (clrType == typeof(DateTimeOffset)) {
-				return "bigint";
+				return "varchar";
 #if !USE_NEW_REFLECTION_API
 			} else if (clrType.IsEnum) {
 #else
@@ -2319,7 +2320,7 @@ namespace SQLite
 						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
 					}
 				} else if (value is DateTimeOffset) {
-					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
+					SQLite3.BindText(stmt, index, ((DateTimeOffset)value).ToString("O", CultureInfo.InvariantCulture), -1, NegativePointer);
 #if !USE_NEW_REFLECTION_API
 				} else if (value.GetType().IsEnum) {
 #else
@@ -2371,7 +2372,8 @@ namespace SQLite
 						return DateTime.Parse (text);
 					}
 				} else if (clrType == typeof(DateTimeOffset)) {
-					return new DateTimeOffset(SQLite3.ColumnInt64 (stmt, index),TimeSpan.Zero);
+					var text = SQLite3.ColumnString(stmt, index);
+					return DateTimeOffset.ParseExact(text, "O", CultureInfo.InvariantCulture);
 #if !USE_NEW_REFLECTION_API
 				} else if (clrType.IsEnum) {
 #else
