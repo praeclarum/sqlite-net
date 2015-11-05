@@ -343,11 +343,13 @@ namespace SQLite.Net
                 {
                     if (storeDateTimeAsTicks)
                     {
-                        isqLite3Api.BindInt64(stmt, index, ((DateTime) value).ToUniversalTime().Ticks);
+                        long ticks = ((DateTime) value).ToUniversalTime().Ticks;
+                        isqLite3Api.BindInt64(stmt, index, ticks);
                     }
                     else
                     {
-                        isqLite3Api.BindText16(stmt, index, ((DateTime) value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"), -1, NegativePointer);
+                        string val = ((DateTime) value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ");
+                        isqLite3Api.BindText16(stmt, index, val, -1, NegativePointer);
                     }
                 }
                 else if (value is DateTimeOffset)
@@ -358,12 +360,13 @@ namespace SQLite.Net
                 {
                     if (storeDateTimeAsTicks)
                     {
-                        isqLite3Api.BindInt64(stmt, index, ((ISerializable<DateTime>) value).Serialize().ToUniversalTime().Ticks);
+                        long ticks = ((ISerializable<DateTime>) value).Serialize().ToUniversalTime().Ticks;
+                        isqLite3Api.BindInt64(stmt, index, ticks);
                     }
                     else
                     {
-                        isqLite3Api.BindText16(stmt, index,
-                            ((ISerializable<DateTime>) value).Serialize().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"), -1, NegativePointer);
+                        string val = ((ISerializable<DateTime>) value).Serialize().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ");
+                        isqLite3Api.BindText16(stmt, index, val, -1, NegativePointer);
                     }
                 }
                 else if (value.GetType().GetTypeInfo().IsEnum)
