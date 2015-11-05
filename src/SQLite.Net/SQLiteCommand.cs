@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using JetBrains.Annotations;
@@ -348,7 +349,7 @@ namespace SQLite.Net
                     }
                     else
                     {
-                        string val = ((DateTime) value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ");
+                        string val = ((DateTime) value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ", CultureInfo.InvariantCulture);
                         isqLite3Api.BindText16(stmt, index, val, -1, NegativePointer);
                     }
                 }
@@ -365,7 +366,7 @@ namespace SQLite.Net
                     }
                     else
                     {
-                        string val = ((ISerializable<DateTime>) value).Serialize().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ");
+                        string val = ((ISerializable<DateTime>) value).Serialize().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ", CultureInfo.InvariantCulture);
                         isqLite3Api.BindText16(stmt, index, val, -1, NegativePointer);
                     }
                 }
@@ -471,7 +472,7 @@ namespace SQLite.Net
                 {
                     return new DateTime(_sqlitePlatform.SQLiteApi.ColumnInt64(stmt, index), DateTimeKind.Utc);
                 }
-                return DateTime.Parse(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index));
+                return DateTime.Parse(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index), CultureInfo.InvariantCulture);
             }
             if (clrType == typeof (DateTimeOffset))
             {
@@ -486,7 +487,7 @@ namespace SQLite.Net
                 }
                 else
                 {
-                    value = DateTime.Parse(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index));
+                    value = DateTime.Parse(_sqlitePlatform.SQLiteApi.ColumnText16(stmt, index), CultureInfo.InvariantCulture);
                 }
                 return Activator.CreateInstance(clrType, value);
             }
