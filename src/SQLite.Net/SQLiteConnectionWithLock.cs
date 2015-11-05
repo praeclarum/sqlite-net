@@ -25,7 +25,6 @@ using System.Collections.Generic;
 using System.Threading;
 using JetBrains.Annotations;
 using SQLite.Net.Interop;
-using System.Collections.Generic;
 
 namespace SQLite.Net
 {
