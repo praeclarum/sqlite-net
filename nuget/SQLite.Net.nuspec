@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>SQLite.Net-PCL</id>
-        <version>3.1.0</version>
+        <version>3.1.1</version>
         <title>SQLite.Net PCL</title>
         <authors>Øystein Krog,Frank Krueger,Tim Heuer</authors>
         <owners>Øystein Krog</owners>
@@ -20,7 +20,7 @@
                 <dependency id="sqlite-net-wp8" version="3.8.5"/>
             </group>
             <group>
-		        <dependency id="SQLite.Net.Core-PCL" version="3.0.5"/>
+		        <dependency id="SQLite.Net.Core-PCL" version="3.1.1"/>
             </group>
         </dependencies>
     </metadata>
