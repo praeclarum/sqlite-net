@@ -332,7 +332,11 @@ namespace SQLite.Net.Tests
                 {
                     if (t == typeof(DivideByZeroException))
                     {
+#if __WINRT__ || WINDOWS_PHONE
+                        var json = Encoding.UTF8.GetString(d, 0, d.Length);
+#else
                         var json = Encoding.UTF8.GetString(d);
+#endif
                         var result = JsonConvert.DeserializeObject<DivideByZeroException>(json);
                         return result;
                     }
