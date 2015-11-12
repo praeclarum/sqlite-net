@@ -162,6 +162,7 @@ namespace SQLite.Net.Tests
             Assert.AreEqual(customer.Id, loaded.Id);
         }
 
+
         [Test]
         public async Task StressAsync()
         {
@@ -169,8 +170,13 @@ namespace SQLite.Net.Tests
 
             SQLiteAsyncConnection globalConn = GetAsyncConnection();
 
+            // see http://stackoverflow.com/questions/12004426/sqlite-returns-sqlite-busy-in-wal-mode
             var journalMode = await globalConn.ExecuteScalarAsync<string>("PRAGMA journal_mode = wal"); // = wal");
             Debug.WriteLine("journal_mode: " + journalMode);
+            var synchronous = await globalConn.ExecuteScalarAsync<string>("PRAGMA synchronous");        // 2 = FULL
+            Debug.WriteLine("synchronous: " + synchronous);
+            var pageSize = await globalConn.ExecuteScalarAsync<string>("PRAGMA page_size");             // 1024 default
+            Debug.WriteLine("page_size: " + pageSize);
             var busyTimeout = await globalConn.ExecuteScalarAsync<string>(
                 string.Format("PRAGMA busy_timeout = {0}", defaultBusyTimeout));
             Debug.WriteLine("busy_timeout: " + busyTimeout);
@@ -188,7 +194,7 @@ namespace SQLite.Net.Tests
                     {
                         SQLiteAsyncConnection conn = GetAsyncConnection();
 
-                        // Each connection retains the global journal_mode but somehow resets busy_timeout to 100
+                        // each connection retains the global journal_mode but somehow resets busy_timeout to 100
                         busyTimeout = await globalConn.ExecuteScalarAsync<string>(
                             string.Format("PRAGMA busy_timeout = {0}", defaultBusyTimeout));
 //                        Debug.WriteLine("busy_timeout: " + busyTimeout);
