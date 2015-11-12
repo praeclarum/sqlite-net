@@ -548,6 +548,36 @@ namespace SQLite.Net.Async
         }
 
         [PublicAPI]
+        public Task ExecuteNonQueryAsync([NotNull] string sql, [NotNull] params object[] args)
+        {
+            return ExecuteNonQueryAsync(CancellationToken.None, sql, args);
+        }
+
+        [PublicAPI]
+        public Task ExecuteNonQueryAsync(CancellationToken cancellationToken, [NotNull] string sql, [NotNull] params object[] args)
+        {
+            if (sql == null)
+            {
+                throw new ArgumentNullException("sql");
+            }
+            if (args == null)
+            {
+                throw new ArgumentNullException("args");
+            }
+            return Task.Factory.StartNew(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var command = conn.CreateCommand(sql, args);
+                    command.ExecuteNonQuery();
+                }
+            }, cancellationToken, _taskCreationOptions, _taskScheduler ?? TaskScheduler.Default);
+        }
+
+        [PublicAPI]
         public Task<List<T>> QueryAsync<T>([NotNull] string sql, [NotNull] params object[] args)
             where T : class
         {
