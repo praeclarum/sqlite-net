@@ -190,8 +190,11 @@ namespace SQLite.Net.Tests
             {
                 tasks.Add(Task.Factory.StartNew(async delegate
                 {
+                    string taskDesc = "";
+
                     try
                     {
+                        taskDesc = "CONNECT";
                         SQLiteAsyncConnection conn = GetAsyncConnection();
 
                         // each connection retains the global journal_mode but somehow resets busy_timeout to 100
@@ -203,6 +206,8 @@ namespace SQLite.Net.Tests
                         {
                             FirstName = i.ToString(),
                         };
+
+                        taskDesc = "INSERT";
                         await conn.InsertAsync(obj);
 
                         if (obj.Id == 0)
@@ -212,6 +217,8 @@ namespace SQLite.Net.Tests
                                 errors.Add("Bad Id");
                             }
                         }
+
+                        taskDesc = "SELECT";
                         var obj3 = await (from c in conn.Table<Customer>() where c.Id == obj.Id select c).ToListAsync();
                         Customer obj2 = obj3.FirstOrDefault();
                         if (obj2 == null)
@@ -226,7 +233,7 @@ namespace SQLite.Net.Tests
                     {
                         lock (errors)
                         {
-                            errors.Add(ex.Message);
+                            errors.Add(string.Format("{0}: {1}", taskDesc, ex.Message));
                         }
                     }
                 }));
