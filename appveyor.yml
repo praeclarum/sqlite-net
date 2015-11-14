@@ -1,2 +1,6 @@
 build:
   project: SQLite.Net.OSS.sln
+
+test:
+  assemblies:
+    - '**\SQLite.Net.Tests.Win32.dll'
