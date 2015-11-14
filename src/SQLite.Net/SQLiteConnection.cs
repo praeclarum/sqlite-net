@@ -1739,9 +1739,6 @@ namespace SQLite.Net
         /// <returns>
         ///     The number of objects deleted.
         /// </returns>
-        /// <typeparam name='T'>
-        ///     The type of objects to delete.
-        /// </typeparam>
         [PublicAPI]
         public int DeleteAll(Type t)
         {
