@@ -28,8 +28,6 @@ namespace SQLite.Net.Tests.XamarinAndroid
 		{
 			global::PCLStorage.Resource.String.ApplicationName = global::SQLite.Net.Tests.XamarinAndroid.Resource.String.ApplicationName;
 			global::PCLStorage.Resource.String.Hello = global::SQLite.Net.Tests.XamarinAndroid.Resource.String.Hello;
-			global::SQLite.Net.Platform.XamarinAndroid.Resource.String.ApplicationName = global::SQLite.Net.Tests.XamarinAndroid.Resource.String.ApplicationName;
-			global::SQLite.Net.Platform.XamarinAndroid.Resource.String.Hello = global::SQLite.Net.Tests.XamarinAndroid.Resource.String.Hello;
 			global::Xamarin.Android.NUnitLite.Resource.Id.OptionHostName = global::SQLite.Net.Tests.XamarinAndroid.Resource.Id.OptionHostName;
 			global::Xamarin.Android.NUnitLite.Resource.Id.OptionPort = global::SQLite.Net.Tests.XamarinAndroid.Resource.Id.OptionPort;
 			global::Xamarin.Android.NUnitLite.Resource.Id.OptionRemoteServer = global::SQLite.Net.Tests.XamarinAndroid.Resource.Id.OptionRemoteServer;

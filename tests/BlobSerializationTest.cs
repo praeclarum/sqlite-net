@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using SQLite.Net.Attributes;
 using NUnit.Framework;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace SQLite.Net.Tests
 {
@@ -226,15 +228,15 @@ namespace SQLite.Net.Tests
             public Guid Guid{ get; set; }
             public byte[] Bytes{ get; set; }
             public TimeSpan Timespan { get; set; }
-        }
+            public DateTimeOffset DateTimeOffset { get; set; }
+    }
 
         public class UnsupportedTypes
         {
             [PrimaryKey]
             public Guid Id { get; set; }
-
-            
             public DateTimeOffset DateTimeOffset { get; set; }
+            public DivideByZeroException DivideByZeroException { get; set; }
         }
 
         protected override IBlobSerializer Serializer
@@ -304,7 +306,7 @@ namespace SQLite.Net.Tests
                 db.CreateTable<UnsupportedTypes>();
             }
 
-            Assert.That(types, Has.Member(typeof (DateTimeOffset)));
+            Assert.That(types, Has.Member(typeof (DivideByZeroException)));
 
             Assert.AreEqual(1, types.Count, "Too many types requested by serializer");
         }
@@ -317,30 +319,22 @@ namespace SQLite.Net.Tests
             var serializer = new BlobSerializerDelegate(
                 obj =>
                 {
-                    if (obj is DateTimeOffset)
+                    if (obj is DivideByZeroException)
                     {
-                        Assert.AreEqual(item.DateTimeOffset, obj);
-                        var offset = (DateTimeOffset)obj;
-                        var bytes = new byte[16];
-                        Buffer.BlockCopy(BitConverter.GetBytes(offset.Ticks), 0, bytes, 0, 8);
-                        Buffer.BlockCopy(BitConverter.GetBytes(offset.Offset.Ticks), 0, bytes, 8, 8);
-                        return bytes;
+                        var e = (DivideByZeroException)obj;
+                        var json = JsonConvert.SerializeObject(e);        // subst your own serializer
+                        return Encoding.UTF8.GetBytes(json);
                     }
 
                     throw new InvalidOperationException(string.Format("Type {0} should not be requested.", obj.GetType()));
                 },
                 (d, t) =>
                 {
-                    if (t == typeof(DateTimeOffset))
+                    if (t == typeof(DivideByZeroException))
                     {
-                        var ticks = BitConverter.ToInt64(d, 0);
-                        var offset = BitConverter.ToInt64(d, 8);
-                        return new DateTimeOffset(ticks, TimeSpan.FromTicks(offset));
-                    }
-
-                    if (t == typeof(TimeSpan))
-                    {
-                        return TimeSpan.FromTicks(BitConverter.ToInt64(d, 0));
+                        var json = Encoding.UTF8.GetString(d);
+                        var result = JsonConvert.DeserializeObject<DivideByZeroException>(json);
+                        return result;
                     }
 
                     throw new InvalidOperationException(string.Format("Type {0} should not be requested.", t));
@@ -350,10 +344,11 @@ namespace SQLite.Net.Tests
             using (var db = new BlobDatabase(serializer))
             {
                 db.CreateTable<UnsupportedTypes>();
-                item = new UnsupportedTypes() 
+                item = new UnsupportedTypes()
                 {
                     Id = Guid.NewGuid(),
-                    DateTimeOffset = DateTime.Now
+                    DateTimeOffset = DateTime.Now,
+                    DivideByZeroException = new DivideByZeroException("a message")
                 };
 
                 db.Insert(item);
@@ -361,6 +356,7 @@ namespace SQLite.Net.Tests
 
                 Assert.AreEqual(item.Id, dbItem.Id);
                 Assert.AreEqual(item.DateTimeOffset, dbItem.DateTimeOffset);
+                Assert.AreEqual(item.DivideByZeroException.Message, dbItem.DivideByZeroException.Message);
             }
         }
     }

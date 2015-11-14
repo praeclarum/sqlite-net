@@ -8,6 +8,7 @@ using NUnit.Framework;
 using PCLStorage;
 using SQLite.Net.Async;
 using SQLite.Net.Attributes;
+using System.Diagnostics;
 
 
 namespace SQLite.Net.Tests
@@ -161,10 +162,24 @@ namespace SQLite.Net.Tests
             Assert.AreEqual(customer.Id, loaded.Id);
         }
 
+
         [Test]
         public async Task StressAsync()
         {
+            const int defaultBusyTimeout = 100;
+
             SQLiteAsyncConnection globalConn = GetAsyncConnection();
+
+            // see http://stackoverflow.com/questions/12004426/sqlite-returns-sqlite-busy-in-wal-mode
+            var journalMode = await globalConn.ExecuteScalarAsync<string>("PRAGMA journal_mode = wal"); // = wal");
+            Debug.WriteLine("journal_mode: " + journalMode);
+            //var synchronous = await globalConn.ExecuteScalarAsync<string>("PRAGMA synchronous");        // 2 = FULL
+            //Debug.WriteLine("synchronous: " + synchronous);
+            //var pageSize = await globalConn.ExecuteScalarAsync<string>("PRAGMA page_size");             // 1024 default
+            //Debug.WriteLine("page_size: " + pageSize);
+            var busyTimeout = await globalConn.ExecuteScalarAsync<string>(
+                string.Format("PRAGMA busy_timeout = {0}", defaultBusyTimeout));
+            Debug.WriteLine("busy_timeout: " + busyTimeout);
 
             await globalConn.CreateTableAsync<Customer>();
 
@@ -173,15 +188,28 @@ namespace SQLite.Net.Tests
             var tasks = new List<Task>();
             for (int i = 0; i < n; i++)
             {
-                tasks.Add(Task.Factory.StartNew(async delegate
+                int taskId = i;
+
+                tasks.Add(Task.Run(async () =>
                 {
+                    string taskStep = "";
+
                     try
                     {
+                        taskStep = "CONNECT";
                         SQLiteAsyncConnection conn = GetAsyncConnection();
+
+                        // each connection retains the global journal_mode but somehow resets busy_timeout to 100
+                        busyTimeout = await globalConn.ExecuteScalarAsync<string>(
+                            string.Format("PRAGMA busy_timeout = {0}", defaultBusyTimeout));
+//                        Debug.WriteLine("busy_timeout: " + busyTimeout);
+
                         var obj = new Customer
                         {
-                            FirstName = i.ToString(),
+                            FirstName = taskId.ToString(),
                         };
+
+                        taskStep = "INSERT";
                         await conn.InsertAsync(obj);
 
                         if (obj.Id == 0)
@@ -191,6 +219,8 @@ namespace SQLite.Net.Tests
                                 errors.Add("Bad Id");
                             }
                         }
+
+                        taskStep = "SELECT";
                         var obj3 = await (from c in conn.Table<Customer>() where c.Id == obj.Id select c).ToListAsync();
                         Customer obj2 = obj3.FirstOrDefault();
                         if (obj2 == null)
@@ -200,22 +230,35 @@ namespace SQLite.Net.Tests
                                 errors.Add("Failed query");
                             }
                         }
+
+//                        Debug.WriteLine("task {0} with id {1} and name {2}", taskId, obj.Id, obj.FirstName);
                     }
                     catch (Exception ex)
                     {
                         lock (errors)
                         {
-                            errors.Add(ex.Message);
+                            errors.Add(string.Format("{0}: {1}", taskStep, ex.Message));
                         }
                     }
                 }));
             }
 
             await Task.WhenAll(tasks);
-            int count = await globalConn.Table<Customer>().CountAsync();
+            Assert.AreEqual(n, tasks.Where(t => t.IsCompleted).Count());
 
-            Assert.AreEqual(0, errors.Count);
-            Assert.AreEqual(n, count);
+            //int j = 0;
+            //foreach (var error in errors)
+            //{
+            //    Debug.WriteLine("{0} {1}", j++, error);
+            //}
+
+            Assert.AreEqual(0, errors.Count, "Error in task runs");
+
+            int count = await globalConn.Table<Customer>().CountAsync();
+            Assert.AreEqual(n, count, "Not enough items in table");
+
+            // TODO: get out of wal mode - currently fails with 'database is locked'
+//            journalMode = await globalConn.ExecuteScalarAsync<string>("PRAGMA journal_mode = delete");
         }
 
         [Test]
