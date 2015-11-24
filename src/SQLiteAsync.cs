@@ -46,6 +46,11 @@ namespace SQLite
             _connectionString = new SQLiteConnectionString(databasePath, storeDateTimeAsTicks);
         }
 
+		public static void ResetPool()
+		{
+			SQLiteConnectionPool.Shared.Reset();
+		}
+
 		SQLiteConnectionWithLock GetConnection ()
 		{
 			return SQLiteConnectionPool.Shared.GetConnection (_connectionString, _openFlags);
