@@ -1566,28 +1566,34 @@ namespace SQLite
 
 		public void Dispose ()
 		{
-			Dispose (true);
-			GC.SuppressFinalize (this);
+			Dispose(true);
+			GC.SuppressFinalize(this);
 		}
 
-		protected virtual void Dispose (bool disposing)
+		public void Close()
 		{
-			Close ();
+			Dispose(true);
 		}
 
-		public void Close ()
+		protected virtual void Dispose(bool disposing)
 		{
 			if (_open && Handle != NullHandle) {
 				try {
-					if (_mappings != null) {
-						foreach (var sqlInsertCommand in _mappings.Values) {
-							sqlInsertCommand.Dispose();
+					if (disposing) {
+						if (_mappings != null) {
+							foreach (var sqlInsertCommand in _mappings.Values){
+								sqlInsertCommand.Dispose();
+							}
 						}
-					}
-					var r = SQLite3.Close (Handle);
-					if (r != SQLite3.Result.OK) {
-						string msg = SQLite3.GetErrmsg (Handle);
-						throw SQLiteException.New (r, msg);
+
+						var r = SQLite3.Close(Handle);
+						if (r != SQLite3.Result.OK)
+						{
+							string msg = SQLite3.GetErrmsg(Handle);
+							throw SQLiteException.New(r, msg);
+						}
+					} else {
+						SQLite3.Close2(Handle);
 					}
 				}
 				finally {
@@ -3109,6 +3115,9 @@ namespace SQLite
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
 		
+		[DllImport(LibraryPath, EntryPoint = "sqlite3_close_v2", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Close2(IntPtr db);
+		
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_initialize", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Initialize();
 						
@@ -3265,6 +3274,11 @@ namespace SQLite
 		public static Result Close(Sqlite3DatabaseHandle db)
 		{
 			return (Result)Sqlite3.sqlite3_close(db);
+		}
+
+		public static Result Close2(Sqlite3DatabaseHandle db)
+		{
+			return (Result)Sqlite3.sqlite3_close_v2(db);
 		}
 
 		public static Result BusyTimeout(Sqlite3DatabaseHandle db, int milliseconds)
