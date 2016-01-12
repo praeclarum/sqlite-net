@@ -47,14 +47,6 @@
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="SQLitePCL.raw">
-      <HintPath>packages\SQLitePCL.raw_basic.0.7.1\lib\portable-net45+netcore45+wpa81+wp8+MonoAndroid10+MonoTouch10+Xamarin.iOS10\SQLitePCL.raw.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -63,4 +55,12 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Reference Include="SQLitePCL.raw">
+      <HintPath>packages\SQLitePCL.raw.0.8.6\lib\portable-net45+netcore45+wpa81+wp8+MonoAndroid10+MonoTouch10+Xamarin.iOS10\SQLitePCL.raw.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>

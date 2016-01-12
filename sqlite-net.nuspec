@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>1.0.8</version>
+    <version>1.1.0</version>
     <authors>Frank Krueger</authors>
     <owners>Frank Krueger,Tim Heuer</owners>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
@@ -14,12 +14,12 @@
 	<summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
 	<releaseNotes>
     <![CDATA[
-		v1.0.8: Update with commits through 25-FEB-2014.
-		]]>
+	v1.1.0: Update with commits through 11-JAN-2016.
+	]]>
 	</releaseNotes>
   </metadata>
   <files>
-    <file src="..\src\SQLite.cs" target="content\SQLite.cs" />
-    <file src="..\src\SQLiteAsync.cs" target="content\SQLiteAsync.cs" />
+    <file src="src/SQLite.cs" target="content\SQLite.cs" />
+    <file src="src/SQLiteAsync.cs" target="content\SQLiteAsync.cs" />
   </files>
 </package>

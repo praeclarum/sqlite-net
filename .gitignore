@@ -7,6 +7,8 @@
 *.suo
 *.nupkg
 
+TestResult.xml
+
 _Resharper*
 obj
 bin

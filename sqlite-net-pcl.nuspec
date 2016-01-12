@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>1.0.11</version>
+    <version>1.1.0</version>
     <authors>Frank A. Krueger</authors>
     <owners>Frank A. Krueger</owners>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
@@ -14,15 +14,15 @@
     <tags>sqlite pcl database orm </tags>
     <releaseNotes>
     <![CDATA[
-    v1.0.11: Update with commits through 22-JAN-2015. Xamarin Unified. Adds async support. Out of prerelease. .raw bumped to 0.7.1.
+    v1.1.0: Update .raw to 0.8. Update with commits through 11-JAN-2016.
     ]]>
     </releaseNotes>
     <dependencies>
-      <dependency id="SQLitePCL.raw_basic" version="0.7.1" />
+      <dependency id="SQLitePCL.raw" version="0.8.0" />
     </dependencies>
   </metadata>
   <files>
-    <file src="SQLite-net\bin\Release\SQLite-net.dll" target="lib\portable-net45+wp8+wpa81+win8+MonoAndroid10+MonoTouch10+Xamarin.iOS10" />
-    <file src="SQLite-net\bin\Release\SQLite-net.dll.mdb" target="lib\portable-net45+wp8+wpa81+win8+MonoAndroid10+MonoTouch10+Xamarin.iOS10" />
+    <file src="nuget/SQLite-net/bin/Release/SQLite-net.dll" target="lib\portable-net45+wp8+wpa81+win8+MonoAndroid10+MonoTouch10+Xamarin.iOS10" />
+    <file src="nuget/SQLite-net/bin/Release/SQLite-net.dll.mdb" target="lib\portable-net45+wp8+wpa81+win8+MonoAndroid10+MonoTouch10+Xamarin.iOS10" />
   </files>
 </package>
