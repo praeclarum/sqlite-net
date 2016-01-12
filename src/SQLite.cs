@@ -391,6 +391,11 @@ namespace SQLite
 				_tables.Add (ty.FullName, map);
 			}
 
+			// Present a nice error if no columns specified
+			if (map.Columns.Length == 0) {
+				throw new Exception (string.Format ("Cannot create a table with zero columns (does '{0}' have public properties?)", ty.FullName));
+			}
+
             // Facilitate virtual tables a.k.a. full-text search.
 		    bool fts3 = (createFlags & CreateFlags.FullTextSearch3) != 0;
 		    bool fts4 = (createFlags & CreateFlags.FullTextSearch4) != 0;

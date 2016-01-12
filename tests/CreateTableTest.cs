@@ -16,6 +16,18 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class CreateTableTest
 	{
+		class NoPropObject
+		{
+		}
+
+		[Test, ExpectedException]
+		public void CreateTypeWithNoProps ()
+		{
+			var db = new TestDb ();
+
+			db.CreateTable<NoPropObject> ();
+		}
+
 		[Test]
 		public void CreateThem ()
 		{
