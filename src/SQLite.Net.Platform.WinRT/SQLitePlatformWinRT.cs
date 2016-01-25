@@ -5,9 +5,9 @@ namespace SQLite.Net.Platform.WinRT
 {
     public class SQLitePlatformWinRT : ISQLitePlatform
     {
-        public SQLitePlatformWinRT()
+        public SQLitePlatformWinRT(string tempFolderPath = null)
         {
-            SQLiteApi = new SQLiteApiWinRT();
+            SQLiteApi = new SQLiteApiWinRT(tempFolderPath);
             VolatileService = new VolatileServiceWinRT();
             StopwatchFactory = new StopwatchFactoryWinRT();
             ReflectionService = new ReflectionServiceWinRT();
