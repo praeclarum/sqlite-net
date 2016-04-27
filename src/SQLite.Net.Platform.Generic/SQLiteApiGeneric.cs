@@ -71,7 +71,7 @@ namespace SQLite.Net.Platform.Generic
         {
             var internalDbHandle = (DbHandle) db;
             IntPtr stmt;
-            Result r = SQLiteApiGenericInternal.sqlite3_prepare_v2(internalDbHandle.DbPtr, query, query.Length, out stmt, IntPtr.Zero);
+            Result r = SQLiteApiGenericInternal.sqlite3_prepare16_v2(internalDbHandle.DbPtr, query, -1, out stmt, IntPtr.Zero);
             if (r != Result.OK)
             {
                 throw SQLiteException.New(r, Errmsg16(internalDbHandle));
