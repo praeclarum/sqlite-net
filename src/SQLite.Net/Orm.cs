@@ -36,8 +36,10 @@ namespace SQLite.Net
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
 
-        internal static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer,
-            IDictionary<Type, string> extraTypeMappings)
+		public static IColumnInformationProvider ColumnInformationProvider { get; set; } = new DefaultColumnInformationProvider();
+
+		internal static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer,
+			IDictionary<Type, string> extraTypeMappings)
         {
             var decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks, serializer, extraTypeMappings) + " ";
 
@@ -144,65 +146,39 @@ namespace SQLite.Net
 
         internal static bool IsPK(MemberInfo p)
         {
-            return p.GetCustomAttributes<PrimaryKeyAttribute>().Any();
+			return ColumnInformationProvider.IsPK (p);
         }
 
         internal static string Collation(MemberInfo p)
         {
-            foreach (var attribute in p.GetCustomAttributes<CollationAttribute>())
-            {
-                return attribute.Value;
-            }
-            return string.Empty;
+			return ColumnInformationProvider.Collation (p);
         }
 
         internal static bool IsAutoInc(MemberInfo p)
         {
-            return p.GetCustomAttributes<AutoIncrementAttribute>().Any();
+			return ColumnInformationProvider.IsAutoInc (p);
         }
 
         internal static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
         {
-            return p.GetCustomAttributes<IndexedAttribute>();
+			return ColumnInformationProvider.GetIndices (p);
         }
 
         [CanBeNull]
         internal static int? MaxStringLength(PropertyInfo p)
         {
-            foreach (var attribute in p.GetCustomAttributes<MaxLengthAttribute>())
-            {
-                return attribute.Value;
-            }
-            return null;
+			return ColumnInformationProvider.MaxStringLength (p);
         }
 
         [CanBeNull]
         internal static object GetDefaultValue(PropertyInfo p)
         {
-            foreach (var attribute in p.GetCustomAttributes<DefaultAttribute>())
-            {
-                try
-                {
-                    if (!attribute.UseProperty)
-                    {
-                        return Convert.ChangeType(attribute.Value, p.PropertyType);
-                    }
-
-                    var obj = Activator.CreateInstance(p.DeclaringType);
-                    return p.GetValue(obj);
-                }
-                catch (Exception exception)
-                {
-                    throw new Exception("Unable to convert " + attribute.Value + " to type " + p.PropertyType, exception);
-                }
-            }
-            return null;
+			return ColumnInformationProvider.GetDefaultValue (p);
         }
 
         internal static bool IsMarkedNotNull(MemberInfo p)
         {
-            var attrs = p.GetCustomAttributes<NotNullAttribute>(true);
-            return attrs.Any();
+			return ColumnInformationProvider.IsMarkedNotNull (p);
         }
     }
 }

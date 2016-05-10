@@ -186,6 +186,18 @@ namespace SQLite.Net
             BusyTimeout = TimeSpan.FromSeconds(0.1);
         }
 
+		private IColumnInformationProvider _columnInformationProvider;
+		[CanBeNull, PublicAPI]
+		public IColumnInformationProvider ColumnInformationProvider 
+		{
+			get { return _columnInformationProvider; }
+			set
+			{
+				_columnInformationProvider = value;
+				Orm.ColumnInformationProvider = _columnInformationProvider;
+			}
+		}
+
         [CanBeNull, PublicAPI]
         public IBlobSerializer Serializer { get; private set; }
 
