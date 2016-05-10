@@ -8,7 +8,7 @@ namespace SQLite.Net
 {
 	public class DefaultColumnInformationProvider : IColumnInformationProvider
 	{
-		#region ICustomAttributeProvider implementation
+		#region IColumnInformationProvider implementation
 
 		public IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
 		{

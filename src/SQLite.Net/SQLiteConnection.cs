@@ -194,7 +194,7 @@ namespace SQLite.Net
 			set
 			{
 				_columnInformationProvider = value;
-				Orm.ColumnInformationProvider = _columnInformationProvider;
+				Orm.ColumnInformationProvider = _columnInformationProvider ?? new DefaultColumnInformationProvider ();
 			}
 		}
 
