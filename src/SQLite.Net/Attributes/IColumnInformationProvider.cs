@@ -13,6 +13,8 @@ namespace SQLite.Net
 		IEnumerable<IndexedAttribute> GetIndices(MemberInfo p);
 		object GetDefaultValue(PropertyInfo p);
 		bool IsMarkedNotNull(MemberInfo p);
+		bool IsIgnored(PropertyInfo p);
+		string GetColumnName(PropertyInfo p);
 	}
 }
 

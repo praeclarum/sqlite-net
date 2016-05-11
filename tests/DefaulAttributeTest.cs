@@ -72,6 +72,16 @@ namespace SQLite.Net.Tests
 
 		public class TestColumnInformationProvider : IColumnInformationProvider
 		{
+			public string GetColumnName(PropertyInfo p)
+			{
+				return p.Name;
+			}
+
+			public bool IsIgnored(PropertyInfo p)
+			{
+				return false;
+			}
+
 			public IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
 			{
 				return p.GetCustomAttributes<IndexedAttribute>();

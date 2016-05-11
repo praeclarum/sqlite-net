@@ -323,9 +323,9 @@ namespace SQLite.Net
         private TableMapping CreateAndSetMapping(Type type, CreateFlags createFlags, IDictionary<string, TableMapping> mapTable)
         {
             var props = Platform.ReflectionService.GetPublicInstanceProperties(type);
-            var map = new TableMapping(type, props, createFlags);
-	            mapTable[type.FullName] = map;
-            	return map;
+			var map = new TableMapping(type, props, createFlags, _columnInformationProvider);
+            mapTable[type.FullName] = map;
+        	return map;
         }
 
         /// <summary>

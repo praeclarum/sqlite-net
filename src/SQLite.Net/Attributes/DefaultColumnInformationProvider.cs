@@ -10,6 +10,17 @@ namespace SQLite.Net
 	{
 		#region IColumnInformationProvider implementation
 
+		public string GetColumnName(PropertyInfo p)
+		{
+			var colAttr = p.GetCustomAttributes<ColumnAttribute>(true).FirstOrDefault();
+			return colAttr == null ? p.Name : colAttr.Name;
+		}
+
+		public bool IsIgnored(PropertyInfo p)
+		{
+			return p.IsDefined(typeof (IgnoreAttribute), true);
+		}
+
 		public IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
 		{
 			return p.GetCustomAttributes<IndexedAttribute>();
