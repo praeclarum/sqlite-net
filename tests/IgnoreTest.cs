@@ -99,6 +99,7 @@ namespace SQLite.Net.Tests
 			db.ColumnInformationProvider = new TestColumnInformationProvider();
 			// if the Ignored property is not ignore this will cause an exception
 			db.CreateTable<TestObjIntWithIgnore>();
+			db.ColumnInformationProvider = null;
 		}
     }
 }

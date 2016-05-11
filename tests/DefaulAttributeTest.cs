@@ -190,10 +190,11 @@ namespace SQLite.Net.Tests
 				foreach (var col in db.GetMapping<TestObjIntWithDefaultValue>().Columns)
 				{
 					if (col.PropertyName == "SomeValue" && !col.DefaultValue.Equals(WithDefaultValue.CustomAttributeDefaultValue))
-						failed += " , SomeValue does not equal " + WithDefaultValue.IntVal;
+						failed += " , SomeValue does not equal " + WithDefaultValue.CustomAttributeDefaultValue;
 				}
 
 				Assert.True(string.IsNullOrWhiteSpace(failed), failed);
+				db.ColumnInformationProvider = null;
 			}
 		}
     }
