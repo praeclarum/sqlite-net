@@ -36,7 +36,12 @@ namespace SQLite.Net
         public const string ImplicitPkName = "Id";
         public const string ImplicitIndexSuffix = "Id";
 
-		public static IColumnInformationProvider ColumnInformationProvider { get; set; } = new DefaultColumnInformationProvider();
+		private static IColumnInformationProvider _columnInformationProvider = new DefaultColumnInformationProvider();
+		public static IColumnInformationProvider ColumnInformationProvider 
+		{
+			get { return _columnInformationProvider; }
+			set { _columnInformationProvider = value; }
+		}
 
 		internal static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks, IBlobSerializer serializer,
 			IDictionary<Type, string> extraTypeMappings)
