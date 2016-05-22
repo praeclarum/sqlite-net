@@ -204,7 +204,7 @@ namespace SQLite.Net.Platform.WinRT
         {
             var dbHandle = (DbHandle)db;
             var stmt = default(Sqlite3Statement);
-            var r = SQLite3.Prepare2(dbHandle.InternalDbHandle, query, query.Length, out stmt, IntPtr.Zero);
+            var r = SQLite3.Prepare2(dbHandle.InternalDbHandle, query, -1, out stmt, IntPtr.Zero);
             if (r != Result.OK)
             {
                 throw SQLiteException.New(r, SQLite3.GetErrmsg(dbHandle.InternalDbHandle));
@@ -355,8 +355,8 @@ namespace SQLite.Net.Platform.WinRT
         [DllImport("sqlite3", EntryPoint = "sqlite3_changes", CallingConvention = CallingConvention.Cdecl)]
         public static extern int Changes(IntPtr db);
 
-        [DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern Result Prepare2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
+        [DllImport("sqlite3", EntryPoint = "sqlite3_prepare16_v2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern Result Prepare2(IntPtr db, [MarshalAs(UnmanagedType.LPWStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
 
         [DllImport("sqlite3", EntryPoint = "sqlite3_step", CallingConvention = CallingConvention.Cdecl)]
         public static extern Result Step(IntPtr stmt);

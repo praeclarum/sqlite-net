@@ -79,7 +79,7 @@ namespace SQLite.Net.Platform.Win32
         {
             var internalDbHandle = (DbHandle) db;
             IntPtr stmt;
-            Result r = SQLiteApiWin32Internal.sqlite3_prepare_v2(internalDbHandle.DbPtr, query, query.Length, out stmt, IntPtr.Zero);
+            Result r = SQLiteApiWin32Internal.sqlite3_prepare16_v2(internalDbHandle.DbPtr, query, -1, out stmt, IntPtr.Zero);
             if (r != Result.OK)
             {
                 throw SQLiteException.New(r, Errmsg16(internalDbHandle));

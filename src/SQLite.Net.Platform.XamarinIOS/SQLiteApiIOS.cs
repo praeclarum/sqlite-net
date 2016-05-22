@@ -60,9 +60,9 @@ namespace SQLite.Net.Platform.XamarinIOS {
 		public IDbStatement Prepare2(IDbHandle db, string query) {
 			var internalDbHandle = (DbHandle)db;
 			IntPtr stmt;
-			Result r = SQLiteApiIOSInternal.sqlite3_prepare_v2(internalDbHandle.DbPtr,
+			Result r = SQLiteApiIOSInternal.sqlite3_prepare16_v2(internalDbHandle.DbPtr,
 			                                                            query,
-			                                                            query.Length,
+			                                                            -1,
 			                                                            out stmt,
 			                                                            IntPtr.Zero);
 			if(r != Result.OK) {
