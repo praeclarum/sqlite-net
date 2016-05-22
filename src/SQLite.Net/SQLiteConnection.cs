@@ -186,6 +186,18 @@ namespace SQLite.Net
             BusyTimeout = TimeSpan.FromSeconds(0.1);
         }
 
+		private IColumnInformationProvider _columnInformationProvider;
+		[CanBeNull, PublicAPI]
+		public IColumnInformationProvider ColumnInformationProvider 
+		{
+			get { return _columnInformationProvider; }
+			set
+			{
+				_columnInformationProvider = value;
+				Orm.ColumnInformationProvider = _columnInformationProvider ?? new DefaultColumnInformationProvider ();
+			}
+		}
+
         [CanBeNull, PublicAPI]
         public IBlobSerializer Serializer { get; private set; }
 
@@ -311,9 +323,9 @@ namespace SQLite.Net
         private TableMapping CreateAndSetMapping(Type type, CreateFlags createFlags, IDictionary<string, TableMapping> mapTable)
         {
             var props = Platform.ReflectionService.GetPublicInstanceProperties(type);
-            var map = new TableMapping(type, props, createFlags);
-	            mapTable[type.FullName] = map;
-            	return map;
+			var map = new TableMapping(type, props, createFlags, _columnInformationProvider);
+            mapTable[type.FullName] = map;
+        	return map;
         }
 
         /// <summary>
