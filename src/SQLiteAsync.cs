@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2015 Krueger Systems, Inc.
+// Copyright (c) 2012-2016 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+
+#pragma warning disable 1591 // XML Doc Comments
 
 namespace SQLite
 {

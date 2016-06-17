@@ -61,6 +61,8 @@ using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
 #endif
 
+#pragma warning disable 1591 // XML Doc Comments
+
 namespace SQLite
 {
 	public class SQLiteException : Exception
