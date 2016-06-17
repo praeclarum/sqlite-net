@@ -163,6 +163,13 @@ namespace SQLite
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
+#if USE_SQLITEPCL_RAW
+		static SQLiteConnection()
+		{
+			SQLitePCL.Batteries.Init();
+		}
+#endif
+
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
