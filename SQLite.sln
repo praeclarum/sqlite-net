@@ -5,8 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Tests", "tests\SQLit
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A0E59A10-7BD0-4554-B133-66FA850159BE}"
 	ProjectSection(SolutionItems) = preProject
-		nuget\sqlite-net-pcl.nuspec = nuget\sqlite-net-pcl.nuspec
-		nuget\sqlite-net.nuspec = nuget\sqlite-net.nuspec
+		sqlite-net-pcl.nuspec = sqlite-net-pcl.nuspec
+		sqlite-net.nuspec = sqlite-net.nuspec
 	EndProjectSection
 EndProject
 Global
