@@ -36,8 +36,8 @@ namespace SQLite.Tests
 				db.CreateTable<UpperId> ();
 
 				var cols = db.GetTableInfo ("Test").ToList ();
-				Assert.That (cols.Count, Is.EqualTo (1));
-				Assert.That (cols[0].Name, Is.EqualTo ("Id"));
+				Assert.AreEqual (1, cols.Count);
+				Assert.AreEqual ("Id", cols[0].Name);
 			}
 		}
 	}
