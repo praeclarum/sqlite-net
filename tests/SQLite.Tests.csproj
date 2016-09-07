@@ -19,6 +19,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>False</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -45,6 +46,7 @@
     <Compile Include="GuidTests.cs" />
     <Compile Include="CreateTableImplicitTest.cs" />
     <Compile Include="NotNullAttributeTest.cs" />
+    <Compile Include="ReaderTest.cs" />
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />
     <Compile Include="ContainsTest.cs" />
@@ -72,5 +74,8 @@
     <Compile Include="DateTimeOffsetTest.cs" />
     <Compile Include="TableChangedTest.cs" />
     <Compile Include="IgnoreTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
 </Project>

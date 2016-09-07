@@ -690,22 +690,27 @@ namespace SQLite
 			return r;
 		}
 
-		/// <summary>
-		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
-		/// in the command text for each of the arguments and then executes that command.
-		/// It returns each row of the result using the mapping automatically generated for
-		/// the given type.
-		/// </summary>
-		/// <param name="query">
-		/// The fully escaped SQL.
-		/// </param>
-		/// <param name="args">
-		/// Arguments to substitute for the occurences of '?' in the query.
-		/// </param>
-		/// <returns>
-		/// An enumerable with one result for each row returned by the query.
-		/// </returns>
-		public List<T> Query<T> (string query, params object[] args) where T : new()
+        public List<ReaderItem> ExecuteReader(string query, params object[] args)
+        {
+            var cmd = CreateCommand(query, args);
+            return cmd.ExecuteReader();
+        }
+        /// <summary>
+        /// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+        /// in the command text for each of the arguments and then executes that command.
+        /// It returns each row of the result using the mapping automatically generated for
+        /// the given type.
+        /// </summary>
+        /// <param name="query">
+        /// The fully escaped SQL.
+        /// </param>
+        /// <param name="args">
+        /// Arguments to substitute for the occurences of '?' in the query.
+        /// </param>
+        /// <returns>
+        /// An enumerable with one result for each row returned by the query.
+        /// </returns>
+        public List<T> Query<T> (string query, params object[] args) where T : new()
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<T> ();
@@ -1949,6 +1954,17 @@ namespace SQLite
 
 			public int? MaxStringLength { get; private set; }
 
+            /// <summary>
+            /// Internal constructor used for Dynamic queries that returns IDictionary
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="columnType"></param>
+            internal Column(string name, Type columnType)
+            {
+                Name = name;
+                ColumnType = columnType;
+            }
+
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
@@ -1991,8 +2007,46 @@ namespace SQLite
 			}
 		}
 	}
+    public class ReaderItem
+    {
+        private readonly IDictionary<string, object> data;
+        
+        public object this[string propertyName]
+        {
+            get
+            {
+                if (data.ContainsKey(propertyName))
+                    return data[propertyName];
+                else
+                    return null;
+            }
+            set
+            {
+                if (data.ContainsKey(propertyName))
+                    data[propertyName] = value;
+                else
+                    data.Add(propertyName, value);
+            }
+        }
 
-	public static class Orm
+        /// <summary>
+        /// Get column names
+        /// </summary>
+        public List<string> Fields
+        {
+            get
+            {
+                return data.Keys.ToList();
+            }
+        }
+        
+        public ReaderItem()
+        {
+            data = new Dictionary<string, object>();
+        }
+    }
+
+    public static class Orm
 	{
         public const int DefaultMaxStringLength = 140;
         public const string ImplicitPkName = "Id";
@@ -2259,7 +2313,71 @@ namespace SQLite
 			return val;
 		}
 
-		public void Bind (string name, object val)
+        public IEnumerable<ReaderItem> ExecuteDeferredReader()
+        {
+            if (_conn.Trace)
+            {
+                Debug.WriteLine("Executing Query: " + this);
+            }
+
+            var stmt = Prepare();
+            try
+            {
+                // We need to manage columns dynamically in order to create columns
+                var cols = new TableMapping.Column[SQLite3.ColumnCount(stmt)];
+
+                while (SQLite3.Step(stmt) == SQLite3.Result.Row)
+                {
+                    var obj = new ReaderItem();
+                    for (var i = 0; i < cols.Length; i++)
+                    {
+                        if (cols[i] == null)
+                        {
+                            // We try to create column mapping if it's not already created :
+                            var name = SQLite3.ColumnName16(stmt, i);
+                            cols[i] = new TableMapping.Column(name, SQLite3.ColumnType(stmt, i).ToType());
+                        }
+                        var colType = SQLite3.ColumnType(stmt, i);
+                        var val = ReadCol(stmt, i, colType, cols[i].ColumnType);
+                        obj[cols[i].Name] = val;
+                    }
+                    OnInstanceCreated(obj);
+                    yield return obj;
+                }
+            }
+            finally
+            {
+                SQLite3.Finalize(stmt);
+            }
+        }
+
+        /// <summary>
+        ///     Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+        ///     in the command text for each of the arguments and then executes that command.
+        ///     It returns each row of the result using the specified mapping. This function is
+        ///     only used by libraries in order to query the database via introspection. It is
+        ///     normally not used.
+        /// </summary>
+        /// <param name="query">
+        ///     The fully escaped SQL.
+        /// </param>
+        /// <param name="args">
+        ///     Arguments to substitute for the occurences of '?' in the query.
+        /// </param>
+        /// <returns>
+        ///     An enumerable with one result for each row returned by the query.
+        /// </returns>
+        public List<ReaderItem> ExecuteReader(string query, params object[] args)
+        {
+            return ExecuteReader(query, args);
+        }
+
+        public List<ReaderItem> ExecuteReader()
+        {
+            return ExecuteDeferredReader().ToList();
+        }
+
+        public void Bind (string name, object val)
 		{
 			_bindings.Add (new Binding {
 				Name = name,
@@ -3489,7 +3607,30 @@ namespace SQLite
 			Blob = 4,
 			Null = 5
 		}
-	}
+
+        /// <summary>
+        /// Get a typeof() element from ColType enumeration.
+        /// </summary>
+        /// <param name="colType"></param>
+        /// <returns></returns>
+        public static Type ToType(this ColType colType)
+        {
+            // Prepare evolution where column can be nullable
+            var nullable = false;
+
+            switch (colType)
+            {
+                case ColType.Blob:
+                    return typeof(byte[]);
+                case ColType.Float:
+                    return nullable ? typeof(double?) : typeof(double);
+                case ColType.Integer:
+                    return nullable ? typeof(int?) : typeof(int);
+                default:
+                    return typeof(string);
+            }
+        }
+    }
 }
 
 #if NO_CONCURRENT

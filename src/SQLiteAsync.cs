@@ -307,7 +307,18 @@ namespace SQLite
 			});
 		}
 
-		public Task<List<T>> QueryAsync<T> (string sql, params object[] args)
+        public Task<List<ReaderItem>> ExecuteReaderAsync(string sql, params object[] args)
+        {
+            return Task<List<ReaderItem>>.Factory.StartNew(() => {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.ExecuteReader(sql, args);
+                }
+            });
+        }
+
+        public Task<List<T>> QueryAsync<T> (string sql, params object[] args)
 			where T : new ()
 		{
 			return Task<List<T>>.Factory.StartNew (() => {
