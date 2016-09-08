@@ -155,6 +155,31 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 		});
 
 
+## No binding queries
+
+If you want to create you own sql query and read values without creating a specific class you can call the ExecuteReader method.
+For example, you can query all data in a specific table :
+
+            var conn = new SQLiteConnection(sqlitePlatform, "foofoo");
+            string tableName = "<Set table name here>";
+            var reader = conn.ExecuteReader(string.format("select * from {0}", tableName"));
+
+            foreach (var resultLine in reader)
+                Debug.WriteLine(string.Join(";", resultLine.Fields.Select(e => e + " : " + resultLine[e].ToString()).ToArray()));
+
+The ExecuteReader method sends a List of ReaderItem that is a Dictionary of <string, object>.
+The property "Field" returns keys of the dictionary. So it corresponds to all fields defined in the select statement.
+To get a value, you can get it with ["Field name"]
+
+The sample Stocks project contains a query that let you show all data in table.
+
+Async reader is available.
+
+Limitations :
+All boolean values are stored as int type in the ResultItem. (as sqlite format)
+All DateTime values are stored as int type in the ResultItem. (as sqlite format)
+
+
 ## Special note on use within Windows Store Apps (Windows 8/WinRT)
 
 sqlite-net is fully compliant with WinRT Metro-style apps and will pass Microsoft Store validation.
