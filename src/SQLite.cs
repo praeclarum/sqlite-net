@@ -1763,7 +1763,12 @@ namespace SQLite
 	{
 	}
 
-	public class TableMapping
+    [AttributeUsage(AttributeTargets.Enum)]
+    public class StoreAsTextAttribute : Attribute
+    {
+    }
+
+    public class TableMapping
 	{
 		public Type MappedType { get; private set; }
 
@@ -1949,6 +1954,8 @@ namespace SQLite
 
 			public int? MaxStringLength { get; private set; }
 
+            public bool StoreAsText { get; private set; }
+
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
@@ -1978,6 +1985,8 @@ namespace SQLite
                 }
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
+
+                StoreAsText = prop.PropertyType.GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
             }
 
 			public void SetValue (object obj, object val)
@@ -2044,7 +2053,10 @@ namespace SQLite
 #else
 			} else if (clrType.GetTypeInfo().IsEnum) {
 #endif
-				return "integer";
+                if (p.StoreAsText)
+                    return "varchar";
+                else
+                    return "integer";
 			} else if (clrType == typeof(byte[])) {
 				return "blob";
             } else if (clrType == typeof(Guid)) {
@@ -2345,7 +2357,10 @@ namespace SQLite
 #else
 				} else if (value.GetType().GetTypeInfo().IsEnum) {
 #endif
-					SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
+                    if (value.GetType().GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null)
+                        SQLite3.BindText(stmt, index, value.ToString(), -1, NegativePointer);
+                    else
+                        SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
                 } else if (value is byte[]){
                     SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
                 } else if (value is Guid) {
@@ -2397,7 +2412,13 @@ namespace SQLite
 #else
 				} else if (clrType.GetTypeInfo().IsEnum) {
 #endif
-					return SQLite3.ColumnInt (stmt, index);
+                    if (type == SQLite3.ColType.Text)
+                    {
+                        var value = SQLite3.ColumnString(stmt, index);
+                        return Enum.Parse(clrType, value.ToString(), true);
+                    }
+                    else
+                        return SQLite3.ColumnInt (stmt, index);
 				} else if (clrType == typeof(Int64)) {
 					return SQLite3.ColumnInt64 (stmt, index);
 				} else if (clrType == typeof(UInt32)) {
