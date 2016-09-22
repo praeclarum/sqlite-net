@@ -1,13 +1,15 @@
 
 # sqlite-net
 
-sqlite-net is an open source, minimal library to allow .NET and Mono applications to store data in [SQLite 3 databases](http://www.sqlite.org). It is written in C# and is meant to be simply compiled in with your projects. It was first designed to work with [MonoTouch](http://xamarin.com) on the iPhone, but has grown up to work on all the platforms (Mono for Android, .NET, Silverlight, WP7, WinRT, Azure, etc.).
+sqlite-net is an open source, minimal library to allow .NET and Mono applications to store data in
+[SQLite 3 databases](http://www.sqlite.org). It was first designed to work with [Xamarin.iOS](http://xamarin.com),
+but has since grown up to work on all the platforms (Xamarin.*, .NET, UWP, Azure, etc.).
 
 sqlite-net was designed as a quick and convenient database layer. Its design follows from these *goals*:
 
-* Very easy to integrate with existing projects and with MonoTouch projects.
+* Very easy to integrate with existing projects and runs on all the .NET platforms.
   
-* Thin wrapper over SQLite and should be fast and efficient. (The library should not be the performance bottleneck of your queries.)
+* Thin wrapper over SQLite that is fast and efficient. (This library should not be the performance bottleneck of your queries.)
   
 * Very simple methods for executing CRUD operations and queries safely (using parameters) and for retrieving the results of those query in a strongly typed fashion.
   
@@ -15,12 +17,11 @@ sqlite-net was designed as a quick and convenient database layer. Its design fol
   
 * 0 dependencies aside from a [compiled form of the sqlite2 library](http://www.sqlite.org/download.html).
 
-*Non-goals* include:
+## Installation
 
-* Not an ADO.NET implementation. This is not a full SQLite driver. If you need that, use [Mono.Data.SQLite](http://www.mono-project.com/SQLite) or [csharp-sqlite](http://code.google.com/p/csharp-sqlite/).
+Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from nuget.
 
-
-## Meta
+## Please Contribute!
 
 This is an open source project that welcomes contributions/suggestions/bug reports from those who use it. If you have any ideas on how to improve the library, please [post an issue here on github](https://github.com/praeclarum/sqlite-net/issues). Please check out the [How to Contribute](https://github.com/praeclarum/sqlite-net/wiki/How-to-Contribute).
 
@@ -154,15 +155,8 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 			Debug.WriteLine(string.Format("Found '{0}' stock items.", t.Result));
 		});
 
+## Thank you!
 
-## Special note on use within Windows Store Apps (Windows 8/WinRT)
+Thank you to the .NET community for embracing this project, and thank you to all the contributors who have helped to make this great.
 
-sqlite-net is fully compliant with WinRT Metro-style apps and will pass Microsoft Store validation.
 
-Please note:
-
-* Database files will always be created in the path returned by `Windows.Storage.ApplicationData.Current.LocalFolder.Path`.
-
-* You will need a copy of sqlite3.dll for your app as well.  You can get this from sqlite.org with an installer to the SQLite for Windows Runtime SDK.
-
- 
