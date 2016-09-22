@@ -53,7 +53,7 @@ namespace SQLite
 			SQLiteConnectionPool.Shared.Reset();
 		}
 
-		SQLiteConnectionWithLock GetConnection ()
+		public SQLiteConnectionWithLock GetConnection ()
 		{
 			return SQLiteConnectionPool.Shared.GetConnection (_connectionString, _openFlags);
 		}
@@ -488,7 +488,7 @@ namespace SQLite
 		}
 	}
 
-	class SQLiteConnectionWithLock : SQLiteConnection
+	public class SQLiteConnectionWithLock : SQLiteConnection
 	{
 		readonly object _lockPoint = new object ();
 
