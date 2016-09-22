@@ -23,7 +23,7 @@
 #define USE_CSHARP_SQLITE
 #endif
 
-#if NETFX_CORE
+#if NETFX_CORE || NETCORE
 #define USE_NEW_REFLECTION_API
 #endif
 
@@ -1062,7 +1062,7 @@ namespace SQLite
 				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
 					if (0 <= depth && depth < _transactionDepth) {
-#if NETFX_CORE || USE_SQLITEPCL_RAW
+#if NETFX_CORE || USE_SQLITEPCL_RAW || NETCORE
                         Volatile.Write (ref _transactionDepth, depth);
 #elif SILVERLIGHT
 						_transactionDepth = depth;
