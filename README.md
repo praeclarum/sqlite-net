@@ -1,11 +1,11 @@
 
-# sqlite-net
+# SQLite-net
 
-sqlite-net is an open source, minimal library to allow .NET and Mono applications to store data in
+SQLite-net is an open source, minimal library to allow .NET and Mono applications to store data in
 [SQLite 3 databases](http://www.sqlite.org). It was first designed to work with [Xamarin.iOS](http://xamarin.com),
 but has since grown up to work on all the platforms (Xamarin.*, .NET, UWP, Azure, etc.).
 
-sqlite-net was designed as a quick and convenient database layer. Its design follows from these *goals*:
+SQLite-net was designed as a quick and convenient database layer. Its design follows from these *goals*:
 
 * Very easy to integrate with existing projects and runs on all the .NET platforms.
   
@@ -15,8 +15,6 @@ sqlite-net was designed as a quick and convenient database layer. Its design fol
   
 * Works with your data model without forcing you to change your classes. (Contains a small reflection-driven ORM layer.)
   
-* 0 dependencies aside from a [compiled form of the sqlite2 library](http://www.sqlite.org/download.html).
-
 ## Installation
 
 Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from nuget.
