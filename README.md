@@ -32,23 +32,25 @@ Please consult the Wiki for, ahem, [complete documentation](https://github.com/p
 
 The library contains simple attributes that you can use to control the construction of tables. In a simple stock program, you might use:
 
-    public class Stock
-    {
-    	[PrimaryKey, AutoIncrement]
-    	public int Id { get; set; }
-    	[MaxLength(8)]
-    	public string Symbol { get; set; }
-    }
+```csharp
+public class Stock
+{
+	[PrimaryKey, AutoIncrement]
+	public int Id { get; set; }
+	[MaxLength(8)]
+	public string Symbol { get; set; }
+}
 
-    public class Valuation
-    {
-    	[PrimaryKey, AutoIncrement]
-    	public int Id { get; set; }
-    	[Indexed]
-    	public int StockId { get; set; }
-    	public DateTime Time { get; set; }
-    	public decimal Price { get; set; }
-    }
+public class Valuation
+{
+	[PrimaryKey, AutoIncrement]
+	public int Id { get; set; }
+	[Indexed]
+	public int StockId { get; set; }
+	public DateTime Time { get; set; }
+	public decimal Price { get; set; }
+}
+```
 
 Once you've defined the objects in your model you have a choice of APIs. You can use the "synchronous API" where calls
 block one at a time, or you can use the "asynchronous API" where calls do not block. You may care to use the asynchronous
@@ -60,46 +62,56 @@ Both APIs are explained in the two sections below.
 
 Once you have defined your entity, you can automatically generate tables in your database by calling `CreateTable`:
 
-    var db = new SQLiteConnection("foofoo");
-    db.CreateTable<Stock>();
-    db.CreateTable<Valuation>();
+```csharp
+var db = new SQLiteConnection("foofoo");
+db.CreateTable<Stock>();
+db.CreateTable<Valuation>();
+```
 
 You can insert rows in the database using `Insert`. If the table contains an auto-incremented primary key, then the value for that key will be available to you after the insert:
 
-    public static void AddStock(SQLiteConnection db, string symbol) {
-    	var s = db.Insert(new Stock() {
-    		Symbol = symbol
-    	});
-    	Console.WriteLine("{0} == {1}", s.Symbol, s.Id);
-    }
+```csharp
+public static void AddStock(SQLiteConnection db, string symbol) {
+	var s = db.Insert(new Stock() {
+		Symbol = symbol
+	});
+	Console.WriteLine("{0} == {1}", s.Symbol, s.Id);
+}
+```
 
 Similar methods exist for `Update` and `Delete`.
 
 The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
 
-		var conn = new SQLiteConnection("foofoo");
-		var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+```csharp
+var conn = new SQLiteConnection("foofoo");
+var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
-		foreach (var stock in query)
-			Debug.WriteLine("Stock: " + stock.Symbol);
+foreach (var stock in query)
+	Debug.WriteLine("Stock: " + stock.Symbol);
+```
 
 You can also query the database at a low-level using the `Query` method:
 
-    public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock)
-    {
-    	return db.Query<Valuation> ("select * from Valuation where StockId = ?", stock.Id);
-    }
+```csharp
+public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock)
+{
+	return db.Query<Valuation> ("select * from Valuation where StockId = ?", stock.Id);
+}
+```
 
 The generic parameter to the `Query` method specifies the type of object to create for each row. It can be one of your table classes, or any other class whose public properties match the column returned by the query. For instance, we could rewrite the above query as:
 
-    public class Val {
-    	public decimal Money { get; set; }
-    	public DateTime Date { get; set; }
-    }
-    public static IEnumerable<Val> QueryVals (SQLiteConnection db, Stock stock)
-    {
-    	return db.Query<Val> ("select 'Price' as 'Money', 'Time' as 'Date' from Valuation where StockId = ?", stock.Id);
-    }
+```csharp
+public class Val {
+	public decimal Money { get; set; }
+	public DateTime Date { get; set; }
+}
+public static IEnumerable<Val> QueryVals (SQLiteConnection db, Stock stock)
+{
+	return db.Query<Val> ("select 'Price' as 'Money', 'Time' as 'Date' from Valuation where StockId = ?", stock.Id);
+}
+```
 
 You can perform low-level updates of the database using the `Execute` method.
 
@@ -110,24 +122,28 @@ will work for you.
 
 Once you have defined your entity, you can automatically generate tables by calling `CreateTableAsync`:
 
-	var conn = new SQLiteAsyncConnection("foofoo");
-	conn.CreateTableAsync<Stock>().ContinueWith((results) =>
-	{
-		Debug.WriteLine("Table created!");
-	});
+```csharp
+var conn = new SQLiteAsyncConnection("foofoo");
+
+await conn.CreateTableAsync<Stock>();
+
+Debug.WriteLine("Table created!");
+```
 
 You can insert rows in the database using `Insert`. If the table contains an auto-incremented primary key, then the value for that key will be available to you after the insert:
 
-		Stock stock = new Stock()
-		{
-			Symbol = "AAPL"
-		};
+```csharp
+Stock stock = new Stock()
+{
+	Symbol = "AAPL"
+};
 
-		var conn = new SQLiteAsyncConnection("foofoo");
-		conn.InsertAsync(stock).ContinueWith((t) =>
-		{
-			Debug.WriteLine("New customer ID: {0}", stock.Id);
-		});
+var conn = new SQLiteAsyncConnection("foofoo");
+
+await conn.InsertAsync(stock);
+
+Debug.WriteLine("New customer ID: {0}", stock.Id);
+```
 
 Similar methods exist for `UpdateAsync` and `DeleteAsync`.
 
@@ -135,25 +151,28 @@ Querying for data is most straightforwardly done using the `Table` method. This 
 you can add predictates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special 
 retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
 
-		var conn = new SQLiteAsyncConnection("foofoo");
-		var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
-			
-		query.ToListAsync().ContinueWith((t) =>
-		{
-			foreach (var stock in t.Result)
-				Debug.WriteLine("Stock: " + stock.Symbol);
-		});
+```csharp
+var conn = new SQLiteAsyncConnection("foofoo");
+var query = await conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+
+var result = await query.ToListAsync();
+
+foreach (var stock in result)
+	Debug.WriteLine("Stock: " + stock.Symbol);
+```
 
 There are a number of low-level methods available. You can also query the database directly via the `QueryAsync` method. Over and above the change 
 operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to change sets of data directly within the database.
 
 Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
 
-		var conn = new SQLiteAsyncConnection("foofoo");
-		conn.ExecuteScalarAsync<int>("select count(*) from Stock").ContinueWith((t) =>
-		{
-			Debug.WriteLine(string.Format("Found '{0}' stock items.", t.Result));
-		});
+```csharp
+var conn = new SQLiteAsyncConnection("foofoo");
+
+var result = await conn.ExecuteScalarAsync<int>("select count(*) from Stock");
+
+Debug.WriteLine(string.Format("Found '{0}' stock items.", result));
+```
 
 ## Thank you!
 
