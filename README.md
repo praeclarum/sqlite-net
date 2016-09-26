@@ -159,4 +159,5 @@ Another helpful method is `ExecuteScalarAsync`. This allows you to return a scal
 
 Thank you to the .NET community for embracing this project, and thank you to all the contributors who have helped to make this great.
 
+Thanks also to Tirza van Dijk (@tirzavdijk) for the great logo!
 
