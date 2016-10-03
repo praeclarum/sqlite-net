@@ -168,7 +168,7 @@ namespace SQLite
 #if USE_SQLITEPCL_RAW
 		static SQLiteConnection()
 		{
-			SQLitePCL.Batteries.Init();
+			SQLitePCL.Batteries_V2.Init();
 		}
 #endif
 
