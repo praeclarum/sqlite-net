@@ -1657,17 +1657,32 @@ namespace SQLite
 
 #if NETFX_CORE
 		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+
+        public static readonly string[] InMemoryDbPaths = new[]
+        {
+            ":memory:",
+            "file::memory:"
+        };
+
+        public static bool IsInMemoryPath(string databasePath)
+        {
+            return InMemoryDbPaths.Any(i => i.Equals(databasePath, StringComparison.OrdinalIgnoreCase));
+        }
+
 #endif
 
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
+        public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
 		{
 			ConnectionString = databasePath;
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 
 #if NETFX_CORE
-			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, databasePath);
+			DatabasePath = IsInMemoryPath(databasePath)
+                ? databasePath
+                : System.IO.Path.Combine(MetroStyleDataPath, databasePath);
+
 #else
-			DatabasePath = databasePath;
+            DatabasePath = databasePath;
 #endif
 		}
 	}
