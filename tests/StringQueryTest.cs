@@ -39,7 +39,8 @@ namespace SQLite.Tests
 			// C#: x => x.Name == "Foo"
 			var fs = db.Table<Product>().Where(x => x.Name == "Foo").ToList();
 			Assert.AreEqual(1, fs.Count);
-			
+
+#if !NO_VB
 			// VB: Function(x) x.Name = "Foo"
 			var param = System.Linq.Expressions.Expression.Parameter(typeof(Product), "x");
 			var expr = System.Linq.Expressions.Expression.Lambda<Func<Product, bool>>(
@@ -53,6 +54,7 @@ namespace SQLite.Tests
 				param);
 			var bs = db.Table<Product>().Where(expr).ToList();
 			Assert.AreEqual(1, bs.Count);
+#endif
 		}
 
 		[Test]

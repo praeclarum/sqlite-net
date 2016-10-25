@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>1.1.2</version>
+    <version>1.2.0</version>
     <authors>Frank Krueger</authors>
     <owners>Frank Krueger,Tim Heuer</owners>
+    <licenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE.md</licenseUrl>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/nuget/Logo-low.png</iconUrl>
     <id>sqlite-net</id>
     <title>sqlite-net</title>
 	<licenseUrl>https://github.com/praeclarum/sqlite-net/blob/master/license.md</licenseUrl>
@@ -14,12 +16,12 @@
 	<summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
 	<releaseNotes>
     <![CDATA[
-	v1.1.2: Update nuget.
+	v1.2.0: Fix bug storing textual dates in non-US cultures.
 	]]>
 	</releaseNotes>
   </metadata>
   <files>
-    <file src="src/SQLite.cs" target="content\SQLite.cs" />
-    <file src="src/SQLiteAsync.cs" target="content\SQLiteAsync.cs" />
+    <file src="src/SQLite.cs" target="content/SQLite.cs" />
+    <file src="src/SQLiteAsync.cs" target="content/SQLiteAsync.cs" />
   </files>
 </package>

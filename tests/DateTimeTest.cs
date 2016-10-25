@@ -62,7 +62,7 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1),
+				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234),
 			};
 			db.InsertAsync (o).Wait ();
 			o2 = db.GetAsync<TestObj> (o.Id).Result;
@@ -79,7 +79,7 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1),
+				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234),
 			};
 			db.Insert (o);
 			o2 = db.Get<TestObj> (o.Id);

@@ -53,10 +53,10 @@ namespace SQLite
             SQLiteConnectionPool.Shared.Reset();
         }
 
-        SQLiteConnectionWithLock GetConnection()
-        {
-            return SQLiteConnectionPool.Shared.GetConnection(_connectionString, _openFlags);
-        }
+		public SQLiteConnectionWithLock GetConnection ()
+		{
+			return SQLiteConnectionPool.Shared.GetConnection (_connectionString, _openFlags);
+		}
 
         public Task<CreateTablesResult> CreateTableAsync<T>(CreateFlags createFlags = CreateFlags.None)
             where T : new()
@@ -531,9 +531,9 @@ namespace SQLite
         }
     }
 
-    class SQLiteConnectionWithLock : SQLiteConnection
-    {
-        readonly object _lockPoint = new object();
+	public class SQLiteConnectionWithLock : SQLiteConnection
+	{
+		readonly object _lockPoint = new object ();
 
         public SQLiteConnectionWithLock(SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
             : base(connectionString.DatabasePath, openFlags, connectionString.StoreDateTimeAsTicks)

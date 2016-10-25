@@ -23,7 +23,7 @@
 #define USE_CSHARP_SQLITE
 #endif
 
-#if NETFX_CORE
+#if NETFX_CORE || NETCORE
 #define USE_NEW_REFLECTION_API
 #endif
 
@@ -1062,7 +1062,7 @@ namespace SQLite
 				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
 					if (0 <= depth && depth < _transactionDepth) {
-#if NETFX_CORE || USE_SQLITEPCL_RAW
+#if NETFX_CORE || USE_SQLITEPCL_RAW || NETCORE
                         Volatile.Write (ref _transactionDepth, depth);
 #elif SILVERLIGHT
 						_transactionDepth = depth;
@@ -1649,7 +1649,7 @@ namespace SQLite
 	/// <summary>
 	/// Represents a parsed connection string.
 	/// </summary>
-	class SQLiteConnectionString
+	public class SQLiteConnectionString
 	{
 		public string ConnectionString { get; private set; }
 		public string DatabasePath { get; private set; }
@@ -1763,7 +1763,12 @@ namespace SQLite
 	{
 	}
 
-	public class TableMapping
+    [AttributeUsage(AttributeTargets.Enum)]
+    public class StoreAsTextAttribute : Attribute
+    {
+    }
+
+    public class TableMapping
 	{
 		public Type MappedType { get; private set; }
 
@@ -1949,6 +1954,8 @@ namespace SQLite
 
 			public int? MaxStringLength { get; private set; }
 
+            public bool StoreAsText { get; private set; }
+
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
@@ -1978,6 +1985,8 @@ namespace SQLite
                 }
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
+
+                StoreAsText = prop.PropertyType.GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
             }
 
 			public void SetValue (object obj, object val)
@@ -2044,7 +2053,10 @@ namespace SQLite
 #else
 			} else if (clrType.GetTypeInfo().IsEnum) {
 #endif
-				return "integer";
+                if (p.StoreAsText)
+                    return "varchar";
+                else
+                    return "integer";
 			} else if (clrType == typeof(byte[])) {
 				return "blob";
             } else if (clrType == typeof(Guid)) {
@@ -2312,6 +2324,8 @@ namespace SQLite
 
 		internal static IntPtr NegativePointer = new IntPtr (-1);
 
+		const string DateTimeExactStoreFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
+
 		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
 		{
 			if (value == null) {
@@ -2336,7 +2350,7 @@ namespace SQLite
 						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
 					}
 					else {
-						SQLite3.BindText (stmt, index, ((DateTime)value).ToString ("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
+						SQLite3.BindText (stmt, index, ((DateTime)value).ToString (DateTimeExactStoreFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
 					}
 				} else if (value is DateTimeOffset) {
 					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
@@ -2345,7 +2359,10 @@ namespace SQLite
 #else
 				} else if (value.GetType().GetTypeInfo().IsEnum) {
 #endif
-					SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
+                    if (value.GetType().GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null)
+                        SQLite3.BindText(stmt, index, value.ToString(), -1, NegativePointer);
+                    else
+                        SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
                 } else if (value is byte[]){
                     SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
                 } else if (value is Guid) {
@@ -2388,7 +2405,11 @@ namespace SQLite
 					}
 					else {
 						var text = SQLite3.ColumnString (stmt, index);
-						return DateTime.Parse (text);
+						DateTime resultDate;
+						if (!DateTime.TryParseExact (text, DateTimeExactStoreFormat, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out resultDate)) {
+							resultDate = DateTime.Parse (text);
+						}
+						return resultDate;
 					}
 				} else if (clrType == typeof(DateTimeOffset)) {
 					return new DateTimeOffset(SQLite3.ColumnInt64 (stmt, index),TimeSpan.Zero);
@@ -2397,7 +2418,13 @@ namespace SQLite
 #else
 				} else if (clrType.GetTypeInfo().IsEnum) {
 #endif
-					return SQLite3.ColumnInt (stmt, index);
+                    if (type == SQLite3.ColType.Text)
+                    {
+                        var value = SQLite3.ColumnString(stmt, index);
+                        return Enum.Parse(clrType, value.ToString(), true);
+                    }
+                    else
+                        return SQLite3.ColumnInt (stmt, index);
 				} else if (clrType == typeof(Int64)) {
 					return SQLite3.ColumnInt64 (stmt, index);
 				} else if (clrType == typeof(UInt32)) {
@@ -3018,6 +3045,16 @@ namespace SQLite
 		{
 			var query = Take (1);
 			return query.ToList<T>().FirstOrDefault ();
+		}
+
+		public T First (Expression<Func<T, bool>> predExpr)
+		{
+			return Where (predExpr).First ();
+		}
+
+		public T FirstOrDefault (Expression<Func<T, bool>> predExpr)
+		{
+			return Where (predExpr).FirstOrDefault ();
 		}
     }
 
