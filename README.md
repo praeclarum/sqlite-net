@@ -17,9 +17,15 @@ SQLite-net was designed as a quick and convenient database layer. Its design fol
   
 * Works with your data model without forcing you to change your classes. (Contains a small reflection-driven ORM layer.)
   
-## Installation
+## Nuget Installation
 
 Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from nuget.
+
+**Important:** You will need to add the nuget package to **both** your *PCL project* and your *platform-dependent project*.
+
+## Source Installation
+
+SQLite-net is all contained in 1 file (I know, so cool right?) and is easy to add to your project. Just add [SQLite.cs](https://github.com/praeclarum/sqlite-net/blob/master/src/SQLite.cs) to your project, and you're ready to start creating tables. 
 
 ## Please Contribute!
 
