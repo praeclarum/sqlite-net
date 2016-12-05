@@ -2425,15 +2425,17 @@ namespace SQLite
 					}
 				} else if (value is DateTimeOffset) {
 					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
-#if !USE_NEW_REFLECTION_API
-				} else if (value.GetType().IsEnum) {
-#else
-				} else if (value.GetType().GetTypeInfo().IsEnum) {
-#endif
-                    if (value.GetType().GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null)
-                        SQLite3.BindText(stmt, index, value.ToString(), -1, NegativePointer);
+                }
+
+                // Now we could possibly get an enum, retrieve cached info
+			    var valueType = value.GetType();
+			    var enumInfo = EnumCache.GetInfo(valueType);
+			    if (enumInfo.IsEnum) {
+                    var enumIntValue = Convert.ToInt32(value);
+                    if (enumInfo.StoreAsText)
+                        SQLite3.BindText(stmt, index, enumInfo.EnumValues[enumIntValue], -1, NegativePointer);
                     else
-                        SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
+                        SQLite3.BindInt(stmt, index, enumIntValue);
                 } else if (value is byte[]){
                     SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
                 } else if (value is Guid) {
