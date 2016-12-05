@@ -2016,6 +2016,62 @@ namespace SQLite
 		}
 	}
 
+    internal class EnumCacheInfo
+    {
+        public EnumCacheInfo(Type type)
+        {
+#if !USE_NEW_REFLECTION_API
+            IsEnum = type.IsEnum;
+#else
+            IsEnum = type.GetTypeInfo().IsEnum;
+#endif
+
+            if (IsEnum)
+            {
+                // This is a big assumption, but for now support ints only as key, otherwise we still
+                // have to pay the price for boxing
+                EnumValues = Enum.GetValues(type).Cast<int>().ToDictionary(x => x, x => x.ToString());
+
+#if !USE_NEW_REFLECTION_API
+                StoreAsText = type.GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
+#else
+                StoreAsText = type.GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
+#endif
+            }
+        }
+
+        public bool IsEnum { get; private set; }
+
+        public bool StoreAsText { get; private set; }
+
+        public Dictionary<int, string> EnumValues { get; private set; }
+    }
+
+    internal static class EnumCache
+    {
+        private static readonly Dictionary<Type, EnumCacheInfo> Cache = new Dictionary<Type, EnumCacheInfo>();
+
+        public static EnumCacheInfo GetInfo<T>()
+        {
+            return GetInfo(typeof(T));
+        }
+
+        public static EnumCacheInfo GetInfo(Type type)
+        {
+            lock (Cache)
+            {
+                EnumCacheInfo info = null;
+                if (!Cache.TryGetValue(type, out info))
+                {
+                    info = new EnumCacheInfo(type);
+                    Cache[type] = info;
+                }
+
+                return info;
+            }
+        }
+    }
+
 	public static class Orm
 	{
         public const int DefaultMaxStringLength = 140;
@@ -2369,22 +2425,24 @@ namespace SQLite
 					}
 				} else if (value is DateTimeOffset) {
 					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
-#if !USE_NEW_REFLECTION_API
-				} else if (value.GetType().IsEnum) {
-#else
-				} else if (value.GetType().GetTypeInfo().IsEnum) {
-#endif
-                    if (value.GetType().GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null)
-                        SQLite3.BindText(stmt, index, value.ToString(), -1, NegativePointer);
-                    else
-                        SQLite3.BindInt (stmt, index, Convert.ToInt32 (value));
-                } else if (value is byte[]){
-                    SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
-                } else if (value is Guid) {
-                    SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
                 } else {
-                    throw new NotSupportedException("Cannot store type: " + value.GetType());
-                }
+				    // Now we could possibly get an enum, retrieve cached info
+			        var valueType = value.GetType();
+			        var enumInfo = EnumCache.GetInfo(valueType);
+			        if (enumInfo.IsEnum) {
+                        var enumIntValue = Convert.ToInt32(value);
+                        if (enumInfo.StoreAsText)
+                            SQLite3.BindText(stmt, index, enumInfo.EnumValues[enumIntValue], -1, NegativePointer);
+                        else
+                            SQLite3.BindInt(stmt, index, enumIntValue);
+                    } else if (value is byte[]){
+                        SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
+                    } else if (value is Guid) {
+                        SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
+                    } else {
+                        throw new NotSupportedException("Cannot store type: " + value.GetType());
+                    }
+				}
 			}
 		}
 
