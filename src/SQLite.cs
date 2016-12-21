@@ -238,8 +238,8 @@ namespace SQLite
 			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
-		
-#if __IOS__
+
+#if __IOS__ || __UNIFIED__
 		static SQLiteConnection ()
 		{
 			if (_preserveDuringLinkMagic) {
