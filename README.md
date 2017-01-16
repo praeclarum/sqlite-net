@@ -180,6 +180,14 @@ var result = await conn.ExecuteScalarAsync<int>("select count(*) from Stock");
 Debug.WriteLine(string.Format("Found '{0}' stock items.", result));
 ```
 
+## Using SQLCipher
+
+You can add support for encrypted databases using SQLCipher by including an additional package [SQLitePCLRaw.bundle_sqlcipher](https://www.nuget.org/packages/SQLitePCLRaw.bundle_sqlcipher/).
+
+I'll let [Eric Sink explain](https://github.com/ericsink/SQLitePCL.raw/wiki/How-to-use-SQLCipher-with-SQLite-net):
+
+> What happens here is that SQLite-net references bundle_green, but at build time, bundle_sqlcipher gets substituted in its place.
+
 ## Thank you!
 
 Thank you to the .NET community for embracing this project, and thank you to all the contributors who have helped to make this great.
