@@ -358,6 +358,17 @@ namespace SQLite
 			return new AsyncTableQuery<T> (_innerQuery.OrderByDescending<U> (orderExpr));
 		}
 
+		public AsyncTableQuery<T> ThenBy<U>(Expression<Func<T, U>> orderExpr)
+		{
+			return new AsyncTableQuery<T>(_innerQuery.ThenBy<U>(orderExpr));
+		}
+
+		public AsyncTableQuery<T> ThenByDescending<U>(Expression<Func<T, U>> orderExpr)
+		{
+			return new AsyncTableQuery<T>(_innerQuery.ThenByDescending<U>(orderExpr));
+		}
+
+
 		public Task<List<T>> ToListAsync ()
 		{
 			return Task.Factory.StartNew (() => {
