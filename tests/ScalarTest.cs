@@ -45,6 +45,20 @@ namespace SQLite.Tests
 
 			Assert.AreEqual (Count * 2, r);
 		}
+
+		[Test]
+		public void Int32s()
+		{
+			var db = CreateDb ();
+
+			var results = db.Query<int>("SELECT Id FROM TestTable");
+
+			int id = 1;
+			foreach (var r in results)
+			{
+				Assert.AreEqual(id++, r);
+			}
+		}
 	}
 }
 
