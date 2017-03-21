@@ -2245,8 +2245,7 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> ()
 		{
-			if (IsScalarType(typeof(T)))
-			{
+			if (IsScalarType(typeof(T))) {
 				return ExecuteDeferredScalarQuery<T>();
 			}
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T)));
@@ -2254,8 +2253,7 @@ namespace SQLite
 
 		public List<T> ExecuteQuery<T> ()
 		{
-			if (IsScalarType(typeof(T)))
-			{
+			if (IsScalarType(typeof(T))) {
 				return ExecuteDeferredScalarQuery<T>().ToList();
 			}
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))).ToList();
@@ -2320,16 +2318,14 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteDeferredScalarQuery<T>()
 		{
-			if (_conn.Trace)
-			{
+			if (_conn.Trace) {
 				Debug.WriteLine("Executing Query: " + this);
 			}
 
 			var stmt = Prepare();
 			try
 			{
-				while (SQLite3.Step(stmt) == SQLite3.Result.Row)
-				{
+				while (SQLite3.Step(stmt) == SQLite3.Result.Row) {
 					var colType = SQLite3.ColumnType(stmt, 0);
 					yield return (T)ReadCol(stmt, 0, colType, typeof(T));
 				}
