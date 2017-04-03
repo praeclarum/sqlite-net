@@ -1827,7 +1827,7 @@ namespace SQLite
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 #endif
 				if (p.CanWrite && !ignore) {
-					cols.Add (new ColumnMapping (p, createFlags));
+					cols.Add (new ColumnMappingFromAttributes (p, createFlags));
 				}
 			}
 			Columns = cols.ToArray ();
@@ -1951,32 +1951,49 @@ namespace SQLite
 	{
 		PropertyInfo _prop;
 
-		public string Name { get; private set; }
+		public string Name { get; protected set; }
 
 		public string PropertyName { get { return _prop.Name; } }
 
-		public Type ColumnType { get; private set; }
+		public Type ColumnType { get; protected set; }
 
-		public string Collation { get; private set; }
+		public string Collation { get; protected set; }
 
-		public bool IsAutoInc { get; private set; }
-		public bool IsAutoGuid { get; private set; }
+		public bool IsAutoInc { get; protected set; }
+		public bool IsAutoGuid { get; protected set; }
 
-		public bool IsPK { get; private set; }
+		public bool IsPK { get; protected set; }
 
 		public IEnumerable<IndexedAttribute> Indices { get; set; }
 
-		public bool IsNullable { get; private set; }
+		public bool IsNullable { get; protected set; }
 
-		public int? MaxStringLength { get; private set; }
+		public int? MaxStringLength { get; protected set; }
 
-		public bool StoreAsText { get; private set; }
+		public bool StoreAsText { get; protected set; }
 
-		public ColumnMapping(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+		public ColumnMapping(PropertyInfo prop)
+		{
+			_prop = prop;
+		}
+
+		public void SetValue(object obj, object val)
+		{
+			_prop.SetValue(obj, val, null);
+		}
+
+		public object GetValue(object obj)
+		{
+			return _prop.GetValue(obj, null);
+		}
+	}
+
+	public class ColumnMappingFromAttributes : ColumnMapping
+	{
+		public ColumnMappingFromAttributes(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None) : base(prop)
 		{
 			var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
-			_prop = prop;
 			Name = colAttr == null ? prop.Name : colAttr.Name;
 			//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
 			ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
@@ -2003,16 +2020,6 @@ namespace SQLite
 			MaxStringLength = Orm.MaxStringLength(prop);
 
 			StoreAsText = prop.PropertyType.GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
-		}
-
-		public void SetValue(object obj, object val)
-		{
-			_prop.SetValue(obj, val, null);
-		}
-
-		public object GetValue(object obj)
-		{
-			return _prop.GetValue(obj, null);
 		}
 	}
 
