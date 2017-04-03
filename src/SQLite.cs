@@ -350,6 +350,17 @@ namespace SQLite
 			_mappings[tableMapping.MappedType.FullName] = tableMapping;
 		}
 
+		/// <summary>
+		/// Returns a TableMappingBuilder for constructing table mappings with a fluent API.
+		/// Please note: the SQLite attributes on the type's properties will be ignored if this method is used.
+		/// </summary>
+		/// <typeparam name="T">The entity type to create a table for.</typeparam>
+		/// <returns>The table mapping builder.</returns>
+		public TableMappingBuilder<T> BuildMapping<T>()
+		{
+			return new TableMappingBuilder<T>(this);
+		}
+
 		private struct IndexedColumn
 		{
 			public int Order;
