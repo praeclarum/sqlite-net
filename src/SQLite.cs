@@ -2292,7 +2292,7 @@ namespace SQLite
 		/// <returns>
 		/// The number of entries added to the database schema.
 		/// </returns>
-		public int CreateTable()
+		public int CreateTable(CreateFlags createFlags = CreateFlags.None)
 		{
 			var tableMapping = new TableMapping(MappedType, _tableName ?? MappedType.Name);
 
@@ -2359,7 +2359,7 @@ namespace SQLite
 
 			_sqlite.AddMapping(tableMapping);
 
-			return _sqlite.CreateTable(tableMapping.MappedType);
+			return _sqlite.CreateTable(tableMapping.MappedType, createFlags);
 		}
 	}
 
