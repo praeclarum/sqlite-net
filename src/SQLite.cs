@@ -1719,8 +1719,15 @@ namespace SQLite
 	{
 	}
 
+	public interface IColumnIndex
+	{
+		string Name { get; set; }
+		int Order { get; set; }
+		bool Unique { get; set; }
+	}
+
 	[AttributeUsage (AttributeTargets.Property)]
-	public class IndexedAttribute : Attribute
+	public class IndexedAttribute : Attribute, IColumnIndex
 	{
 		public string Name { get; set; }
 		public int Order { get; set; }
@@ -1735,6 +1742,13 @@ namespace SQLite
 			Name = name;
 			Order = order;
 		}
+	}
+
+	public class ColumnIndex : IColumnIndex
+	{
+		public string Name { get; set; }
+		public int Order { get; set; }
+		public bool Unique { get; set; }
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
