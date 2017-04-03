@@ -338,6 +338,18 @@ namespace SQLite
 			return GetMapping (typeof (T));
 		}
 
+		/// <summary>
+		/// Adds a mapping to be used for indexes and naming for the given type.
+		/// </summary>
+		/// <param name="tableMapping">The table mapping.</param>
+		internal void AddMapping(TableMapping tableMapping)
+		{
+			if (_mappings == null) {
+				_mappings = new Dictionary<string, TableMapping>();
+			}
+			_mappings[tableMapping.MappedType.FullName] = tableMapping;
+		}
+
 		private struct IndexedColumn
 		{
 			public int Order;
