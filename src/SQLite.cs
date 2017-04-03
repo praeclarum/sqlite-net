@@ -2064,6 +2064,48 @@ namespace SQLite
 		}
 	}
 
+	public static class TableMappingFluentExtensions
+	{
+		public static PropertyInfo AsPropertyInfo<TEntity>(this Expression<Func<TEntity, object>> property)
+		{
+			Expression body = property.Body;
+			var operand = (body as UnaryExpression)?.Operand as MemberExpression;
+			if (operand != null) {
+				body = operand;
+			}
+			return (body as MemberExpression)?.Member as PropertyInfo;
+		}
+
+		public static void AddPropertyValue<T, TEntity>(this Dictionary<PropertyInfo, T> dict, Expression<Func<TEntity, object>> property, T value)
+		{
+			var prop = AsPropertyInfo(property);
+			dict[prop] = value;
+		}
+
+		public static void AddProperty<TEntity>(this List<PropertyInfo> list, Expression<Func<TEntity, object>> property)
+		{
+			var prop = AsPropertyInfo(property);
+			if (!list.Contains(prop)) {
+				list.Add(prop);
+			}
+		}
+
+		public static void AddProperties<TEntity>(this List<PropertyInfo> list, Expression<Func<TEntity, object>>[] properties)
+		{
+			foreach (var property in properties) {
+				AddProperty(list, property);
+			}
+		}
+
+		public static T GetOrDefault<T>(this Dictionary<PropertyInfo, T> dict, PropertyInfo key, T defaultValue = default(T))
+		{
+			if (dict.ContainsKey(key)) {
+				return dict[key];
+			}
+			return defaultValue;
+		}
+	}
+
     internal class EnumCacheInfo
     {
         public EnumCacheInfo(Type type)
