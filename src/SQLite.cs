@@ -2028,9 +2028,9 @@ namespace SQLite
 
             if (IsEnum)
             {
-                // This is a big assumption, but for now support ints only as key, otherwise we still
-                // have to pay the price for boxing
-                EnumValues = Enum.GetValues(type).Cast<int>().ToDictionary(x => x, x => x.ToString());
+                // Boxing required to avoid invalid cast exception
+                EnumValues = Enum.GetValues(type).Cast<object>().ToDictionary(Convert.ToInt32, x => Convert.ToInt32(x).ToString());
+
 
 #if !USE_NEW_REFLECTION_API
                 StoreAsText = type.GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
