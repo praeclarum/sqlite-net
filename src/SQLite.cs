@@ -320,7 +320,7 @@ namespace SQLite
 			}
 			TableMapping map;
 			if (!_mappings.TryGetValue (type.FullName, out map)) {
-				map = new TableMapping (type, createFlags);
+				map = new TableMappingFromAttributes (type, createFlags);
 				_mappings [type.FullName] = map;
 			}
 			return map;
@@ -1785,74 +1785,26 @@ namespace SQLite
 
     public class TableMapping
 	{
-		public Type MappedType { get; private set; }
+		public Type MappedType { get; protected set; }
 
-		public string TableName { get; private set; }
+		public string TableName { get; protected set; }
 
-		public ColumnMapping[] Columns { get; private set; }
+		public ColumnMapping[] Columns { get; protected set; }
 
-		public ColumnMapping PK { get; private set; }
+		public ColumnMapping PK { get; protected set; }
 
-		public string GetByPrimaryKeySql { get; private set; }
+		public string GetByPrimaryKeySql { get; protected set; }
 
-		ColumnMapping _autoPk;
-		ColumnMapping[] _insertColumns;
-		ColumnMapping[] _insertOrReplaceColumns;
+		protected ColumnMapping _autoPk;
+		protected ColumnMapping[] _insertColumns;
+		protected ColumnMapping[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+		public TableMapping(Type mappedType)
 		{
-			MappedType = type;
-
-#if USE_NEW_REFLECTION_API
-			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
-                .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
-#else
-			var tableAttr = (TableAttribute)type.GetCustomAttributes (typeof (TableAttribute), true).FirstOrDefault ();
-#endif
-
-			TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
-
-#if !USE_NEW_REFLECTION_API
-			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
-#else
-			var props = from p in MappedType.GetRuntimeProperties()
-						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
-						select p;
-#endif
-			var cols = new List<ColumnMapping> ();
-			foreach (var p in props) {
-#if !USE_NEW_REFLECTION_API
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
-#else
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
-#endif
-				if (p.CanWrite && !ignore) {
-					cols.Add (new ColumnMappingFromAttributes (p, createFlags));
-				}
-			}
-			Columns = cols.ToArray ();
-			foreach (var c in Columns) {
-				if (c.IsAutoInc && c.IsPK) {
-					_autoPk = c;
-				}
-				if (c.IsPK) {
-					PK = c;
-				}
-			}
-			
-			HasAutoIncPK = _autoPk != null;
-
-			if (PK != null) {
-				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" where \"{1}\" = ?", TableName, PK.Name);
-			}
-			else {
-				// People should not be calling Get/Find without a PK
-				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
-			}
-			_insertCommandMap = new ConcurrentStringDictionary ();
+			MappedType = mappedType;
 		}
 
-		public bool HasAutoIncPK { get; private set; }
+		public bool HasAutoIncPK { get; protected set; }
 
 		public void SetAutoIncPK (object obj, long id)
 		{
@@ -1891,7 +1843,7 @@ namespace SQLite
 			return exact;
 		}
 
-        ConcurrentStringDictionary _insertCommandMap;
+        protected ConcurrentStringDictionary _insertCommandMap;
 
 		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
 		{
@@ -1944,6 +1896,69 @@ namespace SQLite
                 ((PreparedSqlLiteInsertCommand)pair.Value).Dispose ();
 			}
 			_insertCommandMap = null;
+		}
+	}
+
+	public class TableMappingFromAttributes : TableMapping
+	{
+		public TableMappingFromAttributes(Type type, CreateFlags createFlags = CreateFlags.None) : base(type)
+		{
+			MappedType = type;
+
+#if USE_NEW_REFLECTION_API
+			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
+                .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
+#else
+			var tableAttr = (TableAttribute)type.GetCustomAttributes(typeof(TableAttribute), true).FirstOrDefault();
+#endif
+
+			TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
+
+#if !USE_NEW_REFLECTION_API
+			var props = MappedType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
+#else
+			var props = from p in MappedType.GetRuntimeProperties()
+						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
+						select p;
+#endif
+			var cols = new List<ColumnMapping>();
+			foreach (var p in props)
+			{
+#if !USE_NEW_REFLECTION_API
+				var ignore = p.GetCustomAttributes(typeof(IgnoreAttribute), true).Length > 0;
+#else
+				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
+#endif
+				if (p.CanWrite && !ignore)
+				{
+					cols.Add(new ColumnMappingFromAttributes(p, createFlags));
+				}
+			}
+			Columns = cols.ToArray();
+			foreach (var c in Columns)
+			{
+				if (c.IsAutoInc && c.IsPK)
+				{
+					_autoPk = c;
+				}
+				if (c.IsPK)
+				{
+					PK = c;
+				}
+			}
+
+			HasAutoIncPK = _autoPk != null;
+
+			if (PK != null)
+			{
+				GetByPrimaryKeySql = string.Format("select * from \"{0}\" where \"{1}\" = ?", TableName, PK.Name);
+			}
+			else
+			{
+				// People should not be calling Get/Find without a PK
+				GetByPrimaryKeySql = string.Format("select * from \"{0}\" limit 1", TableName);
+			}
+			_insertCommandMap = new ConcurrentStringDictionary();
 		}
 	}
 
