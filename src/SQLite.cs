@@ -150,6 +150,7 @@ namespace SQLite
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
+		private readonly IReadOnlyList<SQLSerializer> _serializers;
 
 		private int _transactionDepth = 0;
 		private Random _rand = new Random ();
@@ -186,8 +187,11 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+		/// <param name="serializers">
+		/// Optional set of serializers to convert back and forth custom types to sql types
+		/// </param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, IReadOnlyList<SQLSerializer> serializers = null)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, serializers)
 		{
 		}
 
@@ -205,7 +209,10 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+		/// <param name="serializers">
+		/// Optional set of serializers to convert back and forth custom types to sql types
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, IReadOnlyList<SQLSerializer> serializers = null)
 		{
 			if (string.IsNullOrEmpty (databasePath))
 				throw new ArgumentException ("Must be specified", "databasePath");
@@ -237,6 +244,8 @@ namespace SQLite
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
+
+			_serializers = serializers;
 		}
 		
 #if __IOS__
@@ -320,7 +329,7 @@ namespace SQLite
 			}
 			TableMapping map;
 			if (!_mappings.TryGetValue (type.FullName, out map)) {
-				map = new TableMapping (type, createFlags);
+				map = new TableMapping (type, _serializers, createFlags);
 				_mappings [type.FullName] = map;
 			}
 			return map;
@@ -510,7 +519,7 @@ namespace SQLite
 
         /// <summary>
         /// Creates an index for the specified object property.
-        /// e.g. CreateIndex<Client>(c => c.Name);
+        /// e.g. CreateIndex&lt;Client&gt;(c => c.Name);
         /// </summary>
         /// <typeparam name="T">Type to reflect to a database table.</typeparam>
         /// <param name="property">Property to index</param>
@@ -608,7 +617,7 @@ namespace SQLite
 		/// <param name="cmdText">
 		/// The fully escaped SQL.
 		/// </param>
-		/// <param name="args">
+		/// <param name="ps">
 		/// Arguments to substitute for the occurences of '?' in the command text.
 		/// </param>
 		/// <returns>
@@ -962,7 +971,7 @@ namespace SQLite
 		/// Creates a savepoint in the database at the current point in the transaction timeline.
 		/// Begins a new transaction if one is not in progress.
 		/// 
-		/// Call <see cref="RollbackTo"/> to undo transactions since the returned savepoint.
+		/// Call <see cref="RollbackTo(string)"/> or <see cref="RollbackTo(string, bool)"/> to undo transactions since the returned savepoint.
 		/// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
 		/// Call <see cref="Commit"/> to end the transaction, committing all changes.
 		/// </summary>
@@ -1090,12 +1099,12 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Executes <param name="action"> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
+		/// Executes <paramref name="action"/> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
 		/// exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
 		/// is rethrown.
 		/// </summary>
 		/// <param name="action">
-		/// The <see cref="Action"/> to perform within a transaction. <param name="action"> can contain any number
+		/// The <see cref="Action"/> to perform within a transaction. <paramref name="action"/> can contain any number
 		/// of operations on the connection but should never call <see cref="BeginTransaction"/> or
 		/// <see cref="Commit"/>.
 		/// </param>
@@ -1149,7 +1158,7 @@ namespace SQLite
 		/// <param name="extra">
 		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
 		/// </param>
-		/// <param name="runInTransaction"/>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
@@ -1182,7 +1191,7 @@ namespace SQLite
 		/// <param name="objType">
 		/// The type of object to insert.
 		/// </param>
-		/// <param name="runInTransaction"/>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
@@ -1479,7 +1488,7 @@ namespace SQLite
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
 		/// </param>
-		/// <param name="runInTransaction"/>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction
 		/// </param>
 		/// <returns>
@@ -1799,7 +1808,7 @@ namespace SQLite
 		Column[] _insertColumns;
 		Column[] _insertOrReplaceColumns;
 
-        public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping(Type type, IReadOnlyList<SQLSerializer> serializers = null, CreateFlags createFlags = CreateFlags.None)
 		{
 			MappedType = type;
 
@@ -1827,7 +1836,7 @@ namespace SQLite
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 #endif
 				if (p.CanWrite && !ignore) {
-					cols.Add (new Column (p, createFlags));
+					cols.Add (new Column (p, serializers, createFlags));
 				}
 			}
 			Columns = cols.ToArray ();
@@ -1971,14 +1980,18 @@ namespace SQLite
 
             public bool StoreAsText { get; private set; }
 
-            public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+			private SQLSerializer _serializer;
+
+            public Column(PropertyInfo prop, IReadOnlyList<SQLSerializer> serializers = null, CreateFlags createFlags = CreateFlags.None)
             {
                 var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
                 _prop = prop;
                 Name = colAttr == null ? prop.Name : colAttr.Name;
-                //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
-                ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
+				var typeToSerialize = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+				_serializer = serializers?.SingleOrDefault(x => x.InputType == typeToSerialize);
+				ColumnType = _serializer?.SQLType ?? typeToSerialize;
                 Collation = Orm.Collation(prop);
 
                 IsPK = Orm.IsPK(prop) ||
@@ -2004,14 +2017,21 @@ namespace SQLite
                 StoreAsText = prop.PropertyType.GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
             }
 
-			public void SetValue (object obj, object val)
+			public void SetValue(object obj, object val)
 			{
-				_prop.SetValue (obj, val, null);
+				if (_serializer != null)
+					val = _serializer.FromSQL(val);
+
+				_prop.SetValue(obj, val, null);
 			}
 
-			public object GetValue (object obj)
+			public object GetValue(object obj)
 			{
-				return _prop.GetValue (obj, null);
+				var value = _prop.GetValue(obj, null);
+				if (_serializer != null)
+					value = _serializer.ToSQL(value);
+
+				return value;
 			}
 		}
 	}
@@ -3598,6 +3618,31 @@ namespace SQLite
 			Text = 3,
 			Blob = 4,
 			Null = 5
+		}
+	}
+
+	public class SQLSerializer
+	{
+		public readonly Func<object, object> ToSQL;
+		public readonly Func<object, object> FromSQL;
+		public readonly Type InputType;
+		public readonly Type SQLType;
+
+		private SQLSerializer(Func<object, object> serializer, Func<object, object> deserializer, Type inputType, Type outputType)
+		{
+			ToSQL = serializer;
+			FromSQL = deserializer;
+			InputType = inputType;
+			SQLType = outputType;
+		}
+
+		public static SQLSerializer Create<TIn, TSQL>(Func<TIn, TSQL> toSQL, Func<TSQL, TIn> fromSQL)
+		{
+			return new SQLSerializer(
+				o => toSQL((TIn)o),
+				o => fromSQL((TSQL)o),
+				typeof(TIn),
+				typeof(TSQL));
 		}
 	}
 }

@@ -28,6 +28,45 @@ namespace SQLite.Tests
 			db.CreateTable<NoPropObject> ();
 		}
 
+		class Address
+		{
+			public string FullAddress { get; set; }
+		}
+
+		class Person
+		{
+			public Guid Id { get; set; }
+			public Address Address { get; set; }
+		}
+
+		[Test]
+		public void CreateWithSerializationToPrimitive()
+		{
+			var addressSerializer = SQLSerializer.Create<Address, string>(
+				toSQL: address => address.FullAddress,
+				fromSQL: s => new Address { FullAddress = s });
+			var customGuidSerializer = SQLSerializer.Create<Guid, string>(
+				toSQL: guid => guid.ToString(),
+				fromSQL: s => Guid.Parse(s));
+
+			var db = new TestDb(serializers: new[] { addressSerializer, customGuidSerializer });
+			db.CreateTable<Person>();
+
+			var personTableMapping = db.GetMapping(typeof(Person));
+			Assert.AreEqual(2, personTableMapping.Columns.Length);
+			Assert.AreEqual(typeof(string), personTableMapping.Columns[0].ColumnType);
+			Assert.AreEqual(typeof(string), personTableMapping.Columns[1].ColumnType);
+
+			var person = new Person {
+				Id = Guid.NewGuid(),
+				Address = new Address { FullAddress = "Some Place" },
+			};
+			db.Insert(person);
+			var p = db.Table<Person>().First();
+			Assert.AreEqual(person.Address.FullAddress, p.Address.FullAddress);
+			Assert.AreEqual(person.Id, p.Id);
+		}
+
 		[Test]
 		public void CreateThem ()
 		{
