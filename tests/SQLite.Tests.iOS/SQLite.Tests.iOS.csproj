@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -33,7 +33,8 @@
     <DeviceSpecificBuild>false</DeviceSpecificBuild>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
-    <DebugType></DebugType>
+    <DebugType>
+    </DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\iPhone\Release</OutputPath>
     <DefineConstants>__UNIFIED__;__MOBILE__;__IOS__;NO_VB</DefineConstants>
@@ -43,14 +44,16 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchFloat32>true</MtouchFloat32>
-    <CodesignEntitlements></CodesignEntitlements>
+    <CodesignEntitlements>
+    </CodesignEntitlements>
     <MtouchLink>SdkOnly</MtouchLink>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
     <MtouchTlsProvider>Default</MtouchTlsProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
-    <DebugType></DebugType>
+    <DebugType>
+    </DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
     <DefineConstants>__UNIFIED__;__MOBILE__;__IOS__;NO_VB</DefineConstants>
@@ -80,7 +83,8 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchFloat32>true</MtouchFloat32>
-    <CodesignEntitlements></CodesignEntitlements>
+    <CodesignEntitlements>
+    </CodesignEntitlements>
     <MtouchLink>SdkOnly</MtouchLink>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchHttpClientHandler>HttpClientHandler</MtouchHttpClientHandler>
@@ -103,7 +107,43 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="UnitTestAppDelegate.cs" />
-    <Compile Include="..\*.cs" />
+    <Compile Include="..\AsyncTests.cs" />
+    <Compile Include="..\BooleanTest.cs" />
+    <Compile Include="..\ByteArrayTest.cs" />
+    <Compile Include="..\CollateTest.cs" />
+    <Compile Include="..\ContainsTest.cs" />
+    <Compile Include="..\CreateTableImplicitTest.cs" />
+    <Compile Include="..\CreateTableTest.cs" />
+    <Compile Include="..\DateTimeOffsetTest.cs" />
+    <Compile Include="..\DateTimeTest.cs" />
+    <Compile Include="..\DeleteTest.cs" />
+    <Compile Include="..\DropTableTest.cs" />
+    <Compile Include="..\EnumCacheTest.cs" />
+    <Compile Include="..\EnumTest.cs" />
+    <Compile Include="..\EqualsTest.cs" />
+    <Compile Include="..\ExceptionAssert.cs" />
+    <Compile Include="..\GuidTests.cs" />
+    <Compile Include="..\IgnoreTest.cs" />
+    <Compile Include="..\InheritanceTest.cs" />
+    <Compile Include="..\InsertTest.cs" />
+    <Compile Include="..\JoinTest.cs" />
+    <Compile Include="..\LinqTest.cs" />
+    <Compile Include="..\MappingTest.cs" />
+    <Compile Include="..\MigrationTest.cs" />
+    <Compile Include="..\NotNullAttributeTest.cs" />
+    <Compile Include="..\NullableTest.cs" />
+    <Compile Include="..\OpenTests.cs" />
+    <Compile Include="..\ScalarTest.cs" />
+    <Compile Include="..\SkipTest.cs" />
+    <Compile Include="..\StringQueryTest.cs" />
+    <Compile Include="..\TableChangedTest.cs" />
+    <Compile Include="..\TestDb.cs" />
+    <Compile Include="..\TransactionTest.cs" />
+    <Compile Include="..\UnicodeTest.cs" />
+    <Compile Include="..\UniqueTest.cs" />
+    <Compile Include="..\ConcurrencyTest.cs">
+      <Link>ConcurrencyTest.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
     </Compile>
