@@ -1334,42 +1334,14 @@ namespace SQLite
 			if (obj == null || objType == null) {
 				return 0;
 			}
-			
             
 			var map = GetMapping (objType);
 
-#if USE_NEW_REFLECTION_API
-            if (map.PK != null && map.PK.IsAutoGuid)
-            {
-                // no GetProperty so search our way up the inheritance chain till we find it
-                PropertyInfo prop;
-                while (objType != null)
-                {
-                    var info = objType.GetTypeInfo();
-                    prop = info.GetDeclaredProperty(map.PK.PropertyName);
-                    if (prop != null) 
-                    {
-                        if (prop.GetValue(obj, null).Equals(Guid.Empty))
-                        {
-                            prop.SetValue(obj, Guid.NewGuid(), null);
-                        }
-                        break; 
-                    }
-
-                    objType = info.BaseType;
-                }
+			if (map.PK != null && map.PK.IsAutoGuid) {
+				if (map.PK.GetValue (obj).Equals (Guid.Empty)) {
+					map.PK.SetValue (obj, Guid.NewGuid ());
+				}
             }
-#else
-            if (map.PK != null && map.PK.IsAutoGuid) {
-                var prop = objType.GetProperty(map.PK.PropertyName);
-                if (prop != null) {
-                    if (prop.GetValue(obj, null).Equals(Guid.Empty)) {
-                        prop.SetValue(obj, Guid.NewGuid(), null);
-                    }
-                }
-            }
-#endif
-
 
 			var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 			
@@ -1962,6 +1934,8 @@ namespace SQLite
 			PropertyInfo _prop;
 
 			public string Name { get; private set; }
+
+			public PropertyInfo PropertyInfo => _prop;
 
 			public string PropertyName { get { return _prop.Name; } }
 
