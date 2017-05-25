@@ -197,6 +197,7 @@ namespace SQLite
 		/// <param name="databasePath">
 		/// Specifies the path to the database file.
 		/// </param>
+        /// <param name="openFlags">The flags to create the database connection with.</param>
 		/// <param name="storeDateTimeAsTicks">
 		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
 		/// absolutely do want to store them as Ticks in all new projects. The value of false is
@@ -510,7 +511,7 @@ namespace SQLite
 
         /// <summary>
         /// Creates an index for the specified object property.
-        /// e.g. CreateIndex<Client>(c => c.Name);
+        /// e.g. CreateIndex&lt;Client&gt;(c => c.Name);
         /// </summary>
         /// <typeparam name="T">Type to reflect to a database table.</typeparam>
         /// <param name="property">Property to index</param>
@@ -614,14 +615,14 @@ namespace SQLite
 		/// <returns>
 		/// A <see cref="SQLiteCommand"/>
 		/// </returns>
-		public SQLiteCommand CreateCommand (string cmdText, params object[] ps)
+		public SQLiteCommand CreateCommand (string cmdText, params object[] args)
 		{
 			if (!_open)
 				throw SQLiteException.New (SQLite3.Result.Error, "Cannot create commands from unopened database");
 
 			var cmd = NewCommand ();
 			cmd.CommandText = cmdText;
-			foreach (var o in ps) {
+			foreach (var o in args) {
 				cmd.Bind (o);
 			}
 			return cmd;
@@ -958,16 +959,16 @@ namespace SQLite
 			}
 		}
 
-		/// <summary>
-		/// Creates a savepoint in the database at the current point in the transaction timeline.
-		/// Begins a new transaction if one is not in progress.
-		/// 
-		/// Call <see cref="RollbackTo"/> to undo transactions since the returned savepoint.
-		/// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
-		/// Call <see cref="Commit"/> to end the transaction, committing all changes.
-		/// </summary>
-		/// <returns>A string naming the savepoint.</returns>
-		public string SaveTransactionPoint ()
+        /// <summary>
+        /// Creates a savepoint in the database at the current point in the transaction timeline.
+        /// Begins a new transaction if one is not in progress.
+        /// 
+        /// Call <see cref="RollbackTo(String)"/> or <see cref="RollbackTo(string, bool)"/> to undo transactions since the returned savepoint.
+        /// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
+        /// Call <see cref="Commit"/> to end the transaction, committing all changes.
+        /// </summary>
+        /// <returns>A string naming the savepoint.</returns>
+        public string SaveTransactionPoint ()
 		{
 			int depth = Interlocked.Increment (ref _transactionDepth) - 1;
 			string retVal = "S" + _rand.Next (short.MaxValue) + "D" + depth;
@@ -1010,17 +1011,18 @@ namespace SQLite
 		/// <summary>
 		/// Rolls back the savepoint created by <see cref="BeginTransaction"/> or SaveTransactionPoint.
 		/// </summary>
-		/// <param name="savepoint">The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint"/>.  If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback"/></param>
+		/// <param name="savepoint">The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint"/>. If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback"/>.</param>
 		public void RollbackTo (string savepoint)
 		{
 			RollbackTo (savepoint, false);
 		}
 
-		/// <summary>
-		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/>.
-		/// </summary>
-		/// <param name="noThrow">true to avoid throwing exceptions, false otherwise</param>
-		void RollbackTo (string savepoint, bool noThrow)
+        /// <summary>
+        /// Rolls back the transaction that was begun by <see cref="BeginTransaction"/>.
+        /// </summary>
+        /// <param name="savepoint">The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint"/>. If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback"/>.</param>
+        /// <param name="noThrow">true to avoid throwing exceptions, false otherwise</param>
+        void RollbackTo (string savepoint, bool noThrow)
 		{
 			// Rolling back without a TO clause rolls backs all transactions 
 			//    and leaves the transaction stack empty.   
@@ -1090,12 +1092,12 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Executes <param name="action"> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
+		/// Executes <paramref name="action"/> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
 		/// exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
 		/// is rethrown.
 		/// </summary>
 		/// <param name="action">
-		/// The <see cref="Action"/> to perform within a transaction. <param name="action"> can contain any number
+		/// The <see cref="Action"/> to perform within a transaction. <paramref name="action"/> can contain any number
 		/// of operations on the connection but should never call <see cref="BeginTransaction"/> or
 		/// <see cref="Commit"/>.
 		/// </param>
@@ -1115,7 +1117,7 @@ namespace SQLite
 		/// Inserts all specified objects.
 		/// </summary>
 		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// An <see cref="System.Collections.IEnumerable"/> of the objects to insert.
 		/// <param name="runInTransaction"/>
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
@@ -1140,22 +1142,22 @@ namespace SQLite
 			return c;
 		}
 
-		/// <summary>
-		/// Inserts all specified objects.
-		/// </summary>
-		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// </param>
-		/// <param name="extra">
-		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
-		/// </param>
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction.
-		/// </param>
-		/// <returns>
-		/// The number of rows added to the table.
-		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, string extra, bool runInTransaction=true)
+        /// <summary>
+        /// Inserts all specified objects.
+        /// </summary>
+        /// <param name="objects">
+        /// An <see cref="System.Collections.IEnumerable"/> of the objects to insert.
+        /// </param>
+        /// <param name="extra">
+        /// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+        /// </param>
+        /// <param name="runInTransaction">
+        /// A boolean indicating if the inserts should be wrapped in a transaction.
+        /// </param>
+        /// <returns>
+        /// The number of rows added to the table.
+        /// </returns>
+        public int InsertAll (System.Collections.IEnumerable objects, string extra, bool runInTransaction=true)
 		{
 			var c = 0;
 			if (runInTransaction) {
@@ -1173,22 +1175,22 @@ namespace SQLite
 			return c;
 		}
 
-		/// <summary>
-		/// Inserts all specified objects.
-		/// </summary>
-		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// </param>
-		/// <param name="objType">
-		/// The type of object to insert.
-		/// </param>
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction.
-		/// </param>
-		/// <returns>
-		/// The number of rows added to the table.
-		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, Type objType, bool runInTransaction=true)
+        /// <summary>
+        /// Inserts all specified objects.
+        /// </summary>
+        /// <param name="objects">
+        /// An <see cref="System.Collections.IEnumerable"/> of the objects to insert.
+        /// </param>
+        /// <param name="objType">
+        /// The type of object to insert.
+        /// </param>
+        /// <param name="runInTransaction">
+        /// A boolean indicating if the inserts should be wrapped in a transaction.
+        /// </param>
+        /// <returns>
+        /// The number of rows added to the table.
+        /// </returns>
+        public int InsertAll (System.Collections.IEnumerable objects, Type objType, bool runInTransaction=true)
 		{
 			var c = 0;
 			if (runInTransaction) {
@@ -1473,19 +1475,19 @@ namespace SQLite
 			return rowsAffected;
 		}
 
-		/// <summary>
-		/// Updates all specified objects.
-		/// </summary>
-		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// </param>
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction
-		/// </param>
-		/// <returns>
-		/// The number of rows modified.
-		/// </returns>
-		public int UpdateAll (System.Collections.IEnumerable objects, bool runInTransaction=true)
+        /// <summary>
+        /// Updates all specified objects.
+        /// </summary>
+        /// <param name="objects">
+        /// An <see cref="System.Collections.IEnumerable"/> of the objects to insert.
+        /// </param>
+        /// <param name="runInTransaction">
+        /// A boolean indicating if the inserts should be wrapped in a transaction
+        /// </param>
+        /// <returns>
+        /// The number of rows modified.
+        /// </returns>
+        public int UpdateAll (System.Collections.IEnumerable objects, bool runInTransaction=true)
 		{
 			var c = 0;
 			if (runInTransaction) {
@@ -3047,7 +3049,8 @@ namespace SQLite
 		/// <summary>
 		/// Compiles a BinaryExpression where one of the parameters is null.
 		/// </summary>
-		/// <param name="parameter">The non-null parameter</param>
+        /// <param name="expression">The expression to compile.</param>
+		/// <param name="parameter">The non-null parameter.</param>
 		private string CompileNullBinaryExpression(BinaryExpression expression, CompileResult parameter)
 		{
 			if (expression.NodeType == ExpressionType.Equal)
