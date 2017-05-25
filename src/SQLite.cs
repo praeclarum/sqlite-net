@@ -28,6 +28,7 @@
 #endif
 
 using System;
+using System.Collections;
 using System.Diagnostics;
 #if !USE_SQLITEPCL_RAW
 using System.Runtime.InteropServices;
@@ -196,6 +197,9 @@ namespace SQLite
 		/// </summary>
 		/// <param name="databasePath">
 		/// Specifies the path to the database file.
+		/// </param>
+		/// <param name="openFlags">
+		/// Flags controlling how the connection should be opened.
 		/// </param>
 		/// <param name="storeDateTimeAsTicks">
 		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
@@ -510,7 +514,7 @@ namespace SQLite
 
         /// <summary>
         /// Creates an index for the specified object property.
-        /// e.g. CreateIndex<Client>(c => c.Name);
+        /// e.g. CreateIndex&lt;Client&gt;(c => c.Name);
         /// </summary>
         /// <typeparam name="T">Type to reflect to a database table.</typeparam>
         /// <param name="property">Property to index</param>
@@ -608,7 +612,7 @@ namespace SQLite
 		/// <param name="cmdText">
 		/// The fully escaped SQL.
 		/// </param>
-		/// <param name="args">
+		/// <param name="ps">
 		/// Arguments to substitute for the occurences of '?' in the command text.
 		/// </param>
 		/// <returns>
@@ -962,7 +966,7 @@ namespace SQLite
 		/// Creates a savepoint in the database at the current point in the transaction timeline.
 		/// Begins a new transaction if one is not in progress.
 		/// 
-		/// Call <see cref="RollbackTo"/> to undo transactions since the returned savepoint.
+		/// Call <see cref="RollbackTo(string)"/> to undo transactions since the returned savepoint.
 		/// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
 		/// Call <see cref="Commit"/> to end the transaction, committing all changes.
 		/// </summary>
@@ -1019,6 +1023,7 @@ namespace SQLite
 		/// <summary>
 		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/>.
 		/// </summary>
+		/// <param name="savepoint">The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint"/>.  If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback"/></param>
 		/// <param name="noThrow">true to avoid throwing exceptions, false otherwise</param>
 		void RollbackTo (string savepoint, bool noThrow)
 		{
@@ -1090,12 +1095,12 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Executes <param name="action"> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
+		/// Executes <paramref name="action"/> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
 		/// exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
 		/// is rethrown.
 		/// </summary>
 		/// <param name="action">
-		/// The <see cref="Action"/> to perform within a transaction. <param name="action"> can contain any number
+		/// The <see cref="Action"/> to perform within a transaction. <paramref name="action"/> can contain any number
 		/// of operations on the connection but should never call <see cref="BeginTransaction"/> or
 		/// <see cref="Commit"/>.
 		/// </param>
@@ -1149,7 +1154,7 @@ namespace SQLite
 		/// <param name="extra">
 		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
 		/// </param>
-		/// <param name="runInTransaction"/>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
@@ -1182,7 +1187,7 @@ namespace SQLite
 		/// <param name="objType">
 		/// The type of object to insert.
 		/// </param>
-		/// <param name="runInTransaction"/>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
@@ -1479,7 +1484,7 @@ namespace SQLite
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
 		/// </param>
-		/// <param name="runInTransaction"/>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction
 		/// </param>
 		/// <returns>
@@ -3047,6 +3052,7 @@ namespace SQLite
 		/// <summary>
 		/// Compiles a BinaryExpression where one of the parameters is null.
 		/// </summary>
+		/// <param name="expression">The expression to compile</param>
 		/// <param name="parameter">The non-null parameter</param>
 		private string CompileNullBinaryExpression(BinaryExpression expression, CompileResult parameter)
 		{
