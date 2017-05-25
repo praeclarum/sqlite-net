@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2016 Krueger Systems, Inc.
+// Copyright (c) 2009-2017 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -163,6 +163,7 @@ namespace SQLite
 		public bool TimeExecution { get; set; }
 
 		public bool Trace { get; set; }
+		public Action<string> Tracer { get; set; }
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -241,6 +242,8 @@ namespace SQLite
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
+
+			Tracer = line => Debug.WriteLine (line);
 		}
 		
 #if __IOS__
@@ -1383,7 +1386,10 @@ namespace SQLite
 				// We lock here to protect the prepared statement returned via GetInsertCommand.
 				// A SQLite prepared statement can be bound for only one operation at a time.
 				try {
-					count = insertCmd.ExecuteNonQuery (vals);
+					if (Trace) {
+						Tracer?.Invoke ("Execute Insert: " + insertCmd.CommandText);
+					}
+ 					count = insertCmd.ExecuteNonQuery (vals);
 				} catch (SQLiteException ex) {
 					if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
 						throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
@@ -2225,7 +2231,7 @@ namespace SQLite
 		public int ExecuteNonQuery ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing: " + this);
+				_conn.Tracer?.Invoke ("Executing: " + this);
 			}
 			
 			var r = SQLite3.Result.OK;
@@ -2283,7 +2289,7 @@ namespace SQLite
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
 
 			var stmt = Prepare ();
@@ -2318,7 +2324,7 @@ namespace SQLite
 		public T ExecuteScalar<T> ()
 		{
 			if (_conn.Trace) {
-				Debug.WriteLine ("Executing Query: " + this);
+				_conn.Tracer.Invoke ("Executing Query: " + this);
 			}
 			
 			T val = default(T);
@@ -2551,7 +2557,7 @@ namespace SQLite
 		public int ExecuteNonQuery (object[] source)
 		{
 			if (Connection.Trace) {
-				Debug.WriteLine ("Executing: " + CommandText);
+				Connection.Tracer?.Invoke ("Executing: " + CommandText);
 			}
 
 			var r = SQLite3.Result.OK;
