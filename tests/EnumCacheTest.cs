@@ -37,6 +37,16 @@ namespace SQLite.Tests
             Value3
         }
 
+        public enum TestByteEnumStoreAsInt : byte
+        {
+            Value1,
+
+            Value2,
+
+            Value3
+        }
+
+
         public class TestClassThusNotEnum
         {
 
@@ -69,6 +79,23 @@ namespace SQLite.Tests
             Assert.IsNotNull(info.EnumValues);
 
             var values = Enum.GetValues(typeof(TestEnumStoreAsInt)).Cast<int>().ToList();
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                Assert.AreEqual(values[i].ToString(), info.EnumValues[i]);
+            }
+        }
+
+        [Test]
+        public void ShouldReturnTrueForByteEnumStoreAsInt()
+        {
+            var info = EnumCache.GetInfo<TestByteEnumStoreAsInt>();
+
+            Assert.IsTrue(info.IsEnum);
+            Assert.IsFalse(info.StoreAsText);
+            Assert.IsNotNull(info.EnumValues);
+
+            var values = Enum.GetValues(typeof(TestByteEnumStoreAsInt)).Cast<object>().Select(x=>Convert.ToInt32(x)).ToList();
 
             for (int i = 0; i < values.Count; i++)
             {
