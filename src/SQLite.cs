@@ -3581,7 +3581,12 @@ namespace SQLite
 
 		public static byte[] ColumnByteArray(Sqlite3Statement stmt, int index)
 		{
-			return ColumnBlob(stmt, index);
+			int length = ColumnBytes(stmt, index);
+			if (length > 0)
+			{
+				return ColumnBlob(stmt, index);
+			}
+			return new byte[0];
 		}
 
 #if !USE_SQLITEPCL_RAW
