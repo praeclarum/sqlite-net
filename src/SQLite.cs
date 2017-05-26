@@ -1278,7 +1278,7 @@ namespace SQLite
 			if (obj == null) {
 				return 0;
 			}
-			return Insert (obj, "", obj.GetType ());
+			return Insert (obj, "", Orm.GetType (obj));
 		}
 
 		/// <summary>
@@ -1299,7 +1299,7 @@ namespace SQLite
 			if (obj == null) {
 				return 0;
 			}
-			return Insert (obj, "OR REPLACE", obj.GetType ());
+			return Insert (obj, "OR REPLACE", Orm.GetType (obj));
 		}
 
 		/// <summary>
@@ -1359,7 +1359,7 @@ namespace SQLite
 			if (obj == null) {
 				return 0;
 			}
-			return Insert (obj, extra, obj.GetType ());
+			return Insert (obj, extra, Orm.GetType (obj));
 		}
 
 	    /// <summary>
@@ -1442,7 +1442,7 @@ namespace SQLite
 			if (obj == null) {
 				return 0;
 			}
-			return Update (obj, obj.GetType ());
+			return Update (obj, Orm.GetType (obj));
 		}
 
 		/// <summary>
@@ -1543,7 +1543,7 @@ namespace SQLite
 		/// </returns>
 		public int Delete (object objectToDelete)
 		{
-			var map = GetMapping (objectToDelete.GetType ());
+			var map = GetMapping (Orm.GetType (objectToDelete));
 			var pk = map.PK;
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
@@ -2140,6 +2140,16 @@ namespace SQLite
 		public const string ImplicitPkName = "Id";
 		public const string ImplicitIndexSuffix = "Id";
 
+		public static Type GetType (object obj)
+		{
+			if (obj == null)
+				return typeof(object);
+			var rt = obj as IReflectableType;
+			if (rt != null)
+				return rt.GetTypeInfo().AsType();
+			return obj.GetType();
+		}
+
 		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
 			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
@@ -2499,7 +2509,11 @@ namespace SQLite
 					}
 				} else if (value is DateTimeOffset) {
 					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
-                } else {
+				} else if (value is byte[]) {
+					SQLite3.BindBlob(stmt, index, (byte[])value, ((byte[])value).Length, NegativePointer);
+				} else if (value is Guid) {
+					SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
+				} else {
 				    // Now we could possibly get an enum, retrieve cached info
 			        var valueType = value.GetType();
 			        var enumInfo = EnumCache.GetInfo(valueType);
@@ -2509,12 +2523,8 @@ namespace SQLite
                             SQLite3.BindText(stmt, index, enumInfo.EnumValues[enumIntValue], -1, NegativePointer);
                         else
                             SQLite3.BindInt(stmt, index, enumIntValue);
-                    } else if (value is byte[]){
-                        SQLite3.BindBlob(stmt, index, (byte[]) value, ((byte[]) value).Length, NegativePointer);
-                    } else if (value is Guid) {
-                        SQLite3.BindText(stmt, index, ((Guid)value).ToString(), 72, NegativePointer);
                     } else {
-                        throw new NotSupportedException("Cannot store type: " + value.GetType());
+                        throw new NotSupportedException("Cannot store type: " + Orm.GetType(value));
                     }
 				}
 			}
