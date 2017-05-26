@@ -320,7 +320,7 @@ namespace SQLite
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-        public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None)
 		{
 			if (_mappings == null) {
 				_mappings = new Dictionary<string, TableMapping> ();
@@ -336,13 +336,16 @@ namespace SQLite
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
+		/// <param name="createFlags">
+		/// Optional flags allowing implicit PK and indexes based on naming conventions
+		/// </param>     
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public TableMapping GetMapping<T> ()
+		public TableMapping GetMapping<T> (CreateFlags createFlags = CreateFlags.None)
 		{
-			return GetMapping (typeof (T));
+			return GetMapping (typeof (T), createFlags);
 		}
 
 		private struct IndexedColumn
@@ -364,13 +367,21 @@ namespace SQLite
 		/// </summary>
 		public int DropTable<T>()
 		{
-			var map = GetMapping (typeof (T));
-
-			var query = string.Format("drop table if exists \"{0}\"", map.TableName);
-
-			return Execute (query);
+			return DropTable (GetMapping (typeof (T)));
 		}
 		
+		/// <summary>
+		/// Executes a "drop table" on the database.  This is non-recoverable.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		public int DropTable (TableMapping map)
+		{
+			var query = string.Format ("drop table if exists \"{0}\"", map.TableName);
+			return Execute (query);
+		}
+
 		/// <summary>
 		/// Executes a "create table if not exists" on the database. It also
 		/// creates any specified indexes on the columns of the table. It uses
@@ -821,8 +832,25 @@ namespace SQLite
 		/// </returns>
 		public T Get<T> (object pk) where T : new()
 		{
-			var map = GetMapping (typeof(T));
-			return Query<T> (map.GetByPrimaryKeySql, pk).First ();
+			var map = GetMapping (typeof (T));
+		    return Query<T> (map.GetByPrimaryKeySql, pk).First ();
+		}
+
+		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
+		/// </summary>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param>
+		/// <returns>
+		/// The object with the given primary key. Throws a not found exception
+		/// if the object is not found.
+		/// </returns>
+		public object Get (object pk, TableMapping map)
+		{
+			return Query (map, map.GetByPrimaryKeySql, pk).First ();
 		}
 
         /// <summary>
@@ -868,7 +896,7 @@ namespace SQLite
 		/// The primary key.
 		/// </param>
 		/// <param name="map">
-		/// The TableMapping used to identify the object type.
+		/// The TableMapping used to identify the table.
 		/// </param>
 		/// <returns>
 		/// The object with the given primary key or null
@@ -912,6 +940,28 @@ namespace SQLite
 		public T FindWithQuery<T> (string query, params object[] args) where T : new()
 		{
 			return Query<T> (query, args).FirstOrDefault ();
+		}
+
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type. 
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public object FindWithQuery (TableMapping map, string query, params object[] args)
+		{
+			return Query (map, query, args).FirstOrDefault ();
 		}
 
 		/// <summary>
@@ -1520,7 +1570,23 @@ namespace SQLite
 		/// </typeparam>
 		public int Delete<T> (object primaryKey)
 		{
-			var map = GetMapping (typeof (T));
+			return Delete (primaryKey, GetMapping (typeof (T)));
+		}
+
+		/// <summary>
+		/// Deletes the object with the specified primary key.
+		/// </summary>
+		/// <param name="primaryKey">
+		/// The primary key of the object to delete.
+		/// </param>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <returns>
+		/// The number of objects deleted.
+		/// </returns>
+		public int Delete (object primaryKey, TableMapping map)
+		{
 			var pk = map.PK;
 			if (pk == null) {
 				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
@@ -1546,7 +1612,26 @@ namespace SQLite
 		public int DeleteAll<T> ()
 		{
 			var map = GetMapping (typeof (T));
-			var query = string.Format("delete from \"{0}\"", map.TableName);
+			return DeleteAll (map);
+		}
+
+		/// <summary>
+		/// Deletes all the objects from the specified table.
+		/// WARNING WARNING: Let me repeat. It deletes ALL the objects from the
+		/// specified table. Do you really want to do that?
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <returns>
+		/// The number of objects deleted.
+		/// </returns>
+		/// <typeparam name='T'>
+		/// The type of objects to delete.
+		/// </typeparam>
+		public int DeleteAll (TableMapping map)
+		{
+			var query = string.Format ("delete from \"{0}\"", map.TableName);
 			var count = Execute (query);
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Delete);
