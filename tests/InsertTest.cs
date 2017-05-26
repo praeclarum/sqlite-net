@@ -119,6 +119,26 @@ namespace SQLite.Tests
 			Assert.AreEqual(numCount, n, "Num counted must = num objects");
         }
 
+		[Test]
+		public void InsertTraces ()
+		{
+			var oldTracer = _db.Tracer;
+			var oldTrace = _db.Trace;
+
+			var traces = new List<string> ();
+			_db.Tracer = traces.Add;
+			_db.Trace = true;
+
+			var obj1 = new TestObj () { Text = "GLaDOS loves tracing!" };
+			var numIn1 = _db.Insert (obj1);
+
+			Assert.AreEqual (1, numIn1);
+			Assert.AreEqual (1, traces.Count);
+
+			_db.Tracer = oldTracer;
+			_db.Trace = oldTrace;
+		}
+
         [Test]
         public void InsertTwoTimes()
         {

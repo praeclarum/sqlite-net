@@ -1358,9 +1358,6 @@ namespace SQLite
 				// We lock here to protect the prepared statement returned via GetInsertCommand.
 				// A SQLite prepared statement can be bound for only one operation at a time.
 				try {
-					if (Trace) {
-						Tracer?.Invoke ("Execute Insert: " + insertCmd.CommandText);
-					}
  					count = insertCmd.ExecuteNonQuery (vals);
 				} catch (SQLiteException ex) {
 					if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
