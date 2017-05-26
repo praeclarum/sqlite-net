@@ -23,10 +23,6 @@
 #define USE_CSHARP_SQLITE
 #endif
 
-#if NETFX_CORE || NETCORE
-#define USE_NEW_REFLECTION_API
-#endif
-
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -1868,29 +1864,29 @@ namespace SQLite
 		{
 			MappedType = type;
 
-#if USE_NEW_REFLECTION_API
-			var tableAttr = (TableAttribute)System.Reflection.CustomAttributeExtensions
-                .GetCustomAttribute(type.GetTypeInfo(), typeof(TableAttribute), true);
-#else
-			var tableAttr = (TableAttribute)type.GetCustomAttributes (typeof (TableAttribute), true).FirstOrDefault ();
-#endif
+			var typeInfo = type.GetTypeInfo ();
+			var tableAttr =
+				typeInfo.CustomAttributes
+						.Where(x => x.AttributeType == typeof(TableAttribute))
+			            .Select(x => (TableAttribute)Orm.InflateAttribute(x))
+						.FirstOrDefault();
 
-			TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
+			TableName = (tableAttr != null && !string.IsNullOrEmpty(tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
 
-#if !USE_NEW_REFLECTION_API
-			var props = MappedType.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
-#else
-			var props = from p in MappedType.GetRuntimeProperties()
-						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
-						select p;
-#endif
+			var props = new List<PropertyInfo> ();
+			var baseType = type;
+			while (baseType != typeof(object)) {
+				var ti = baseType.GetTypeInfo();
+				props.AddRange(
+					from p in ti.DeclaredProperties
+					where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
+					select p);
+				baseType = ti.BaseType;
+			}
+
 			var cols = new List<Column> ();
 			foreach (var p in props) {
-#if !USE_NEW_REFLECTION_API
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Length > 0;
-#else
-				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
-#endif
+				var ignore = p.CustomAttributes.Any(x => x.AttributeType == typeof(IgnoreAttribute));
 				if (p.CanWrite && !ignore) {
 					cols.Add (new Column (p, createFlags));
 				}
@@ -2040,10 +2036,12 @@ namespace SQLite
 
             public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
             {
-                var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
+				var colAttr = prop.CustomAttributes.FirstOrDefault(x => x.AttributeType == typeof(ColumnAttribute));
 
                 _prop = prop;
-                Name = colAttr == null ? prop.Name : colAttr.Name;
+				Name = (colAttr != null && colAttr.ConstructorArguments.Count > 0) ?
+						colAttr.ConstructorArguments[0].Value?.ToString() :
+			            prop.Name;
                 //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
                 ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
                 Collation = Orm.Collation(prop);
@@ -2068,7 +2066,7 @@ namespace SQLite
                 IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
                 MaxStringLength = Orm.MaxStringLength(prop);
 
-                StoreAsText = prop.PropertyType.GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
+				StoreAsText = prop.PropertyType.GetTypeInfo().CustomAttributes.Any(x => x.AttributeType == typeof(StoreAsTextAttribute));
             }
 
 			public void SetValue (object obj, object val)
@@ -2083,67 +2081,64 @@ namespace SQLite
 		}
 	}
 
-    internal class EnumCacheInfo
-    {
-        public EnumCacheInfo(Type type)
-        {
-#if !USE_NEW_REFLECTION_API
-            IsEnum = type.IsEnum;
-#else
-            IsEnum = type.GetTypeInfo().IsEnum;
-#endif
+	class EnumCacheInfo
+	{
+		public EnumCacheInfo (Type type)
+		{
+			var typeInfo = type.GetTypeInfo();
 
-            if (IsEnum)
-            {
-                // Boxing required to avoid invalid cast exception
-                EnumValues = Enum.GetValues(type).Cast<object>().ToDictionary(Convert.ToInt32, x => Convert.ToInt32(x).ToString());
+			IsEnum = typeInfo.IsEnum;
 
+			if (IsEnum)
+			{
+				StoreAsText = typeInfo.CustomAttributes.Any(x => x.AttributeType == typeof(StoreAsTextAttribute));
 
-#if !USE_NEW_REFLECTION_API
-                StoreAsText = type.GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
-#else
-                StoreAsText = type.GetTypeInfo().GetCustomAttribute(typeof(StoreAsTextAttribute), false) != null;
-#endif
-            }
-        }
+				if (StoreAsText) {
+					EnumValues = Enum.GetValues(type).Cast<object>().ToDictionary(Convert.ToInt32, x => x.ToString());
+				}
+				else {
+					EnumValues = Enum.GetValues(type).Cast<object>().ToDictionary(Convert.ToInt32, x => Convert.ToInt32(x).ToString());
+				}
+			}
+		}
 
-        public bool IsEnum { get; private set; }
+		public bool IsEnum { get; private set; }
 
-        public bool StoreAsText { get; private set; }
+		public bool StoreAsText { get; private set; }
 
-        public Dictionary<int, string> EnumValues { get; private set; }
-    }
+		public Dictionary<int, string> EnumValues { get; private set; }
+	}
 
-    internal static class EnumCache
-    {
-        private static readonly Dictionary<Type, EnumCacheInfo> Cache = new Dictionary<Type, EnumCacheInfo>();
+	static class EnumCache
+	{
+		static readonly Dictionary<Type, EnumCacheInfo> Cache = new Dictionary<Type, EnumCacheInfo>();
 
-        public static EnumCacheInfo GetInfo<T>()
-        {
-            return GetInfo(typeof(T));
-        }
+		public static EnumCacheInfo GetInfo<T> ()
+		{
+			return GetInfo(typeof(T));
+		}
 
-        public static EnumCacheInfo GetInfo(Type type)
-        {
-            lock (Cache)
-            {
-                EnumCacheInfo info = null;
-                if (!Cache.TryGetValue(type, out info))
-                {
-                    info = new EnumCacheInfo(type);
-                    Cache[type] = info;
-                }
+		public static EnumCacheInfo GetInfo (Type type)
+		{
+			lock (Cache)
+			{
+				EnumCacheInfo info = null;
+				if (!Cache.TryGetValue(type, out info))
+				{
+					info = new EnumCacheInfo(type);
+					Cache[type] = info;
+				}
 
-                return info;
-            }
-        }
-    }
+				return info;
+			}
+		}
+	}
 
 	public static class Orm
 	{
-        public const int DefaultMaxStringLength = 140;
-        public const string ImplicitPkName = "Id";
-        public const string ImplicitIndexSuffix = "Id";
+		public const int DefaultMaxStringLength = 140;
+		public const string ImplicitPkName = "Id";
+		public const string ImplicitIndexSuffix = "Id";
 
 		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
@@ -2186,11 +2181,7 @@ namespace SQLite
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
 			} else if (clrType == typeof(DateTimeOffset)) {
 				return "bigint";
-#if !USE_NEW_REFLECTION_API
-			} else if (clrType.IsEnum) {
-#else
 			} else if (clrType.GetTypeInfo().IsEnum) {
-#endif
                 if (p.StoreAsText)
                     return "varchar";
                 else
@@ -2206,67 +2197,83 @@ namespace SQLite
 
 		public static bool IsPK (MemberInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(PrimaryKeyAttribute), true);
-#if !USE_NEW_REFLECTION_API
-			return attrs.Length > 0;
-#else
-			return attrs.Count() > 0;
-#endif
+			return p.CustomAttributes.Any(x => x.AttributeType == typeof(PrimaryKeyAttribute));
 		}
 
 		public static string Collation (MemberInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(CollationAttribute), true);
-#if !USE_NEW_REFLECTION_API
-			if (attrs.Length > 0) {
-				return ((CollationAttribute)attrs [0]).Value;
-#else
-			if (attrs.Count() > 0) {
-                return ((CollationAttribute)attrs.First()).Value;
-#endif
-			} else {
-				return string.Empty;
-			}
+			return
+				(p.CustomAttributes
+				 .Where(x => typeof(CollationAttribute) == x.AttributeType)
+				 .Select(x =>
+				 {
+					var args = x.ConstructorArguments;
+					return args.Count > 0 ? ((args[0].Value as string) ?? "") : "";
+				 })
+			     .FirstOrDefault()) ?? "";
 		}
 
 		public static bool IsAutoInc (MemberInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(AutoIncrementAttribute), true);
-#if !USE_NEW_REFLECTION_API
-			return attrs.Length > 0;
-#else
-			return attrs.Count() > 0;
-#endif
+			return p.CustomAttributes.Any(x => x.AttributeType == typeof(AutoIncrementAttribute));
+		}
+
+		public static FieldInfo GetField (TypeInfo t, string name)
+		{
+			var f = t.GetDeclaredField(name);
+			if (f != null)
+				return f;
+			return GetField(t.BaseType.GetTypeInfo(), name);
+		}
+
+		public static PropertyInfo GetProperty (TypeInfo t, string name)
+		{
+			var f = t.GetDeclaredProperty(name);
+			if (f != null)
+				return f;
+			return GetProperty(t.BaseType.GetTypeInfo(), name);
+		}
+
+		public static object InflateAttribute (CustomAttributeData x)
+		{
+			var atype = x.AttributeType;
+			var typeInfo = atype.GetTypeInfo();
+			var args = x.ConstructorArguments.Select(a => a.Value).ToArray();
+			var r = Activator.CreateInstance(x.AttributeType, args);
+			foreach (var arg in x.NamedArguments) {
+				if (arg.IsField) {
+					GetField(typeInfo, arg.MemberName).SetValue(r, arg.TypedValue.Value);
+				}
+				else {
+					GetProperty(typeInfo, arg.MemberName).SetValue(r, arg.TypedValue.Value);
+				}
+			}
+			return r;
 		}
 
 		public static IEnumerable<IndexedAttribute> GetIndices(MemberInfo p)
 		{
-			var attrs = p.GetCustomAttributes(typeof(IndexedAttribute), true);
-			return attrs.Cast<IndexedAttribute>();
+			var indexedInfo = typeof(IndexedAttribute).GetTypeInfo();
+			return
+				p.CustomAttributes
+				 .Where(x => indexedInfo.IsAssignableFrom(x.AttributeType.GetTypeInfo()))
+				 .Select(x => (IndexedAttribute)InflateAttribute(x));
 		}
 		
 		public static int? MaxStringLength(PropertyInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof(MaxLengthAttribute), true);
-#if !USE_NEW_REFLECTION_API
-			if (attrs.Length > 0)
-				return ((MaxLengthAttribute)attrs [0]).Value;
-#else
-			if (attrs.Count() > 0)
-				return ((MaxLengthAttribute)attrs.First()).Value;
-#endif
-
+			var attr = p.CustomAttributes.FirstOrDefault(x => x.AttributeType == typeof(MaxLengthAttribute));
+			if (attr != null)
+			{
+				var attrv = (MaxLengthAttribute)InflateAttribute(attr);
+				return attrv.Value;
+			}
 			return null;
 		}
 
 		public static bool IsMarkedNotNull(MemberInfo p)
 		{
-			var attrs = p.GetCustomAttributes (typeof (NotNullAttribute), true);
-#if !USE_NEW_REFLECTION_API
-			return attrs.Length > 0;
-#else
-	return attrs.Count() > 0;
-#endif
+			return p.CustomAttributes.Any(x => x.AttributeType == typeof(NotNullAttribute));
 		}
 	}
 
@@ -2527,6 +2534,7 @@ namespace SQLite
 			if (type == SQLite3.ColType.Null) {
 				return null;
 			} else {
+				var clrTypeInfo = clrType.GetTypeInfo();
 				if (clrType == typeof(String)) {
 					return SQLite3.ColumnString (stmt, index);
 				} else if (clrType == typeof(Int32)) {
@@ -2553,11 +2561,7 @@ namespace SQLite
 					}
 				} else if (clrType == typeof(DateTimeOffset)) {
 					return new DateTimeOffset(SQLite3.ColumnInt64 (stmt, index),TimeSpan.Zero);
-#if !USE_NEW_REFLECTION_API
-				} else if (clrType.IsEnum) {
-#else
-				} else if (clrType.GetTypeInfo().IsEnum) {
-#endif
+				} else if (clrTypeInfo.IsEnum) {
                     if (type == SQLite3.ColType.Text)
                     {
                         var value = SQLite3.ColumnString(stmt, index);
@@ -3042,30 +3046,14 @@ namespace SQLite
 					//
 					object val = null;
 					
-#if !USE_NEW_REFLECTION_API
-					if (mem.Member.MemberType == MemberTypes.Property) {
-#else
 					if (mem.Member is PropertyInfo) {
-#endif
 						var m = (PropertyInfo)mem.Member;
 						val = m.GetValue (obj, null);
-#if !USE_NEW_REFLECTION_API
-					} else if (mem.Member.MemberType == MemberTypes.Field) {
-#else
 					} else if (mem.Member is FieldInfo) {
-#endif
-#if SILVERLIGHT
-						val = Expression.Lambda (expr).Compile ().DynamicInvoke ();
-#else
 						var m = (FieldInfo)mem.Member;
 						val = m.GetValue (obj);
-#endif
 					} else {
-#if !USE_NEW_REFLECTION_API
-						throw new NotSupportedException ("MemberExpr: " + mem.Member.MemberType);
-#else
-						throw new NotSupportedException ("MemberExpr: " + mem.Member.DeclaringType);
-#endif
+						throw new NotSupportedException ("MemberExpr: " + mem.Member.GetType());
 					}
 					
 					//

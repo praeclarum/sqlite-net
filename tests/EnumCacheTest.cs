@@ -61,7 +61,7 @@ namespace SQLite.Tests
             Assert.IsTrue(info.StoreAsText);
             Assert.IsNotNull(info.EnumValues);
 
-            var values = Enum.GetValues(typeof(TestEnumStoreAsText)).Cast<int>().ToList();
+            var values = Enum.GetValues(typeof(TestEnumStoreAsText)).Cast<object>().ToList();
 
             for (int i = 0; i < values.Count; i++)
             {
@@ -78,11 +78,11 @@ namespace SQLite.Tests
             Assert.IsFalse(info.StoreAsText);
             Assert.IsNotNull(info.EnumValues);
 
-            var values = Enum.GetValues(typeof(TestEnumStoreAsInt)).Cast<int>().ToList();
+            var values = Enum.GetValues(typeof(TestEnumStoreAsInt)).Cast<object>().ToList();
 
             for (int i = 0; i < values.Count; i++)
             {
-                Assert.AreEqual(values[i].ToString(), info.EnumValues[i]);
+				Assert.AreEqual(((int)values[i]).ToString(), info.EnumValues[i]);
             }
         }
 
