@@ -844,6 +844,9 @@ namespace SQLite
 		/// <param name="pk">
 		/// The primary key.
 		/// </param>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
 		/// <returns>
 		/// The object with the given primary key. Throws a not found exception
 		/// if the object is not found.
@@ -1626,9 +1629,6 @@ namespace SQLite
 		/// <returns>
 		/// The number of objects deleted.
 		/// </returns>
-		/// <typeparam name='T'>
-		/// The type of objects to delete.
-		/// </typeparam>
 		public int DeleteAll (TableMapping map)
 		{
 			var query = string.Format ("delete from \"{0}\"", map.TableName);

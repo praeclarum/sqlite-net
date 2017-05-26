@@ -26,6 +26,7 @@
     <DefineConstants>TRACE;DEBUG;USE_SQLITEPCL_RAW USE_NEW_REFLECTION_API NO_CONCURRENT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -36,6 +37,7 @@
     <DefineConstants>TRACE;USE_SQLITEPCL_RAW USE_NEW_REFLECTION_API NO_CONCURRENT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Release\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
