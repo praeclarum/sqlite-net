@@ -2329,11 +2329,17 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> ()
 		{
+			if (IsScalarType(typeof(T))) {
+				return ExecuteDeferredScalarQuery<T>();
+			}
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T)));
 		}
 
 		public List<T> ExecuteQuery<T> ()
 		{
+			if (IsScalarType(typeof(T))) {
+				return ExecuteDeferredScalarQuery<T>().ToList();
+			}
 			return ExecuteDeferredQuery<T>(_conn.GetMapping(typeof(T))).ToList();
 		}
 
@@ -2386,6 +2392,26 @@ namespace SQLite
  					}
 					OnInstanceCreated (obj);
 					yield return (T)obj;
+				}
+			}
+			finally
+			{
+				SQLite3.Finalize(stmt);
+			}
+		}
+
+		public IEnumerable<T> ExecuteDeferredScalarQuery<T>()
+		{
+			if (_conn.Trace) {
+				Debug.WriteLine("Executing Query: " + this);
+			}
+
+			var stmt = Prepare();
+			try
+			{
+				while (SQLite3.Step(stmt) == SQLite3.Result.Row) {
+					var colType = SQLite3.ColumnType(stmt, 0);
+					yield return (T)ReadCol(stmt, 0, colType, typeof(T));
 				}
 			}
 			finally
@@ -2602,6 +2628,21 @@ namespace SQLite
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
 			}
+		}
+
+		// Returns true if the Type can be return from a single column.
+		bool IsScalarType(Type clrType)
+		{
+			if (clrType == typeof(string) || clrType == typeof(byte[])) {
+				return true;
+#if !USE_NEW_REFLECTION_API
+			} else if (clrType.IsEnum || clrType.IsValueType) {
+#else
+			} else if (clrType.GetTypeInfo().IsEnum || clrType.GetTypeInfo().IsValueType) {
+#endif
+				return true;
+			}
+			return false;
 		}
 	}
 
