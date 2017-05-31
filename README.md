@@ -1,7 +1,7 @@
 
 # SQLite-net
 
-[![Build Status](https://www.bitrise.io/app/bf752c26c31aec6c.svg?token=puU-yHhMNdAwJUusm9swlA&branch=master)](https://www.bitrise.io/app/bf752c26c31aec6c)
+[![Build status](https://ci.appveyor.com/api/projects/status/jsbuyhe4i1b7dvjy/branch/master?svg=true)](https://ci.appveyor.com/project/praeclarum/sqlite-net/branch/master)
 
 SQLite-net is an open source, minimal library to allow .NET and Mono applications to store data in
 [SQLite 3 databases](http://www.sqlite.org). It was first designed to work with [Xamarin.iOS](http://xamarin.com),
