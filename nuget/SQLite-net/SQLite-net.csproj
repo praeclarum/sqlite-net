@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETSTANDARD1_1;USE_SQLITEPCL_RAW USE_NEW_REFLECTION_API NO_CONCURRENT</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NETSTANDARD1_1;USE_SQLITEPCL_RAW USE_NEW_REFLECTION_API NO_CONCURRENT;NETSTANDARD1_1</DefineConstants>
     <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
 
@@ -13,6 +13,7 @@
     <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
     <DebugType>full</DebugType>
     <DebugSymbols>True</DebugSymbols>
+    <DefineConstants>TRACE;NETSTANDARD1_1;USE_SQLITEPCL_RAW USE_NEW_REFLECTION_API NO_CONCURRENT;NETSTANDARD1_1</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
