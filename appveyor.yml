@@ -6,6 +6,10 @@ assembly_info:
   assembly_version: '{version}'
   assembly_file_version: '{version}'
   assembly_informational_version: '{version}'
+test:
+  assemblies:
+    only:
+    - '**\SQLite.Tests.dll'
 build_script:
 - cmd: >-
     nuget restore .\SQLite.sln
