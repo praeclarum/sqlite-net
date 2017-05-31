@@ -59,6 +59,7 @@
       <group targetFramework="xamarinwatchos">
         <dependency id="SQLitePCLRaw.bundle_green" version="1.1.5" />
       </group>
+    </dependencies>
   </metadata>
   <files>
     <file src="nuget/SQLite-net/bin/Release/netstandard1.1/SQLite-net.*" target="lib/netstandard1.1" />
