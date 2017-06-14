@@ -1,0 +1,20 @@
+version: 1.4.0.{build}-beta
+image: Visual Studio 2017
+assembly_info:
+  patch: true
+  file: '**\AssemblyInfo.*'
+  assembly_version: '{version}'
+  assembly_file_version: '{version}'
+  assembly_informational_version: '{version}'
+test:
+  assemblies:
+    only:
+    - '**\SQLite.Tests.dll'
+build_script:
+- cmd: >-
+    nuget restore .\SQLite.sln
+
+    powershell .\bootstrapper.ps1 -Target NuGetPack -Verbosity diagnostic
+artifacts:
+- path: '*.nupkg'
+  name: NuGet

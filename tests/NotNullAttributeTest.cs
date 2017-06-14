@@ -113,12 +113,22 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+
+#if PCLTESTS
+                    if (ex.Result == SQLite3.Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
-				}
-			}
+#else
+                    if (SQLite3.LibVersionNumber() < 3007017 && ex.Result == SQLite3.Result.Constraint)
+                    {
+                        Inconclusive();
+                        return;
+                    }
+
+#endif
+                }
+            }
 			Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
 		}
 
@@ -144,12 +154,20 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+#if PCLTESTS
+                    if (ex.Result == SQLite3.Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
-				}
-			}
+#else
+                    if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+						Inconclusive ();
+						return;
+					}
+
+#endif
+                }
+            }
 			Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
 		}
 
@@ -172,12 +190,21 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+#if PCLTESTS
+                    if (ex.Result == SQLite3.Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
-				}
-				Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
+#else
+                    if (SQLite3.LibVersionNumber() < 3007017 && ex.Result == SQLite3.Result.Constraint)
+                    {
+                        Inconclusive();
+                        return;
+                    }
+
+#endif
+                }
+                Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
 			}
 		}
 
@@ -208,12 +235,21 @@ namespace SQLite.Tests
 						return;
 					}
 					catch (SQLiteException ex) {
-						if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-							Inconclusive ();
-							return;
-						}
+#if PCLTESTS
+                    if (ex.Result == SQLite3.Result.Constraint) {
+						Inconclusive ();
+						return;
 					}
-					catch (Exception ex) {
+#else
+                    if (SQLite3.LibVersionNumber() < 3007017 && ex.Result == SQLite3.Result.Constraint)
+                    {
+                        Inconclusive();
+                        return;
+                    }
+
+#endif
+                }
+                catch (Exception ex) {
 						Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. An exception of type {0} was thrown instead.", ex.GetType ().Name);
 					}
 				Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
@@ -223,6 +259,7 @@ namespace SQLite.Tests
 		[Test]
 		public void InsertQueryWithNullThrowsException ()
 		{
+#if !PCLTESTS
 			// Skip this test if the Dll doesn't support the extended SQLITE_CONSTRAINT codes
 			if (SQLite3.LibVersionNumber () >= 3007017) {
 				using (TestDb db = new TestDb ()) {
@@ -237,18 +274,22 @@ namespace SQLite.Tests
 						return;
 					}
 					catch (SQLiteException ex) {
-						if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
-							Inconclusive ();
-							return;
-						}
-					}
-					catch (Exception ex) {
+
+
+                        if (SQLite3.LibVersionNumber() < 3007017 && ex.Result == SQLite3.Result.Constraint){
+                            Inconclusive();
+                            return;
+                        }
+
+                    }
+                    catch (Exception ex) {
 						Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. An exception of type {0} was thrown instead.", ex.GetType ().Name);
 					}
 				}
 				Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
 			}
-		}
+#endif
+        }
 
 		[Test]
 		public void UpdateQueryWithNullThrowsException ()
@@ -269,12 +310,21 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+#if PCLTESTS
+                    if (ex.Result == SQLite3.Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
-				}
-				catch (Exception ex) {
+#else
+                    if (SQLite3.LibVersionNumber() < 3007017 && ex.Result == SQLite3.Result.Constraint)
+                    {
+                        Inconclusive();
+                        return;
+                    }
+
+#endif
+                }
+                catch (Exception ex) {
 					Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. An exception of type {0} was thrown instead.", ex.GetType ().Name);
 				}
 				Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. No exception was thrown.");
@@ -304,12 +354,21 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+#if PCLTESTS
+                    if (ex.Result == SQLite3.Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
-				}
-				catch (Exception ex) {
+#else
+                    if (SQLite3.LibVersionNumber() < 3007017 && ex.Result == SQLite3.Result.Constraint)
+                    {
+                        Inconclusive();
+                        return;
+                    }
+
+#endif
+                }
+                catch (Exception ex) {
 					Assert.Fail ("Expected an exception of type NotNullConstraintViolationException to be thrown. An exception of type {0} was thrown instead.", ex.GetType ().Name);
 				}
 			}
