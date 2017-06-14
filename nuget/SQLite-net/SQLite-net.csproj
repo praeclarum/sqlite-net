@@ -8,7 +8,7 @@
     <ProjectGuid>{7F946494-8EE0-432B-8A87-98961143D5C1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SQLite_net</RootNamespace>
+    <RootNamespace>SQLite</RootNamespace>
     <AssemblyName>SQLite-net</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DefaultLanguage>en-US</DefaultLanguage>
@@ -41,9 +41,6 @@
     <DocumentationFile>bin\Release\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\src\AssemblyInfo.cs">
-      <Link>AssemblyInfo.cs</Link>
-    </Compile>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
     </Compile>
