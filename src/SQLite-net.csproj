@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>sqlite-net-pcl</PackageId>
-    <Version>1.4.0</Version>
+    <VersionPrefix>1.4.0</VersionPrefix>
     <Authors>praeclarum</Authors>
     <Title>SQLite-net Official Portable Library</Title>
     <Description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite.</Description>
