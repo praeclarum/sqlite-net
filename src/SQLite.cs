@@ -1886,7 +1886,7 @@ namespace SQLite
 
 			var cols = new List<Column> ();
 			foreach (var p in props) {
-				var ignore = p.CustomAttributes.Any(x => x.AttributeType == typeof(IgnoreAttribute));
+				var ignore = p.IsDefined(typeof(IgnoreAttribute),true);
 				if (p.CanWrite && !ignore) {
 					cols.Add (new Column (p, createFlags));
 				}
