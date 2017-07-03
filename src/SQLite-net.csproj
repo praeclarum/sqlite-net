@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>sqlite-net-pcl</PackageId>
+    <VersionPrefix>1.4.0</VersionPrefix>
+    <Authors>praeclarum</Authors>
+    <Title>SQLite-net Official Portable Library</Title>
+    <Description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite.</Description>
+    <PackageTags>sqlite;pcl;database;orm;mobile;xamarin;db</PackageTags>
+    <PackageIconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/Logo-low.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/praeclarum/sqlite-net</PackageProjectUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE.md</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/praeclarum/sqlite-net.git</RepositoryUrl>
+
+    <TargetFramework>netstandard1.1</TargetFramework>
+
+    <DefineConstants>USE_SQLITEPCL_RAW;USE_NEW_REFLECTION_API;NO_CONCURRENT</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.5" />
+  </ItemGroup>
+
+</Project>

@@ -45,22 +45,29 @@ namespace SQLite.Tests
             Assert.AreEqual(2, item.Id);
         }
 
-		[Test, ExpectedException (typeof(AssertionException))]
+		[Test]
         public void WithoutImplicitMapping ()
         {
-            var db = new TestDb ();
+            try {
+                var db = new TestDb ();
 
-            db.CreateTable<NoAttributes>();
+                db.CreateTable<NoAttributes>();
 
-            var mapping = db.GetMapping<NoAttributes>();
+                var mapping = db.GetMapping<NoAttributes>();
 
-            Assert.IsNull (mapping.PK);
+                Assert.IsNull (mapping.PK);
 
-            var column = mapping.Columns[2];
-            Assert.AreEqual("IndexedId", column.Name);
-            Assert.IsFalse(column.Indices.Any());
+                var column = mapping.Columns[2];
+                Assert.AreEqual("IndexedId", column.Name);
+                Assert.IsFalse(column.Indices.Any());
 
-            CheckPK(db);
+                CheckPK(db);
+            }
+            catch (AssertionException)
+            {
+                return;
+            }
+            Assert.Fail ();
         }
 
         [Test]
