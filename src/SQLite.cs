@@ -2069,12 +2069,23 @@ namespace SQLite
 				StoreAsText = prop.PropertyType.GetTypeInfo().CustomAttributes.Any(x => x.AttributeType == typeof(StoreAsTextAttribute));
             }
 
-			public void SetValue (object obj, object val)
-			{
-				_prop.SetValue (obj, val, null);
-			}
+            public void SetValue(object obj, object val)
+            {
+#if !USE_NEW_REFLECTION_API
+                if (ColumnType.IsEnum)
+#else
+                if (ColumnType.GetTypeInfo().IsEnum)
+#endif
+                {
+                    _prop.SetValue(obj, Enum.ToObject(ColumnType, val));
+                }
+                else
+                {
+                    _prop.SetValue(obj, val, null);
+                }
+            }
 
-			public object GetValue (object obj)
+            public object GetValue (object obj)
 			{
 				return _prop.GetValue (obj, null);
 			}

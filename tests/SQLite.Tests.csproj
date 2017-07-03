@@ -45,6 +45,7 @@
     <Compile Include="ByteArrayTest.cs" />
     <Compile Include="ConcurrencyTest.cs" />
     <Compile Include="EnumCacheTest.cs" />
+    <Compile Include="EnumNullableTest.cs" />
     <Compile Include="EnumTest.cs" />
     <Compile Include="ExceptionAssert.cs" />
     <Compile Include="InsertTest.cs" />
