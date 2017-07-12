@@ -3018,12 +3018,10 @@ namespace SQLite
 				    {
 				        case StringComparison.Ordinal:
 				        case StringComparison.CurrentCulture:
-				        case StringComparison.InvariantCulture:
                             sqlCall = "( substr(" + obj.CommandText + ", 1, " + args[0].Value.ToString().Length + ") =  " + args[0].CommandText + ")";
                                 break;
 				        case StringComparison.OrdinalIgnoreCase:
 				        case StringComparison.CurrentCultureIgnoreCase:
-				        case StringComparison.InvariantCultureIgnoreCase:
                             sqlCall = "(" + obj.CommandText + " like (" + args[0].CommandText + " || '%'))";
                                 break;
 				    }
@@ -3039,12 +3037,10 @@ namespace SQLite
 				    {
 				        case StringComparison.Ordinal:
 				        case StringComparison.CurrentCulture:
-				        case StringComparison.InvariantCulture:
                             sqlCall = "( substr(" + obj.CommandText + ", length(" + obj.CommandText + ") - "+args[0].Value.ToString().Length+ "+1, " + args[0].Value.ToString().Length + ") =  " + args[0].CommandText + ")";
 				            break;
 				        case StringComparison.OrdinalIgnoreCase:
 				        case StringComparison.CurrentCultureIgnoreCase:
-				        case StringComparison.InvariantCultureIgnoreCase:
                             sqlCall = "(" + obj.CommandText + " like ('%' || " + args[0].CommandText + "))";
                             break;
 				    }
