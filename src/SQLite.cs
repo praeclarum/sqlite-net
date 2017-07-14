@@ -3703,4 +3703,3 @@ namespace SQLite.Extensions
 }
 #endif
 
-
