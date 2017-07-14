@@ -1,29 +1,29 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>1.3.1</version>
+    <version>1.3.3</version>
     <authors>Frank A. Krueger</authors>
     <owners>Frank A. Krueger</owners>
     <licenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE.md</licenseUrl>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/nuget/Logo-low.png</iconUrl>
     <id>sqlite-net-pcl</id>
-    <title>SQLite-net PCL</title>
-    <summary>The official portable version of sqlite-net: the easy way to access sqlite from .NET apps.</summary>
+    <title>SQLite-net Official Portable Library</title>
+    <summary>SQLite-net Official Portable Library is the easy way to access sqlite from .NET apps.</summary>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite.</description>
     <tags>sqlite pcl database orm mobile</tags>
     <releaseNotes>
     <![CDATA[
-    v1.3.1: Switch to .NET Standard
+    v1.3.3: Improvements to reflection code to use IReflectableType
     ]]>
     </releaseNotes>
     <dependencies>
       <group>
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.2" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.5" />
       </group>
       <group targetFramework=".NETStandard1.1">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.2" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.5" />
         <dependency id="NETStandard.Library" version="1.6.0" />
       </group>
     </dependencies>

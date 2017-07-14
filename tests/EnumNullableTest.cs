@@ -16,7 +16,7 @@ using NUnit.Framework;
 namespace SQLite.Tests
 {
     [TestFixture]
-    public class EnumTests
+    public class EnumNullableTests
     {
         public enum TestEnum
         {
@@ -27,21 +27,11 @@ namespace SQLite.Tests
             Value3
         }
 
-		[StoreAsText]
-		public enum StringTestEnum
-		{
-			Value1,
-
-			Value2,
-
-			Value3
-		}
-
-		public class TestObj
+        public class TestObj
         {
             [PrimaryKey]
             public int Id { get; set; }
-            public TestEnum Value { get; set; }
+            public TestEnum? Value { get; set; }
 
             public override string ToString()
             {
@@ -50,26 +40,12 @@ namespace SQLite.Tests
 
         }
 
-		public class StringTestObj
-		{
-			[PrimaryKey]
-			public int Id { get; set; }
-			public StringTestEnum Value { get; set; }
-
-			public override string ToString ()
-			{
-				return string.Format("[StringTestObj: Id={0}, Value={1}]", Id, Value);
-			}
-
-		}
-
         public class TestDb : SQLiteConnection
         {
             public TestDb(String path)
                 : base(path)
             {
                 CreateTable<TestObj>();
-				CreateTable<StringTestObj>();
             }
         }
 
@@ -96,29 +72,5 @@ namespace SQLite.Tests
 
             db.Close();
         }
-
-		[Test]
-		public void ShouldPersistAndReadStringEnum ()
-		{
-			var db = new TestDb(TestPath.GetTempFileName());
-
-			var obj1 = new StringTestObj() { Id = 1, Value = StringTestEnum.Value2 };
-			var obj2 = new StringTestObj() { Id = 2, Value = StringTestEnum.Value3 };
-
-			var numIn1 = db.Insert(obj1);
-			var numIn2 = db.Insert(obj2);
-			Assert.AreEqual(1, numIn1);
-			Assert.AreEqual(1, numIn2);
-
-			var result = db.Query<StringTestObj>("select * from StringTestObj").ToList();
-			Assert.AreEqual(2, result.Count);
-			Assert.AreEqual(obj1.Value, result[0].Value);
-			Assert.AreEqual(obj2.Value, result[1].Value);
-
-			Assert.AreEqual(obj1.Id, result[0].Id);
-			Assert.AreEqual(obj2.Id, result[1].Id);
-
-			db.Close();
-		}
     }
 }
