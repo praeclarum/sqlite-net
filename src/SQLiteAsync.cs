@@ -58,47 +58,47 @@ namespace SQLite
 			return SQLiteConnectionPool.Shared.GetConnection (_connectionString, _openFlags);
 		}
 
-		public Task<CreateTablesResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None, CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof(T));
+			return CreateTablesAsync (createFlags, cancellationToken, typeof(T));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None, CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 			where T2 : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof (T), typeof (T2));
+			return CreateTablesAsync (createFlags, cancellationToken, typeof (T), typeof (T2));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3> (CreateFlags createFlags = CreateFlags.None, CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 			where T2 : new ()
 			where T3 : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3));
+			return CreateTablesAsync (createFlags, cancellationToken, typeof (T), typeof (T2), typeof (T3));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None, CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 			where T2 : new ()
 			where T3 : new ()
 			where T4 : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4));
+			return CreateTablesAsync (createFlags, cancellationToken, typeof (T), typeof (T2), typeof (T3), typeof (T4));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None, CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 			where T2 : new ()
 			where T3 : new ()
 			where T4 : new ()
 			where T5 : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
+			return CreateTablesAsync (createFlags, cancellationToken, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
 		}
 
-		public Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, params Type[] types)
+		public Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, CancellationToken cancellationToken = default(CancellationToken), params Type[] types)
 		{
 			return Task.Factory.StartNew (() => {
 				CreateTablesResult result = new CreateTablesResult ();
@@ -110,10 +110,10 @@ namespace SQLite
 					}
 				}
 				return result;
-			});
+			}, cancellationToken);
 		}
 
-		public Task<int> DropTableAsync<T> ()
+		public Task<int> DropTableAsync<T> (CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 		{
 			return Task.Factory.StartNew (() => {
@@ -121,20 +121,20 @@ namespace SQLite
 				using (conn.Lock ()) {
 					return conn.DropTable<T> ();
 				}
-			});
+			}, cancellationToken);
 		}
 
-		public Task<int> InsertAsync (object item)
+		public Task<int> InsertAsync (object item, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Insert (item);
 				}
-			});
+			}, cancellationToken);
 		}
 
-        public Task<int> InsertOrReplaceAsync(object item)
+        public Task<int> InsertOrReplaceAsync(object item, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
@@ -143,30 +143,30 @@ namespace SQLite
                 {
                     return conn.InsertOrReplace(item);
                 }
-            });
+            }, cancellationToken);
         }
 
-		public Task<int> UpdateAsync (object item)
+		public Task<int> UpdateAsync (object item, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Update (item);
 				}
-			});
+			}, cancellationToken);
 		}
 
-		public Task<int> DeleteAsync (object item)
+		public Task<int> DeleteAsync (object item, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Delete (item);
 				}
-			});
+			}, cancellationToken);
 		}
 
-        public Task<T> GetAsync<T>(object pk)
+        public Task<T> GetAsync<T>(object pk, CancellationToken cancellationToken = default(CancellationToken))
             where T : new()
         {
             return Task.Factory.StartNew(() =>
@@ -176,10 +176,10 @@ namespace SQLite
                 {
                     return conn.Get<T>(pk);
                 }
-            });
+            }, cancellationToken);
         }
 
-		public Task<T> FindAsync<T> (object pk)
+		public Task<T> FindAsync<T> (object pk, CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 		{
 			return Task.Factory.StartNew (() => {
@@ -187,10 +187,10 @@ namespace SQLite
 				using (conn.Lock ()) {
 					return conn.Find<T> (pk);
 				}
-			});
+			}, cancellationToken);
 		}
 		
-		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
+		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default(CancellationToken))
             where T : new()
         {
             return Task.Factory.StartNew(() =>
@@ -200,10 +200,10 @@ namespace SQLite
                 {
                     return conn.Get<T> (predicate);
                 }
-            });
+            }, cancellationToken);
         }
 
-		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate)
+		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default(CancellationToken))
 			where T : new ()
 		{
 			return Task.Factory.StartNew (() => {
@@ -211,7 +211,7 @@ namespace SQLite
 				using (conn.Lock ()) {
 					return conn.Find<T> (predicate);
 				}
-			});
+			}, cancellationToken);
 		}
 
 		public Task<int> ExecuteAsync (string query, params object[] args)
@@ -224,28 +224,28 @@ namespace SQLite
 			});
 		}
 
-		public Task<int> InsertAllAsync (IEnumerable items)
+		public Task<int> InsertAllAsync (IEnumerable items, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.InsertAll (items);
 				}
-			});
+			}, cancellationToken);
 		}
 		
-		public Task<int> UpdateAllAsync (IEnumerable items)
+		public Task<int> UpdateAllAsync (IEnumerable items, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.UpdateAll (items);
 				}
-			});
+			}, cancellationToken);
 		}
 
         [Obsolete("Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead.")]
-		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action)
+		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = this.GetConnection ();
@@ -260,10 +260,10 @@ namespace SQLite
 						throw;
 					}
 				}
-			});
+			}, cancellationToken);
 		}
 
-        public Task RunInTransactionAsync(Action<SQLiteConnection> action)
+        public Task RunInTransactionAsync(Action<SQLiteConnection> action, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Factory.StartNew(() =>
             {
@@ -282,7 +282,7 @@ namespace SQLite
                         throw;
                     }
                 }
-            });
+            }, cancellationToken);
         }
 
 		public AsyncTableQuery<T> Table<T> ()
@@ -369,49 +369,49 @@ namespace SQLite
 		}
 
 
-		public Task<List<T>> ToListAsync ()
+		public Task<List<T>> ToListAsync (CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
 					return _innerQuery.ToList ();
 				}
-			});
+			}, cancellationToken);
 		}
 
-		public Task<int> CountAsync ()
+		public Task<int> CountAsync (CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
 					return _innerQuery.Count ();
 				}
-			});
+			}, cancellationToken);
 		}
 
-		public Task<T> ElementAtAsync (int index)
+		public Task<T> ElementAtAsync (int index, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => {
 				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
 					return _innerQuery.ElementAt (index);
 				}
-			});
+			}, cancellationToken);
 		}
 
-		public Task<T> FirstAsync ()
+		public Task<T> FirstAsync (CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task<T>.Factory.StartNew(() => {
 				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
 					return _innerQuery.First ();
 				}
-			});
+			}, cancellationToken);
 		}
 
-		public Task<T> FirstOrDefaultAsync ()
+		public Task<T> FirstOrDefaultAsync (CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return Task<T>.Factory.StartNew(() => {
 				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
 					return _innerQuery.FirstOrDefault ();
 				}
-			});
+			}, cancellationToken);
 		}
     }
 
@@ -530,4 +530,3 @@ namespace SQLite
 		}
 	}
 }
-
