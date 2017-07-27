@@ -169,7 +169,6 @@ namespace SQLite
             });
         }
 
-
         public Task<int> UpdateAsync (object item)
 		{
 			return Task.Factory.StartNew (() => {
