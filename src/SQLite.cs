@@ -1302,20 +1302,33 @@ namespace SQLite
 			return Insert (obj, "OR REPLACE", Orm.GetType (obj));
 		}
 
-		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
-		/// </summary>
-		/// <param name="obj">
-		/// The object to insert.
-		/// </param>
-		/// <param name="objType">
-		/// The type of object to insert.
-		/// </param>
-		/// <returns>
-		/// The number of rows added to the table.
-		/// </returns>
-		public int Insert (object obj, Type objType)
+        public int InsertOrReplaceAll(IEnumerable objects)
+        {
+            var c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (var r in objects)
+                {
+                    c += InsertOrReplace(r);
+                }
+            });
+            return c;
+        }
+
+        /// <summary>
+        /// Inserts the given object and retrieves its
+        /// auto incremented primary key if it has one.
+        /// </summary>
+        /// <param name="obj">
+        /// The object to insert.
+        /// </param>
+        /// <param name="objType">
+        /// The type of object to insert.
+        /// </param>
+        /// <returns>
+        /// The number of rows added to the table.
+        /// </returns>
+        public int Insert (object obj, Type objType)
 		{
 			return Insert (obj, "", objType);
 		}

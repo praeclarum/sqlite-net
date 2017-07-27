@@ -134,6 +134,17 @@ namespace SQLite
 			});
 		}
 
+        public Task<int> InsertAllAsync(IEnumerable items)
+        {
+            return Task.Factory.StartNew(() => {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertAll(items);
+                }
+            });
+        }
+
         public Task<int> InsertOrReplaceAsync(object item)
         {
             return Task.Factory.StartNew(() =>
@@ -146,7 +157,19 @@ namespace SQLite
             });
         }
 
-		public Task<int> UpdateAsync (object item)
+        public Task<int> InsertOrReplaceAllAsync(IEnumerable items)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.InsertOrReplaceAll(items);
+                }
+            });
+        }
+
+        public Task<int> UpdateAsync (object item)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
@@ -165,6 +188,17 @@ namespace SQLite
 				}
 			});
 		}
+
+        public Task<int> DeleteAllAsync<T>() where T:new()
+        {
+            return Task.Factory.StartNew(() => {
+                var conn = GetConnection();
+                using (conn.Lock())
+                {
+                    return conn.DeleteAll<T>();
+                }
+            });
+        }
 
         public Task<T> GetAsync<T>(object pk)
             where T : new()
@@ -220,16 +254,6 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Execute (query, args);
-				}
-			});
-		}
-
-		public Task<int> InsertAllAsync (IEnumerable items)
-		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.InsertAll (items);
 				}
 			});
 		}
