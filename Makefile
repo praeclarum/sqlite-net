@@ -16,6 +16,7 @@ srcnuget: src/SQLite.cs src/SQLiteAsync.cs sqlite-net.nuspec
 
 pclnuget: src/SQLite.cs src/SQLiteAsync.cs
 	nuget restore SQLite.sln
-	'/Applications/Xamarin Studio.app/Contents/MacOS/mdtool' build '-c:Release|iPhone' SQLite.sln -p:SQLite-net
+	msbuild "/p:Configuration=Release" nuget/SQLite-net-std/SQLite-net-std.csproj 
+	msbuild "/p:Configuration=Release" nuget/SQLite-net-std/SQLite-net-std.csproj 
 	nuget pack sqlite-net-pcl.nuspec -o .\
 

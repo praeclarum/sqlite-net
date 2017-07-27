@@ -23,7 +23,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;USE_SQLITEPCL_RAW USE_NEW_REFLECTION_API NO_CONCURRENT</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;USE_SQLITEPCL_RAW;NO_CONCURRENT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -31,10 +31,10 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType></DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;USE_SQLITEPCL_RAW USE_NEW_REFLECTION_API NO_CONCURRENT</DefineConstants>
+    <DefineConstants>TRACE;USE_SQLITEPCL_RAW;NO_CONCURRENT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
