@@ -243,5 +243,73 @@ namespace SQLite.Tests
 			Assert.AreEqual(withEmpty, results[0]);
 			Assert.AreEqual(withData, results[1]);
 		}
+
+		public enum TestIntEnum
+		{
+			One = 1,
+			Two = 2,
+		}
+
+		[StoreAsText]
+		public enum TestTextEnum
+		{
+			Alpha,
+			Beta,
+		}
+
+		public class NullableEnumClass
+		{
+			[PrimaryKey, AutoIncrement]
+			public int ID { get; set; }
+
+			public TestIntEnum? NullableIntEnum { get; set; }
+			public TestTextEnum? NullableTextEnum { get; set; }
+
+			public override bool Equals (object obj)
+			{
+				var other = (NullableEnumClass)obj;
+				return this.ID == other.ID && this.NullableIntEnum == other.NullableIntEnum && this.NullableTextEnum == other.NullableTextEnum;
+			}
+
+			public override int GetHashCode ()
+			{
+				return ID.GetHashCode () + NullableIntEnum.GetHashCode () + NullableTextEnum.GetHashCode ();
+			}
+
+			public override string ToString ()
+			{
+				return string.Format ("[NullableEnumClass: ID={0}, NullableIntEnum={1}, NullableTextEnum={2}]", ID, NullableIntEnum, NullableTextEnum);
+			}
+		}
+
+		[Test]
+		[Description ("Create a table with a nullable enum column then insert and select against it")]
+		public void NullableEnum ()
+		{
+			SQLiteConnection db = new SQLiteConnection (TestPath.GetTempFileName ());
+			db.CreateTable<NullableEnumClass> ();
+
+			var withNull = new NullableEnumClass { NullableIntEnum = null, NullableTextEnum = null };
+			var with1 = new NullableEnumClass { NullableIntEnum = TestIntEnum.One, NullableTextEnum = null };
+			var with2 = new NullableEnumClass { NullableIntEnum = TestIntEnum.Two, NullableTextEnum = null };
+			var withNullA = new NullableEnumClass { NullableIntEnum = null, NullableTextEnum = TestTextEnum.Alpha };
+			var with1B = new NullableEnumClass { NullableIntEnum = TestIntEnum.One, NullableTextEnum = TestTextEnum.Beta };
+
+			db.Insert (withNull);
+			db.Insert (with1);
+			db.Insert (with2);
+			db.Insert (withNullA);
+			db.Insert (with1B);
+
+			var results = db.Table<NullableEnumClass> ().OrderBy (x => x.ID).ToArray ();
+
+			Assert.AreEqual (5, results.Length);
+
+			Assert.AreEqual (withNull, results[0]);
+			Assert.AreEqual (with1, results[1]);
+			Assert.AreEqual (with2, results[2]);
+			Assert.AreEqual (withNullA, results[3]);
+			Assert.AreEqual (with1B, results[4]);
+		}
 	}
 }

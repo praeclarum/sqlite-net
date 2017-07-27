@@ -1661,7 +1661,7 @@ namespace SQLite
 							}
 						}
 
-						var r = SQLite3.Close(Handle);
+						var r = SQLite3.Close2(Handle);
 						if (r != SQLite3.Result.OK)
 						{
 							string msg = SQLite3.GetErrmsg(Handle);
@@ -2071,11 +2071,7 @@ namespace SQLite
 
             public void SetValue(object obj, object val)
             {
-#if !USE_NEW_REFLECTION_API
-                if (ColumnType.IsEnum)
-#else
-                if (ColumnType.GetTypeInfo().IsEnum)
-#endif
+                if (val != null && ColumnType.GetTypeInfo().IsEnum)
                 {
                     _prop.SetValue(obj, Enum.ToObject(ColumnType, val));
                 }
