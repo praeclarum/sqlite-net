@@ -91,5 +91,39 @@ namespace SQLite.Tests
 			Assert.AreEqual ("Hello", oo.Text);
 			Assert.AreEqual (null, oo.IgnoredText);
 		}
+
+		public class BaseClass
+		{
+			[Ignore]
+			public string ToIgnore {
+				get;
+				set;
+			}
+		}
+
+		public class TableClass : BaseClass
+		{
+			public string Name { get; set; }
+		}
+
+		[Test]
+		public void BaseIgnores ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<TableClass> ();
+
+			var o = new TableClass {
+				ToIgnore = "Hello",
+				Name = "World",
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<TableClass> ().First ();
+
+			Assert.AreEqual (null, oo.ToIgnore);
+			Assert.AreEqual ("World", oo.Name);
+		}
+
 	}
 }
