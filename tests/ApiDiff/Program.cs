@@ -76,22 +76,23 @@ namespace ApiDiff
 				switch (a.ActionType) {
 					case ListDiffActionType.Add:
 						Console.ForegroundColor = ConsoleColor.Green;
-						Console.WriteLine ($"  + {a.DestinationItem.Index}");
+						Console.WriteLine ($"- [ ] *add* `{a.DestinationItem.Index.Replace('`', '_')}`");
 						n++;
 						break;
 					case ListDiffActionType.Remove:
 						Console.ForegroundColor = ConsoleColor.Red;
-						Console.WriteLine ($"  - {a.SourceItem.Index}");
+						Console.WriteLine ($"- [ ] *remove* `{a.SourceItem.Index.Replace('`', '_')}`");
 						n++;
 						break;
 					case ListDiffActionType.Update:
 						Console.ForegroundColor = ConsoleColor.Yellow;
-						Console.WriteLine ($"    {a.SourceItem.Index}");
+						Console.WriteLine ($"- [x] `{a.SourceItem.Index.Replace('`', '_')}`");
 						break;
 				}
 			}
 			Console.ResetColor ();
-			Console.WriteLine ($"{n} differences");
+			Console.WriteLine ();
+			Console.WriteLine ($"**{n}** differences");
 
 			return n;
 		}
