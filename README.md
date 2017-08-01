@@ -184,8 +184,9 @@ Debug.WriteLine(string.Format("Found '{0}' stock items.", result));
 
 You can add support for encrypted databases using SQLCipher by including an additional package [SQLitePCLRaw.bundle_sqlcipher](https://www.nuget.org/packages/SQLitePCLRaw.bundle_sqlcipher/).
 
-I'll let [Eric Sink explain](https://github.com/ericsink/SQLitePCL.raw/wiki/How-to-use-SQLCipher-with-SQLite-net):
+I'll let [Eric Sink explain how to use SQLCipher with SQLite-net](https://github.com/ericsink/SQLitePCL.raw/wiki/How-to-use-SQLCipher-with-SQLite-net):
 
+> The reference to bundle_sqlcipher must be placed in your app project.
 > What happens here is that SQLite-net references bundle_green, but at build time, bundle_sqlcipher gets substituted in its place.
 
 ## Thank you!
