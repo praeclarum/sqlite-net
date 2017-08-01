@@ -233,5 +233,33 @@ namespace SQLite.Tests
                 Assert.AreEqual(4, r[1].Id);
             }
         }
+
+		[Test]
+		public void QuerySelectAverage ()
+		{
+			var db = CreateDb ();
+
+			db.Insert (new Product {
+				Name = "A",
+				Price = 20,
+				TotalSales = 100,
+			});
+
+			db.Insert (new Product {
+				Name = "B",
+				Price = 10,
+				TotalSales = 100,
+			});
+
+			db.Insert (new Product {
+				Name = "C",
+				Price = 1000,
+				TotalSales = 1,
+			});
+
+			var r = db.Table<Product> ().Where (x => x.TotalSales > 50).Select (s => s.Price).Average ();
+
+			Assert.AreEqual (15, r);
+		}
 	}
 }

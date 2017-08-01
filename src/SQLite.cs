@@ -2903,13 +2903,15 @@ namespace SQLite
 			};
 			return q;
 		}
-				
-		public TableQuery<TResult> Select<TResult> (Expression<Func<T, TResult>> selector)
-		{
-			var q = Clone<TResult> ();
-			q._selector = selector;
-			return q;
-		}
+
+		// Not needed until Joins are supported
+		// Keeping this commented out forces the default Linq to objects processor to run
+		//public TableQuery<TResult> Select<TResult> (Expression<Func<T, TResult>> selector)
+		//{
+		//	var q = Clone<TResult> ();
+		//	q._selector = selector;
+		//	return q;
+		//}
 
 		private SQLiteCommand GenerateCommand (string selectionList)
 		{
