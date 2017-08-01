@@ -259,7 +259,40 @@ namespace SQLite.Tests
 
 			var r = db.Table<Product> ().Where (x => x.TotalSales > 50).Select (s => s.Price).Average ();
 
-			Assert.AreEqual (15, r);
+			Assert.AreEqual (15m, r);
+		}
+
+		interface IEntity
+		{
+			int Id { get; set; }
+			string Value { get; set; }
+		}
+
+		class Entity : IEntity
+		{
+			[AutoIncrement, PrimaryKey]
+			public int Id { get; set; }
+			public string Value { get; set; }
+		}
+
+		static T GetEntity<T> (TestDb db, int id) where T : IEntity, new ()
+		{
+			return db.Table<T> ().FirstOrDefault (x => x.Id == id);
+		}
+
+		[Test]
+		public void CastedParameters ()
+		{
+			var db = CreateDb ();
+			db.CreateTable<Entity> ();
+
+			db.Insert (new Entity {
+				Value = "Foo",
+			});
+
+			var r = GetEntity<Entity> (db, 1);
+
+			Assert.AreEqual ("Foo", r.Value);
 		}
 	}
 }

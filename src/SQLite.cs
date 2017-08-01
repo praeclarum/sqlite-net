@@ -3089,8 +3089,16 @@ namespace SQLite
 				};
 			} else if (expr.NodeType == ExpressionType.MemberAccess) {
 				var mem = (MemberExpression)expr;
+
+				var paramExpr = mem.Expression as ParameterExpression;
+				if (paramExpr == null) {
+					var convert = mem.Expression as UnaryExpression;
+					if (convert != null && convert.NodeType == ExpressionType.Convert) {
+						paramExpr = convert.Operand as ParameterExpression;
+					}
+				}
 				
-				if (mem.Expression!=null && mem.Expression.NodeType == ExpressionType.Parameter) {
+				if (paramExpr != null) {
 					//
 					// This is a column of our table, output just the column name
 					// Need to translate it if that column name is mapped
