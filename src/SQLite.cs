@@ -1875,19 +1875,29 @@ namespace SQLite
 
 			var props = new List<PropertyInfo> ();
 			var baseType = type;
+			var propNames = new HashSet<string> ();
 			while (baseType != typeof(object)) {
 				var ti = baseType.GetTypeInfo();
-				props.AddRange(
+				var newProps = (
 					from p in ti.DeclaredProperties
-					where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
-					select p);
+					where
+						!propNames.Contains(p.Name) &&
+						p.CanRead && p.CanWrite &&
+						(p.GetMethod != null) && (p.SetMethod != null) &&
+						(p.GetMethod.IsPublic && p.SetMethod.IsPublic) &&
+						(!p.GetMethod.IsStatic) && (!p.SetMethod.IsStatic)
+					select p).ToList();
+				foreach (var p in newProps) {
+					propNames.Add(p.Name);
+				}
+				props.AddRange (newProps);
 				baseType = ti.BaseType;
 			}
 
 			var cols = new List<Column> ();
 			foreach (var p in props) {
 				var ignore = p.IsDefined(typeof(IgnoreAttribute),true);
-				if (p.CanWrite && !ignore) {
+				if (!ignore) {
 					cols.Add (new Column (p, createFlags));
 				}
 			}

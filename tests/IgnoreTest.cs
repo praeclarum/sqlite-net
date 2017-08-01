@@ -125,5 +125,38 @@ namespace SQLite.Tests
 			Assert.AreEqual ("World", oo.Name);
 		}
 
+		public class RedefinedBaseClass
+		{
+			public string Name { get; set; }
+			public List<string> Values { get; set; }
+		}
+
+		public class RedefinedClass : RedefinedBaseClass
+		{
+			[Ignore]
+			public new List<string> Values { get; set; }
+			public string Value { get; set; }
+		}
+
+		[Test]
+		public void RedefinedIgnores ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<RedefinedClass> ();
+
+			var o = new RedefinedClass {
+				Name = "Foo",
+				Value = "Bar",
+				Values = new List<string> { "hello", "world" },
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<RedefinedClass> ().First ();
+
+			Assert.AreEqual ("Foo", oo.Name);
+			Assert.AreEqual ("Bar", oo.Value);
+			Assert.AreEqual (null, oo.Values);
+		}
 	}
 }
