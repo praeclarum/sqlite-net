@@ -25,6 +25,7 @@ namespace ApiDiff
 			if (nameSuffix.Length > 0 && Name.EndsWith (nameSuffix)) {
 				var indexName = Name.Substring (0, Name.IndexOf (nameSuffix));
 				Index = taskRe.Replace (Index.Replace (Name, indexName), "$1").Replace ("System.Int32", "Int32");
+				Name = indexName;
 			}
 		}
 	}
@@ -35,57 +36,75 @@ namespace ApiDiff
 		readonly string nameSuffix;
 		readonly Type type;
 
+		static readonly HashSet<string> ignores = new HashSet<string> {
+			"BeginTransaction",
+			"Commit",
+			"Rollback",
+			"RollbackTo",
+			"IsInTransaction",
+			"EndTransaction",
+
+			"GetConnection",
+			"Handle",
+
+			"Close",
+			"Dispose",
+		};
+
 		public Apis (Type type, string nameSuffix = "")
 		{
 			this.type = type;
 			this.nameSuffix = nameSuffix;
 			All = type.GetMembers (BindingFlags.Public|BindingFlags.Instance)
-			          .Where (x => !x.Name.StartsWith("get_") && !x.Name.StartsWith ("set_") && !x.Name.StartsWith ("remove_"))
+			          .Where (x => !ignores.Contains(x.Name))
+			          .Where (x => !x.Name.StartsWith("get_") && !x.Name.StartsWith ("set_") && !x.Name.StartsWith ("remove_") && !x.Name.StartsWith ("add_"))
 			          .Select (x => new Api(x, nameSuffix))
 			          .OrderBy (x => x.Name)
 			          .ToList ();
 		}
 
-		public void DumpComparison (Apis other)
+		public int DumpComparison (Apis other)
 		{
 			Console.ForegroundColor = ConsoleColor.Cyan;
 			Console.WriteLine (type.FullName);
 
 			var diff = new ListDiff<Api, Api> (All, other.All, (x, y) => x.Index == y.Index);
 
+			var n = 0;
+
 			foreach (var a in diff.Actions) {
 				switch (a.ActionType) {
 					case ListDiffActionType.Add:
 						Console.ForegroundColor = ConsoleColor.Green;
-						Console.Write ($"  + {a.DestinationItem.Name}");
-						Console.ForegroundColor = ConsoleColor.Gray;
-						Console.WriteLine ($" {a.DestinationItem.Declaration}");
+						Console.WriteLine ($"  + {a.DestinationItem.Index}");
+						n++;
 						break;
 					case ListDiffActionType.Remove:
 						Console.ForegroundColor = ConsoleColor.Red;
-						Console.Write ($"  - {a.SourceItem.Name}");
-						Console.ForegroundColor = ConsoleColor.Gray;
-						Console.WriteLine ($" {a.SourceItem.Declaration}");
+						Console.WriteLine ($"  - {a.SourceItem.Index}");
+						n++;
 						break;
 					case ListDiffActionType.Update:
 						Console.ForegroundColor = ConsoleColor.Yellow;
-						Console.Write ($"    {a.DestinationItem.Name}");
-						Console.ForegroundColor = ConsoleColor.Gray;
-						Console.WriteLine ($" {a.DestinationItem.Declaration}");
+						Console.WriteLine ($"    {a.SourceItem.Index}");
 						break;
 				}
 			}
 			Console.ResetColor ();
+			Console.WriteLine ($"{n} differences");
+
+			return n;
 		}
 	}
 
 	class MainClass
 	{
-		public static void Main (string[] args)
+		public static int Main (string[] args)
 		{
 			var synchronous = new Apis (typeof (SQLiteConnection));
 			var asynchronous = new Apis (typeof (SQLiteAsyncConnection), "Async");
-			asynchronous.DumpComparison (synchronous);
+			var n = asynchronous.DumpComparison (synchronous);
+			return n > 0 ? 1 : 0;
 		}
 	}
 }

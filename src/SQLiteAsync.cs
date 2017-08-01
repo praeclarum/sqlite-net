@@ -48,6 +48,9 @@ namespace SQLite
             _connectionString = new SQLiteConnectionString(databasePath, storeDateTimeAsTicks);
         }
 
+		public string DatabasePath => GetConnection ().DatabasePath;
+		public int LibVersionNumber => GetConnection ().LibVersionNumber;
+
 		public static void ResetPool()
 		{
 			SQLiteConnectionPool.Shared.Reset();
@@ -166,19 +169,47 @@ namespace SQLite
 			});
 		}
 
-        public Task<int> DeleteAllAsync<T>()
+		public Task<int> DeleteAsync<T> (object primaryKey)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Delete<T> (primaryKey);
+				}
+			});
+		}
+
+		public Task<int> DeleteAsync (object primaryKey, TableMapping map)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Delete (primaryKey, map);
+				}
+			});
+		}
+
+		public Task<int> DeleteAllAsync<T>()
         {
-            return Task.Factory.StartNew(() =>
-            {
+            return Task.Factory.StartNew(() => {
                 var conn = GetConnection();
-                using (conn.Lock())
-                {
+                using (conn.Lock()) {
                     return conn.DeleteAll<T>();
                 }
             });
         }
 
-        public Task<T> GetAsync<T>(object pk)
+		public Task<int> DeleteAllAsync (TableMapping map)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.DeleteAll (map);
+				}
+			});
+		}
+
+		public Task<T> GetAsync<T>(object pk)
             where T : new()
         {
             return Task.Factory.StartNew(() =>
@@ -190,6 +221,16 @@ namespace SQLite
                 }
             });
         }
+
+		public Task<object> GetAsync(object pk, TableMapping map)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Get (pk, map);
+				}
+			});
+		}
 
 		public Task<T> FindAsync<T> (object pk)
 			where T : new ()
@@ -236,12 +277,12 @@ namespace SQLite
 			});
 		}
 
-		public Task<int> InsertAllAsync (IEnumerable items)
+		public Task<int> InsertAllAsync (IEnumerable items, bool runInTransaction = true)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
-					return conn.InsertAll (items);
+					return conn.InsertAll (items, runInTransaction);
 				}
 			});
 		}
@@ -322,10 +363,31 @@ namespace SQLite
 		public Task<List<T>> QueryAsync<T> (string sql, params object[] args)
 			where T : new ()
 		{
-			return Task<List<T>>.Factory.StartNew (() => {
+			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Query<T> (sql, args);
+				}
+			});
+		}
+
+		public Task<IEnumerable<T>> DeferredQueryAsync<T> (string query, params object[] args)
+			where T : new()
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ();
+				}
+			});
+		}
+
+		public Task<IEnumerable<object>> DeferredQueryAsync (TableMapping map, string query, params object[] args)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ();
 				}
 			});
 		}
