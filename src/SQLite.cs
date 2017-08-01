@@ -1306,6 +1306,41 @@ namespace SQLite
 			return Insert (obj, "OR REPLACE", Orm.GetType (obj));
 		}
 
+        public int InsertOrIgnore(object obj)
+        {
+            if (obj == null)
+            {
+                return 0;
+            }
+            return Insert(obj, "OR IGNORE", obj.GetType());
+        }
+
+        public int InsertOrReplaceAll(IEnumerable objects)
+        {
+            var c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (var r in objects)
+                {
+                    c += InsertOrReplace(r);
+                }
+            });
+            return c;
+        }
+
+        public int InsertOrIgnoreAll(IEnumerable objects)
+        {
+            var c = 0;
+            RunInTransaction(() =>
+            {
+                foreach (var r in objects)
+                {
+                    c += InsertOrIgnore(r);
+                }
+            });
+            return c;
+        }
+
 		/// <summary>
 		/// Inserts the given object and retrieves its
 		/// auto incremented primary key if it has one.
@@ -1344,6 +1379,11 @@ namespace SQLite
 		{
 			return Insert (obj, "OR REPLACE", objType);
 		}
+
+        public int InsertOrIgnore(object obj, Type objType)
+        {
+            return Insert(obj, "OR IGNORE", objType);
+        }
 		
 		/// <summary>
 		/// Inserts the given object and retrieves its
