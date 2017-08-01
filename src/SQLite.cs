@@ -1480,6 +1480,14 @@ namespace SQLite
 			var vals = from c in cols
 				select c.GetValue (obj);
 			var ps = new List<object> (vals);
+			if (ps.Count == 0) {
+				// There is a PK but no accompanying data,
+				// so reset the PK to make the UPDATE work.
+				cols = map.Columns;
+				vals = from c in cols
+					   select c.GetValue (obj);
+				ps = new List<object> (vals);
+			}
 			ps.Add (pk.GetValue (obj));
 			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
 				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
