@@ -158,5 +158,40 @@ namespace SQLite.Tests
 			Assert.AreEqual ("Bar", oo.Value);
 			Assert.AreEqual (null, oo.Values);
 		}
+
+		[AttributeUsage (AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+		class DerivedIgnoreAttribute : IgnoreAttribute
+		{
+		}
+
+		class DerivedIgnoreClass
+		{
+			[PrimaryKey, AutoIncrement]
+			public int Id { get; set; }
+
+			public string NotIgnored { get; set; }
+
+			[DerivedIgnore]
+			public string Ignored { get; set; }
+		}
+
+		[Test]
+		public void DerivedIgnore ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<DerivedIgnoreClass> ();
+
+			var o = new DerivedIgnoreClass {
+				Ignored = "Hello",
+				NotIgnored = "World",
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<DerivedIgnoreClass> ().First ();
+
+			Assert.AreEqual (null, oo.Ignored);
+			Assert.AreEqual ("World", oo.NotIgnored);
+		}
 	}
 }
