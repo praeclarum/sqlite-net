@@ -156,6 +156,8 @@ namespace SQLite
 
 		public string DatabasePath { get; private set; }
 
+		public int LibVersionNumber { get; private set; }
+
 		public bool TimeExecution { get; set; }
 
 		public bool Trace { get; set; }
@@ -212,6 +214,8 @@ namespace SQLite
 				throw new ArgumentException ("Must be specified", "databasePath");
 
 			DatabasePath = databasePath;
+
+			LibVersionNumber = SQLite3.LibVersionNumber ();
 
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
@@ -1660,6 +1664,8 @@ namespace SQLite
 
 		protected virtual void Dispose(bool disposing)
 		{
+			var useClose2 = LibVersionNumber >= 3007014;
+
 			if (_open && Handle != NullHandle) {
 				try {
 					if (disposing) {
@@ -1669,14 +1675,14 @@ namespace SQLite
 							}
 						}
 
-						var r = SQLite3.Close2(Handle);
+						var r = useClose2 ? SQLite3.Close2(Handle) : SQLite3.Close(Handle);
 						if (r != SQLite3.Result.OK)
 						{
 							string msg = SQLite3.GetErrmsg(Handle);
 							throw SQLiteException.New(r, msg);
 						}
 					} else {
-						SQLite3.Close2(Handle);
+						var r = useClose2 ? SQLite3.Close2(Handle) : SQLite3.Close(Handle);
 					}
 				}
 				finally {
@@ -3722,6 +3728,11 @@ namespace SQLite
 			return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
 		}
 #endif
+
+		public static int LibVersionNumber()
+		{
+			return Sqlite3.sqlite3_libversion_number();
+		}
 
 		public static ExtendedResult ExtendedErrCode(Sqlite3DatabaseHandle db)
 		{
