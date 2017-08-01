@@ -41,6 +41,47 @@ namespace SQLite.Tests
 			Assert.AreEqual ("AGoodColumnName", mapping.Columns [1].Name);
 		}
 
+		class OverrideNamesBase
+		{
+			[PrimaryKey, AutoIncrement]
+			public int Id { get; set; }
+
+			public virtual string Name { get; set; }
+			public virtual string Value { get; set; }
+		}
+
+		class OverrideNamesClass : OverrideNamesBase
+		{
+			[Column ("n")]
+			public override string Name { get; set; }
+			[Column ("v")]
+			public override string Value { get; set; }
+		}
+
+		[Test]
+		public void OverrideNames ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<OverrideNamesClass> ();
+
+			var cols = db.GetTableInfo ("OverrideNamesClass");
+			Assert.AreEqual (3, cols.Count);
+			Assert.IsTrue (cols.Exists (x => x.Name == "n"));
+			Assert.IsTrue (cols.Exists (x => x.Name == "v"));
+
+			var o = new OverrideNamesClass {
+				Name = "Foo",
+				Value = "Bar",
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<OverrideNamesClass> ().First ();
+
+			Assert.AreEqual ("Foo", oo.Name);
+			Assert.AreEqual ("Bar", oo.Value);
+		}
+
 		#region Issue #86
 
 		[Table("foo")]
