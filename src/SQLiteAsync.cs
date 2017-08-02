@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2016 Krueger Systems, Inc.
+// Copyright (c) 2012-2017 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,9 @@ namespace SQLite
 		public string DatabasePath => GetConnection ().DatabasePath;
 		public int LibVersionNumber => GetConnection ().LibVersionNumber;
 
+		/// <summary>
+		/// Closes all connections to all async databases.
+		/// </summary>
 		public static void ResetPool()
 		{
 			SQLiteConnectionPool.Shared.Reset();
@@ -58,7 +61,12 @@ namespace SQLite
 
 		public SQLiteConnectionWithLock GetConnection ()
 		{
-			return SQLiteConnectionPool.Shared.GetConnection (_connectionString, _openFlags);
+			return SQLiteConnectionPool.Shared.GetConnection(_connectionString, _openFlags);
+		}
+
+		public void Close()
+		{
+			SQLiteConnectionPool.Shared.CloseConnection(_connectionString, _openFlags);
 		}
 
 		public Task<CreateTablesResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
@@ -493,9 +501,9 @@ namespace SQLite
 	{
 		public Dictionary<Type, int> Results { get; private set; }
 
-		internal CreateTablesResult ()
+		public CreateTablesResult ()
 		{
-			this.Results = new Dictionary<Type, int> ();
+			Results = new Dictionary<Type, int> ();
 		}
 	}
 
@@ -512,7 +520,7 @@ namespace SQLite
 				Connection = new SQLiteConnectionWithLock (connectionString, openFlags);
 			}
 
-			public void OnApplicationSuspended ()
+			public void Close ()
 			{
 				Connection.Dispose ();
 				Connection = null;
@@ -550,6 +558,19 @@ namespace SQLite
 			}
 		}
 
+		public void CloseConnection (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
+		{
+			lock (_entriesLock) {
+				Entry entry;
+				string key = connectionString.ConnectionString;
+
+				if (_entries.TryGetValue (key, out entry)) {
+					_entries.Remove (key);
+					entry.Close ();
+				}
+			}
+		}
+
 		/// <summary>
 		/// Closes all connections managed by this pool.
 		/// </summary>
@@ -557,19 +578,10 @@ namespace SQLite
 		{
 			lock (_entriesLock) {
 				foreach (var entry in _entries.Values) {
-					entry.OnApplicationSuspended ();
+					entry.Close ();
 				}
 				_entries.Clear ();
 			}
-		}
-
-		/// <summary>
-		/// Call this method when the application is suspended.
-		/// </summary>
-		/// <remarks>Behaviour here is to close any open connections.</remarks>
-		public void ApplicationSuspended ()
-		{
-			Reset ();
 		}
 	}
 

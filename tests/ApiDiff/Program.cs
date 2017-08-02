@@ -47,7 +47,6 @@ namespace ApiDiff
 			"GetConnection",
 			"Handle",
 
-			"Close",
 			"Dispose",
 		};
 
