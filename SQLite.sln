@@ -98,5 +98,20 @@ Global
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = tests\SQLite.Tests.csproj
+		Policies = $0
+		$0.TextStylePolicy = $1
+		$1.FileWidth = 128
+		$1.NoTabsAfterNonTabs = True
+		$1.EolMarker = Unix
+		$1.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $2
+		$2.NewLinesForBracesInProperties = False
+		$2.NewLinesForBracesInAccessors = False
+		$2.NewLinesForBracesInAnonymousMethods = False
+		$2.NewLinesForBracesInControlBlocks = False
+		$2.NewLinesForBracesInAnonymousTypes = False
+		$2.NewLinesForBracesInObjectCollectionArrayInitializers = False
+		$2.NewLinesForBracesInLambdaExpressionBody = False
+		$2.scope = text/x-csharp
 	EndGlobalSection
 EndGlobal
