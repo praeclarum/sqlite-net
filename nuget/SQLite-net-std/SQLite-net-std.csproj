@@ -15,7 +15,7 @@
     <DefineConstants>TRACE;USE_SQLITEPCL_RAW;DEBUG;NETSTANDARD1_1</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.5" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.7" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
