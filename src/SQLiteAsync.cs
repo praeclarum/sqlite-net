@@ -67,6 +67,7 @@ namespace SQLite
 			get { return GetConnection ().TimeExecution; }
 			set { GetConnection ().TimeExecution = value; }
 		}
+		public IEnumerable<TableMapping> TableMappings => GetConnection ().TableMappings;
 
 		/// <summary>
 		/// Closes all connections to all async databases.
@@ -148,6 +149,16 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.DropTable<T> ();
+				}
+			});
+		}
+
+		public Task<int> DropTableAsync (TableMapping map)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.DropTable (map);
 				}
 			});
 		}
@@ -257,6 +268,17 @@ namespace SQLite
 			});
 		}
 
+		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
+			where T : new()
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Get<T> (predicate);
+				}
+			});
+		}
+
 		public Task<T> FindAsync<T> (object pk)
 			where T : new ()
 		{
@@ -267,19 +289,16 @@ namespace SQLite
 				}
 			});
 		}
-		
-		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
-            where T : new()
-        {
-            return Task.Factory.StartNew(() =>
-            {
-                var conn = GetConnection();
-                using (conn.Lock())
-                {
-                    return conn.Get<T> (predicate);
-                }
-            });
-        }
+
+		public Task<object> FindAsync (object pk, TableMapping map)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Find (pk, map);
+				}
+			});
+		}
 
 		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate)
 			where T : new ()
@@ -288,6 +307,58 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Find<T> (predicate);
+				}
+			});
+		}
+
+		public Task<T> FindWithQueryAsync<T> (string query, params object[] args)
+			where T : new()
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.FindWithQuery<T> (query, args);
+				}
+			});
+		}
+
+		public Task<object> FindWithQueryAsync (TableMapping map, string query, params object[] args)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.FindWithQuery (map, query, args);
+				}
+			});
+		}
+
+		public Task<TableMapping> GetMappingAsync (Type type, CreateFlags createFlags = CreateFlags.None)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.GetMapping (type, createFlags);
+				}
+			});
+		}
+
+		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.GetMapping<T> (createFlags);
+				}
+			});
+		}
+
+		public Task<List<SQLiteConnection.ColumnInfo>> GetTableInfoAsync (string tableName)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.GetTableInfo (tableName);
 				}
 			});
 		}
@@ -392,6 +463,16 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.Query<T> (sql, args);
+				}
+			});
+		}
+
+		public Task<List<object>> QueryAsync (TableMapping map, string sql, params object[] args)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Query (map, sql, args);
 				}
 			});
 		}

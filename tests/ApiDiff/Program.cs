@@ -55,6 +55,7 @@ namespace ApiDiff
 
 			"Table",
 			"CreateCommand",
+			"TableChanged",
 		};
 
 		public Apis (Type type, string nameSuffix = "")

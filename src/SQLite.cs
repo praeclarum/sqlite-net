@@ -245,7 +245,7 @@ namespace SQLite
 
 			Tracer = line => Debug.WriteLine (line);
 		}
-		
+
 #if __IOS__
 		static SQLiteConnection ()
 		{
@@ -262,16 +262,17 @@ namespace SQLite
 		static bool _preserveDuringLinkMagic;
 #endif
 
-#if !USE_SQLITEPCL_RAW
-        public void EnableLoadExtension(int onoff)
+		/// <summary>
+		/// Enable or disable extension loading.
+		/// </summary>
+		public void EnableLoadExtension(bool enabled)
         {
-            SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
+			SQLite3.Result r = SQLite3.EnableLoadExtension (Handle, enabled ? 1 : 0);
 			if (r != SQLite3.Result.OK) {
 				string msg = SQLite3.GetErrmsg (Handle);
 				throw SQLiteException.New (r, msg);
 			}
         }
-#endif
 
 #if !USE_SQLITEPCL_RAW
 		static byte[] GetNullTerminatedUtf8 (string s)
@@ -3722,12 +3723,10 @@ namespace SQLite
 			return new byte[0];
 		}
 
-#if !USE_SQLITEPCL_RAW
 		public static Result EnableLoadExtension(Sqlite3DatabaseHandle db, int onoff)
 		{
 			return (Result)Sqlite3.sqlite3_enable_load_extension(db, onoff);
 		}
-#endif
 
 		public static int LibVersionNumber()
 		{
