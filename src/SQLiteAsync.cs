@@ -50,6 +50,23 @@ namespace SQLite
 
 		public string DatabasePath => GetConnection ().DatabasePath;
 		public int LibVersionNumber => GetConnection ().LibVersionNumber;
+		public TimeSpan BusyTimeout {
+			get { return GetConnection ().BusyTimeout; }
+			set { GetConnection ().BusyTimeout = value; }
+		}
+		public bool StoreDateTimeAsTicks => GetConnection ().StoreDateTimeAsTicks;
+		public bool Trace {
+			get { return GetConnection ().Trace; }
+			set { GetConnection ().Trace = value; }
+		}
+		public Action<string> Tracer {
+			get { return GetConnection ().Tracer; }
+			set { GetConnection ().Tracer = value; }
+		}
+		public bool TimeExecution {
+			get { return GetConnection ().TimeExecution; }
+			set { GetConnection ().TimeExecution = value; }
+		}
 
 		/// <summary>
 		/// Closes all connections to all async databases.

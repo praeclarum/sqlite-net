@@ -37,17 +37,24 @@ namespace ApiDiff
 		readonly Type type;
 
 		static readonly HashSet<string> ignores = new HashSet<string> {
+			"RunInTransaction",
+			"RunInTransactionAsync",
 			"BeginTransaction",
+			"SaveTransactionPoint",
 			"Commit",
 			"Rollback",
 			"RollbackTo",
 			"IsInTransaction",
+			"Release",
 			"EndTransaction",
 
 			"GetConnection",
 			"Handle",
 
 			"Dispose",
+
+			"Table",
+			"CreateCommand",
 		};
 
 		public Apis (Type type, string nameSuffix = "")
@@ -56,6 +63,7 @@ namespace ApiDiff
 			this.nameSuffix = nameSuffix;
 			All = type.GetMembers (BindingFlags.Public|BindingFlags.Instance)
 			          .Where (x => !ignores.Contains(x.Name))
+			          .Where (x => x.MemberType != MemberTypes.NestedType)
 			          .Where (x => !x.Name.StartsWith("get_") && !x.Name.StartsWith ("set_") && !x.Name.StartsWith ("remove_") && !x.Name.StartsWith ("add_"))
 			          .Select (x => new Api(x, nameSuffix))
 			          .OrderBy (x => x.Name)
@@ -84,7 +92,7 @@ namespace ApiDiff
 						n++;
 						break;
 					case ListDiffActionType.Update:
-						Console.ForegroundColor = ConsoleColor.Yellow;
+						Console.ForegroundColor = ConsoleColor.Gray;
 						Console.WriteLine ($"- [x] `{a.SourceItem.Index.Replace('`', '_')}`");
 						break;
 				}

@@ -679,7 +679,7 @@ namespace SQLite
 			if (TimeExecution) {
 				_sw.Stop ();
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				Tracer?.Invoke (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
 			}
 			
 			return r;
@@ -702,7 +702,7 @@ namespace SQLite
 			if (TimeExecution) {
 				_sw.Stop ();
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				Tracer?.Invoke (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
 			}
 			
 			return r;
