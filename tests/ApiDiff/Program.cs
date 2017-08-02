@@ -39,7 +39,7 @@ namespace ApiDiff
 		readonly string nameSuffix;
 		readonly Type type;
 
-		static readonly HashSet<string> ignores = new HashSet<string> {
+		public static readonly HashSet<string> connectionIgnores = new HashSet<string> {
 			"RunInTransaction",
 			"RunInTransactionAsync",
 			"BeginTransaction",
@@ -65,7 +65,17 @@ namespace ApiDiff
 			"TableChanged",
 		};
 
-		public Apis (Type type, string nameSuffix = "")
+		public static readonly HashSet<string> queryIgnores = new HashSet<string> {
+			".ctor",
+			"Clone",
+			"Connection",
+			"Deferred",
+			"Table",
+			"GetEnumerator",
+			"Delete",
+		};
+
+		public Apis (Type type, HashSet<string> ignores, string nameSuffix = "")
 		{
 			this.type = type;
 			this.nameSuffix = nameSuffix;
@@ -120,13 +130,13 @@ namespace ApiDiff
 	{
 		public static int Main (string[] args)
 		{
-			var synchronousConnection = new Apis (typeof (SQLiteConnection));
-			var asynchronousConnection = new Apis (typeof (SQLiteAsyncConnection), "Async");
+			var synchronousConnection = new Apis (typeof (SQLiteConnection), Apis.connectionIgnores);
+			var asynchronousConnection = new Apis (typeof (SQLiteAsyncConnection), Apis.connectionIgnores, "Async");
 			var n = asynchronousConnection.DumpComparison (synchronousConnection);
 
-			//var synchronousQuery = new Apis (typeof (TableQuery<>));
-			//var asynchronousQuery = new Apis (typeof (AsyncTableQuery<>), "Async");
-			//n += asynchronousQuery.DumpComparison (synchronousQuery);
+			var synchronousQuery = new Apis (typeof (TableQuery<>), Apis.queryIgnores);
+			var asynchronousQuery = new Apis (typeof (AsyncTableQuery<>), Apis.queryIgnores, "Async");
+			n += asynchronousQuery.DumpComparison (synchronousQuery);
 
 			return n > 0 ? 1 : 0;
 		}

@@ -1191,6 +1191,14 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Execute SELECT COUNT(*) on the query with an additional WHERE clause.
+		/// </summary>
+		public Task<int> CountAsync (Expression<Func<T, bool>> predExpr)
+		{
+			return ReadAsync (conn => _innerQuery.Count (predExpr));
+		}
+
+		/// <summary>
 		/// Returns the element at a given index
 		/// </summary>
 		public Task<T> ElementAtAsync (int index)
@@ -1212,6 +1220,22 @@ namespace SQLite
 		public Task<T> FirstOrDefaultAsync ()
 		{
 			return ReadAsync (conn => _innerQuery.FirstOrDefault ());
+		}
+
+		/// <summary>
+		/// Returns the first element of this query that matches the predicate.
+		/// </summary>
+		public Task<T> FirstAsync (Expression<Func<T, bool>> predExpr)
+		{
+			return ReadAsync (conn => _innerQuery.First (predExpr));
+		}
+
+		/// <summary>
+		/// Returns the first element of this query that matches the predicate.
+		/// </summary>
+		public Task<T> FirstOrDefaultAsync (Expression<Func<T, bool>> predExpr)
+		{
+			return ReadAsync (conn => _innerQuery.FirstOrDefault (predExpr));
 		}
 	}
 

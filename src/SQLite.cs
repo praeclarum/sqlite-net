@@ -3460,6 +3460,9 @@ namespace SQLite
 			return GenerateCommand ("count(*)").ExecuteScalar<int> ();
 		}
 
+		/// <summary>
+		/// Execute SELECT COUNT(*) on the query with an additional WHERE clause.
+		/// </summary>
 		public int Count (Expression<Func<T, bool>> predExpr)
 		{
 			return Where (predExpr).Count ();
