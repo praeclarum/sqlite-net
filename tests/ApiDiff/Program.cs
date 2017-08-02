@@ -21,11 +21,13 @@ namespace ApiDiff
 		{
 			Name = member.Name;
 			Declaration = member.ToString ();
-			Index = Declaration;
+			Index = Declaration.Replace ("AsyncTableQuery`1", "TableQuery`1");
 
 			if (nameSuffix.Length > 0 && Name.EndsWith (nameSuffix)) {
 				var indexName = Name.Substring (0, Name.IndexOf (nameSuffix));
-				Index = taskRe.Replace (task1Re.Replace (Index.Replace (Name, indexName), "$1"), "Void$1").Replace ("System.Int32", "Int32");
+				Index = taskRe
+					.Replace (task1Re.Replace (Index.Replace (Name, indexName), "$1"), "Void$1")
+					.Replace ("System.Int32", "Int32");
 				Name = indexName;
 			}
 		}
@@ -48,6 +50,10 @@ namespace ApiDiff
 			"IsInTransaction",
 			"Release",
 			"EndTransaction",
+
+			"BusyTimeout",
+			"GetBusyTimeout",
+			"SetBusyTimeoutAsync",
 
 			"GetConnection",
 			"Handle",
@@ -76,7 +82,8 @@ namespace ApiDiff
 		public int DumpComparison (Apis other)
 		{
 			Console.ForegroundColor = ConsoleColor.Cyan;
-			Console.WriteLine (type.FullName);
+			Console.WriteLine ("## " + type.FullName);
+			Console.WriteLine ();
 
 			var diff = new ListDiff<Api, Api> (All, other.All, (x, y) => x.Index == y.Index);
 
@@ -103,6 +110,7 @@ namespace ApiDiff
 			Console.ResetColor ();
 			Console.WriteLine ();
 			Console.WriteLine ($"**{n}** differences");
+			Console.WriteLine ();
 
 			return n;
 		}
@@ -112,9 +120,14 @@ namespace ApiDiff
 	{
 		public static int Main (string[] args)
 		{
-			var synchronous = new Apis (typeof (SQLiteConnection));
-			var asynchronous = new Apis (typeof (SQLiteAsyncConnection), "Async");
-			var n = asynchronous.DumpComparison (synchronous);
+			var synchronousConnection = new Apis (typeof (SQLiteConnection));
+			var asynchronousConnection = new Apis (typeof (SQLiteAsyncConnection), "Async");
+			var n = asynchronousConnection.DumpComparison (synchronousConnection);
+
+			//var synchronousQuery = new Apis (typeof (TableQuery<>));
+			//var asynchronousQuery = new Apis (typeof (AsyncTableQuery<>), "Async");
+			//n += asynchronousQuery.DumpComparison (synchronousQuery);
+
 			return n > 0 ? 1 : 0;
 		}
 	}
