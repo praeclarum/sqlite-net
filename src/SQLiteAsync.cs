@@ -97,10 +97,25 @@ namespace SQLite
 			});
 		}
 
-		public Task<CreateTablesResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
+		public Task<int> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 		{
-			return CreateTablesAsync (createFlags, typeof(T));
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.CreateTable<T> (createFlags);
+				}
+			});
+		}
+
+		public Task<int> CreateTableAsync (Type ty, CreateFlags createFlags = CreateFlags.None)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.CreateTable (ty, createFlags);
+				}
+			});
 		}
 
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
@@ -143,12 +158,8 @@ namespace SQLite
 				CreateTablesResult result = new CreateTablesResult ();
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
-					foreach (Type type in types) {
-						int aResult = conn.CreateTable (type, createFlags);
-						result.Results[type] = aResult;
-					}
+					return conn.CreateTables (createFlags, types);
 				}
-				return result;
 			});
 		}
 
@@ -169,6 +180,56 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return conn.DropTable (map);
+				}
+			});
+		}
+
+		public Task<int> CreateIndexAsync (string tableName, string columnName, bool unique = false)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.CreateIndex (tableName, columnName, unique);
+				}
+			});
+		}
+
+		public Task<int> CreateIndexAsync (string indexName, string tableName, string columnName, bool unique = false)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.CreateIndex (indexName, tableName, columnName, unique);
+				}
+			});
+		}
+
+		public Task<int> CreateIndexAsync (string tableName, string[] columnNames, bool unique = false)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.CreateIndex (tableName, columnNames, unique);
+				}
+			});
+		}
+
+		public Task<int> CreateIndexAsync (string indexName, string tableName, string[] columnNames, bool unique = false)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.CreateIndex (indexName, tableName, columnNames, unique);
+				}
+			});
+		}
+
+		public Task<int> CreateIndexAsync<T> (Expression<Func<T, object>> property, bool unique = false)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.CreateIndex (property, unique);
 				}
 			});
 		}
@@ -674,16 +735,6 @@ namespace SQLite
 			});
 		}
     }
-
-	public class CreateTablesResult
-	{
-		public Dictionary<Type, int> Results { get; private set; }
-
-		public CreateTablesResult ()
-		{
-			Results = new Dictionary<Type, int> ();
-		}
-	}
 
 	class SQLiteConnectionPool
 	{

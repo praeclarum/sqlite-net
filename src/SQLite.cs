@@ -479,14 +479,103 @@ namespace SQLite
 			return count;
 		}
 
-        /// <summary>
-        /// Creates an index for the specified table and columns.
-        /// </summary>
-        /// <param name="indexName">Name of the index to create</param>
-        /// <param name="tableName">Name of the database table</param>
-        /// <param name="columnNames">An array of column names to index</param>
-        /// <param name="unique">Whether the index should be unique</param>
-        public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// The number of entries added to the database schema for each type.
+		/// </returns>
+		public CreateTablesResult CreateTables<T, T2> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
+			where T2 : new()
+		{
+			return CreateTables (createFlags, typeof (T), typeof (T2));
+		}
+
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// The number of entries added to the database schema for each type.
+		/// </returns>
+		public CreateTablesResult CreateTables<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
+			where T2 : new()
+			where T3 : new()
+		{
+			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3));
+		}
+
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// The number of entries added to the database schema for each type.
+		/// </returns>
+		public CreateTablesResult CreateTables<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
+			where T2 : new()
+			where T3 : new()
+			where T4 : new()
+		{
+			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4));
+		}
+
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// The number of entries added to the database schema for each type.
+		/// </returns>
+		public CreateTablesResult CreateTables<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
+			where T2 : new()
+			where T3 : new()
+			where T4 : new()
+			where T5 : new()
+		{
+			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
+		}
+
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// The number of entries added to the database schema for each type.
+		/// </returns>
+		public CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types)
+		{
+			var result = new CreateTablesResult ();
+			foreach (Type type in types) {
+				int aResult = CreateTable (type, createFlags);
+				result.Results[type] = aResult;
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Creates an index for the specified table and columns.
+		/// </summary>
+		/// <param name="indexName">Name of the index to create</param>
+		/// <param name="tableName">Name of the database table</param>
+		/// <param name="columnNames">An array of column names to index</param>
+		/// <param name="unique">Whether the index should be unique</param>
+		public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
         {
             const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
             var sql = String.Format(sqlFormat, tableName, string.Join ("\", \"", columnNames), unique ? "unique" : "", indexName);
@@ -534,7 +623,7 @@ namespace SQLite
         /// <typeparam name="T">Type to reflect to a database table.</typeparam>
         /// <param name="property">Property to index</param>
         /// <param name="unique">Whether the index should be unique</param>
-        public void CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
+        public int CreateIndex<T>(Expression<Func<T, object>> property, bool unique = false)
         {
             MemberExpression mx;
             if (property.Body.NodeType == ExpressionType.Convert)
@@ -556,7 +645,7 @@ namespace SQLite
             var map = GetMapping<T>();
             var colName = map.FindColumnWithPropertyName(propName).Name;
 
-            CreateIndex(map.TableName, colName, unique);
+            return CreateIndex(map.TableName, colName, unique);
         }
 
 		public class ColumnInfo
@@ -2721,6 +2810,16 @@ namespace SQLite
 		~PreparedSqlLiteInsertCommand ()
 		{
 			Dispose (false);
+		}
+	}
+
+	public class CreateTablesResult
+	{
+		public Dictionary<Type, int> Results { get; private set; }
+
+		public CreateTablesResult ()
+		{
+			Results = new Dictionary<Type, int> ();
 		}
 	}
 

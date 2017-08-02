@@ -68,6 +68,7 @@ namespace ApiDiff
 			          .Where (x => x.MemberType != MemberTypes.NestedType)
 			          .Where (x => !x.Name.StartsWith("get_") && !x.Name.StartsWith ("set_") && !x.Name.StartsWith ("remove_") && !x.Name.StartsWith ("add_"))
 			          .Select (x => new Api(x, nameSuffix))
+			          .OrderBy (x => x.Index)
 			          .OrderBy (x => x.Name)
 			          .ToList ();
 		}
