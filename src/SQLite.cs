@@ -138,7 +138,7 @@ namespace SQLite
 	}
 
 	/// <summary>
-	/// Represents an open connection to a SQLite database.
+	/// An open connection to a SQLite database.
 	/// </summary>
 	public partial class SQLiteConnection : IDisposable
 	{
@@ -155,15 +155,36 @@ namespace SQLite
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 		internal static readonly Sqlite3DatabaseHandle NullHandle = default (Sqlite3DatabaseHandle);
 
+		/// <summary>
+		/// Gets the database path used by this connection.
+		/// </summary>
 		public string DatabasePath { get; private set; }
 
+		/// <summary>
+		/// Gets the SQLite library version number. 3007014 would be v3.7.14
+		/// </summary>
 		public int LibVersionNumber { get; private set; }
 
+		/// <summary>
+		/// Whether Trace lines should be written that show the execution time of queries.
+		/// </summary>
 		public bool TimeExecution { get; set; }
 
+		/// <summary>
+		/// Whether to writer queries to <see cref="Tracer"/> during execution.
+		/// </summary>
+		/// <value>The tracer.</value>
 		public bool Trace { get; set; }
+
+		/// <summary>
+		/// The delegate responsible for writing trace lines.
+		/// </summary>
+		/// <value>The tracer.</value>
 		public Action<string> Tracer { get; set; }
 
+		/// <summary>
+		/// Whether to store DateTime properties as ticks (true) or strings (false).
+		/// </summary>
 		public bool StoreDateTimeAsTicks { get; private set; }
 
 #if USE_SQLITEPCL_RAW
@@ -668,6 +689,11 @@ namespace SQLite
 			}
 		}
 
+		/// <summary>
+		/// Query the built-in sqlite table_info table for a specific tables columns.
+		/// </summary>
+		/// <returns>The columns contains in the table.</returns>
+		/// <param name="tableName">Table name.</param>
 		public List<ColumnInfo> GetTableInfo (string tableName)
 		{
 			var query = "pragma table_info(\"" + tableName + "\")";
@@ -773,6 +799,22 @@ namespace SQLite
 			return r;
 		}
 
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method when return primitive values.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified in the database as a result of this execution.
+		/// </returns>
 		public T ExecuteScalar<T> (string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
@@ -2522,7 +2564,7 @@ namespace SQLite
 		public T ExecuteScalar<T> ()
 		{
 			if (_conn.Trace) {
-				_conn.Tracer.Invoke ("Executing Query: " + this);
+				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
 
 			T val = default (T);
@@ -2919,6 +2961,9 @@ namespace SQLite
 			return q;
 		}
 
+		/// <summary>
+		/// Filters the query based on a predicate.
+		/// </summary>
 		public TableQuery<T> Where (Expression<Func<T, bool>> predExpr)
 		{
 			if (predExpr.NodeType == ExpressionType.Lambda) {
@@ -2952,6 +2997,9 @@ namespace SQLite
 			}
 		}
 
+		/// <summary>
+		/// Yields a given number of elements from the query and then skips the remainder.
+		/// </summary>
 		public TableQuery<T> Take (int n)
 		{
 			var q = Clone<T> ();
@@ -2959,6 +3007,9 @@ namespace SQLite
 			return q;
 		}
 
+		/// <summary>
+		/// Skips a given number of elements from the query and then yields the remainder.
+		/// </summary>
 		public TableQuery<T> Skip (int n)
 		{
 			var q = Clone<T> ();
@@ -2966,6 +3017,9 @@ namespace SQLite
 			return q;
 		}
 
+		/// <summary>
+		/// Returns the element at a given index
+		/// </summary>
 		public T ElementAt (int index)
 		{
 			return Skip (index).Take (1).First ();
@@ -2979,27 +3033,39 @@ namespace SQLite
 			return q;
 		}
 
+		/// <summary>
+		/// Order the query results according to a key.
+		/// </summary>
 		public TableQuery<T> OrderBy<U> (Expression<Func<T, U>> orderExpr)
 		{
 			return AddOrderBy<U> (orderExpr, true);
 		}
 
+		/// <summary>
+		/// Order the query results according to a key.
+		/// </summary>
 		public TableQuery<T> OrderByDescending<U> (Expression<Func<T, U>> orderExpr)
 		{
 			return AddOrderBy<U> (orderExpr, false);
 		}
 
+		/// <summary>
+		/// Order the query results according to a key.
+		/// </summary>
 		public TableQuery<T> ThenBy<U> (Expression<Func<T, U>> orderExpr)
 		{
 			return AddOrderBy<U> (orderExpr, true);
 		}
 
+		/// <summary>
+		/// Order the query results according to a key.
+		/// </summary>
 		public TableQuery<T> ThenByDescending<U> (Expression<Func<T, U>> orderExpr)
 		{
 			return AddOrderBy<U> (orderExpr, false);
 		}
 
-		private TableQuery<T> AddOrderBy<U> (Expression<Func<T, U>> orderExpr, bool asc)
+		TableQuery<T> AddOrderBy<U> (Expression<Func<T, U>> orderExpr, bool asc)
 		{
 			if (orderExpr.NodeType == ExpressionType.Lambda) {
 				var lambda = (LambdaExpression)orderExpr;
@@ -3044,6 +3110,9 @@ namespace SQLite
 			}
 		}
 
+		/// <summary>
+		/// Performs an inner join of two queries based on matching keys extracted from the elements.
+		/// </summary>
 		public TableQuery<TResult> Join<TInner, TKey, TResult> (
 			TableQuery<TInner> inner,
 			Expression<Func<T, TKey>> outerKeySelector,
@@ -3383,6 +3452,9 @@ namespace SQLite
 			}
 		}
 
+		/// <summary>
+		/// Execute SELECT COUNT(*) on the query
+		/// </summary>
 		public int Count ()
 		{
 			return GenerateCommand ("count(*)").ExecuteScalar<int> ();
@@ -3406,23 +3478,36 @@ namespace SQLite
 			return GetEnumerator ();
 		}
 
+		/// <summary>
+		/// Returns the first element of this query.
+		/// </summary>
 		public T First ()
 		{
 			var query = Take (1);
 			return query.ToList<T> ().First ();
 		}
 
+		/// <summary>
+		/// Returns the first element of this query, or null if no element is found.
+		/// </summary>
 		public T FirstOrDefault ()
 		{
 			var query = Take (1);
 			return query.ToList<T> ().FirstOrDefault ();
 		}
 
+		/// <summary>
+		/// Returns the first element of this query that matches the predicate.
+		/// </summary>
 		public T First (Expression<Func<T, bool>> predExpr)
 		{
 			return Where (predExpr).First ();
 		}
 
+		/// <summary>
+		/// Returns the first element of this query that matches the predicate, or null
+		/// if no element is found.
+		/// </summary>
 		public T FirstOrDefault (Expression<Func<T, bool>> predExpr)
 		{
 			return Where (predExpr).FirstOrDefault ();
