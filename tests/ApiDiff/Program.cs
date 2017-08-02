@@ -14,7 +14,8 @@ namespace ApiDiff
 		public string Declaration;
 		public string Index;
 
-		static readonly Regex taskRe = new Regex (@"System\.Threading\.Tasks\.Task`1\[([^\]]*)\]");
+		static readonly Regex task1Re = new Regex (@"System\.Threading\.Tasks\.Task`1\[([^\]]*)\]");
+		static readonly Regex taskRe = new Regex (@"System\.Threading\.Tasks\.Task(\s*)");
 
 		public Api (MemberInfo member, string nameSuffix)
 		{
@@ -24,7 +25,7 @@ namespace ApiDiff
 
 			if (nameSuffix.Length > 0 && Name.EndsWith (nameSuffix)) {
 				var indexName = Name.Substring (0, Name.IndexOf (nameSuffix));
-				Index = taskRe.Replace (Index.Replace (Name, indexName), "$1").Replace ("System.Int32", "Int32");
+				Index = taskRe.Replace (task1Re.Replace (Index.Replace (Name, indexName), "$1"), "Void$1").Replace ("System.Int32", "Int32");
 				Name = indexName;
 			}
 		}

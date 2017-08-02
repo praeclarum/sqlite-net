@@ -87,6 +87,16 @@ namespace SQLite
 			SQLiteConnectionPool.Shared.CloseConnection(_connectionString, _openFlags);
 		}
 
+		public Task EnableLoadExtensionAsync (bool enabled)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					conn.EnableLoadExtension (enabled);
+				}
+			});
+		}
+
 		public Task<CreateTablesResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 		{
@@ -163,34 +173,84 @@ namespace SQLite
 			});
 		}
 
-		public Task<int> InsertAsync (object item)
+		public Task<int> InsertAsync (object obj)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
-					return conn.Insert (item);
+					return conn.Insert (obj);
 				}
 			});
 		}
 
-        public Task<int> InsertOrReplaceAsync(object item)
+		public Task<int> InsertAsync (object obj, Type objType)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Insert (obj, objType);
+				}
+			});
+		}
+
+		public Task<int> InsertAsync (object obj, string extra)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Insert (obj, extra);
+				}
+			});
+		}
+
+		public Task<int> InsertAsync (object obj, string extra, Type objType)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Insert (obj, extra, objType);
+				}
+			});
+		}
+
+		public Task<int> InsertOrReplaceAsync(object obj)
         {
             return Task.Factory.StartNew(() =>
             {
                 var conn = GetConnection();
                 using (conn.Lock())
                 {
-                    return conn.InsertOrReplace(item);
+                    return conn.InsertOrReplace(obj);
                 }
             });
         }
 
-		public Task<int> UpdateAsync (object item)
+		public Task<int> InsertOrReplaceAsync (object obj, Type objType)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
-					return conn.Update (item);
+					return conn.InsertOrReplace (obj, objType);
+				}
+			});
+		}
+
+		public Task<int> UpdateAsync (object obj)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Update (obj);
+				}
+			});
+		}
+
+		public Task<int> UpdateAsync (object obj, Type objType)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.Update (obj, objType);
 				}
 			});
 		}
@@ -382,18 +442,38 @@ namespace SQLite
 				}
 			});
 		}
-		
-		public Task<int> UpdateAllAsync (IEnumerable items)
+
+		public Task<int> InsertAllAsync (IEnumerable items, string extra, bool runInTransaction = true)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
-					return conn.UpdateAll (items);
+					return conn.InsertAll (items, extra, runInTransaction);
 				}
 			});
 		}
 
-        [Obsolete("Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead.")]
+		public Task<int> InsertAllAsync (IEnumerable items, Type objType, bool runInTransaction = true)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.InsertAll (items, objType, runInTransaction);
+				}
+			});
+		}
+
+		public Task<int> UpdateAllAsync (IEnumerable objects, bool runInTransaction = true)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return conn.UpdateAll (objects, runInTransaction);
+				}
+			});
+		}
+
+		[Obsolete("Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead.")]
 		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action)
 		{
 			return Task.Factory.StartNew (() => {
