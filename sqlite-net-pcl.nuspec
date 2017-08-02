@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
     <authors>Frank A. Krueger</authors>
     <owners>Frank A. Krueger</owners>
     <licenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE.md</licenseUrl>
