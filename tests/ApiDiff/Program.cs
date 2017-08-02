@@ -72,7 +72,6 @@ namespace ApiDiff
 			"Deferred",
 			"Table",
 			"GetEnumerator",
-			"Delete",
 		};
 
 		public Apis (Type type, HashSet<string> ignores, string nameSuffix = "")

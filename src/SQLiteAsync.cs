@@ -1110,6 +1110,16 @@ namespace SQLite
 			});
 		}
 
+		Task<U> WriteAsync<U> (Func<SQLiteConnectionWithLock, U> write)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = (SQLiteConnectionWithLock)_innerQuery.Connection;
+				using (conn.Lock ()) {
+					return write (conn);
+				}
+			});
+		}
+
 		/// <summary>
 		/// Filters the query based on a predicate.
 		/// </summary>
@@ -1236,6 +1246,22 @@ namespace SQLite
 		public Task<T> FirstOrDefaultAsync (Expression<Func<T, bool>> predExpr)
 		{
 			return ReadAsync (conn => _innerQuery.FirstOrDefault (predExpr));
+		}
+
+		/// <summary>
+		/// Delete all the rows that match this query and the given predicate.
+		/// </summary>
+		public Task<int> DeleteAsync (Expression<Func<T, bool>> predExpr)
+		{
+			return WriteAsync (conn => _innerQuery.Delete (predExpr));
+		}
+
+		/// <summary>
+		/// Delete all the rows that match this query.
+		/// </summary>
+		public Task<int> DeleteAsync ()
+		{
+			return WriteAsync (conn => _innerQuery.Delete ());
 		}
 	}
 

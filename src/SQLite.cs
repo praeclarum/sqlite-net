@@ -2978,23 +2978,41 @@ namespace SQLite
 			}
 		}
 
+		/// <summary>
+		/// Delete all the rows that match this query.
+		/// </summary>
+		public int Delete ()
+		{
+			return Delete (null);
+		}
+
+		/// <summary>
+		/// Delete all the rows that match this query and the given predicate.
+		/// </summary>
 		public int Delete (Expression<Func<T, bool>> predExpr)
 		{
-			if (predExpr.NodeType == ExpressionType.Lambda) {
-				var lambda = (LambdaExpression)predExpr;
-				var pred = lambda.Body;
-				var args = new List<object> ();
-				var w = CompileExpr (pred, args);
-				var cmdText = "delete from \"" + Table.TableName + "\"";
-				cmdText += " where " + w.CommandText;
-				var command = Connection.CreateCommand (cmdText, args.ToArray ());
+			if (_limit.HasValue || _offset.HasValue)
+				throw new InvalidOperationException ("Cannot delete with limits or offsets");
 
-				int result = command.ExecuteNonQuery ();
-				return result;
+			if (_where == null && predExpr == null)
+				throw new InvalidOperationException ("No condition specified");
+
+			var pred = _where;
+
+			if (predExpr != null && predExpr.NodeType == ExpressionType.Lambda) {
+				var lambda = (LambdaExpression)predExpr;
+				pred = pred != null ? Expression.AndAlso (pred, lambda.Body) : lambda.Body;
 			}
-			else {
-				throw new NotSupportedException ("Must be a predicate");
-			}
+
+			var args = new List<object> ();
+			var cmdText = "delete from \"" + Table.TableName + "\"";
+			var w = CompileExpr (pred, args);
+			cmdText += " where " + w.CommandText;
+
+			var command = Connection.CreateCommand (cmdText, args.ToArray ());
+
+			int result = command.ExecuteNonQuery ();
+			return result;
 		}
 
 		/// <summary>
