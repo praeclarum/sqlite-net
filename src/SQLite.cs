@@ -3110,24 +3110,24 @@ namespace SQLite
 			}
 		}
 
-		/// <summary>
-		/// Performs an inner join of two queries based on matching keys extracted from the elements.
-		/// </summary>
-		public TableQuery<TResult> Join<TInner, TKey, TResult> (
-			TableQuery<TInner> inner,
-			Expression<Func<T, TKey>> outerKeySelector,
-			Expression<Func<TInner, TKey>> innerKeySelector,
-			Expression<Func<T, TInner, TResult>> resultSelector)
-		{
-			var q = new TableQuery<TResult> (Connection, Connection.GetMapping (typeof (TResult))) {
-				_joinOuter = this,
-				_joinOuterKeySelector = outerKeySelector,
-				_joinInner = inner,
-				_joinInnerKeySelector = innerKeySelector,
-				_joinSelector = resultSelector,
-			};
-			return q;
-		}
+		///// <summary>
+		///// Performs an inner join of two queries based on matching keys extracted from the elements.
+		///// </summary>
+		//public TableQuery<TResult> Join<TInner, TKey, TResult> (
+		//	TableQuery<TInner> inner,
+		//	Expression<Func<T, TKey>> outerKeySelector,
+		//	Expression<Func<TInner, TKey>> innerKeySelector,
+		//	Expression<Func<T, TInner, TResult>> resultSelector)
+		//{
+		//	var q = new TableQuery<TResult> (Connection, Connection.GetMapping (typeof (TResult))) {
+		//		_joinOuter = this,
+		//		_joinOuterKeySelector = outerKeySelector,
+		//		_joinInner = inner,
+		//		_joinInnerKeySelector = innerKeySelector,
+		//		_joinSelector = resultSelector,
+		//	};
+		//	return q;
+		//}
 
 		// Not needed until Joins are supported
 		// Keeping this commented out forces the default Linq to objects processor to run
@@ -3476,6 +3476,22 @@ namespace SQLite
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
 		{
 			return GetEnumerator ();
+		}
+
+		/// <summary>
+		/// Queries the database and returns the results as a List.
+		/// </summary>
+		public List<T> ToList ()
+		{
+			return GenerateCommand ("*").ExecuteQuery<T> ();
+		}
+
+		/// <summary>
+		/// Queries the database and returns the results as an array.
+		/// </summary>
+		public T[] ToArray ()
+		{
+			return GenerateCommand ("*").ExecuteQuery<T> ().ToArray ();
 		}
 
 		/// <summary>
