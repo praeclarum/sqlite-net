@@ -1100,6 +1100,16 @@ namespace SQLite
 			_innerQuery = innerQuery;
 		}
 
+		Task<U> ReadAsync<U> (Func<SQLiteConnectionWithLock, U> read)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = (SQLiteConnectionWithLock)_innerQuery.Connection;
+				using (conn.Lock ()) {
+					return read (conn);
+				}
+			});
+		}
+
 		/// <summary>
 		/// Filters the query based on a predicate.
 		/// </summary>
@@ -1157,15 +1167,19 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Execute the query and return the results as a list
+		/// Queries the database and returns the results as a List.
 		/// </summary>
 		public Task<List<T>> ToListAsync ()
 		{
-			return Task.Factory.StartNew (() => {
-				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
-					return _innerQuery.ToList ();
-				}
-			});
+			return ReadAsync (conn => _innerQuery.ToList ());
+		}
+
+		/// <summary>
+		/// Queries the database and returns the results as an array.
+		/// </summary>
+		public Task<T[]> ToArrayAsync ()
+		{
+			return ReadAsync (conn => _innerQuery.ToArray ());
 		}
 
 		/// <summary>
@@ -1173,11 +1187,7 @@ namespace SQLite
 		/// </summary>
 		public Task<int> CountAsync ()
 		{
-			return Task.Factory.StartNew (() => {
-				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
-					return _innerQuery.Count ();
-				}
-			});
+			return ReadAsync (conn => _innerQuery.Count ());
 		}
 
 		/// <summary>
@@ -1185,11 +1195,7 @@ namespace SQLite
 		/// </summary>
 		public Task<T> ElementAtAsync (int index)
 		{
-			return Task.Factory.StartNew (() => {
-				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
-					return _innerQuery.ElementAt (index);
-				}
-			});
+			return ReadAsync (conn => _innerQuery.ElementAt (index));
 		}
 
 		/// <summary>
@@ -1197,11 +1203,7 @@ namespace SQLite
 		/// </summary>
 		public Task<T> FirstAsync ()
 		{
-			return Task<T>.Factory.StartNew (() => {
-				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
-					return _innerQuery.First ();
-				}
-			});
+			return ReadAsync (conn => _innerQuery.First ());
 		}
 
 		/// <summary>
@@ -1209,11 +1211,7 @@ namespace SQLite
 		/// </summary>
 		public Task<T> FirstOrDefaultAsync ()
 		{
-			return Task<T>.Factory.StartNew (() => {
-				using (((SQLiteConnectionWithLock)_innerQuery.Connection).Lock ()) {
-					return _innerQuery.FirstOrDefault ();
-				}
-			});
+			return ReadAsync (conn => _innerQuery.FirstOrDefault ());
 		}
 	}
 
