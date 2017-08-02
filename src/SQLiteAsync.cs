@@ -87,35 +87,43 @@ namespace SQLite
 			SQLiteConnectionPool.Shared.CloseConnection(_connectionString, _openFlags);
 		}
 
-		public Task EnableLoadExtensionAsync (bool enabled)
+		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
-					conn.EnableLoadExtension (enabled);
+					return read (conn);
 				}
+			});
+		}
+
+		Task<T> WriteAsync<T> (Func<SQLiteConnectionWithLock, T> write)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnection ();
+				using (conn.Lock ()) {
+					return write (conn);
+				}
+			});
+		}
+
+		public Task EnableLoadExtensionAsync (bool enabled)
+		{
+			return WriteAsync<object> (conn => {
+				conn.EnableLoadExtension (enabled);
+				return null;
 			});
 		}
 
 		public Task<int> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new ()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateTable<T> (createFlags);
-				}
-			});
+			return WriteAsync (conn => conn.CreateTable<T> (createFlags));
 		}
 
 		public Task<int> CreateTableAsync (Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateTable (ty, createFlags);
-				}
-			});
+			return WriteAsync (conn => conn.CreateTable (ty, createFlags));
 		}
 
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
@@ -154,423 +162,211 @@ namespace SQLite
 
 		public Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, params Type[] types)
 		{
-			return Task.Factory.StartNew (() => {
-				CreateTablesResult result = new CreateTablesResult ();
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateTables (createFlags, types);
-				}
-			});
+			return WriteAsync (conn => conn.CreateTables (createFlags, types));
 		}
 
 		public Task<int> DropTableAsync<T> ()
 			where T : new ()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.DropTable<T> ();
-				}
-			});
+			return WriteAsync (conn => conn.DropTable<T> ());
 		}
 
 		public Task<int> DropTableAsync (TableMapping map)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.DropTable (map);
-				}
-			});
+			return WriteAsync (conn => conn.DropTable (map));
 		}
 
 		public Task<int> CreateIndexAsync (string tableName, string columnName, bool unique = false)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateIndex (tableName, columnName, unique);
-				}
-			});
+			return WriteAsync (conn => conn.CreateIndex (tableName, columnName, unique));
 		}
 
 		public Task<int> CreateIndexAsync (string indexName, string tableName, string columnName, bool unique = false)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateIndex (indexName, tableName, columnName, unique);
-				}
-			});
+			return WriteAsync (conn => conn.CreateIndex (indexName, tableName, columnName, unique));
 		}
 
 		public Task<int> CreateIndexAsync (string tableName, string[] columnNames, bool unique = false)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateIndex (tableName, columnNames, unique);
-				}
-			});
+			return WriteAsync (conn => conn.CreateIndex (tableName, columnNames, unique));
 		}
 
 		public Task<int> CreateIndexAsync (string indexName, string tableName, string[] columnNames, bool unique = false)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateIndex (indexName, tableName, columnNames, unique);
-				}
-			});
+			return WriteAsync (conn => conn.CreateIndex (indexName, tableName, columnNames, unique));
 		}
 
 		public Task<int> CreateIndexAsync<T> (Expression<Func<T, object>> property, bool unique = false)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.CreateIndex (property, unique);
-				}
-			});
+			return WriteAsync (conn => conn.CreateIndex (property, unique));
 		}
 
 		public Task<int> InsertAsync (object obj)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Insert (obj);
-				}
-			});
+			return WriteAsync (conn => conn.Insert (obj));
 		}
 
 		public Task<int> InsertAsync (object obj, Type objType)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Insert (obj, objType);
-				}
-			});
+			return WriteAsync (conn => conn.Insert (obj, objType));
 		}
 
 		public Task<int> InsertAsync (object obj, string extra)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Insert (obj, extra);
-				}
-			});
+			return WriteAsync (conn => conn.Insert (obj, extra));
 		}
 
 		public Task<int> InsertAsync (object obj, string extra, Type objType)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Insert (obj, extra, objType);
-				}
-			});
+			return WriteAsync (conn => conn.Insert (obj, extra, objType));
 		}
 
 		public Task<int> InsertOrReplaceAsync(object obj)
         {
-            return Task.Factory.StartNew(() =>
-            {
-                var conn = GetConnection();
-                using (conn.Lock())
-                {
-                    return conn.InsertOrReplace(obj);
-                }
-            });
+			return WriteAsync (conn => conn.InsertOrReplace(obj));
         }
 
 		public Task<int> InsertOrReplaceAsync (object obj, Type objType)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.InsertOrReplace (obj, objType);
-				}
-			});
+			return WriteAsync (conn => conn.InsertOrReplace (obj, objType));
 		}
 
 		public Task<int> UpdateAsync (object obj)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Update (obj);
-				}
-			});
+			return WriteAsync (conn => conn.Update (obj));
 		}
 
 		public Task<int> UpdateAsync (object obj, Type objType)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Update (obj, objType);
-				}
-			});
+			return WriteAsync (conn => conn.Update (obj, objType));
 		}
 
 		public Task<int> DeleteAsync (object item)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Delete (item);
-				}
-			});
+			return WriteAsync (conn => conn.Delete (item));
 		}
 
 		public Task<int> DeleteAsync<T> (object primaryKey)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Delete<T> (primaryKey);
-				}
-			});
+			return WriteAsync (conn => conn.Delete<T> (primaryKey));
 		}
 
 		public Task<int> DeleteAsync (object primaryKey, TableMapping map)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Delete (primaryKey, map);
-				}
-			});
+			return WriteAsync (conn => conn.Delete (primaryKey, map));
 		}
 
 		public Task<int> DeleteAllAsync<T>()
         {
-            return Task.Factory.StartNew(() => {
-                var conn = GetConnection();
-                using (conn.Lock()) {
-                    return conn.DeleteAll<T>();
-                }
-            });
+			return WriteAsync (conn => conn.DeleteAll<T>());
         }
 
 		public Task<int> DeleteAllAsync (TableMapping map)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.DeleteAll (map);
-				}
-			});
+			return WriteAsync (conn => conn.DeleteAll (map));
 		}
 
 		public Task<T> GetAsync<T>(object pk)
             where T : new()
         {
-            return Task.Factory.StartNew(() =>
-            {
-                var conn = GetConnection();
-                using (conn.Lock())
-                {
-                    return conn.Get<T>(pk);
-                }
-            });
+			return ReadAsync (conn => conn.Get<T>(pk));
         }
 
 		public Task<object> GetAsync(object pk, TableMapping map)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Get (pk, map);
-				}
-			});
+			return ReadAsync (conn => conn.Get (pk, map));
 		}
 
 		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
 			where T : new()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Get<T> (predicate);
-				}
-			});
+			return ReadAsync (conn => conn.Get<T> (predicate));
 		}
 
 		public Task<T> FindAsync<T> (object pk)
 			where T : new ()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Find<T> (pk);
-				}
-			});
+			return ReadAsync (conn => conn.Find<T> (pk));
 		}
 
 		public Task<object> FindAsync (object pk, TableMapping map)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Find (pk, map);
-				}
-			});
+			return ReadAsync (conn => conn.Find (pk, map));
 		}
 
 		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate)
 			where T : new ()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Find<T> (predicate);
-				}
-			});
+			return ReadAsync (conn => conn.Find<T> (predicate));
 		}
 
 		public Task<T> FindWithQueryAsync<T> (string query, params object[] args)
 			where T : new()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.FindWithQuery<T> (query, args);
-				}
-			});
+			return ReadAsync (conn => conn.FindWithQuery<T> (query, args));
 		}
 
 		public Task<object> FindWithQueryAsync (TableMapping map, string query, params object[] args)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.FindWithQuery (map, query, args);
-				}
-			});
+			return ReadAsync (conn => conn.FindWithQuery (map, query, args));
 		}
 
 		public Task<TableMapping> GetMappingAsync (Type type, CreateFlags createFlags = CreateFlags.None)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.GetMapping (type, createFlags);
-				}
-			});
+			return ReadAsync (conn => conn.GetMapping (type, createFlags));
 		}
 
 		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.GetMapping<T> (createFlags);
-				}
-			});
+			return ReadAsync (conn => conn.GetMapping<T> (createFlags));
 		}
 
 		public Task<List<SQLiteConnection.ColumnInfo>> GetTableInfoAsync (string tableName)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.GetTableInfo (tableName);
-				}
-			});
+			return ReadAsync (conn => conn.GetTableInfo (tableName));
 		}
 
 		public Task<int> ExecuteAsync (string query, params object[] args)
 		{
-			return Task<int>.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Execute (query, args);
-				}
-			});
+			return WriteAsync (conn => conn.Execute (query, args));
 		}
 
 		public Task<int> InsertAllAsync (IEnumerable items, bool runInTransaction = true)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.InsertAll (items, runInTransaction);
-				}
-			});
+			return WriteAsync (conn => conn.InsertAll (items, runInTransaction));
 		}
 
 		public Task<int> InsertAllAsync (IEnumerable items, string extra, bool runInTransaction = true)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.InsertAll (items, extra, runInTransaction);
-				}
-			});
+			return WriteAsync (conn => conn.InsertAll (items, extra, runInTransaction));
 		}
 
 		public Task<int> InsertAllAsync (IEnumerable items, Type objType, bool runInTransaction = true)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.InsertAll (items, objType, runInTransaction);
-				}
-			});
+			return WriteAsync (conn => conn.InsertAll (items, objType, runInTransaction));
 		}
 
 		public Task<int> UpdateAllAsync (IEnumerable objects, bool runInTransaction = true)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.UpdateAll (objects, runInTransaction);
-				}
-			});
-		}
-
-		[Obsolete("Will cause a deadlock if any call in action ends up in a different thread. Use RunInTransactionAsync(Action<SQLiteConnection>) instead.")]
-		public Task RunInTransactionAsync (Action<SQLiteAsyncConnection> action)
-		{
-			return Task.Factory.StartNew (() => {
-				var conn = this.GetConnection ();
-				using (conn.Lock ()) {
-					conn.BeginTransaction ();
-					try {
-						action (this);
-						conn.Commit ();
-					}
-					catch (Exception) {
-						conn.Rollback ();
-						throw;
-					}
-				}
-			});
+			return WriteAsync (conn => conn.UpdateAll (objects, runInTransaction));
 		}
 
         public Task RunInTransactionAsync(Action<SQLiteConnection> action)
         {
-            return Task.Factory.StartNew(() =>
+			return WriteAsync<object> (conn =>
             {
-                var conn = this.GetConnection();
-                using (conn.Lock())
+                conn.BeginTransaction();
+                try
                 {
-                    conn.BeginTransaction();
-                    try
-                    {
-                        action(conn);
-                        conn.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        conn.Rollback();
-                        throw;
-                    }
+                    action(conn);
+                    conn.Commit();
+					return null;
+                }
+                catch (Exception)
+                {
+                    conn.Rollback();
+                    throw;
                 }
             });
         }
@@ -588,55 +384,32 @@ namespace SQLite
 
 		public Task<T> ExecuteScalarAsync<T> (string sql, params object[] args)
 		{
-			return Task<T>.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					var command = conn.CreateCommand (sql, args);
-					return command.ExecuteScalar<T> ();
-				}
+			return WriteAsync (conn => {
+				var command = conn.CreateCommand (sql, args);
+				return command.ExecuteScalar<T> ();
 			});
 		}
 
 		public Task<List<T>> QueryAsync<T> (string sql, params object[] args)
 			where T : new ()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Query<T> (sql, args);
-				}
-			});
+			return ReadAsync (conn => conn.Query<T> (sql, args));
 		}
 
 		public Task<List<object>> QueryAsync (TableMapping map, string sql, params object[] args)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return conn.Query (map, sql, args);
-				}
-			});
+			return ReadAsync (conn => conn.Query (map, sql, args));
 		}
 
 		public Task<IEnumerable<T>> DeferredQueryAsync<T> (string query, params object[] args)
 			where T : new()
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ();
-				}
-			});
+			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ());
 		}
 
 		public Task<IEnumerable<object>> DeferredQueryAsync (TableMapping map, string query, params object[] args)
 		{
-			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ();
-				}
-			});
+			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ());
 		}
 	}
 
