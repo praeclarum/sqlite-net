@@ -31,7 +31,7 @@ namespace SQLite.Tests
 		[MaxLength (64)]
 		public string LastName { get; set; }
 
-		[MaxLength (64)]
+		[MaxLength (64), Indexed]
 		public string Email { get; set; }
 	}
 
@@ -817,5 +817,30 @@ namespace SQLite.Tests
             // check...
             Assert.AreEqual("7", loaded.FirstName);
         }
+
+		[Test]
+		public void CreateTable ()
+		{
+			var conn = GetConnection ();
+
+			var trace = new List<string> ();
+			conn.Tracer = trace.Add;
+			conn.Trace = true;
+
+			var r0 = conn.CreateTableAsync<Customer> ().Result;
+
+			Assert.AreEqual (CreateTableResult.Created, r0);
+
+			var r1 = conn.CreateTableAsync<Customer> ().Result;
+
+			Assert.AreEqual (CreateTableResult.Migrated, r1);
+
+			var r2 = conn.CreateTableAsync<Customer> ().Result;
+
+			Assert.AreEqual (CreateTableResult.Migrated, r1);
+
+			Assert.AreEqual (7, trace.Count);
+		}
+
 	}
 }

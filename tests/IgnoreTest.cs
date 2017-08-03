@@ -91,5 +91,107 @@ namespace SQLite.Tests
 			Assert.AreEqual ("Hello", oo.Text);
 			Assert.AreEqual (null, oo.IgnoredText);
 		}
+
+		public class BaseClass
+		{
+			[Ignore]
+			public string ToIgnore {
+				get;
+				set;
+			}
+		}
+
+		public class TableClass : BaseClass
+		{
+			public string Name { get; set; }
+		}
+
+		[Test]
+		public void BaseIgnores ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<TableClass> ();
+
+			var o = new TableClass {
+				ToIgnore = "Hello",
+				Name = "World",
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<TableClass> ().First ();
+
+			Assert.AreEqual (null, oo.ToIgnore);
+			Assert.AreEqual ("World", oo.Name);
+		}
+
+		public class RedefinedBaseClass
+		{
+			public string Name { get; set; }
+			public List<string> Values { get; set; }
+		}
+
+		public class RedefinedClass : RedefinedBaseClass
+		{
+			[Ignore]
+			public new List<string> Values { get; set; }
+			public string Value { get; set; }
+		}
+
+		[Test]
+		public void RedefinedIgnores ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<RedefinedClass> ();
+
+			var o = new RedefinedClass {
+				Name = "Foo",
+				Value = "Bar",
+				Values = new List<string> { "hello", "world" },
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<RedefinedClass> ().First ();
+
+			Assert.AreEqual ("Foo", oo.Name);
+			Assert.AreEqual ("Bar", oo.Value);
+			Assert.AreEqual (null, oo.Values);
+		}
+
+		[AttributeUsage (AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+		class DerivedIgnoreAttribute : IgnoreAttribute
+		{
+		}
+
+		class DerivedIgnoreClass
+		{
+			[PrimaryKey, AutoIncrement]
+			public int Id { get; set; }
+
+			public string NotIgnored { get; set; }
+
+			[DerivedIgnore]
+			public string Ignored { get; set; }
+		}
+
+		[Test]
+		public void DerivedIgnore ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<DerivedIgnoreClass> ();
+
+			var o = new DerivedIgnoreClass {
+				Ignored = "Hello",
+				NotIgnored = "World",
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<DerivedIgnoreClass> ().First ();
+
+			Assert.AreEqual (null, oo.Ignored);
+			Assert.AreEqual ("World", oo.NotIgnored);
+		}
 	}
 }

@@ -48,12 +48,16 @@ namespace SQLite.Tests
                     {
                         while (true)
                         {
-                            //
-                            // NOTE: Change this to readwrite and then it does work ???
-                            // No more IOERROR
-                            // 
-                        
-                            using (var dbConnection = new DbConnection(SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadOnly))
+							//
+							// NOTE: Change this to readwrite and then it does work ???
+							// No more IOERROR
+							// 
+
+							var flags = SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadOnly;
+#if __IOS__
+							flags = SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite;
+#endif
+							using (var dbConnection = new DbConnection(flags))
                             {
                                 var records = dbConnection.Table<TestObj>().ToList();
                                 System.Diagnostics.Debug.WriteLine($"{Environment.CurrentManagedThreadId} Read records: {records.Count}");

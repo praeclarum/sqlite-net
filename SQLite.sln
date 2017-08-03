@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		sqlite-net-pcl.nuspec = sqlite-net-pcl.nuspec
 		sqlite-net.nuspec = sqlite-net.nuspec
+		Makefile = Makefile
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net", "nuget\SQLite-net\SQLite-net.csproj", "{7F946494-8EE0-432B-8A87-98961143D5C1}"
@@ -14,6 +15,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Tests.iOS", "tests\SQLite.Tests.iOS\SQLite.Tests.iOS.csproj", "{81850129-71C3-40C7-A48B-AA5D2C2E365E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-std", "nuget\SQLite-net-std\SQLite-net-std.csproj", "{081D08D6-10F1-431B-88FE-469FD9FE898C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiDiff", "tests\ApiDiff\ApiDiff.csproj", "{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,12 +66,54 @@ Global
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Debug|iPhone.ActiveCfg = Debug|iPhone
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Debug|iPhone.Build.0 = Debug|iPhone
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Release|iPhone.Build.0 = Release|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{081D08D6-10F1-431B-88FE-469FD9FE898C}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Release|iPhone.Build.0 = Release|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|iPhone.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
+		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = tests\SQLite.Tests.csproj
+		Policies = $0
+		$0.TextStylePolicy = $1
+		$1.FileWidth = 128
+		$1.NoTabsAfterNonTabs = True
+		$1.EolMarker = Unix
+		$1.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $2
+		$2.NewLinesForBracesInProperties = False
+		$2.NewLinesForBracesInAccessors = False
+		$2.NewLinesForBracesInAnonymousMethods = False
+		$2.NewLinesForBracesInControlBlocks = False
+		$2.NewLinesForBracesInAnonymousTypes = False
+		$2.NewLinesForBracesInObjectCollectionArrayInitializers = False
+		$2.NewLinesForBracesInLambdaExpressionBody = False
+		$2.scope = text/x-csharp
+		$2.SpacingAfterMethodDeclarationName = True
+		$2.SpaceAfterMethodCallName = True
 	EndGlobalSection
 EndGlobal
