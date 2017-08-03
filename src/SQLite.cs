@@ -412,9 +412,9 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema.
+		/// Whether the table was created or migrated.
 		/// </returns>
-		public int CreateTable<T> (CreateFlags createFlags = CreateFlags.None)
+		public CreateTableResult CreateTable<T> (CreateFlags createFlags = CreateFlags.None)
 		{
 			return CreateTable (typeof (T), createFlags);
 		}
@@ -428,9 +428,9 @@ namespace SQLite
 		/// <param name="ty">Type to reflect to a database table.</param>
 		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
 		/// <returns>
-		/// The number of entries added to the database schema.
+		/// Whether the table was created or migrated.
 		/// </returns>
-		public int CreateTable (Type ty, CreateFlags createFlags = CreateFlags.None)
+		public CreateTableResult CreateTable (Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
 			if (_tables == null) {
 				_tables = new Dictionary<string, TableMapping> ();
@@ -446,25 +446,32 @@ namespace SQLite
 				throw new Exception (string.Format ("Cannot create a table with zero columns (does '{0}' have public properties?)", ty.FullName));
 			}
 
-			// Facilitate virtual tables a.k.a. full-text search.
-			bool fts3 = (createFlags & CreateFlags.FullTextSearch3) != 0;
-			bool fts4 = (createFlags & CreateFlags.FullTextSearch4) != 0;
-			bool fts = fts3 || fts4;
-			var @virtual = fts ? "virtual " : string.Empty;
-			var @using = fts3 ? "using fts3 " : fts4 ? "using fts4 " : string.Empty;
+			// Check if the table exists
+			var result = CreateTableResult.Created;
+			var existingCols = GetTableInfo (map.TableName);
 
-			// Build query.
-			var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
-			var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
-			var decl = string.Join (",\n", decls.ToArray ());
-			query += decl;
-			query += ")";
+			// Create or migrate it
+			if (existingCols.Count == 0) {
 
-			var count = Execute (query);
+				// Facilitate virtual tables a.k.a. full-text search.
+				bool fts3 = (createFlags & CreateFlags.FullTextSearch3) != 0;
+				bool fts4 = (createFlags & CreateFlags.FullTextSearch4) != 0;
+				bool fts = fts3 || fts4;
+				var @virtual = fts ? "virtual " : string.Empty;
+				var @using = fts3 ? "using fts3 " : fts4 ? "using fts4 " : string.Empty;
 
-			if (count == 0) { //Possible bug: This always seems to return 0?
-							  // Table already exists, migrate it
-				MigrateTable (map);
+				// Build query.
+				var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
+				var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
+				var decl = string.Join (",\n", decls.ToArray ());
+				query += decl;
+				query += ")";
+
+				Execute (query);
+			}
+			else {
+				result = CreateTableResult.Migrated;
+				MigrateTable (map, existingCols);
 			}
 
 			var indexes = new Dictionary<string, IndexInfo> ();
@@ -495,10 +502,10 @@ namespace SQLite
 			foreach (var indexName in indexes.Keys) {
 				var index = indexes[indexName];
 				var columns = index.Columns.OrderBy (i => i.Order).Select (i => i.ColumnName).ToArray ();
-				count += CreateIndex (indexName, index.TableName, columns, index.Unique);
+				CreateIndex (indexName, index.TableName, columns, index.Unique);
 			}
 
-			return count;
+			return result;
 		}
 
 		/// <summary>
@@ -508,7 +515,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -524,7 +531,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -541,7 +548,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -559,7 +566,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -578,13 +585,13 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types)
 		{
 			var result = new CreateTablesResult ();
 			foreach (Type type in types) {
-				int aResult = CreateTable (type, createFlags);
+				var aResult = CreateTable (type, createFlags);
 				result.Results[type] = aResult;
 			}
 			return result;
@@ -700,10 +707,8 @@ namespace SQLite
 			return Query<ColumnInfo> (query);
 		}
 
-		void MigrateTable (TableMapping map)
+		void MigrateTable (TableMapping map, List<ColumnInfo> existingCols)
 		{
-			var existingCols = GetTableInfo (map.TableName);
-
 			var toBeAdded = new List<TableMapping.Column> ();
 
 			foreach (var p in map.Columns) {
@@ -2892,13 +2897,19 @@ namespace SQLite
 		}
 	}
 
+	public enum CreateTableResult
+	{
+		Created,
+		Migrated,
+	}
+
 	public class CreateTablesResult
 	{
-		public Dictionary<Type, int> Results { get; private set; }
+		public Dictionary<Type, CreateTableResult> Results { get; private set; }
 
 		public CreateTablesResult ()
 		{
-			Results = new Dictionary<Type, int> ();
+			Results = new Dictionary<Type, CreateTableResult> ();
 		}
 	}
 

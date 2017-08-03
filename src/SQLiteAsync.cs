@@ -211,9 +211,9 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema.
+		/// Whether the table was created or migrated.
 		/// </returns>
-		public Task<int> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTableResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 		{
 			return WriteAsync (conn => conn.CreateTable<T> (createFlags));
@@ -228,9 +228,9 @@ namespace SQLite
 		/// <param name="ty">Type to reflect to a database table.</param>
 		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
 		/// <returns>
-		/// The number of entries added to the database schema.
+		/// Whether the table was created or migrated.
 		/// </returns>
-		public Task<int> CreateTableAsync (Type ty, CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTableResult> CreateTableAsync (Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
 			return WriteAsync (conn => conn.CreateTable (ty, createFlags));
 		}
@@ -242,7 +242,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -258,7 +258,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -275,7 +275,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -293,7 +293,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
@@ -312,7 +312,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema for each type.
+		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, params Type[] types)
 		{
