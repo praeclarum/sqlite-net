@@ -2006,6 +2006,11 @@ namespace SQLite
 		}
 	}
 
+	/// <summary>
+	/// Select the collating sequence to use on a column.
+	/// "BINARY", "NOCASE", and "RTRIM" are supported.
+	/// "BINARY" is the default.
+	/// </summary>
 	[AttributeUsage (AttributeTargets.Property)]
 	public class CollationAttribute : Attribute
 	{
