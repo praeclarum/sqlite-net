@@ -413,8 +413,9 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
 		/// </summary>
 		/// <param name="obj">
 		/// The object to insert.
@@ -431,8 +432,9 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
 		/// </summary>
 		/// <param name="obj">
 		/// The object to insert.
@@ -449,8 +451,9 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
 		/// </summary>
 		/// <param name="obj">
 		/// The object to insert.
@@ -470,8 +473,9 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
 		/// If a UNIQUE constraint violation occurs with
 		/// some pre-existing object, this function deletes
 		/// the old object.
@@ -488,8 +492,9 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
 		/// If a UNIQUE constraint violation occurs with
 		/// some pre-existing object, this function deletes
 		/// the old object.
