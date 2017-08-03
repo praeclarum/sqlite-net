@@ -129,12 +129,31 @@ namespace SQLite
 	public enum CreateFlags
 	{
 		None = 0x000,
-		ImplicitPK = 0x001,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
-		ImplicitIndex = 0x002,    // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
-		AllImplicit = 0x003,    // do both above
-		AutoIncPK = 0x004,    // force PK field to be auto inc
-		FullTextSearch3 = 0x100,    // create virtual table using FTS3
-		FullTextSearch4 = 0x200     // create virtual table using FTS4
+		/// <summary>
+		/// Create a primary key for properties called 'Id'
+		/// </summary>
+		ImplicitPK = 0x001,
+		/// <summary>
+		/// Create an index for properties ending in 'Id'
+		/// </summary>
+		ImplicitIndex = 0x002,
+		/// <summary>
+		/// Create a primary key for properties called 'Id' and
+		/// create an index for properties ending in 'Id'.
+		/// </summary>
+		AllImplicit = 0x003,
+		/// <summary>
+		/// Force the primary key to be auto incrementing
+		/// </summary>
+		AutoIncPK = 0x004,
+		/// <summary>
+		/// Create virtual table using FTS3
+		/// </summary>
+		FullTextSearch3 = 0x100,
+		/// <summary>
+		/// Create virtual table using FTS4
+		/// </summary>
+		FullTextSearch4 = 0x200
 	}
 
 	/// <summary>
