@@ -212,7 +212,7 @@ namespace SQLite
 		/// </summary>
 		public bool StoreDateTimeAsTicks { get; private set; }
 
-#if USE_SQLITEPCL_RAW
+#if USE_SQLITEPCL_RAW && !NO_SQLITEPCL_RAW_BATTERIES
 		static SQLiteConnection ()
 		{
 			SQLitePCL.Batteries_V2.Init ();
