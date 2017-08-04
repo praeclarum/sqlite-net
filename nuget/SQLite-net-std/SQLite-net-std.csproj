@@ -9,10 +9,13 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
     <DefineConstants>TRACE;USE_SQLITEPCL_RAW;RELEASE;NETSTANDARD1_1</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>TRACE;USE_SQLITEPCL_RAW;DEBUG;NETSTANDARD1_1</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.8" />
