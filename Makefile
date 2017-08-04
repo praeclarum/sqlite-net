@@ -13,7 +13,7 @@ tests/bin/Debug/SQLite.Tests.dll: tests/SQLite.Tests.csproj $(SRC)
 tests/ApiDiff/bin/Debug/ApiDiff.exe: tests/ApiDiff/ApiDiff.csproj $(SRC)
 	msbuild tests/ApiDiff/ApiDiff.csproj
 
-nuget: srcnuget pclnuget
+nuget: srcnuget pclnuget basenuget
 
 packages: nuget/SQLite-net/packages.config
 	nuget restore SQLite.sln
@@ -25,4 +25,8 @@ pclnuget: sqlite-net-pcl.nuspec packages $(SRC)
 	msbuild "/p:Configuration=Release" nuget/SQLite-net/SQLite-net.csproj
 	msbuild "/p:Configuration=Release" nuget/SQLite-net-std/SQLite-net-std.csproj 
 	nuget pack sqlite-net-pcl.nuspec -o .\
+
+basenuget: sqlite-net-pcl.nuspec packages $(SRC)
+	msbuild "/p:Configuration=Release" nuget/SQLite-net-base/SQLite-net-base.csproj 
+	nuget pack sqlite-net-base.nuspec -o .\
 
