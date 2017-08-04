@@ -30,6 +30,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="ListDiff">
+      <HintPath>..\..\packages\ListDiff.1.0.7\lib\netstandard1.0\ListDiff.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -40,7 +43,9 @@
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
-    <Compile Include="ListDiff.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

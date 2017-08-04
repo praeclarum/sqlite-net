@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Linq;
 using System.Text.RegularExpressions;
 using SQLite;
-using Praeclarum;
+using ListDiff;
 
 namespace ApiDiff
 {
