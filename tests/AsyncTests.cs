@@ -842,5 +842,18 @@ namespace SQLite.Tests
 			Assert.AreEqual (7, trace.Count);
 		}
 
+		[Test]
+		public void CloseAsync ()
+		{
+			var conn = GetConnection ();
+
+			var r0 = conn.CreateTableAsync<Customer> ().Result;
+
+			Assert.AreEqual (CreateTableResult.Created, r0);
+
+			conn.CloseAsync ().Wait ();
+		}
+
+
 	}
 }

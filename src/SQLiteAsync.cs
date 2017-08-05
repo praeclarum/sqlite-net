@@ -148,6 +148,9 @@ namespace SQLite
 
 		/// <summary>
 		/// Closes all connections to all async databases.
+		/// You should *never* need to do this.
+		/// This is a blocking operation that will return when all connections
+		/// have been closed.
 		/// </summary>
 		public static void ResetPool ()
 		{
@@ -168,9 +171,11 @@ namespace SQLite
 		/// <summary>
 		/// Closes any pooled connections used by the database.
 		/// </summary>
-		public void Close ()
+		public Task CloseAsync ()
 		{
-			SQLiteConnectionPool.Shared.CloseConnection (_connectionString, _openFlags);
+			return Task.Factory.StartNew (() => {
+				SQLiteConnectionPool.Shared.CloseConnection (_connectionString, _openFlags);
+			});
 		}
 
 		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
@@ -1285,7 +1290,11 @@ namespace SQLite
 
 			public void Close ()
 			{
-				Connection.Dispose ();
+				if (Connection == null)
+					return;
+				using (var l = Connection.Lock ()) {
+					Connection.Dispose ();
+				}
 				Connection = null;
 			}
 		}
@@ -1321,15 +1330,16 @@ namespace SQLite
 
 		public void CloseConnection (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
 		{
-			lock (_entriesLock) {
-				Entry entry;
-				string key = connectionString.ConnectionString;
+			var key = connectionString.ConnectionString;
 
+			Entry entry;
+			lock (_entriesLock) {
 				if (_entries.TryGetValue (key, out entry)) {
 					_entries.Remove (key);
-					entry.Close ();
 				}
 			}
+
+			entry.Close ();
 		}
 
 		/// <summary>
@@ -1337,11 +1347,14 @@ namespace SQLite
 		/// </summary>
 		public void Reset ()
 		{
+			List<Entry> entries;
 			lock (_entriesLock) {
-				foreach (var entry in _entries.Values) {
-					entry.Close ();
-				}
+				entries = new List<Entry> (_entries.Values);
 				_entries.Clear ();
+			}
+
+			foreach (var e in entries) {
+				e.Close ();
 			}
 		}
 	}
