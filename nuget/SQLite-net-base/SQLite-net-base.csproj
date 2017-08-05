@@ -5,21 +5,18 @@
     <AssemblyName>SQLite-net</AssemblyName>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>portable</DebugType>
-    <DefineConstants>TRACE;USE_SQLITEPCL_RAW;RELEASE;NETSTANDARD1_1</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
-  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>TRACE;USE_SQLITEPCL_RAW;DEBUG;NETSTANDARD1_1</DefineConstants>
+    <DefineConstants>TRACE;USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;DEBUG;NETSTANDARD1_1</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.8" />
-  </ItemGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <DefineConstants>TRACE;USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;RELEASE;NETSTANDARD1_1</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
@@ -27,5 +24,8 @@
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.core" Version="1.1.8" />
   </ItemGroup>
 </Project>

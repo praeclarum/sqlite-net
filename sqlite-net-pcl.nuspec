@@ -13,51 +13,47 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite.</description>
     <tags>sqlite pcl database orm mobile</tags>
-    <releaseNotes>
-    <![CDATA[
-    v1.4: Improve .NET Standard Support
-    ]]>
-    </releaseNotes>
+    <releaseNotes>See project page</releaseNotes>
     <dependencies>
       <group targetFramework="net">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="win">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="wp">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="wpa">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="netstandard1.1">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
         <dependency id="NETStandard.Library" version="1.6.1" />
       </group>
       <group targetFramework="MonoAndroid10">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="Xamarin.iOS10">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="Xamarin.Mac20">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="portable-net45+win+wpa81+wp80">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="uap">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="dotnet">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="xamarintvos">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
       <group targetFramework="xamarinwatchos">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.7" />
+        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
       </group>
     </dependencies>
   </metadata>

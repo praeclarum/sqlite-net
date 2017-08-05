@@ -8,6 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		sqlite-net-pcl.nuspec = sqlite-net-pcl.nuspec
 		sqlite-net.nuspec = sqlite-net.nuspec
 		Makefile = Makefile
+		sqlite-net-base.nuspec = sqlite-net-base.nuspec
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net", "nuget\SQLite-net\SQLite-net.csproj", "{7F946494-8EE0-432B-8A87-98961143D5C1}"
@@ -19,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-std", "nuget\SQLite-net-std\SQLite-net-std.csproj", "{081D08D6-10F1-431B-88FE-469FD9FE898C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiDiff", "tests\ApiDiff\ApiDiff.csproj", "{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-base", "nuget\SQLite-net-base\SQLite-net-base.csproj", "{53D1953C-3641-47D0-BE08-14DB853CC576}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -90,6 +93,18 @@ Global
 		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|iPhone.ActiveCfg = Debug|Any CPU
 		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Release|iPhone.Build.0 = Release|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|iPhone.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
