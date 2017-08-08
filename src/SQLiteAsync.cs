@@ -350,7 +350,7 @@ namespace SQLite
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnName">Name of the column to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-		public Task<int> CreateIndexAsync (string tableName, string columnName, bool unique = false)
+		public Task<bool> CreateIndexAsync (string tableName, string columnName, bool unique = false)
 		{
 			return WriteAsync (conn => conn.CreateIndex (tableName, columnName, unique));
 		}
@@ -362,7 +362,7 @@ namespace SQLite
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnName">Name of the column to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-		public Task<int> CreateIndexAsync (string indexName, string tableName, string columnName, bool unique = false)
+		public Task<bool> CreateIndexAsync (string indexName, string tableName, string columnName, bool unique = false)
 		{
 			return WriteAsync (conn => conn.CreateIndex (indexName, tableName, columnName, unique));
 		}
@@ -373,7 +373,7 @@ namespace SQLite
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnNames">An array of column names to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-		public Task<int> CreateIndexAsync (string tableName, string[] columnNames, bool unique = false)
+		public Task<bool> CreateIndexAsync (string tableName, string[] columnNames, bool unique = false)
 		{
 			return WriteAsync (conn => conn.CreateIndex (tableName, columnNames, unique));
 		}
@@ -385,7 +385,7 @@ namespace SQLite
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnNames">An array of column names to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-		public Task<int> CreateIndexAsync (string indexName, string tableName, string[] columnNames, bool unique = false)
+		public Task<bool> CreateIndexAsync (string indexName, string tableName, string[] columnNames, bool unique = false)
 		{
 			return WriteAsync (conn => conn.CreateIndex (indexName, tableName, columnNames, unique));
 		}
@@ -397,7 +397,7 @@ namespace SQLite
 		/// <typeparam name="T">Type to reflect to a database table.</typeparam>
 		/// <param name="property">Property to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-		public Task<int> CreateIndexAsync<T> (Expression<Func<T, object>> property, bool unique = false)
+		public Task<bool> CreateIndexAsync<T> (Expression<Func<T, object>> property, bool unique = false)
 		{
 			return WriteAsync (conn => conn.CreateIndex (property, unique));
 		}
@@ -830,10 +830,10 @@ namespace SQLite
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None)
+		public Task<TableMapping> GetMappingAsync<T> ()
 			where T : new()
 		{
-			return ReadAsync (conn => conn.GetMapping<T> (createFlags));
+			return ReadAsync (conn => conn.GetMapping<T> ());
 		}
 
 		/// <summary>
@@ -986,10 +986,7 @@ namespace SQLite
 		/// </returns>
 		public Task<T> ExecuteScalarAsync<T> (string query, params object[] args)
 		{
-			return WriteAsync (conn => {
-				var command = conn.CreateCommand (query, args);
-				return command.ExecuteScalar<T> ();
-			});
+			return WriteAsync (conn => conn.ExecuteScalar<T>(query, args));
 		}
 
 		/// <summary>

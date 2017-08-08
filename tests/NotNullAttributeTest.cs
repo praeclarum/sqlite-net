@@ -298,7 +298,7 @@ namespace SQLite.Tests
 					db.Insert (obj);
 
 					map = db.GetMapping<NotNullNoPK> ();
-					map.GetInsertCommand (db, "OR REPLACE").ExecuteNonQuery (new object[] { 1, null, 123, null, null, null });
+					db.GetInsertCommand (map, "OR REPLACE").ExecuteNonQuery (new object[] { 1, null, 123, null, null, null });
 				}
 				catch (NotNullConstraintViolationException) {
 					return;
