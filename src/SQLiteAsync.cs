@@ -329,38 +329,6 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Executes a "create table if not exists" on the database for each type. It also
-		/// creates any specified indexes on the columns of the table. It uses
-		/// a schema automatically generated from the specified type. You can
-		/// later access this schema by calling GetMapping.
-		/// </summary>
-		/// <returns>
-		/// Whether the table was created or migrated for each type.
-		/// </returns>
-		public CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types)
-		{
-			var result = new CreateTablesResult ();
-			var conn = GetConnection ();
-			using (conn.Lock())
-			{
-				foreach (Type type in types)
-				{
-					try
-					{
-						var aResult = conn.CreateTable (type);
-						result.Results[type] = aResult;
-					}
-					catch (Exception)
-					{
-						System.Diagnostics.Debug.WriteLine("Error creating table for {0}", type);
-						throw;
-					}
-				}
-			}
-			return result;
-		}
-
-		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
 		public Task<int> DropTableAsync<T> ()
