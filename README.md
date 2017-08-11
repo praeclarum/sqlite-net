@@ -43,7 +43,6 @@ public class Stock
 {
 	[PrimaryKey, AutoIncrement]
 	public int Id { get; set; }
-	[MaxLength(8)]
 	public string Symbol { get; set; }
 }
 
@@ -69,7 +68,10 @@ Both APIs are explained in the two sections below.
 Once you have defined your entity, you can automatically generate tables in your database by calling `CreateTable`:
 
 ```csharp
-var db = new SQLiteConnection("foofoo");
+// Get an absolute path to the database file
+var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MyData.db");
+
+var db = new SQLiteConnection(databasePath);
 db.CreateTable<Stock>();
 db.CreateTable<Valuation>();
 ```
@@ -90,7 +92,7 @@ Similar methods exist for `Update` and `Delete`.
 The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
 
 ```csharp
-var conn = new SQLiteConnection("foofoo");
+var conn = new SQLiteConnection(databasePath);
 var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
 foreach (var stock in query)
@@ -129,7 +131,10 @@ will work for you.
 Once you have defined your entity, you can automatically generate tables by calling `CreateTableAsync`:
 
 ```csharp
-var conn = new SQLiteAsyncConnection("foofoo");
+// Get an absolute path to the database file
+var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MyData.db");
+
+var conn = new SQLiteAsyncConnection(databasePath);
 
 await conn.CreateTableAsync<Stock>();
 
@@ -144,7 +149,7 @@ Stock stock = new Stock()
 	Symbol = "AAPL"
 };
 
-var conn = new SQLiteAsyncConnection("foofoo");
+var conn = new SQLiteAsyncConnection(databasePath);
 
 await conn.InsertAsync(stock);
 
@@ -158,7 +163,7 @@ you can add predictates for constraining via WHERE clauses and/or adding ORDER B
 retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
 
 ```csharp
-var conn = new SQLiteAsyncConnection("foofoo");
+var conn = new SQLiteAsyncConnection(databasePath);
 var query = await conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
 var result = await query.ToListAsync();
@@ -173,7 +178,7 @@ operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to
 Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
 
 ```csharp
-var conn = new SQLiteAsyncConnection("foofoo");
+var conn = new SQLiteAsyncConnection(databasePath);
 
 var result = await conn.ExecuteScalarAsync<int>("select count(*) from Stock");
 
