@@ -185,7 +185,7 @@ namespace SQLite
 		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = GetConnection ();
+				var conn = isFullMutex ? _connection : GetConnection ();
 				using (conn.Lock ()) {
 					return read (conn);
 				}
@@ -195,7 +195,7 @@ namespace SQLite
 		Task<T> WriteAsync<T> (Func<SQLiteConnectionWithLock, T> write)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = isFullMutex ? _connection : GetConnection ();
+				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return write (conn);
 				}
