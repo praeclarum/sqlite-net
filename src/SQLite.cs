@@ -30,12 +30,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 #endif
 using System.Collections.Generic;
-#if NO_CONCURRENT
-using ConcurrentStringDictionary = System.Collections.Generic.Dictionary<string, object>;
-using SQLite.Extensions;
-#else
-using ConcurrentStringDictionary = System.Collections.Concurrent.ConcurrentDictionary<string, object>;
-#endif
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
@@ -1578,7 +1572,7 @@ namespace SQLite
 				vals[i] = cols[i].GetValue (obj);
 			}
 
-			var insertCmd = map.GetInsertCommand (this, extra);
+			var insertCmd = GetInsertCommand (map, extra);
 			int count;
 
 			lock (insertCmd) {
@@ -1603,6 +1597,61 @@ namespace SQLite
 				OnTableChanged (map, NotifyTableChangedAction.Insert);
 
 			return count;
+		}
+
+		readonly Dictionary<Tuple<string, string>, PreparedSqlLiteInsertCommand> _insertCommandMap = new Dictionary<Tuple<string, string>, PreparedSqlLiteInsertCommand> ();
+
+		PreparedSqlLiteInsertCommand GetInsertCommand (TableMapping map, string extra)
+		{
+			PreparedSqlLiteInsertCommand prepCmd;
+
+			var key = Tuple.Create (map.MappedType.FullName, extra);
+
+			lock (_insertCommandMap) {
+				_insertCommandMap.TryGetValue (key, out prepCmd);
+			}
+
+			if (prepCmd == null) {
+				prepCmd = CreateInsertCommand (map, extra);
+				var added = false;
+				lock (_insertCommandMap) {
+					if (!_insertCommandMap.ContainsKey (key)) {
+						_insertCommandMap.Add (key, prepCmd);
+						added = true;
+					}
+				}
+				if (!added) {
+					prepCmd.Dispose ();
+				}
+			}
+
+			return prepCmd;
+		}
+
+		PreparedSqlLiteInsertCommand CreateInsertCommand (TableMapping map, string extra)
+		{
+			var cols = map.InsertColumns;
+			string insertSql;
+			if (cols.Length == 0 && map.Columns.Length == 1 && map.Columns[0].IsAutoInc) {
+				insertSql = string.Format ("insert {1} into \"{0}\" default values", map.TableName, extra);
+			}
+			else {
+				var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
+
+				if (replacing) {
+					cols = map.InsertOrReplaceColumns;
+				}
+
+				insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", map.TableName,
+								   string.Join (",", (from c in cols
+													  select "\"" + c.Name + "\"").ToArray ()),
+								   string.Join (",", (from c in cols
+													  select "?").ToArray ()), extra);
+
+			}
+
+			var insertCommand = new PreparedSqlLiteInsertCommand (this, insertSql);
+			return insertCommand;
 		}
 
 		/// <summary>
@@ -1844,10 +1893,11 @@ namespace SQLite
 			if (_open && Handle != NullHandle) {
 				try {
 					if (disposing) {
-						if (_mappings != null) {
-							foreach (var sqlInsertCommand in _mappings.Values) {
+						lock (_insertCommandMap) {
+							foreach (var sqlInsertCommand in _insertCommandMap.Values) {
 								sqlInsertCommand.Dispose ();
 							}
+							_insertCommandMap.Clear ();
 						}
 
 						var r = useClose2 ? SQLite3.Close2 (Handle) : SQLite3.Close (Handle);
@@ -2114,7 +2164,6 @@ namespace SQLite
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
-			_insertCommandMap = new ConcurrentStringDictionary ();
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -2154,59 +2203,6 @@ namespace SQLite
 		{
 			var exact = Columns.FirstOrDefault (c => c.Name.ToLower () == columnName.ToLower ());
 			return exact;
-		}
-
-		ConcurrentStringDictionary _insertCommandMap;
-
-		public PreparedSqlLiteInsertCommand GetInsertCommand (SQLiteConnection conn, string extra)
-		{
-			object prepCmdO;
-
-			if (!_insertCommandMap.TryGetValue (extra, out prepCmdO)) {
-				var prepCmd = CreateInsertCommand (conn, extra);
-				prepCmdO = prepCmd;
-				if (!_insertCommandMap.TryAdd (extra, prepCmd)) {
-					// Concurrent add attempt beat us.
-					prepCmd.Dispose ();
-					_insertCommandMap.TryGetValue (extra, out prepCmdO);
-				}
-			}
-			return (PreparedSqlLiteInsertCommand)prepCmdO;
-		}
-
-		PreparedSqlLiteInsertCommand CreateInsertCommand (SQLiteConnection conn, string extra)
-		{
-			var cols = InsertColumns;
-			string insertSql;
-			if (!cols.Any () && Columns.Count () == 1 && Columns[0].IsAutoInc) {
-				insertSql = string.Format ("insert {1} into \"{0}\" default values", TableName, extra);
-			}
-			else {
-				var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
-
-				if (replacing) {
-					cols = InsertOrReplaceColumns;
-				}
-
-				insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", TableName,
-								   string.Join (",", (from c in cols
-													  select "\"" + c.Name + "\"").ToArray ()),
-								   string.Join (",", (from c in cols
-													  select "?").ToArray ()), extra);
-
-			}
-
-			var insertCommand = new PreparedSqlLiteInsertCommand (conn);
-			insertCommand.CommandText = insertSql;
-			return insertCommand;
-		}
-
-		protected internal void Dispose ()
-		{
-			foreach (var pair in _insertCommandMap) {
-				((PreparedSqlLiteInsertCommand)pair.Value).Dispose ();
-			}
-			_insertCommandMap = null;
 		}
 
 		public class Column
@@ -2845,24 +2841,29 @@ namespace SQLite
 	/// <summary>
 	/// Since the insert never changed, we only need to prepare once.
 	/// </summary>
-	public class PreparedSqlLiteInsertCommand : IDisposable
+	class PreparedSqlLiteInsertCommand : IDisposable
 	{
-		public bool Initialized { get; set; }
+		bool Initialized;
 
-		protected SQLiteConnection Connection { get; set; }
+		SQLiteConnection Connection;
 
-		public string CommandText { get; set; }
+		string CommandText;
 
-		protected Sqlite3Statement Statement { get; set; }
-		internal static readonly Sqlite3Statement NullStatement = default (Sqlite3Statement);
+		Sqlite3Statement Statement;
+		static readonly Sqlite3Statement NullStatement = default (Sqlite3Statement);
 
-		internal PreparedSqlLiteInsertCommand (SQLiteConnection conn)
+		public PreparedSqlLiteInsertCommand (SQLiteConnection conn, string commandText)
 		{
 			Connection = conn;
+			CommandText = commandText;
 		}
 
 		public int ExecuteNonQuery (object[] source)
 		{
+			if (Initialized && Statement == NullStatement) {
+				throw new ObjectDisposedException (nameof (PreparedSqlLiteInsertCommand));
+			}
+
 			if (Connection.Trace) {
 				Connection.Tracer?.Invoke ("Executing: " + CommandText);
 			}
@@ -2870,7 +2871,7 @@ namespace SQLite
 			var r = SQLite3.Result.OK;
 
 			if (!Initialized) {
-				Statement = Prepare ();
+				Statement = SQLite3.Prepare2 (Connection.Handle, CommandText);
 				Initialized = true;
 			}
 
@@ -2902,28 +2903,19 @@ namespace SQLite
 			}
 		}
 
-		protected virtual Sqlite3Statement Prepare ()
-		{
-			var stmt = SQLite3.Prepare2 (Connection.Handle, CommandText);
-			return stmt;
-		}
-
 		public void Dispose ()
 		{
 			Dispose (true);
 			GC.SuppressFinalize (this);
 		}
 
-		private void Dispose (bool disposing)
+		void Dispose (bool disposing)
 		{
-			if (Statement != NullStatement) {
-				try {
-					SQLite3.Finalize (Statement);
-				}
-				finally {
-					Statement = NullStatement;
-					Connection = null;
-				}
+			var s = Statement;
+			Statement = NullStatement;
+			Connection = null;
+			if (s != NullStatement) {
+				SQLite3.Finalize (s);
 			}
 		}
 
@@ -4074,24 +4066,3 @@ namespace SQLite
 		}
 	}
 }
-
-#if NO_CONCURRENT
-namespace SQLite.Extensions
-{
-	public static class ListEx
-	{
-		public static bool TryAdd<TKey, TValue> (this IDictionary<TKey, TValue> dict, TKey key, TValue value)
-		{
-			try {
-				dict.Add (key, value);
-				return true;
-			}
-			catch (ArgumentException) {
-				return false;
-			}
-		}
-	}
-}
-#endif
-
-
