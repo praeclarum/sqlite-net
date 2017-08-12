@@ -886,7 +886,8 @@ namespace SQLite
 		/// </param>
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
-		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
 		/// connection must remain open for the lifetime of the enumerator.
 		/// </returns>
 		public IEnumerable<T> DeferredQuery<T> (string query, params object[] args) where T : new()
@@ -940,7 +941,8 @@ namespace SQLite
 		/// </param>
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
-		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
 		/// connection must remain open for the lifetime of the enumerator.
 		/// </returns>
 		public IEnumerable<object> DeferredQuery (TableMapping map, string query, params object[] args)
