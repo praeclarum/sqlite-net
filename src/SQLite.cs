@@ -159,6 +159,7 @@ namespace SQLite
 	/// <summary>
 	/// An open connection to a SQLite database.
 	/// </summary>
+	[Preserve (AllMembers = true)]
 	public partial class SQLiteConnection : IDisposable
 	{
 		private bool _open;
@@ -285,22 +286,6 @@ namespace SQLite
 
 			Tracer = line => Debug.WriteLine (line);
 		}
-
-#if __IOS__
-		static SQLiteConnection ()
-		{
-			if (_preserveDuringLinkMagic) {
-				var ti = new ColumnInfo ();
-				ti.Name = "magic";
-			}
-		}
-
-   		/// <summary>
-		/// Used to list some code that we want the MonoTouch linker
-		/// to see, but that we never want to actually execute.
-		/// </summary>
-		static bool _preserveDuringLinkMagic;
-#endif
 
 		/// <summary>
 		/// Enable or disable extension loading.
@@ -693,6 +678,7 @@ namespace SQLite
 			return CreateIndex (map.TableName, colName, unique);
 		}
 
+		[Preserve (AllMembers = true)]
 		public class ColumnInfo
 		{
 			//			public int cid { get; set; }
@@ -2060,6 +2046,12 @@ namespace SQLite
 		{
 			Value = length;
 		}
+	}
+
+	public sealed class PreserveAttribute : System.Attribute
+	{
+		public bool AllMembers;
+		public bool Conditional;
 	}
 
 	/// <summary>
