@@ -3333,6 +3333,9 @@ namespace SQLite
 				else if (call.Method.Name == "ToUpper") {
 					sqlCall = "(upper(" + obj.CommandText + "))";
 				}
+				else if (call.Method.Name == "Replace" && args.Length == 2) {
+					sqlCall = "(replace(" + obj.CommandText + "," + args[0].CommandText + "," + args[1].CommandText + "))";
+				}
 				else {
 					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
 				}

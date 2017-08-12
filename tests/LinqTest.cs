@@ -294,5 +294,27 @@ namespace SQLite.Tests
 
 			Assert.AreEqual ("Foo", r.Value);
 		}
+
+		[Test]
+		public void Issue460_ReplaceWith2Args ()
+		{
+			var db = CreateDb ();
+			db.Trace = true;
+			db.Tracer = Console.WriteLine;
+
+			db.Insert (new Product {
+				Name = "I am not B X B",
+			});
+			db.Insert (new Product {
+				Name = "I am B O B",
+			});
+
+			var cl = (from c in db.Table<Product> ()
+			          where c.Name.Replace (" ", "").Contains ("BOB")
+					  select c).FirstOrDefault ();
+
+			Assert.AreEqual (2, cl.Id);
+			Assert.AreEqual ("I am B O B", cl.Name);
+		}
 	}
 }
