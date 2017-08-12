@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net", "nuget\SQLite-
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Tests.iOS", "tests\SQLite.Tests.iOS\SQLite.Tests.iOS.csproj", "{81850129-71C3-40C7-A48B-AA5D2C2E365E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLiteTestsiOS", "tests\SQLite.Tests.iOS\SQLiteTestsiOS.csproj", "{81850129-71C3-40C7-A48B-AA5D2C2E365E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-std", "nuget\SQLite-net-std\SQLite-net-std.csproj", "{081D08D6-10F1-431B-88FE-469FD9FE898C}"
 EndProject
