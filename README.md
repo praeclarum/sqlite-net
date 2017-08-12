@@ -102,8 +102,7 @@ foreach (var stock in query)
 You can also query the database at a low-level using the `Query` method:
 
 ```csharp
-public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock)
-{
+public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock) {
 	return db.Query<Valuation> ("select * from Valuation where StockId = ?", stock.Id);
 }
 ```
@@ -111,13 +110,14 @@ public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock
 The generic parameter to the `Query` method specifies the type of object to create for each row. It can be one of your table classes, or any other class whose public properties match the column returned by the query. For instance, we could rewrite the above query as:
 
 ```csharp
-public class Val {
+public class Val
+{
 	public decimal Money { get; set; }
 	public DateTime Date { get; set; }
 }
-public static IEnumerable<Val> QueryVals (SQLiteConnection db, Stock stock)
-{
-	return db.Query<Val> ("select 'Price' as 'Money', 'Time' as 'Date' from Valuation where StockId = ?", stock.Id);
+
+public static IEnumerable<Val> QueryVals (SQLiteConnection db, Stock stock) {
+	return db.Query<Val> ("select \"Price\" as \"Money\", \"Time\" as \"Date\" from Valuation where StockId = ?", stock.Id);
 }
 ```
 
