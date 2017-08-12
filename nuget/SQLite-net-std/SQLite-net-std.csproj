@@ -3,17 +3,21 @@
   <PropertyGroup>
     <TargetFramework>netstandard1.1</TargetFramework>
     <AssemblyName>SQLite-net</AssemblyName>
+    <Version>1.0.0</Version>
+    <AssemblyTitle>SQLite-net Official .NET Standard Library</AssemblyTitle>
+    <Description>Light weight library providing easy SQLite database storage</Description>
+    <Company>Krueger Systems, Inc.</Company>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
-    <DefineConstants>TRACE;USE_SQLITEPCL_RAW;RELEASE;NETSTANDARD1_1</DefineConstants>
+    <DefineConstants>USE_SQLITEPCL_RAW;RELEASE;NETSTANDARD1_1</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>TRACE;USE_SQLITEPCL_RAW;DEBUG;NETSTANDARD1_1</DefineConstants>
+    <DefineConstants>USE_SQLITEPCL_RAW;DEBUG;NETSTANDARD1_1</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>

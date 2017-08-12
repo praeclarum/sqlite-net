@@ -34,7 +34,7 @@
     <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>USE_SQLITEPCL_RAW</DefineConstants>
+    <DefineConstants>RELEASE;USE_SQLITEPCL_RAW</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
