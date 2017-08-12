@@ -163,8 +163,7 @@ namespace SQLite
 	{
 		private bool _open;
 		private TimeSpan _busyTimeout;
-		private Dictionary<string, TableMapping> _mappings = null;
-		private Dictionary<string, TableMapping> _tables = null;
+		readonly static Dictionary<string, TableMapping> _mappings = new Dictionary<string, TableMapping> ();
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
 
@@ -172,7 +171,7 @@ namespace SQLite
 		private Random _rand = new Random ();
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
-		internal static readonly Sqlite3DatabaseHandle NullHandle = default (Sqlite3DatabaseHandle);
+		static readonly Sqlite3DatabaseHandle NullHandle = default (Sqlite3DatabaseHandle);
 
 		/// <summary>
 		/// Gets the database path used by this connection.
@@ -345,7 +344,9 @@ namespace SQLite
 		/// </summary>
 		public IEnumerable<TableMapping> TableMappings {
 			get {
-				return _tables != null ? _tables.Values : Enumerable.Empty<TableMapping> ();
+				lock (_mappings) {
+					return new List<TableMapping> (_mappings.Values);
+				}
 			}
 		}
 
@@ -364,13 +365,19 @@ namespace SQLite
 		/// </returns>
 		public TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None)
 		{
-			if (_mappings == null) {
-				_mappings = new Dictionary<string, TableMapping> ();
-			}
 			TableMapping map;
-			if (!_mappings.TryGetValue (type.FullName, out map)) {
-				map = new TableMapping (type, createFlags);
-				_mappings[type.FullName] = map;
+			var key = type.FullName;
+			lock (_mappings) {
+				if (_mappings.TryGetValue (key, out map)) {
+					if (createFlags != CreateFlags.None && createFlags != map.CreateFlags) {
+						map = new TableMapping (type, createFlags);
+						_mappings[key] = map;
+					}
+				}
+				else {
+					map = new TableMapping (type, createFlags);
+					_mappings.Add (key, map);
+				}
 			}
 			return map;
 		}
@@ -451,18 +458,11 @@ namespace SQLite
 		/// </returns>
 		public CreateTableResult CreateTable (Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
-			if (_tables == null) {
-				_tables = new Dictionary<string, TableMapping> ();
-			}
-			TableMapping map;
-			if (!_tables.TryGetValue (ty.FullName, out map)) {
-				map = GetMapping (ty, createFlags);
-				_tables.Add (ty.FullName, map);
-			}
+			var map = GetMapping (ty, createFlags);
 
 			// Present a nice error if no columns specified
 			if (map.Columns.Length == 0) {
-				throw new Exception (string.Format ("Cannot create a table with zero columns (does '{0}' have public properties?)", ty.FullName));
+				throw new Exception (string.Format ("Cannot create a table without columns (does '{0}' have public properties?)", ty.FullName));
 			}
 
 			// Check if the table exists
@@ -2100,13 +2100,16 @@ namespace SQLite
 
 		public string GetByPrimaryKeySql { get; private set; }
 
-		Column _autoPk;
-		Column[] _insertColumns;
-		Column[] _insertOrReplaceColumns;
+		public CreateFlags CreateFlags { get; private set; }
+
+		readonly Column _autoPk;
+		readonly Column[] _insertColumns;
+		readonly Column[] _insertOrReplaceColumns;
 
 		public TableMapping (Type type, CreateFlags createFlags = CreateFlags.None)
 		{
 			MappedType = type;
+			CreateFlags = createFlags;
 
 			var typeInfo = type.GetTypeInfo ();
 			var tableAttr =
@@ -2164,6 +2167,9 @@ namespace SQLite
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
+
+			_insertColumns = Columns.Where (c => !c.IsAutoInc).ToArray ();
+			_insertOrReplaceColumns = Columns.ToArray ();
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -2177,18 +2183,12 @@ namespace SQLite
 
 		public Column[] InsertColumns {
 			get {
-				if (_insertColumns == null) {
-					_insertColumns = Columns.Where (c => !c.IsAutoInc).ToArray ();
-				}
 				return _insertColumns;
 			}
 		}
 
 		public Column[] InsertOrReplaceColumns {
 			get {
-				if (_insertOrReplaceColumns == null) {
-					_insertOrReplaceColumns = Columns.ToArray ();
-				}
 				return _insertOrReplaceColumns;
 			}
 		}
