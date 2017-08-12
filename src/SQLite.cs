@@ -3560,7 +3560,7 @@ namespace SQLite
 		public T First ()
 		{
 			var query = Take (1);
-			return query.ToList<T> ().First ();
+			return query.ToList ().First ();
 		}
 
 		/// <summary>
@@ -3569,7 +3569,7 @@ namespace SQLite
 		public T FirstOrDefault ()
 		{
 			var query = Take (1);
-			return query.ToList<T> ().FirstOrDefault ();
+			return query.ToList ().FirstOrDefault ();
 		}
 
 		/// <summary>
