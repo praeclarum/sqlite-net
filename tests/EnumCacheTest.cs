@@ -46,8 +46,30 @@ namespace SQLite.Tests
             Value3
         }
 
+		public enum TestEnumWithRepeats
+		{
+			Value1 = 1,
 
-        public class TestClassThusNotEnum
+			Value2 = 2,
+
+			Value2Again = 2,
+
+			Value3 = 3,
+		}
+
+		[StoreAsText]
+		public enum TestEnumWithRepeatsAsText
+		{
+			Value1 = 1,
+
+			Value2 = 2,
+
+			Value2Again = 2,
+
+			Value3 = 3,
+		}
+
+		public class TestClassThusNotEnum
         {
 
         }
@@ -76,14 +98,7 @@ namespace SQLite.Tests
 
             Assert.IsTrue(info.IsEnum);
             Assert.IsFalse(info.StoreAsText);
-            Assert.IsNotNull(info.EnumValues);
-
-            var values = Enum.GetValues(typeof(TestEnumStoreAsInt)).Cast<object>().ToList();
-
-            for (int i = 0; i < values.Count; i++)
-            {
-				Assert.AreEqual(((int)values[i]).ToString(), info.EnumValues[i]);
-            }
+            Assert.IsNull(info.EnumValues);
         }
 
         [Test]
@@ -93,14 +108,6 @@ namespace SQLite.Tests
 
             Assert.IsTrue(info.IsEnum);
             Assert.IsFalse(info.StoreAsText);
-            Assert.IsNotNull(info.EnumValues);
-
-            var values = Enum.GetValues(typeof(TestByteEnumStoreAsInt)).Cast<object>().Select(x=>Convert.ToInt32(x)).ToList();
-
-            for (int i = 0; i < values.Count; i++)
-            {
-                Assert.AreEqual(values[i].ToString(), info.EnumValues[i]);
-            }
         }
 
         [Test]
@@ -112,5 +119,25 @@ namespace SQLite.Tests
             Assert.IsFalse(info.StoreAsText);
             Assert.IsNull(info.EnumValues);
         }
-    }
+
+		[Test]
+		public void Issue598_EnumsWithRepeatedValues ()
+		{
+			var info = EnumCache.GetInfo<TestEnumWithRepeats> ();
+
+			Assert.IsTrue (info.IsEnum);
+			Assert.IsFalse (info.StoreAsText);
+			Assert.IsNull (info.EnumValues);
+		}
+
+		[Test]
+		public void Issue598_EnumsWithRepeatedValuesAsText ()
+		{
+			var info = EnumCache.GetInfo<TestEnumWithRepeatsAsText> ();
+
+			Assert.IsTrue (info.IsEnum);
+			Assert.IsTrue (info.StoreAsText);
+			Assert.IsNotNull (info.EnumValues);
+		}
+	}
 }

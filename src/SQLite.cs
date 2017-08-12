@@ -2287,10 +2287,10 @@ namespace SQLite
 				StoreAsText = typeInfo.CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
 
 				if (StoreAsText) {
-					EnumValues = Enum.GetValues (type).Cast<object> ().ToDictionary (Convert.ToInt32, x => x.ToString ());
-				}
-				else {
-					EnumValues = Enum.GetValues (type).Cast<object> ().ToDictionary (Convert.ToInt32, x => Convert.ToInt32 (x).ToString ());
+					EnumValues = new Dictionary<int, string> ();
+					foreach (object e in Enum.GetValues (type)) {
+						EnumValues[Convert.ToInt32 (e)] = e.ToString ();
+					}
 				}
 			}
 		}
