@@ -470,6 +470,9 @@ namespace SQLite
 				var decl = string.Join (",\n", decls.ToArray ());
 				query += decl;
 				query += ")";
+				if(map.WithoutRowId) {
+					query += " without rowid";
+				}
 
 				Execute (query);
 			}
@@ -1978,6 +1981,13 @@ namespace SQLite
 	{
 		public string Name { get; set; }
 
+		/// <summary>
+		/// Flag whether to create the table without rowid (see https://sqlite.org/withoutrowid.html)
+		/// 
+		/// The default is <c>false</c> so that sqlite adds an implicit <c>rowid</c> to every table created.
+		/// </summary>
+		public bool WithoutRowId { get; set; }
+
 		public TableAttribute (string name)
 		{
 			Name = name;
@@ -2086,6 +2096,8 @@ namespace SQLite
 
 		public string TableName { get; private set; }
 
+		public bool WithoutRowId { get; private set; }
+
 		public Column[] Columns { get; private set; }
 
 		public Column PK { get; private set; }
@@ -2111,6 +2123,7 @@ namespace SQLite
 						.FirstOrDefault ();
 
 			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
+			WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
 
 			var props = new List<PropertyInfo> ();
 			var baseType = type;
