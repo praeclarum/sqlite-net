@@ -199,6 +199,39 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Sets the key used to encrypt/decrypt the database.
+		/// This must be the first thing you call before doing anything else with this connection
+		/// if your database is encrypted.
+		/// This only has an effect if you are using the SQLCipher nuget package.
+		/// </summary>
+		/// <param name="key">Ecryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
+		public Task SetKeyAsync (string key)
+		{
+			if (key == null) throw new ArgumentNullException (nameof (key));
+			return WriteAsync<object> (conn => {
+				conn.SetKey (key);
+				return null;
+			});
+		}
+
+		/// <summary>
+		/// Sets the key used to encrypt/decrypt the database.
+		/// This must be the first thing you call before doing anything else with this connection
+		/// if your database is encrypted.
+		/// This only has an effect if you are using the SQLCipher nuget package.
+		/// </summary>
+		/// <param name="key">256-bit (32 byte) ecryption key data</param>
+		public Task SetKeyAsync (byte[] key)
+		{
+			if (key == null) throw new ArgumentNullException (nameof (key));
+			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof (key));
+			return WriteAsync<object> (conn => {
+				conn.SetKey (key);
+				return null;
+			});
+		}
+
+		/// <summary>
 		/// Enable or disable extension loading.
 		/// </summary>
 		public Task EnableLoadExtensionAsync (bool enabled)

@@ -288,6 +288,48 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Convert an input string to a quoted SQL string that can be safely used in queries.
+		/// </summary>
+		/// <returns>The quoted string.</returns>
+		/// <param name="unsafeString">The unsafe string to quote.</param>
+		static string Quote (string unsafeString)
+		{
+			// TODO: Doesn't call sqlite3_mprintf("%Q", u) because we're waiting on https://github.com/ericsink/SQLitePCL.raw/issues/153
+			if (unsafeString == null) return "NULL";
+			var safe = unsafeString.Replace ("'", "''");
+			return "'" + safe + "'";
+		}
+
+		/// <summary>
+		/// Sets the key used to encrypt/decrypt the database.
+		/// This must be the first thing you call before doing anything else with this connection
+		/// if your database is encrypted.
+		/// This only has an effect if you are using the SQLCipher nuget package.
+		/// </summary>
+		/// <param name="key">Ecryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
+		public void SetKey (string key)
+		{
+			if (key == null) throw new ArgumentNullException (nameof (key));
+			var q = Quote (key);
+			Execute ("pragma key = " + q);
+		}
+
+		/// <summary>
+		/// Sets the key used to encrypt/decrypt the database.
+		/// This must be the first thing you call before doing anything else with this connection
+		/// if your database is encrypted.
+		/// This only has an effect if you are using the SQLCipher nuget package.
+		/// </summary>
+		/// <param name="key">256-bit (32 byte) ecryption key data</param>
+		public void SetKey (byte[] key)
+		{
+			if (key == null) throw new ArgumentNullException (nameof (key));
+			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof(key));
+			var s = String.Join ("", key.Select (x => x.ToString ("X2")));
+			Execute ("pragma key = \"x'" + s + "'\"");
+		}
+
+		/// <summary>
 		/// Enable or disable extension loading.
 		/// </summary>
 		public void EnableLoadExtension (bool enabled)
