@@ -36,7 +36,7 @@ namespace SQLite
 	public partial class SQLiteAsyncConnection
 	{
 		SQLiteConnectionString _connectionString;
-		SQLiteConnectionWithLock _connection;
+		SQLiteConnectionWithLock _fullMutexReadConnection;
 		bool isFullMutex;
 		SQLiteOpenFlags _openFlags;
 
@@ -81,7 +81,8 @@ namespace SQLite
 			_openFlags = openFlags;
 			isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
 			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks);
-			_connection = new SQLiteConnectionWithLock (_connectionString, openFlags) { SkipLock = isFullMutex };
+			if(isFullMutex)
+				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString, openFlags) { SkipLock = true };
 		}
 
 		/// <summary>
@@ -185,7 +186,7 @@ namespace SQLite
 		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = isFullMutex ? _connection : GetConnection ();
+				var conn = isFullMutex ? _fullMutexReadConnection : GetConnection ();
 				using (conn.Lock ()) {
 					return read (conn);
 				}
