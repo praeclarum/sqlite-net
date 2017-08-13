@@ -11,8 +11,8 @@
     <title>sqlite-net</title>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>sqlite-net is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases. It is written in C# 3.0 and is meant to be simply compiled in with your projects. It was first designed to work with MonoTouch on the iPhone, but should work in any other CLI environment.</description>
-    <tags>sqlite sql monotouch database metro winrt</tags>
-	<summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
+    <tags>sqlite-net sqlite sql monotouch database metro winrt</tags>
+    <summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</summary>
     <releaseNotes>See project page</releaseNotes>
   </metadata>
   <files>

@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiDiff", "tests\ApiDiff\Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-base", "nuget\SQLite-net-base\SQLite-net-base.csproj", "{53D1953C-3641-47D0-BE08-14DB853CC576}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-sqlcipher", "nuget\SQLite-net-sqlcipher\SQLite-net-sqlcipher.csproj", "{59DB03EF-E28D-431E-9058-74AF316800EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -105,6 +107,18 @@ Global
 		{53D1953C-3641-47D0-BE08-14DB853CC576}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|iPhone.ActiveCfg = Debug|Any CPU
 		{53D1953C-3641-47D0-BE08-14DB853CC576}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Release|iPhone.Build.0 = Release|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|iPhone.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}

@@ -16,7 +16,7 @@
       It is meant to give you all the power of SQLite-net but with the freedom to choose your own provider.
       Please use the package sqlite-net-pcl if you have no idea what any of this means.
     </description>
-    <tags>sqlite pcl database orm mobile</tags>
+    <tags>sqlite-net sqlite pcl database orm mobile raw</tags>
     <releaseNotes>See project page</releaseNotes>
     <dependencies>
       <group targetFramework="net">
