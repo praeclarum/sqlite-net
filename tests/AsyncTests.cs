@@ -100,6 +100,10 @@ namespace SQLite.Tests
 			doneEvent.WaitOne ();
 			
 			var count = globalConn.Table<Customer> ().CountAsync ().Result;
+
+			foreach (var e in errors) {
+				Console.WriteLine ("ERROR " + e);
+			}
 			
 			Assert.AreEqual (0, errors.Count);
 			Assert.AreEqual (n, count);			

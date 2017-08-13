@@ -300,7 +300,7 @@ namespace SQLite.Tests
 		{
 			var db = CreateDb ();
 			db.Trace = true;
-			db.Tracer = Console.WriteLine;
+			//db.Tracer = Console.WriteLine;
 
 			db.Insert (new Product {
 				Name = "I am not B X B",
