@@ -1,16 +1,16 @@
 //
 // Copyright (c) 2009-2017 Krueger Systems, Inc.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,6 +33,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using System.Threading;
 
 #if USE_CSHARP_SQLITE
@@ -384,12 +385,12 @@ namespace SQLite
 		/// </summary>
 		/// <param name="type">
 		/// The type whose mapping to the database is returned.
-		/// </param>         
+		/// </param>
 		/// <param name="createFlags">
 		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>     
+		/// </param>
 		/// <returns>
-		/// The mapping represents the schema of the columns of the database and contains 
+		/// The mapping represents the schema of the columns of the database and contains
 		/// methods to set and get properties of objects.
 		/// </returns>
 		public TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None)
@@ -416,9 +417,9 @@ namespace SQLite
 		/// </summary>
 		/// <param name="createFlags">
 		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>     
+		/// </param>
 		/// <returns>
-		/// The mapping represents the schema of the columns of the database and contains 
+		/// The mapping represents the schema of the columns of the database and contains
 		/// methods to set and get properties of objects.
 		/// </returns>
 		public TableMapping GetMapping<T> (CreateFlags createFlags = CreateFlags.None)
@@ -481,7 +482,7 @@ namespace SQLite
 		/// later access this schema by calling GetMapping.
 		/// </summary>
 		/// <param name="ty">Type to reflect to a database table.</param>
-		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
+		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>
 		/// <returns>
 		/// Whether the table was created or migrated.
 		/// </returns>
@@ -1047,7 +1048,7 @@ namespace SQLite
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the predicate from the table
-		/// associated with the specified type. 
+		/// associated with the specified type.
 		/// </summary>
 		/// <param name="predicate">
 		/// A predicate for which object to find.
@@ -1101,7 +1102,7 @@ namespace SQLite
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the predicate from the table
-		/// associated with the specified type. 
+		/// associated with the specified type.
 		/// </summary>
 		/// <param name="predicate">
 		/// A predicate for which object to find.
@@ -1117,7 +1118,7 @@ namespace SQLite
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the query from the table
-		/// associated with the specified type. 
+		/// associated with the specified type.
 		/// </summary>
 		/// <param name="query">
 		/// The fully escaped SQL.
@@ -1136,7 +1137,7 @@ namespace SQLite
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the query from the table
-		/// associated with the specified type. 
+		/// associated with the specified type.
 		/// </summary>
 		/// <param name="map">
 		/// The TableMapping used to identify the table.
@@ -1169,9 +1170,9 @@ namespace SQLite
 		/// <example cref="System.InvalidOperationException">Throws if a transaction has already begun.</example>
 		public void BeginTransaction ()
 		{
-			// The BEGIN command only works if the transaction stack is empty, 
-			//    or in other words if there are no pending transactions. 
-			// If the transaction stack is not empty when the BEGIN command is invoked, 
+			// The BEGIN command only works if the transaction stack is empty,
+			//    or in other words if there are no pending transactions.
+			// If the transaction stack is not empty when the BEGIN command is invoked,
 			//    then the command fails with an error.
 			// Rather than crash with an error, we will just ignore calls to BeginTransaction
 			//    that would result in an error.
@@ -1182,7 +1183,7 @@ namespace SQLite
 				catch (Exception ex) {
 					var sqlExp = ex as SQLiteException;
 					if (sqlExp != null) {
-						// It is recommended that applications respond to the errors listed below 
+						// It is recommended that applications respond to the errors listed below
 						//    by explicitly issuing a ROLLBACK command.
 						// TODO: This rollback failsafe should be localized to all throw sites.
 						switch (sqlExp.Result) {
@@ -1196,7 +1197,7 @@ namespace SQLite
 						}
 					}
 					else {
-						// Call decrement and not VolatileWrite in case we've already 
+						// Call decrement and not VolatileWrite in case we've already
 						//    created a transaction point in SaveTransactionPoint since the catch.
 						Interlocked.Decrement (ref _transactionDepth);
 					}
@@ -1213,7 +1214,7 @@ namespace SQLite
 		/// <summary>
 		/// Creates a savepoint in the database at the current point in the transaction timeline.
 		/// Begins a new transaction if one is not in progress.
-		/// 
+		///
 		/// Call <see cref="RollbackTo(string)"/> to undo transactions since the returned savepoint.
 		/// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
 		/// Call <see cref="Commit"/> to end the transaction, committing all changes.
@@ -1230,7 +1231,7 @@ namespace SQLite
 			catch (Exception ex) {
 				var sqlExp = ex as SQLiteException;
 				if (sqlExp != null) {
-					// It is recommended that applications respond to the errors listed below 
+					// It is recommended that applications respond to the errors listed below
 					//    by explicitly issuing a ROLLBACK command.
 					// TODO: This rollback failsafe should be localized to all throw sites.
 					switch (sqlExp.Result) {
@@ -1277,8 +1278,8 @@ namespace SQLite
 		/// <param name="noThrow">true to avoid throwing exceptions, false otherwise</param>
 		void RollbackTo (string savepoint, bool noThrow)
 		{
-			// Rolling back without a TO clause rolls backs all transactions 
-			//    and leaves the transaction stack empty.   
+			// Rolling back without a TO clause rolls backs all transactions
+			//    and leaves the transaction stack empty.
 			try {
 				if (String.IsNullOrEmpty (savepoint)) {
 					if (Interlocked.Exchange (ref _transactionDepth, 0) > 0) {
@@ -1298,10 +1299,10 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Releases a savepoint returned from <see cref="SaveTransactionPoint"/>.  Releasing a savepoint 
+		/// Releases a savepoint returned from <see cref="SaveTransactionPoint"/>.  Releasing a savepoint
 		///    makes changes since that savepoint permanent if the savepoint began the transaction,
 		///    or otherwise the changes are permanent pending a call to <see cref="Commit"/>.
-		/// 
+		///
 		/// The RELEASE command is like a COMMIT for a SAVEPOINT.
 		/// </summary>
 		/// <param name="savepoint">The name of the savepoint to release.  The string should be the result of a call to <see cref="SaveTransactionPoint"/></param>
@@ -2029,7 +2030,7 @@ namespace SQLite
 
 		/// <summary>
 		/// Flag whether to create the table without rowid (see https://sqlite.org/withoutrowid.html)
-		/// 
+		///
 		/// The default is <c>false</c> so that sqlite adds an implicit <c>rowid</c> to every table created.
 		/// </summary>
 		public bool WithoutRowId { get; set; }
@@ -2429,7 +2430,7 @@ namespace SQLite
 			else if (clrType == typeof (Single) || clrType == typeof (Double) || clrType == typeof (Decimal)) {
 				return "float";
 			}
-			else if (clrType == typeof (String)) {
+			else if (clrType == typeof (String) || clrType == typeof (StringBuilder) || clrType == typeof (Uri) || clrType == typeof (UriBuilder)) {
 				int? len = p.MaxStringLength;
 
 				if (len.HasValue)
@@ -2778,6 +2779,15 @@ namespace SQLite
 				else if (value is Guid) {
 					SQLite3.BindText (stmt, index, ((Guid)value).ToString (), 72, NegativePointer);
 				}
+				else if (value is Uri) {
+					SQLite3.BindText (stmt, index, ((Uri)value).ToString (), -1, NegativePointer);
+				}
+				else if (value is StringBuilder) {
+					SQLite3.BindText (stmt, index, ((StringBuilder)value).ToString (), -1, NegativePointer);
+				}
+				else if (value is UriBuilder) {
+					SQLite3.BindText (stmt, index, ((UriBuilder)value).ToString (), -1, NegativePointer);
+				}
 				else {
 					// Now we could possibly get an enum, retrieve cached info
 					var valueType = value.GetType ();
@@ -2882,6 +2892,18 @@ namespace SQLite
 					var text = SQLite3.ColumnString (stmt, index);
 					return new Guid (text);
 				}
+                else if (clrType == typeof(Uri)) {
+                    var text = SQLite3.ColumnString(stmt, index);
+                    return new Uri(text);
+                }
+				else if (clrType == typeof (StringBuilder)) {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new StringBuilder (text);
+				}
+				else if (clrType == typeof(UriBuilder)) {
+                    var text = SQLite3.ColumnString(stmt, index);
+                    return new UriBuilder(text);
+                }
 				else {
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
@@ -3749,7 +3771,7 @@ namespace SQLite
 
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db, int flags, IntPtr zvfs);
-		
+
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open(byte[] filename, out IntPtr db, int flags, IntPtr zvfs);
 
@@ -3761,16 +3783,16 @@ namespace SQLite
 
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
-		
+
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_close_v2", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Close2(IntPtr db);
-		
+
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_initialize", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Initialize();
-						
+
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_shutdown", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Shutdown();
-		
+
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
 
