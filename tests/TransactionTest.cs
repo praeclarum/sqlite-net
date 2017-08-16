@@ -122,6 +122,38 @@ namespace SQLite.Tests
 			Assert.AreEqual(testObjects.Count, db.Table<TestObj>().Count());
 		}
 
+		[Test]
+		public void Issue329_AsyncTransactionFailuresShouldRollback ()
+		{
+			var adb = new SQLiteAsyncConnection (TestPath.GetTempFileName ());
+			adb.CreateTableAsync<TestObj> ().Wait ();
+			var initialCount = adb.Table<TestObj> ().CountAsync ().Result;
+			var rollbacks = 0;
+
+			//
+			// Fail a commit
+			//
+			adb.Trace = true;
+			adb.Tracer = m => {
+				Console.WriteLine (m);
+				if (m == "Executing: rollback")
+					rollbacks++;
+			};
+
+			try {
+				adb.RunInTransactionAsync (db => {
+					db.Insert (new TestObj ());
+					throw new Exception ("User exception");
+				}).Wait ();
+				Assert.Fail ("Should have thrown");
+			}
+			catch (AggregateException aex)
+				when (aex.InnerException.Message == "User exception") {
+				// Expected
+			}
+
+			Assert.AreEqual (1, rollbacks);
+		}
 
 		[Test]
 		public void Issue604_RunInTransactionAsync ()
