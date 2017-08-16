@@ -1308,7 +1308,24 @@ namespace SQLite
 		/// <param name="savepoint">The name of the savepoint to release.  The string should be the result of a call to <see cref="SaveTransactionPoint"/></param>
 		public void Release (string savepoint)
 		{
-			DoSavePointExecute (savepoint, "release ");
+			try {
+				DoSavePointExecute (savepoint, "release ");
+			}
+			catch (SQLiteException ex) {
+				if (ex.Result == SQLite3.Result.Busy) {
+					// Force a rollback since most people don't know this function can fail
+					// Don't call Rollback() since the _transactionDepth is 0 and it won't try
+					// Calling rollback makes our _transactionDepth variable correct.
+					// Writes to the database only happen at depth=0, so this failure will only happen then.
+					try {
+						Execute ("rollback");
+					}
+					catch {
+						// rollback can fail in all sorts of wonderful version-dependent ways. Let's just hope for the best
+					}
+				}
+				throw;
+			}
 		}
 
 		void DoSavePointExecute (string savepoint, string cmd)
@@ -1342,7 +1359,21 @@ namespace SQLite
 		public void Commit ()
 		{
 			if (Interlocked.Exchange (ref _transactionDepth, 0) != 0) {
-				Execute ("commit");
+				try {
+					Execute ("commit");
+				}
+				catch {
+					// Force a rollback since most people don't know this function can fail
+					// Don't call Rollback() since the _transactionDepth is 0 and it won't try
+					// Calling rollback makes our _transactionDepth variable correct.
+					try {
+						Execute ("rollback");
+					}
+					catch {
+						// rollback can fail in all sorts of wonderful version-dependent ways. Let's just hope for the best
+					}
+					throw;
+				}
 			}
 			// Do nothing on a commit with no open transaction
 		}
