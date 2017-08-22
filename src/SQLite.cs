@@ -309,7 +309,7 @@ namespace SQLite
 		/// if your database is encrypted.
 		/// This only has an effect if you are using the SQLCipher nuget package.
 		/// </summary>
-		/// <param name="key">Ecryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
+		/// <param name="key">Encryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
 		public void SetKey (string key)
 		{
 			if (key == null) throw new ArgumentNullException (nameof (key));
@@ -323,7 +323,7 @@ namespace SQLite
 		/// if your database is encrypted.
 		/// This only has an effect if you are using the SQLCipher nuget package.
 		/// </summary>
-		/// <param name="key">256-bit (32 byte) ecryption key data</param>
+		/// <param name="key">256-bit (32 byte) encryption key data</param>
 		public void SetKey (byte[] key)
 		{
 			if (key == null) throw new ArgumentNullException (nameof (key));
