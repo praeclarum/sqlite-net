@@ -39,6 +39,7 @@ using ConcurrentStringDictionary = System.Collections.Concurrent.ConcurrentDicti
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using System.Threading;
 
 #if USE_CSHARP_SQLITE
@@ -185,10 +186,11 @@ namespace SQLite
 		/// </summary>
 		public string DatabasePath { get; private set; }
 
-		/// <summary>
-		/// Gets the SQLite library version number. 3007014 would be v3.7.14
-		/// </summary>
-		public int LibVersionNumber { get; private set; }
+        /// <summary>
+        /// Gets the SQLite library version number. 3007014 would be v3.7.14
+        /// </summary>
+        [Obsolete("Use LibraryVersion instead.")]
+        public int LibVersionNumber => LibraryVersion.ToInt32();
 
 		/// <summary>
 		/// Whether Trace lines should be written that show the execution time of queries.
@@ -212,6 +214,11 @@ namespace SQLite
 		/// </summary>
 		public bool StoreDateTimeAsTicks { get; private set; }
 
+		/// <summary>
+		/// Gets the SQLite library version number. 3007014 would be v3.7.14
+		/// </summary>
+	    public SQLiteVersion LibraryVersion { get; } = new SQLiteVersion(SQLite3.LibVersionNumber());
+		
 #if USE_SQLITEPCL_RAW && !NO_SQLITEPCL_RAW_BATTERIES
 		static SQLiteConnection ()
 		{
@@ -255,14 +262,13 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
+		/// <exception cref="ArgumentException"></exception>
 		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
 		{
 			if (string.IsNullOrEmpty (databasePath))
 				throw new ArgumentException ("Must be specified", "databasePath");
 
 			DatabasePath = databasePath;
-
-			LibVersionNumber = SQLite3.LibVersionNumber ();
 
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
@@ -1345,28 +1351,19 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
+		/// </param>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
 		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, bool runInTransaction = true)
+		public int InsertAll (System.Collections.IEnumerable objects, bool runInTransaction = true, bool bulkInsert = false)
 		{
-			var c = 0;
-			if (runInTransaction) {
-				RunInTransaction (() => {
-					foreach (var r in objects) {
-						c += Insert (r);
-					}
-				});
-			}
-			else {
-				foreach (var r in objects) {
-					c += Insert (r);
-				}
-			}
-			return c;
+		    return InsertAll(objects, "", null, runInTransaction, bulkInsert);
 		}
 
 		/// <summary>
@@ -1381,26 +1378,16 @@ namespace SQLite
 		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
+		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, string extra, bool runInTransaction = true)
+		public int InsertAll(System.Collections.IEnumerable objects, string extra, bool runInTransaction = true, bool bulkInsert = false)
 		{
-			var c = 0;
-			if (runInTransaction) {
-				RunInTransaction (() => {
-					foreach (var r in objects) {
-						c += Insert (r, extra);
-					}
-				});
-			}
-			else {
-				foreach (var r in objects) {
-					c += Insert (r);
-				}
-			}
-			return c;
-		}
+		    return InsertAll(objects, extra, null, runInTransaction, bulkInsert);
+        }
 
 		/// <summary>
 		/// Inserts all specified objects.
@@ -1414,26 +1401,210 @@ namespace SQLite
 		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
+		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertAll (System.Collections.IEnumerable objects, Type objType, bool runInTransaction = true)
+		public int InsertAll(System.Collections.IEnumerable objects, Type objType, bool runInTransaction = true, bool bulkInsert = false)
 		{
-			var c = 0;
-			if (runInTransaction) {
-				RunInTransaction (() => {
-					foreach (var r in objects) {
-						c += Insert (r, objType);
+		    return InsertAll(objects, "", objType, runInTransaction, bulkInsert);
+		}
+
+	    private static readonly SQLiteVersion MinInsertAllVersion = new SQLiteVersion(3007011); // 3.7.11
+
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <param name="extra">
+		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <param name="runInTransaction">
+		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+		public int InsertAll(System.Collections.IEnumerable objects, string extra, Type objType, bool runInTransaction = true, bool bulkInsert = false)
+	    {
+	        var doNotBulkInsert = false;
+	        var count = 0;
+
+	        if (LibraryVersion < MinInsertAllVersion)
+	            doNotBulkInsert = true;
+
+		    if (!bulkInsert)
+			    doNotBulkInsert = true;
+
+	        if (!doNotBulkInsert) {
+		        var o = new List<object> ();
+	            foreach (var r in objects)
+	                if (r != null)
+	                    o.Add(r);
+
+	            // if there are no records just return 0
+	            if (o.Count == 0)
+	                return 0;
+
+	            // if there is only one object it is better to go through the old logic because the insert is already prepared
+	            if (!doNotBulkInsert && o.Count == 1)
+	                doNotBulkInsert = true;
+
+	            if (!doNotBulkInsert)
+	            {
+	                var firstRecordType = objType;
+	                if (firstRecordType == null)
+	                    firstRecordType = o[0].GetType();
+
+	                // all the types need to match
+	                foreach (var r in o)
+	                {
+	                    if (r.GetType() != firstRecordType)
+	                    {
+	                        doNotBulkInsert = true;
+	                        break;
+	                    }
+	                }
+	            }
+
+	            if (!doNotBulkInsert)
+	            {
+	                if (runInTransaction)
+	                {
+	                    RunInTransaction(() => {
+	                        count = InternalInsertAll(o, extra, objType);
+	                    });
+	                }
+	                else
+	                {
+	                    count = InternalInsertAll(o, extra, objType);
+	                }
+	            }
+	        }
+
+	        if (doNotBulkInsert)
+	        {
+	            if (runInTransaction)
+	            {
+	                RunInTransaction(() => {
+	                    foreach (var r in objects)
+	                        count += Insert(r, extra, objType);
+	                });
+	            }
+	            else
+	            {
+	                foreach (var r in objects)
+	                    count += Insert(r, extra, objType);
+	            }
+	        }
+
+	        return count;
+	    }
+
+	    private object[] InternalInsertRecordValues(TableMapping map, object obj, Type objType, bool replacing)
+	    {
+			if (map.PK != null && map.PK.IsAutoGuid)
+			{
+				// no GetProperty so search our way up the inheritance chain till we find it
+				PropertyInfo prop;
+				while (objType != null)
+				{
+					var info = objType.GetTypeInfo();
+					prop = info.GetDeclaredProperty(map.PK.PropertyName);
+					if (prop != null)
+					{
+						if (prop.GetValue(obj, null).Equals(Guid.Empty))
+						{
+							prop.SetValue(obj, Guid.NewGuid(), null);
+						}
+						break;
 					}
-				});
-			}
-			else {
-				foreach (var r in objects) {
-					c += Insert (r, objType);
+
+					objType = info.BaseType;
 				}
 			}
-			return c;
-		}
+
+	        var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
+	        var vals = new object[cols.Length];
+
+	        for (var i = 0; i < vals.Length; i++)
+	        {
+	            var col = cols[i];
+	            var value = col.GetValue(obj);
+
+	            // primary key, auto increment, with a value of 0 should be considered a new incremented value
+	            if (col.IsPK && col.IsAutoInc && col.ColumnType == typeof(long) && Object.Equals(value, 0L))
+	                value = null;
+
+	            vals[i] = value;
+	        }
+
+	        return vals;
+	    }
+
+        private int InternalInsertAll(IList objects, string extra, Type objType)
+        {
+            if (objects.Count == 0)
+                return 0;
+
+            objType = objType ?? objects[0].GetType();
+
+	        int count = 0;
+            var map = GetMapping(objType);
+	        var replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
+	        var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
+
+            // todo: look up if this value was changed at runtime by using sqlite3_limit(db,SQLITE_LIMIT_VARIABLE_NUMBER,size)
+            const int SQLITE_LIMIT_VARIABLE_NUMBER = 999;
+
+	        var recordValues = new Queue<object[]>();
+            foreach(var obj in objects)
+                recordValues.Enqueue(InternalInsertRecordValues(map, obj, objType, replacing));
+
+            var line = $"({String.Join(",", cols.Select(c => "?"))}),";
+            while (recordValues.Count > 0)
+	        {
+	            var insertVals = new List<object>();
+	            var s = new StringBuilder();
+	            s.AppendFormat("insert {2} into \"{0}\"({1}) values ", map.TableName, String.Join(",", cols.Select(c => $"\"{c.Name}\"")), extra);
+
+                while (recordValues.Count > 0 && insertVals.Count + cols.Length < SQLITE_LIMIT_VARIABLE_NUMBER)
+	            {
+	                insertVals.AddRange(recordValues.Dequeue());
+	                s.Append(line);
+	            }
+
+	            try
+	            {
+	                // remove the last comma from the string
+	                var insertSql = s.ToString(0, s.Length - 1);
+                    count += Execute(insertSql, insertVals.ToArray());
+	            }
+	            catch (SQLiteException ex)
+	            {
+	                if (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
+	                {
+	                    throw NotNullConstraintViolationException.New(ex.Result, ex.Message);
+	                }
+	                throw;
+	            }
+	        }
+
+	        if (count > 0)
+	            OnTableChanged(map, NotifyTableChangedAction.Insert);
+
+	        return count;
+	    }
 
 		/// <summary>
 		/// Inserts the given object (and updates its
@@ -1558,10 +1729,11 @@ namespace SQLite
 		/// </returns>
 		public int Insert (object obj, string extra, Type objType)
 		{
-			if (obj == null || objType == null) {
+			if (obj == null) {
 				return 0;
 			}
 
+			objType = objType ?? Orm.GetType (obj);
 			var map = GetMapping (objType);
 
 			if (map.PK != null && map.PK.IsAutoGuid) {
@@ -1837,9 +2009,11 @@ namespace SQLite
 			Dispose (true);
 		}
 
+	    private static readonly SQLiteVersion MinClose2Version = new SQLiteVersion(3007014); // 3.7.14
+
 		protected virtual void Dispose (bool disposing)
 		{
-			var useClose2 = LibVersionNumber >= 3007014;
+			var useClose2 = LibraryVersion >= MinClose2Version;
 
 			if (_open && Handle != NullHandle) {
 				try {
@@ -1861,6 +2035,9 @@ namespace SQLite
 					}
 				}
 				finally {
+#if USE_SQLITEPCL_RAW
+					Handle.Dispose();
+#endif
 					Handle = NullHandle;
 					_open = false;
 				}
@@ -4073,6 +4250,100 @@ namespace SQLite
 			Null = 5
 		}
 	}
+
+    /// <seealso href="https://sqlite.org/c3ref/c_source_id.html"/>
+    public struct SQLiteVersion : IEquatable<SQLiteVersion>, IComparable<SQLiteVersion>, IComparable
+    {
+        /// <summary>
+        /// Indicates whether the two SQLiteVersion instances are equal to each other.
+        /// </summary>
+        /// <param name="x">A SQLiteVersion instance.</param>
+        /// <param name="y">A SQLiteVersion instance.</param>
+        /// <returns><see langword="true"/> if the two instances are equal to each other; otherwise,  <see langword="false"/>.</returns>
+        public static bool operator ==(SQLiteVersion x, SQLiteVersion y) => x.Equals(y);
+
+        /// <summary>
+        /// Indicates whether the two SQLiteVersion instances are not equal each other.
+        /// </summary>
+        /// <param name="x">A SQLiteVersion instance.</param>
+        /// <param name="y">A SQLiteVersion instance.</param>
+        /// <returns><see langword="true"/> if the two instances are not equal to each other; otherwise,  <see langword="false"/>.</returns>
+        public static bool operator !=(SQLiteVersion x, SQLiteVersion y) => !(x == y);
+
+        /// <summary>
+        /// Indicates if the the first SQLiteVersion is greater than or equal to the second.
+        /// </summary>
+        /// <param name="x">A SQLiteVersion instance.</param>
+        /// <param name="y">A SQLiteVersion instance.</param>
+        /// <returns><see langword="true"/>if the the first SQLiteVersion is greater than or equal to the second; otherwise, <see langword="false"/>.</returns>
+        public static bool operator >=(SQLiteVersion x, SQLiteVersion y) => x._version >= y._version;
+
+        /// <summary>
+        /// Indicates if the the first SQLiteVersion is greater than the second.
+        /// </summary>
+        /// <param name="x">A SQLiteVersion instance.</param>
+        /// <param name="y">A SQLiteVersion instance.</param>
+        /// <returns><see langword="true"/>if the the first SQLiteVersion is greater than the second; otherwise, <see langword="false"/>.</returns>
+        public static bool operator >(SQLiteVersion x, SQLiteVersion y) => x._version > y._version;
+
+        /// <summary>
+        /// Indicates if the the first SQLiteVersion is less than or equal to the second.
+        /// </summary>
+        /// <param name="x">A SQLiteVersion instance.</param>
+        /// <param name="y">A SQLiteVersion instance.</param>
+        /// <returns><see langword="true"/>if the the first SQLiteVersion is less than or equal to the second; otherwise, <see langword="false"/>.</returns>
+        public static bool operator <=(SQLiteVersion x, SQLiteVersion y) => x._version <= y._version;
+
+        /// <summary>
+        /// Indicates if the the first SQLiteVersion is less than the second.
+        /// </summary>
+        /// <param name="x">A SQLiteVersion instance.</param>
+        /// <param name="y">A SQLiteVersion instance.</param>
+        /// <returns><see langword="true"/>if the the first SQLiteVersion is less than the second; otherwise, <see langword="false"/>.</returns>
+        public static bool operator <(SQLiteVersion x, SQLiteVersion y) => x._version < y._version;
+
+        private readonly int _version;
+
+        public SQLiteVersion(int version)
+        {
+            this._version = version;
+        }
+
+        /// <summary>
+        /// Gets the major version number.
+        /// </summary>
+        public int Major => _version / 1000000;
+
+        /// <summary>
+        /// Gets the minor version number.
+        /// </summary>
+        public int Minor => (_version / 1000) % 1000;
+
+        /// <summary>
+        /// Gets the release version number.
+        /// </summary>
+        public int Release => _version % 1000;
+
+        /// <summary>
+        /// Converts the version number as an integer with the value (Major*1000000 + Minor*1000 + Release).
+        /// </summary>
+        /// <returns>The version number as an integer</returns>
+        public int ToInt32() => _version;
+
+        public override string ToString() => $"{this.Major}.{this.Minor}.{this.Release}";
+        public override int GetHashCode() => _version;
+        public bool Equals(SQLiteVersion other) => this._version == other._version;
+        public override bool Equals(object other) => other is SQLiteVersion && this == (SQLiteVersion)other;
+        public int CompareTo(SQLiteVersion other) => this._version.CompareTo(other._version);
+        public int CompareTo(object obj)
+        {
+            if (obj is SQLiteVersion)
+            {
+                return this.CompareTo((SQLiteVersion)obj);
+            }
+            throw new ArgumentException("Can only compare to other SQLiteVersion");
+        }
+    }
 }
 
 #if NO_CONCURRENT

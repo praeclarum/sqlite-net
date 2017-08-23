@@ -873,15 +873,19 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
+		/// </param>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
 		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public Task<int> InsertAllAsync (IEnumerable objects, bool runInTransaction = true)
+		public Task<int> InsertAllAsync (IEnumerable objects, bool runInTransaction = true, bool bulkInsert = false)
 		{
-			return WriteAsync (conn => conn.InsertAll (objects, runInTransaction));
+			return WriteAsync (conn => conn.InsertAll (objects, runInTransaction, bulkInsert));
 		}
 
 		/// <summary>
@@ -896,12 +900,15 @@ namespace SQLite
 		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
+		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public Task<int> InsertAllAsync (IEnumerable objects, string extra, bool runInTransaction = true)
+		public Task<int> InsertAllAsync (IEnumerable objects, string extra, bool runInTransaction = true, bool bulkInsert = false)
 		{
-			return WriteAsync (conn => conn.InsertAll (objects, extra, runInTransaction));
+			return WriteAsync (conn => conn.InsertAll (objects, extra, runInTransaction, bulkInsert));
 		}
 
 		/// <summary>
@@ -916,12 +923,40 @@ namespace SQLite
 		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
+		/// </param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public Task<int> InsertAllAsync (IEnumerable objects, Type objType, bool runInTransaction = true)
+		public Task<int> InsertAllAsync (IEnumerable objects, Type objType, bool runInTransaction = true, bool bulkInsert = false)
 		{
-			return WriteAsync (conn => conn.InsertAll (objects, objType, runInTransaction));
+			return WriteAsync (conn => conn.InsertAll (objects, objType, runInTransaction, bulkInsert));
+		}
+
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <param name="extra">
+		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <param name="runInTransaction">
+		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <param name="bulkInsert">
+		/// A boolean indicating if the bulk insert command should be uses. INSERT INTO ... VALUES ...
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+		public Task<int> InsertAllAsync (IEnumerable objects, string extra, Type objType, bool runInTransaction = true, bool bulkInsert = false) {
+			return WriteAsync (conn => conn.InsertAll (objects, extra, objType, runInTransaction, bulkInsert));
 		}
 
 		/// <summary>
