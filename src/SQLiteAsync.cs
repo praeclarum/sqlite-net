@@ -846,32 +846,43 @@ namespace SQLite
 		/// <param name="type">
 		/// The type whose mapping to the database is returned.
 		/// </param>         
-		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>     
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public Task<TableMapping> GetMappingAsync (Type type, CreateFlags createFlags = CreateFlags.None)
+		public Task<TableMapping> GetMappingAsync (Type type)
 		{
-			return ReadAsync (conn => conn.GetMapping (type, createFlags));
+			return ReadAsync (conn => conn.GetMapping (type));
+		}
+
+		/// <summary>
+		/// Retrieves the mapping that is automatically generated for the given type.
+		/// </summary>
+		/// <returns>
+		/// The mapping represents the schema of the columns of the database and contains
+		/// methods to set and get properties of objects.
+		/// </returns>
+		public Task<TableMapping> GetMappingAsync<T> ()
+			where T : new()
+		{
+			return ReadAsync (conn => conn.GetMapping<T> ());
 		}
 
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
 		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>     
+		/// Obsolete - The createFlags parameter doesn't have any effect any longer, and can be removed.
+		/// </param>
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
+		[Obsolete ("The createFlags parameter doesn't have any effect any longer, and can be removed.")]
 		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 		{
-			return ReadAsync (conn => conn.GetMapping<T> (createFlags));
+			return ReadAsync (conn => conn.GetMapping<T> ());
 		}
 
 		/// <summary>

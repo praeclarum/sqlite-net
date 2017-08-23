@@ -55,6 +55,7 @@ namespace SQLite.Tests
 	{
 		public TestDb (bool storeDateTimeAsTicks = true) : base (TestPath.GetTempFileName (), storeDateTimeAsTicks)
 		{
+			TableMapping.ClearCache();
 			Trace = true;
 		}
 
