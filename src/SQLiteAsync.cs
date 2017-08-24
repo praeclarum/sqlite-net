@@ -180,7 +180,7 @@ namespace SQLite
 		{
 			return Task.Factory.StartNew (() => {
 				SQLiteConnectionPool.Shared.CloseConnection (_connectionString, _openFlags);
-			});
+			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
 		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
@@ -190,7 +190,7 @@ namespace SQLite
 				using (conn.Lock ()) {
 					return read (conn);
 				}
-			});
+			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
 		Task<T> WriteAsync<T> (Func<SQLiteConnectionWithLock, T> write)
@@ -200,7 +200,7 @@ namespace SQLite
 				using (conn.Lock ()) {
 					return write (conn);
 				}
-			});
+			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
 		/// <summary>
@@ -1155,7 +1155,7 @@ namespace SQLite
 				using (conn.Lock ()) {
 					return read (conn);
 				}
-			});
+			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
 		Task<U> WriteAsync<U> (Func<SQLiteConnectionWithLock, U> write)
@@ -1165,7 +1165,7 @@ namespace SQLite
 				using (conn.Lock ()) {
 					return write (conn);
 				}
-			});
+			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
 		/// <summary>
