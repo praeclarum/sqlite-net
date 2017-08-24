@@ -529,8 +529,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2));
 		}
@@ -545,9 +543,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3));
 		}
@@ -562,10 +557,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
-			where T4 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4));
 		}
@@ -580,11 +571,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
-			where T4 : new()
-			where T5 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
 		}
@@ -870,7 +856,7 @@ namespace SQLite
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
 		/// </returns>
-		public List<T> Query<T> (string query, params object[] args) where T : new()
+		public List<T> Query<T> (string query, params object[] args) 
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<T> ();
@@ -894,7 +880,7 @@ namespace SQLite
 		/// will call sqlite3_step on each call to MoveNext, so the database
 		/// connection must remain open for the lifetime of the enumerator.
 		/// </returns>
-		public IEnumerable<T> DeferredQuery<T> (string query, params object[] args) where T : new()
+		public IEnumerable<T> DeferredQuery<T> (string query, params object[] args) 
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteDeferredQuery<T> ();
@@ -962,7 +948,7 @@ namespace SQLite
 		/// A queryable object that is able to translate Where, OrderBy, and Take
 		/// queries into native SQL.
 		/// </returns>
-		public TableQuery<T> Table<T> () where T : new()
+		public TableQuery<T> Table<T> ()
 		{
 			return new TableQuery<T> (this);
 		}
@@ -979,7 +965,7 @@ namespace SQLite
 		/// The object with the given primary key. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public T Get<T> (object pk) where T : new()
+		public T Get<T> (object pk)
 		{
 			var map = GetMapping (typeof (T));
 			return Query<T> (map.GetByPrimaryKeySql, pk).First ();
@@ -1016,7 +1002,7 @@ namespace SQLite
 		/// The object that matches the given predicate. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
+		public T Get<T> (Expression<Func<T, bool>> predicate) 
 		{
 			return Table<T> ().Where (predicate).First ();
 		}
@@ -1033,7 +1019,7 @@ namespace SQLite
 		/// The object with the given primary key or null
 		/// if the object is not found.
 		/// </returns>
-		public T Find<T> (object pk) where T : new()
+		public T Find<T> (object pk) 
 		{
 			var map = GetMapping (typeof (T));
 			return Query<T> (map.GetByPrimaryKeySql, pk).FirstOrDefault ();
@@ -1070,7 +1056,7 @@ namespace SQLite
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public T Find<T> (Expression<Func<T, bool>> predicate) where T : new()
+		public T Find<T> (Expression<Func<T, bool>> predicate) 
 		{
 			return Table<T> ().Where (predicate).FirstOrDefault ();
 		}
@@ -1089,7 +1075,7 @@ namespace SQLite
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public T FindWithQuery<T> (string query, params object[] args) where T : new()
+		public T FindWithQuery<T> (string query, params object[] args)
 		{
 			return Query<T> (query, args).FirstOrDefault ();
 		}
@@ -1626,7 +1612,7 @@ namespace SQLite
 			return count;
 		}
 
-		readonly System.Collections.Generic.Dictionary<string, PreparedSqlLiteInsertCommand> _insertCommandMap = new System.Collections.Generic.Dictionary<string, PreparedSqlLiteInsertCommand> ();
+		readonly Dictionary<string, PreparedSqlLiteInsertCommand> _insertCommandMap = new Dictionary<string, PreparedSqlLiteInsertCommand> ();
 
 	    private PreparedSqlLiteInsertCommand GetInsertCommand (TableMapping map, string extra)
 	    {
@@ -2125,7 +2111,7 @@ namespace SQLite
 
 	public interface ITableMapper
     {
-        List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags = CreateFlags.None);
+        List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags);
 
         object CreateInstance(Type t);
 
@@ -2317,7 +2303,7 @@ namespace SQLite
 	        };
             private static readonly Func<PropertyInfo, Column, object, object> _getValue = (prop, col, obj) => prop.GetValue(obj, null);
 
-            public List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags = CreateFlags.None)
+            public List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags)
             {
                 var props = new List<PropertyInfo>();
                 var baseType = GetSchema(t);
