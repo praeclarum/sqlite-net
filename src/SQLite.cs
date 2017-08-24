@@ -376,22 +376,6 @@ namespace SQLite
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
-		/// <param name="type">
-		/// The type whose mapping to the database is returned.
-		/// </param>
-		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions.
-		/// </param>     
-		/// <returns>
-		/// The mapping represents the schema of the columns of the database and contains 
-		/// methods to set and get properties of objects.
-		/// </returns>
-		[Obsolete ("It is recommended that you include createFlags in your TableAttribute instead for consitancy in creating TableMappings.")]
-		public TableMapping GetMapping (Type type, CreateFlags createFlags) => TableMapping.GetMapping (type, createFlags);
-
-		/// <summary>
-		/// Retrieves the mapping that is automatically generated for the given type.
-		/// </summary>
 		/// <param name="createFlags">
 		/// Optional flags allowing implicit PK and indexes based on naming conventions.
 		/// </param>
