@@ -872,14 +872,14 @@ namespace SQLite
 		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
 		/// <param name="createFlags">
-		/// Obsolete - The createFlags parameter doesn't have any effect any longer, and can be removed.
+		/// Optional flags allowing implicit PK and indexes based on naming conventions.
 		/// </param>
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		[Obsolete ("The createFlags parameter doesn't have any effect any longer, and can be removed.")]
-		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None)
+		[Obsolete ("It is recommended that you include createFlags in your TableAttribute instead for consitancy in creating TableMappings.")]
+		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.GetMapping<T> ());
@@ -922,7 +922,8 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
+		/// </param>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>

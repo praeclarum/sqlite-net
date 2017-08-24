@@ -380,27 +380,27 @@ namespace SQLite
 		/// The type whose mapping to the database is returned.
 		/// </param>
 		/// <param name="createFlags">
-		/// Obsolete - The createFlags parameter doesn't have any effect any longer, and can be removed.
+		/// Optional flags allowing implicit PK and indexes based on naming conventions.
 		/// </param>     
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		[Obsolete ("The createFlags parameter doesn't have any effect any longer, and can be removed.")]
-		public TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None) => TableMapping.GetMapping (type);
+		[Obsolete ("It is recommended that you include createFlags in your TableAttribute instead for consitancy in creating TableMappings.")]
+		public TableMapping GetMapping (Type type, CreateFlags createFlags) => TableMapping.GetMapping (type, createFlags);
 
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
 		/// <param name="createFlags">
-		/// Obsolete - The createFlags parameter doesn't have any effect any longer, and can be removed.
+		/// Optional flags allowing implicit PK and indexes based on naming conventions.
 		/// </param>
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		[Obsolete ("The createFlags parameter doesn't have any effect any longer, and can be removed.")]
-		public TableMapping GetMapping<T> (CreateFlags createFlags = CreateFlags.None) => TableMapping.GetMapping<T> ();
+		[Obsolete ("It is recommended that you include createFlags in your TableAttribute instead for consitancy in creating TableMappings.")]
+		public TableMapping GetMapping<T> (CreateFlags createFlags) => TableMapping.GetMapping(typeof(T), createFlags);
 
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
@@ -1365,7 +1365,8 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
+		/// </param>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
@@ -1625,7 +1626,7 @@ namespace SQLite
 			return count;
 		}
 
-		readonly System.Collections.Concurrent.ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> _insertCommandMap = new System.Collections.Concurrent.ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> ();
+		readonly System.Collections.Generic.Dictionary<string, PreparedSqlLiteInsertCommand> _insertCommandMap = new System.Collections.Generic.Dictionary<string, PreparedSqlLiteInsertCommand> ();
 
 	    private PreparedSqlLiteInsertCommand GetInsertCommand (TableMapping map, string extra)
 	    {
@@ -1633,32 +1634,28 @@ namespace SQLite
 
 		    PreparedSqlLiteInsertCommand cachedCommand;
 
-	        if (!_insertCommandMap.TryGetValue(commandName, out cachedCommand)) {
-	            var cols = map.InsertColumns;
-	            string insertSql;
+			lock (_insertCommandMap) { 
+				if (!_insertCommandMap.TryGetValue(commandName, out cachedCommand)) {
+					var cols = map.InsertColumns;
+					string insertSql;
 
-	            // weird case to handle where there is only one column in the database, and it is an auto incrementing column
-	            if (!cols.Any() && map.Columns.Count() == 1 && map.Columns[0].IsAutoInc) {
-	                insertSql = $"insert {extra} into \"{map.TableName}\" default values";
-	            }
-	            else {
-	                if (String.Equals(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase))
-	                    cols = map.InsertOrReplaceColumns;
+					// weird case to handle where there is only one column in the database, and it is an auto incrementing column
+					if (!cols.Any() && map.Columns.Count() == 1 && map.Columns[0].IsAutoInc) {
+						insertSql = $"insert {extra} into \"{map.TableName}\" default values";
+					}
+					else {
+						if (String.Equals(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase))
+							cols = map.InsertOrReplaceColumns;
 
-	                insertSql = String.Format("insert {3} into \"{0}\"({1}) values ({2})", map.TableName,
-	                    String.Join(",", cols.Select(c => $"\"{c.Name}\"")),
-	                    String.Join(",", cols.Select(c => "?")), extra);
-	            }
+						insertSql = String.Format("insert {3} into \"{0}\"({1}) values ({2})", map.TableName,
+							String.Join(",", cols.Select(c => $"\"{c.Name}\"")),
+							String.Join(",", cols.Select(c => "?")), extra);
+					}
 
-		        var prepCmd = new PreparedSqlLiteInsertCommand (this, insertSql);
-
-	            cachedCommand = prepCmd;
-	            if (!_insertCommandMap.TryAdd(commandName, prepCmd)) {
-	                // concurrent add attempt this add, retreive a fresh copy
-	                prepCmd.Dispose();
-		            _insertCommandMap.TryGetValue(commandName, out cachedCommand);
-	            }
-	        }
+					cachedCommand = new PreparedSqlLiteInsertCommand (this, insertSql);
+					_insertCommandMap.Add (commandName, cachedCommand);
+				}
+			}
 
 	        return cachedCommand;
 	    }
@@ -2019,6 +2016,11 @@ namespace SQLite
 		/// </summary>
 		public bool WithoutRowId { get; set; }
 
+		/// <summary>
+		/// Optional flags allowing implicit PK and indexes based on naming conventions.  The default is None.
+		/// </summary>
+		public CreateFlags CreateFlags { get; set; } = CreateFlags.None;
+
 		public TableAttribute (string name)
 		{
 			Name = name;
@@ -2132,7 +2134,7 @@ namespace SQLite
 
     public class TableMapping
     {
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<System.Type, SQLite.TableMapping> _mappings = new System.Collections.Concurrent.ConcurrentDictionary<System.Type, SQLite.TableMapping>();
+        private static readonly System.Collections.Generic.Dictionary<System.Type, SQLite.TableMapping> _mappings = new System.Collections.Generic.Dictionary<System.Type, SQLite.TableMapping>();
 
 	    public static void ClearCache () => _mappings.Clear ();
 
@@ -2145,18 +2147,18 @@ namespace SQLite
         /// The mapping represents the schema of the columns of the database and contains
         /// methods to set and get properties of objects.
         /// </returns>
-        public static TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        public static TableMapping GetMapping(Type type, CreateFlags? createFlags = null)
         {
             TableMapping map;
-            if (!_mappings.TryGetValue(type, out map))
-            {
-                map = new TableMapping(type, createFlags);
-                if (!_mappings.TryAdd(type, map))
-                {
-                    // concurrent add attempt this add, retreive a fresh copy
-                    _mappings.TryGetValue(type, out map);
-                }
-            }
+
+			lock (_mappings) 
+			{ 
+				if (!_mappings.TryGetValue(type, out map))
+				{
+					map = new TableMapping(type, createFlags);
+					_mappings.Add (type, map);
+				}
+			}
 
             return map;
         }
@@ -2168,12 +2170,10 @@ namespace SQLite
         /// The mapping represents the schema of the columns of the database and contains
         /// methods to set and get properties of objects.
         /// </returns>
-        public static TableMapping GetMapping<T>()
-        {
+        public static TableMapping GetMapping<T>(CreateFlags? createFlags = null) 
+		{
             return GetMapping(typeof(T));
         }
-
-        private readonly ITableMapper _mapper;
 
         private Type Schema { get; }
 
@@ -2185,9 +2185,14 @@ namespace SQLite
 
         public Column PK { get; }
 
-		public string GetByPrimaryKeySql { get; private set; }
+		public string GetByPrimaryKeySql { get; }
 
-        private readonly Column _autoPk;
+		public CreateFlags CreateFlags { get; }
+
+	    public bool HasAutoIncPK { get; }
+
+		private readonly ITableMapper _mapper;
+		private readonly Column _autoPk;
         private Column[] _insertColumns;
         private Column[] _insertOrReplaceColumns;
         private Dictionary<string, Column> _columnNameIndex;
@@ -2229,7 +2234,7 @@ namespace SQLite
             return indexes.Values.ToList();
         }
 
-        private TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
+        private TableMapping(Type type, CreateFlags? createFlags = null)
         {
 	        var typeInfo = type.GetTypeInfo ();
             var mapperAttr = (TableMapperAttribute)typeInfo.GetCustomAttributes(typeof(TableMapperAttribute), true).FirstOrDefault();
@@ -2248,10 +2253,11 @@ namespace SQLite
                     .Select(x => (TableAttribute)Orm.InflateAttribute(x))
                     .FirstOrDefault();
 
-			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : Schema.Name;
-	        WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
+	        TableName = string.IsNullOrEmpty (tableAttr?.Name) ? Schema.Name : tableAttr.Name;
+	        WithoutRowId = tableAttr?.WithoutRowId ?? false;
+	        CreateFlags = createFlags ?? tableAttr?.CreateFlags ?? CreateFlags.None;
 
-			Columns = _mapper.GetColumns(type, createFlags).ToArray();
+			Columns = _mapper.GetColumns(type, CreateFlags).ToArray();
             foreach (var c in Columns) {
 				if (c.IsAutoInc && c.IsPK) {
 					_autoPk = c;
@@ -2269,8 +2275,6 @@ namespace SQLite
         }
 
         public object CreateInstance() => _mapper.CreateInstance(Schema);
-
-		public bool HasAutoIncPK { get; private set; }
 
         public void SetAutoIncPK(object obj, long id)
         {
