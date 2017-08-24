@@ -3575,6 +3575,11 @@ namespace SQLite
 				return "(" + parameter.CommandText + " is ?)";
 			else if (expression.NodeType == ExpressionType.NotEqual)
 				return "(" + parameter.CommandText + " is not ?)";
+			else if (expression.NodeType == ExpressionType.GreaterThan
+				|| expression.NodeType == ExpressionType.GreaterThanOrEqual
+				|| expression.NodeType == ExpressionType.LessThan
+				|| expression.NodeType == ExpressionType.LessThanOrEqual)
+				return "(" + parameter.CommandText + " < ?)"; // always false
 			else
 				throw new NotSupportedException ("Cannot compile Null-BinaryExpression with type " + expression.NodeType.ToString ());
 		}
