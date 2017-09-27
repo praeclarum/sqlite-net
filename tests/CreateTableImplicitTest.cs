@@ -25,6 +25,13 @@ namespace SQLite.Tests
             public int IndexedId { get; set; }
         }
 
+        class NoAttributesStringId
+        {
+            public string Id { get; set; }
+            public string AColumn { get; set; }
+            public int IndexedId { get; set; }
+        }
+
         class PkAttribute
         {
             [PrimaryKey]
@@ -122,6 +129,21 @@ namespace SQLite.Tests
             Assert.AreEqual("Id", mapping.PK.Name);
             Assert.IsTrue(mapping.PK.IsPK);
             Assert.IsTrue(mapping.PK.IsAutoInc);
+        }
+
+        [Test]
+        public void ImplicitPKAutoIncStringId()
+        {
+            var db = new TestDb ();
+
+            db.CreateTable (typeof (NoAttributesStringId), CreateFlags.ImplicitPK | CreateFlags.AutoIncPK);
+
+            var mapping = db.GetMapping<NoAttributesStringId> ();
+
+            Assert.IsNotNull (mapping.PK);
+            Assert.AreEqual ("Id", mapping.PK.Name);
+            Assert.IsTrue (mapping.PK.IsPK);
+            Assert.IsFalse(mapping.PK.IsAutoInc);
         }
 
         [Test]
