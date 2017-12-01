@@ -193,5 +193,37 @@ namespace SQLite.Tests
 			Assert.AreEqual (null, oo.Ignored);
 			Assert.AreEqual ("World", oo.NotIgnored);
 		}
+		public class OverrideBaseClass 
+		{
+			public string Name { get; set; }
+			public virtual List<string> Values { get; set; }
+		}
+
+		public class OverrideClass : OverrideBaseClass 
+		{
+			[Ignore]
+			public override List<string> Values { get; set; }
+			public string Value { get; set; }
+		}
+		[Test]
+		public void OverrideIgnore() 
+		{
+			var db = new TestDb ();
+			db.CreateTable<OverrideClass> ();
+
+			var o = new OverrideClass {
+				Name = "Foo",
+				Value = "Bar",
+				Values = new List<string> { "hello", "world" },
+			};
+
+			db.Insert (o);
+
+			var oo = db.Table<OverrideClass> ().First ();
+
+			Assert.AreEqual ("Foo", oo.Name);
+			Assert.AreEqual ("Bar", oo.Value);
+			Assert.AreEqual (null, oo.Values);
+		}
 	}
 }
