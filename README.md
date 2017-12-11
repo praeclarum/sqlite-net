@@ -10,13 +10,13 @@ but has since grown up to work on all the platforms (Xamarin.*, .NET, UWP, Azure
 SQLite-net was designed as a quick and convenient database layer. Its design follows from these *goals*:
 
 * Very easy to integrate with existing projects and runs on all the .NET platforms.
-  
+
 * Thin wrapper over SQLite that is fast and efficient. (This library should not be the performance bottleneck of your queries.)
-  
+
 * Very simple methods for executing CRUD operations and queries safely (using parameters) and for retrieving the results of those query in a strongly typed fashion.
-  
+
 * Works with your data model without forcing you to change your classes. (Contains a small reflection-driven ORM layer.)
-  
+
 ## Nuget Installation
 
 Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from nuget.
@@ -25,7 +25,7 @@ Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from nug
 
 ## Source Installation
 
-SQLite-net is all contained in 1 file (I know, so cool right?) and is easy to add to your project. Just add [SQLite.cs](https://github.com/praeclarum/sqlite-net/blob/master/src/SQLite.cs) to your project, and you're ready to start creating tables. 
+SQLite-net is all contained in 1 file (I know, so cool right?) and is easy to add to your project. Just add [SQLite.cs](https://github.com/praeclarum/sqlite-net/blob/master/src/SQLite.cs) to your project, and you're ready to start creating tables.
 
 ## Please Contribute!
 
@@ -80,10 +80,11 @@ You can insert rows in the database using `Insert`. If the table contains an aut
 
 ```csharp
 public static void AddStock(SQLiteConnection db, string symbol) {
-	var s = db.Insert(new Stock() {
+	var stock = new Stock() {
 		Symbol = symbol
-	});
-	Console.WriteLine("{0} == {1}", s.Symbol, s.Id);
+	};
+	db.Insert(stock);
+	Console.WriteLine("{0} == {1}", stock.Symbol, stock.Id);
 }
 ```
 
@@ -125,7 +126,7 @@ You can perform low-level updates of the database using the `Execute` method.
 
 ## Asynchronous API
 
-The asynchronous library uses the Task Parallel Library (TPL). As such, normal use of `Task` objects, and the `async` and `await` keywords 
+The asynchronous library uses the Task Parallel Library (TPL). As such, normal use of `Task` objects, and the `async` and `await` keywords
 will work for you.
 
 Once you have defined your entity, you can automatically generate tables by calling `CreateTableAsync`:
@@ -159,7 +160,7 @@ Debug.WriteLine("New customer ID: {0}", stock.Id);
 Similar methods exist for `UpdateAsync` and `DeleteAsync`.
 
 Querying for data is most straightforwardly done using the `Table` method. This will return an `AsyncTableQuery` instance back, whereupon
-you can add predictates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special 
+you can add predictates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special
 retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
 
 ```csharp
@@ -172,7 +173,7 @@ foreach (var stock in result)
 	Debug.WriteLine("Stock: " + stock.Symbol);
 ```
 
-There are a number of low-level methods available. You can also query the database directly via the `QueryAsync` method. Over and above the change 
+There are a number of low-level methods available. You can also query the database directly via the `QueryAsync` method. Over and above the change
 operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to change sets of data directly within the database.
 
 Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
