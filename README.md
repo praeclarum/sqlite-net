@@ -71,9 +71,11 @@ Once you have defined your entity, you can automatically generate tables in your
 // Get an absolute path to the database file
 var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MyData.db");
 
-var db = new SQLiteConnection(databasePath);
-db.CreateTable<Stock>();
-db.CreateTable<Valuation>();
+using (var db = new SQLiteConnection(databasePath))
+{
+	db.CreateTable<Stock>();
+	db.CreateTable<Valuation>();
+}
 ```
 
 You can insert rows in the database using `Insert`. If the table contains an auto-incremented primary key, then the value for that key will be available to you after the insert:
@@ -92,11 +94,12 @@ Similar methods exist for `Update` and `Delete`.
 The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
 
 ```csharp
-var conn = new SQLiteConnection(databasePath);
-var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
-
-foreach (var stock in query)
-	Debug.WriteLine("Stock: " + stock.Symbol);
+using (var conn = new SQLiteConnection(databasePath))
+{
+    var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+    foreach (var stock in query)
+    	Debug.WriteLine("Stock: " + stock.Symbol);
+}
 ```
 
 You can also query the database at a low-level using the `Query` method:
