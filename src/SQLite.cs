@@ -2681,6 +2681,37 @@ namespace SQLite
 			}
 		}
 
+		public IEnumerable<Dictionary<string, object>> ExecuteDeferredQuery2 () {
+			if (_conn.Trace) {
+				Debug.WriteLine ("Executing Query: " + this);
+			}
+			var stmt = Prepare ();
+			try {
+				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					Dictionary<string, object> dict = new Dictionary<string, object> ();
+					for (var i = 0; i < cols.Length; i++) {
+						var name = SQLite3.ColumnName16 (stmt, i);
+						var colType = SQLite3.ColumnType (stmt, i);
+						Type type;
+						if (colType == SQLite3.ColType.Float)
+							type = typeof (float);
+						else if (colType == SQLite3.ColType.Blob)
+							type = typeof (object);
+						else
+							type = typeof (string);
+						var val = ReadCol (stmt, i, colType, type);
+						dict[name] = val;
+
+					}
+					yield return dict;
+				}
+			}
+			finally {
+				SQLite3.Finalize (stmt);
+			}
+		}
+
 		public T ExecuteScalar<T> ()
 		{
 			if (_conn.Trace) {
