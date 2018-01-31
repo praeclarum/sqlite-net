@@ -653,12 +653,12 @@ namespace SQLite.Tests
 
 			// query...
 			var query = conn.Table<Customer> ();
-			var task = query.ToListAsync ();
+			var task = query.Where (v => v.Id == customer.Id + 1 - 1).ToListAsync ();
 			task.Wait ();
 			var items = task.Result;
 
 			// check...
-			var loaded = items.Where (v => v.Id == customer.Id).First ();
+			var loaded = items.First ();
 			Assert.AreEqual (customer.Email, loaded.Email);
 		}
 
@@ -695,6 +695,27 @@ namespace SQLite.Tests
 
 			// query...
 			var query = conn.Table<Customer> ().OrderBy (v => v.Email);
+			var task = query.ToListAsync ();
+			task.Wait ();
+			var items = task.Result;
+
+			// check...
+			Assert.AreEqual (-1, string.Compare(items[0].Email, items[9].Email));
+		}
+
+		[Test]
+		public void TestAsyncTableOrderByExpression ()
+		{
+			var conn = GetConnection ();
+			conn.CreateTableAsync<Customer> ().Wait ();
+			conn.ExecuteAsync ("delete from customer").Wait ();
+
+			// create...
+			for (int index = 0; index < 10; index++)
+				conn.InsertAsync (this.CreateCustomer ()).Wait ();
+
+			// query...
+			var query = conn.Table<Customer> ().OrderBy (v => v.Email.ToLower() + "eee");
 			var task = query.ToListAsync ();
 			task.Wait ();
 			var items = task.Result;

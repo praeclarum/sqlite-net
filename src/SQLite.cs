@@ -3049,7 +3049,7 @@ namespace SQLite
 	{
 		protected class Ordering
 		{
-			public string ColumnName { get; set; }
+			public string SqlExpressionText { get; set; }
 			public bool Ascending { get; set; }
 		}
 	}
@@ -3229,32 +3229,22 @@ namespace SQLite
 		TableQuery<T> AddOrderBy<U> (Expression<Func<T, U>> orderExpr, bool asc)
 		{
 			if (orderExpr.NodeType == ExpressionType.Lambda) {
-				var lambda = (LambdaExpression)orderExpr;
 
-				MemberExpression mem = null;
+				string sqlExpressionText;
+				sqlExpressionText = CompileExpr (orderExpr.Body, new List<object> ()).CommandText;
 
-				var unary = lambda.Body as UnaryExpression;
-				if (unary != null && unary.NodeType == ExpressionType.Convert) {
-					mem = unary.Operand as MemberExpression;
-				}
-				else {
-					mem = lambda.Body as MemberExpression;
+				var q = Clone<T> ();
+				if (q._orderBys == null) {
+					q._orderBys = new List<Ordering> ();
 				}
 
-				if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter)) {
-					var q = Clone<T> ();
-					if (q._orderBys == null) {
-						q._orderBys = new List<Ordering> ();
-					}
-					q._orderBys.Add (new Ordering {
-						ColumnName = Table.FindColumnWithPropertyName (mem.Member.Name).Name,
-						Ascending = asc
-					});
-					return q;
-				}
-				else {
-					throw new NotSupportedException ("Order By does not support: " + orderExpr);
-				}
+				var ordering = new Ordering {
+					Ascending = asc,
+					SqlExpressionText = sqlExpressionText
+				};
+
+				q._orderBys.Add (ordering);
+				return q;
 			}
 			else {
 				throw new NotSupportedException ("Must be a predicate");
@@ -3312,7 +3302,7 @@ namespace SQLite
 					cmdText += " where " + w.CommandText;
 				}
 				if ((_orderBys != null) && (_orderBys.Count > 0)) {
-					var t = string.Join (", ", _orderBys.Select (o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray ());
+					var t = string.Join (", ", _orderBys.Select (o => o.SqlExpressionText + (o.Ascending ? "" : " desc")).ToArray ());
 					cmdText += " order by " + t;
 				}
 				if (_limit.HasValue) {
@@ -3448,8 +3438,11 @@ namespace SQLite
 				else if (call.Method.Name == "Replace" && args.Length == 2) {
 					sqlCall = "(replace(" + obj.CommandText + "," + args[0].CommandText + "," + args[1].CommandText + "))";
 				}
+				else if (call.Method.Name == "ToString") {
+					sqlCall = "(cast(" + obj.CommandText + " as text))";
+				}
 				else {
-					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
+					throw new NotSupportedException($"Method {call.Method.Name} is not supported.");
 				}
 				return new CompileResult { CommandText = sqlCall };
 
@@ -3615,6 +3608,15 @@ namespace SQLite
 			}
 			else if (n == ExpressionType.NotEqual) {
 				return "!=";
+			}
+			else if (n == ExpressionType.Add) {
+				if (((BinaryExpression)expr).Left.Type == typeof (string)) {
+					return "||";
+				}
+				return "+";
+			}
+			else if (n == ExpressionType.Subtract) {
+				return "-";
 			}
 			else {
 				throw new NotSupportedException ("Cannot get SQL for: " + n);
