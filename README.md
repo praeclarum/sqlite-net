@@ -13,7 +13,7 @@ SQLite-net was designed as a quick and convenient database layer. Its design fol
   
 * Thin wrapper over SQLite that is fast and efficient. (This library should not be the performance bottleneck of your queries.)
   
-* Very simple methods for executing CRUD operations and queries safely (using parameters) and for retrieving the results of those query in a strongly typed fashion.
+* Very simple methods for executing CRUD operations and queries safely (using parameters) and for retrieving the results of those queries in a strongly typed fashion.
   
 * Works with your data model without forcing you to change your classes. (Contains a small reflection-driven ORM layer.)
   
