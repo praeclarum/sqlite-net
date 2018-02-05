@@ -275,7 +275,7 @@ namespace SQLite.Tests
 			public string Value { get; set; }
 		}
 
-		static T GetEntity<T> (TestDb db, int id) where T : IEntity, new ()
+		static T GetEntity<T> (TestDb db, int id) where T : class, IEntity 
 		{
 			return db.Table<T> ().FirstOrDefault (x => x.Id == id);
 		}
