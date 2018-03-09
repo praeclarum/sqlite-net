@@ -2764,7 +2764,7 @@ namespace SQLite
 
 		internal static IntPtr NegativePointer = new IntPtr (-1);
 
-		const string DateTimeExactStoreFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
+	    const string DateTimeExactStoreFormat = "yyyy-MM-ddTHH:mm:ss.fffffffZ";
 
 		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
 		{
@@ -2795,10 +2795,10 @@ namespace SQLite
 				}
 				else if (value is DateTime) {
 					if (storeDateTimeAsTicks) {
-						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
+						SQLite3.BindInt64 (stmt, index, ((DateTime)value).ToUniversalTime().Ticks);
 					}
 					else {
-						SQLite3.BindText (stmt, index, ((DateTime)value).ToString (DateTimeExactStoreFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
+						SQLite3.BindText (stmt, index, ((DateTime)value).ToUniversalTime().ToString (DateTimeExactStoreFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
 					}
 				}
 				else if (value is DateTimeOffset) {
@@ -2873,7 +2873,7 @@ namespace SQLite
 				}
 				else if (clrType == typeof (DateTime)) {
 					if (_conn.StoreDateTimeAsTicks) {
-						return new DateTime (SQLite3.ColumnInt64 (stmt, index));
+						return new DateTime (SQLite3.ColumnInt64 (stmt, index), DateTimeKind.Utc);
 					}
 					else {
 						var text = SQLite3.ColumnString (stmt, index);
@@ -2881,7 +2881,7 @@ namespace SQLite
 						if (!DateTime.TryParseExact (text, DateTimeExactStoreFormat, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out resultDate)) {
 							resultDate = DateTime.Parse (text);
 						}
-						return resultDate;
+						return resultDate.ToUniversalTime();
 					}
 				}
 				else if (clrType == typeof (DateTimeOffset)) {

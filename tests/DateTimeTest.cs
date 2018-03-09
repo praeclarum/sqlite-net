@@ -62,10 +62,11 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234),
+				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234, DateTimeKind.Utc),
 			};
 			db.InsertAsync (o).Wait ();
 			o2 = db.GetAsync<TestObj> (o.Id).Result;
+			Assert.AreEqual (DateTimeKind.Utc, o2.ModifiedTime.Kind);
 			Assert.AreEqual (o.ModifiedTime, o2.ModifiedTime);
 		}
 
@@ -79,7 +80,7 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234),
+				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234, DateTimeKind.Utc),
 			};
 			db.Insert (o);
 			o2 = db.Get<TestObj> (o.Id);
