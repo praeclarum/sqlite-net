@@ -81,26 +81,76 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void DeleteAllWithPredicate()
+		public void DeleteWithPredicate()
 		{
 			var db = CreateDb();
 
-			var r = db.Table<TestTable>().Delete(p => p.Test == "Hello World");
+			var r = db.Table<TestTable>().Delete (p => p.Test == "Hello World");
 
 			Assert.AreEqual (Count, r);
 			Assert.AreEqual (0, db.Table<TestTable> ().Count ());
 		}
 
 		[Test]
-		public void DeleteAllWithPredicateHalf()
+		public void DeleteWithPredicateHalf()
 		{
 			var db = CreateDb();
-			db.Insert(new TestTable() { Datum = 1, Test = "Hello World 2" }); 
+			db.Insert(new TestTable() { Datum = 1, Test = "Hello World 2" });
 
-			var r = db.Table<TestTable>().Delete(p => p.Test == "Hello World");
+			var r = db.Table<TestTable>().Delete (p => p.Test == "Hello World");
 
 			Assert.AreEqual (Count, r);
 			Assert.AreEqual (1, db.Table<TestTable> ().Count ());
+		}
+
+		[Test]
+		public void DeleteWithWherePredicate ()
+		{
+			var db = CreateDb ();
+
+			var r = db.Table<TestTable> ().Where (p => p.Test == "Hello World").Delete ();
+
+			Assert.AreEqual (Count, r);
+			Assert.AreEqual (0, db.Table<TestTable> ().Count ());
+		}
+
+		[Test]
+		public void DeleteWithoutPredicate ()
+		{
+			var db = CreateDb ();
+
+			try {
+				var r = db.Table<TestTable> ().Delete ();
+				Assert.Fail ();
+			}
+			catch (InvalidOperationException) {
+			}
+		}
+
+		[Test]
+		public void DeleteWithTake ()
+		{
+			var db = CreateDb ();
+
+			try {
+				var r = db.Table<TestTable> ().Where (p => p.Test == "Hello World").Take (2).Delete ();
+				Assert.Fail ();
+			}
+			catch (InvalidOperationException) {
+			}
+		}
+
+		[Test]
+		public void DeleteWithSkip ()
+		{
+			var db = CreateDb ();
+
+			try {
+				var r = db.Table<TestTable> ().Where (p => p.Test == "Hello World").Skip (2).Delete ();
+				Assert.Fail ();
+			}
+			catch (InvalidOperationException) {
+			}
 		}
 	}
 }

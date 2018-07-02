@@ -43,7 +43,6 @@ public class Stock
 {
 	[PrimaryKey, AutoIncrement]
 	public int Id { get; set; }
-	[MaxLength(8)]
 	public string Symbol { get; set; }
 }
 
@@ -69,7 +68,10 @@ Both APIs are explained in the two sections below.
 Once you have defined your entity, you can automatically generate tables in your database by calling `CreateTable`:
 
 ```csharp
-var db = new SQLiteConnection("foofoo");
+// Get an absolute path to the database file
+var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MyData.db");
+
+var db = new SQLiteConnection(databasePath);
 db.CreateTable<Stock>();
 db.CreateTable<Valuation>();
 ```
@@ -90,7 +92,7 @@ Similar methods exist for `Update` and `Delete`.
 The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
 
 ```csharp
-var conn = new SQLiteConnection("foofoo");
+var conn = new SQLiteConnection(databasePath);
 var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
 foreach (var stock in query)
@@ -100,8 +102,7 @@ foreach (var stock in query)
 You can also query the database at a low-level using the `Query` method:
 
 ```csharp
-public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock)
-{
+public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock stock) {
 	return db.Query<Valuation> ("select * from Valuation where StockId = ?", stock.Id);
 }
 ```
@@ -109,13 +110,14 @@ public static IEnumerable<Valuation> QueryValuations (SQLiteConnection db, Stock
 The generic parameter to the `Query` method specifies the type of object to create for each row. It can be one of your table classes, or any other class whose public properties match the column returned by the query. For instance, we could rewrite the above query as:
 
 ```csharp
-public class Val {
+public class Val
+{
 	public decimal Money { get; set; }
 	public DateTime Date { get; set; }
 }
-public static IEnumerable<Val> QueryVals (SQLiteConnection db, Stock stock)
-{
-	return db.Query<Val> ("select 'Price' as 'Money', 'Time' as 'Date' from Valuation where StockId = ?", stock.Id);
+
+public static IEnumerable<Val> QueryVals (SQLiteConnection db, Stock stock) {
+	return db.Query<Val> ("select \"Price\" as \"Money\", \"Time\" as \"Date\" from Valuation where StockId = ?", stock.Id);
 }
 ```
 
@@ -129,7 +131,10 @@ will work for you.
 Once you have defined your entity, you can automatically generate tables by calling `CreateTableAsync`:
 
 ```csharp
-var conn = new SQLiteAsyncConnection("foofoo");
+// Get an absolute path to the database file
+var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MyData.db");
+
+var conn = new SQLiteAsyncConnection(databasePath);
 
 await conn.CreateTableAsync<Stock>();
 
@@ -144,7 +149,7 @@ Stock stock = new Stock()
 	Symbol = "AAPL"
 };
 
-var conn = new SQLiteAsyncConnection("foofoo");
+var conn = new SQLiteAsyncConnection(databasePath);
 
 await conn.InsertAsync(stock);
 
@@ -158,7 +163,7 @@ you can add predictates for constraining via WHERE clauses and/or adding ORDER B
 retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
 
 ```csharp
-var conn = new SQLiteAsyncConnection("foofoo");
+var conn = new SQLiteAsyncConnection(databasePath);
 var query = await conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
 var result = await query.ToListAsync();
@@ -173,7 +178,7 @@ operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to
 Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
 
 ```csharp
-var conn = new SQLiteAsyncConnection("foofoo");
+var conn = new SQLiteAsyncConnection(databasePath);
 
 var result = await conn.ExecuteScalarAsync<int>("select count(*) from Stock");
 
@@ -184,8 +189,9 @@ Debug.WriteLine(string.Format("Found '{0}' stock items.", result));
 
 You can add support for encrypted databases using SQLCipher by including an additional package [SQLitePCLRaw.bundle_sqlcipher](https://www.nuget.org/packages/SQLitePCLRaw.bundle_sqlcipher/).
 
-I'll let [Eric Sink explain](https://github.com/ericsink/SQLitePCL.raw/wiki/How-to-use-SQLCipher-with-SQLite-net):
+I'll let [Eric Sink explain how to use SQLCipher with SQLite-net](https://github.com/ericsink/SQLitePCL.raw/wiki/How-to-use-SQLCipher-with-SQLite-net):
 
+> The reference to bundle_sqlcipher must be placed in your app project.
 > What happens here is that SQLite-net references bundle_green, but at build time, bundle_sqlcipher gets substituted in its place.
 
 ## Thank you!

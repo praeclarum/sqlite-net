@@ -285,7 +285,6 @@ namespace SQLite.Tests
 		public void ExecuteNonQueryWithNullThrowsException ()
 		{
 			using (TestDb db = new TestDb ()) {
-				TableMapping map;
 
 				db.CreateTable<NotNullNoPK> ();
 
@@ -297,8 +296,11 @@ namespace SQLite.Tests
 					};
 					db.Insert (obj);
 
-					map = db.GetMapping<NotNullNoPK> ();
-					map.GetInsertCommand (db, "OR REPLACE").ExecuteNonQuery (new object[] { 1, null, 123, null, null, null });
+					NotNullNoPK obj2 = new NotNullNoPK () {
+						objectId = 1,
+						OptionalIntProp = 123,
+					};
+					db.InsertOrReplace (obj2);
 				}
 				catch (NotNullConstraintViolationException) {
 					return;

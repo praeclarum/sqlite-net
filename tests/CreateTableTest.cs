@@ -107,5 +107,47 @@ namespace SQLite.Tests
 				}
 			}
 		}
+
+		[Table("WantsNoRowId", WithoutRowId = true)]
+		class WantsNoRowId
+		{
+			[PrimaryKey]
+			public int Id { get; set; }
+			public string Name { get; set; }
+		}
+
+		[Table("sqlite_master")]
+		class SqliteMaster
+		{
+			[Column ("type")]
+			public string Type { get; set; }
+
+			[Column ("name")]
+			public string Name { get; set; }
+
+			[Column ("tbl_name")]
+			public string TableName { get; set; }
+
+			[Column ("rootpage")]
+			public int RootPage { get; set; }
+
+			[Column ("sql")]
+			public string Sql { get; set; }
+		}
+
+		[Test]
+		public void WithoutRowId ()
+		{
+			using(var conn = new TestDb ())
+			{
+				conn.CreateTable<OrderLine> ();
+				var info = conn.Table<SqliteMaster>().Where(m => m.TableName=="OrderLine").First ();
+				Assert.That (!info.Sql.Contains ("without rowid"));
+				
+				conn.CreateTable<WantsNoRowId> ();
+				info = conn.Table<SqliteMaster>().Where(m => m.TableName=="WantsNoRowId").First ();
+				Assert.That (info.Sql.Contains ("without rowid"));
+			}
+		}
     }
 }

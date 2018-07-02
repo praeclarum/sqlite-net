@@ -57,6 +57,11 @@ namespace SQLite.Tests
 		{
 			Trace = true;
 		}
+
+		public TestDb (string path, bool storeDateTimeAsTicks = true) : base (path, storeDateTimeAsTicks)
+		{
+			Trace = true;
+		}
 	}
 
 	public class TestPath

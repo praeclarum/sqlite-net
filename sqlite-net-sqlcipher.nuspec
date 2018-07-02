@@ -7,58 +7,57 @@
     <licenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE.md</licenseUrl>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/nuget/Logo-low.png</iconUrl>
-    <id>sqlite-net-pcl</id>
-    <title>SQLite-net Official Portable Library</title>
+    <id>sqlite-net-sqlcipher</id>
+    <title>SQLite-net Official SQLCipher .NET Standard Library</title>
     <summary>SQLite-net Official Portable Library is the easy way to access sqlite from .NET apps.</summary>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite.</description>
-    <tags>sqlite-net sqlite pcl database orm mobile raw</tags>
+    <description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite with the SQLCipher extension. This enables secure access to the datbase with password (key) access.</description>
+    <tags>sqlite-net sqlite pcl database orm mobile encryption sqlcipher</tags>
     <releaseNotes>See project page</releaseNotes>
     <dependencies>
       <group targetFramework="net">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="win">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="wp">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="wpa">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="netstandard1.1">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
         <dependency id="NETStandard.Library" version="1.6.1" />
       </group>
       <group targetFramework="MonoAndroid10">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="Xamarin.iOS10">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="Xamarin.Mac20">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="portable-net45+win+wpa81+wp80">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="uap">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="dotnet">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="xamarintvos">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
       <group targetFramework="xamarinwatchos">
-        <dependency id="SQLitePCLRaw.bundle_green" version="1.1.8" />
+        <dependency id="SQLitePCLRaw.bundle_sqlcipher" version="1.1.8" />
       </group>
     </dependencies>
   </metadata>
   <files>
-    <file src="nuget/SQLite-net/bin/Release/SQLite-net.*" target="lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+MonoTouch10+Xamarin.iOS10" />
-    <file src="nuget/SQLite-net-std/bin/Release/netstandard1.1/SQLite-net.*" target="lib/netstandard1.1" />
+    <file src="nuget/SQLite-net-sqlcipher/bin/Release/netstandard1.1/SQLite-net.*" target="lib/netstandard1.1" />
   </files>
 </package>
