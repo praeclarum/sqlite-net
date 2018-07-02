@@ -2406,7 +2406,7 @@ namespace SQLite
 
 		public string TableName { get; protected set; }
 
-		public bool WithoutRowId { get; protected set; }
+		public bool WithoutRowId { get; internal set; }
 
 		public ColumnMapping[] Columns { get; internal set; }
 
@@ -2681,166 +2681,176 @@ namespace SQLite
 			return defaultValue;
 		}
 	}
-	
+
 	public class TableMappingBuilder<T>
 	{
 		string _tableName;
 		PropertyInfo _primaryKey;
+		bool _withoutRowId;
 
-		readonly List<PropertyInfo> _ignore = new List<PropertyInfo>();
-		readonly List<PropertyInfo> _autoInc = new List<PropertyInfo>();
-		readonly List<PropertyInfo> _notNull = new List<PropertyInfo>();
-		readonly List<PropertyInfo> _storeAsText = new List<PropertyInfo>();
+		readonly List<PropertyInfo> _ignore = new List<PropertyInfo> ();
+		readonly List<PropertyInfo> _autoInc = new List<PropertyInfo> ();
+		readonly List<PropertyInfo> _notNull = new List<PropertyInfo> ();
+		readonly List<PropertyInfo> _storeAsText = new List<PropertyInfo> ();
 
-		readonly Dictionary<PropertyInfo, string> _columnNames = new Dictionary<PropertyInfo, string>();
-		readonly Dictionary<PropertyInfo, int?> _maxLengths = new Dictionary<PropertyInfo, int?>();
-		readonly Dictionary<PropertyInfo, string> _collations = new Dictionary<PropertyInfo, string>();
-		readonly Dictionary<PropertyInfo, List<ColumnIndex>> _indices = new Dictionary<PropertyInfo, List<ColumnIndex>>();
+		readonly Dictionary<PropertyInfo, string> _columnNames = new Dictionary<PropertyInfo, string> ();
+		readonly Dictionary<PropertyInfo, int?> _maxLengths = new Dictionary<PropertyInfo, int?> ();
+		readonly Dictionary<PropertyInfo, string> _collations = new Dictionary<PropertyInfo, string> ();
+		readonly Dictionary<PropertyInfo, List<ColumnIndex>> _indices = new Dictionary<PropertyInfo, List<ColumnIndex>> ();
 
 		static Type MappedType => typeof(T);
 
-		public TableMappingBuilder<T> TableName(string name)
+		public TableMappingBuilder<T> TableName (string name)
 		{
 			_tableName = name;
 			return this;
 		}
 
-		public TableMappingBuilder<T> ColumnName(Expression<Func<T, object>> property, string name)
+		public TableMappingBuilder<T> WithoutRowId (bool value = true)
 		{
-			_columnNames.AddPropertyValue(property, name);
+			_withoutRowId = value;
 			return this;
 		}
 
-		public TableMappingBuilder<T> MaxLength(Expression<Func<T, object>> property, int maxLength)
+		public TableMappingBuilder<T> ColumnName (Expression<Func<T, object>> property, string name)
 		{
-			_maxLengths.AddPropertyValue(property, maxLength);
+			_columnNames.AddPropertyValue (property, name);
 			return this;
 		}
 
-		public TableMappingBuilder<T> Collation(Expression<Func<T, object>> property, string collation)
+		public TableMappingBuilder<T> MaxLength (Expression<Func<T, object>> property, int maxLength)
 		{
-			_collations.AddPropertyValue(property, collation);
+			_maxLengths.AddPropertyValue (property, maxLength);
 			return this;
 		}
 
-		public TableMappingBuilder<T> Index(Expression<Func<T, object>> property, bool unique = false, string indexName = null, int order = 0)
+		public TableMappingBuilder<T> Collation (Expression<Func<T, object>> property, string collation)
 		{
-			var prop = property.AsPropertyInfo();
-			if (!_indices.ContainsKey(prop))
-			{
-				_indices[prop] = new List<ColumnIndex>();
+			_collations.AddPropertyValue (property, collation);
+			return this;
+		}
+
+		public TableMappingBuilder<T> Index (Expression<Func<T, object>> property, bool unique = false, string indexName = null, int order = 0)
+		{
+			var prop = property.AsPropertyInfo ();
+			if (!_indices.ContainsKey (prop)) {
+				_indices[prop] = new List<ColumnIndex> ();
 			}
 
-			_indices[prop].Add(new ColumnIndex { Name = indexName, Order = order, Unique = unique });
+			_indices[prop].Add (new ColumnIndex {
+				Name = indexName,
+				Order = order,
+				Unique = unique
+			});
 			return this;
 		}
 
-		public TableMappingBuilder<T> Index(string indexName, Expression<Func<T, object>> property, bool unique = false, int order = 0)
+		public TableMappingBuilder<T> Index (string indexName, Expression<Func<T, object>> property, bool unique = false, int order = 0)
 		{
-			return Index(property, unique, indexName, order);
+			return Index (property, unique, indexName, order);
 		}
 
-		public TableMappingBuilder<T> Unique(Expression<Func<T, object>> property, string indexName = null, int order = 0)
+		public TableMappingBuilder<T> Unique (Expression<Func<T, object>> property, string indexName = null, int order = 0)
 		{
-			return Index(property, true, indexName, order);
+			return Index (property, true, indexName, order);
 		}
 
-		public TableMappingBuilder<T> Unique(string indexName, Expression<Func<T, object>> property, int order = 0)
+		public TableMappingBuilder<T> Unique (string indexName, Expression<Func<T, object>> property, int order = 0)
 		{
-			return Index(property, true, indexName, order);
+			return Index (property, true, indexName, order);
 		}
 
-		public TableMappingBuilder<T> Index(params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> Index (params Expression<Func<T, object>>[] properties)
 		{
-			for (int i = 0; i < properties.Length; i++)
-			{
-				Index(properties[i], false, null, i);
+			for (int i = 0; i < properties.Length; i++) {
+				Index (properties[i], false, null, i);
 			}
+
 			return this;
 		}
 
-		public TableMappingBuilder<T> Index(string indexName, params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> Index (string indexName, params Expression<Func<T, object>>[] properties)
 		{
-			for (int i = 0; i < properties.Length; i++)
-			{
-				Index(properties[i], false, indexName, i);
+			for (int i = 0; i < properties.Length; i++) {
+				Index (properties[i], false, indexName, i);
 			}
+
 			return this;
 		}
 
-		public TableMappingBuilder<T> Unique(params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> Unique (params Expression<Func<T, object>>[] properties)
 		{
-			for (int i = 0; i < properties.Length; i++)
-			{
-				Index(properties[i], true, null, i);
+			for (int i = 0; i < properties.Length; i++) {
+				Index (properties[i], true, null, i);
 			}
+
 			return this;
 		}
 
-		public TableMappingBuilder<T> Unique(string indexName, params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> Unique (string indexName, params Expression<Func<T, object>>[] properties)
 		{
-			for (int i = 0; i < properties.Length; i++)
-			{
-				Index(properties[i], true, indexName, i);
+			for (int i = 0; i < properties.Length; i++) {
+				Index (properties[i], true, indexName, i);
 			}
+
 			return this;
 		}
 
-		public TableMappingBuilder<T> PrimaryKey(Expression<Func<T, object>> property, bool autoIncrement = false)
+		public TableMappingBuilder<T> PrimaryKey (Expression<Func<T, object>> property, bool autoIncrement = false)
 		{
-			_primaryKey = property.AsPropertyInfo();
-			if (autoIncrement)
-			{
-				_autoInc.Add(_primaryKey);
+			_primaryKey = property.AsPropertyInfo ();
+			if (autoIncrement) {
+				_autoInc.Add (_primaryKey);
 			}
+
 			return this;
 		}
 
-		public TableMappingBuilder<T> Ignore(Expression<Func<T, object>> property)
+		public TableMappingBuilder<T> Ignore (Expression<Func<T, object>> property)
 		{
-			_ignore.AddProperty(property);
+			_ignore.AddProperty (property);
 			return this;
 		}
 
-		public TableMappingBuilder<T> Ignore(params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> Ignore (params Expression<Func<T, object>>[] properties)
 		{
-			_ignore.AddProperties(properties);
+			_ignore.AddProperties (properties);
 			return this;
 		}
 
-		public TableMappingBuilder<T> AutoIncrement(Expression<Func<T, object>> property)
+		public TableMappingBuilder<T> AutoIncrement (Expression<Func<T, object>> property)
 		{
-			_autoInc.AddProperty(property);
+			_autoInc.AddProperty (property);
 			return this;
 		}
 
-		public TableMappingBuilder<T> AutoIncrement(params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> AutoIncrement (params Expression<Func<T, object>>[] properties)
 		{
-			_autoInc.AddProperties(properties);
+			_autoInc.AddProperties (properties);
 			return this;
 		}
 
-		public TableMappingBuilder<T> NotNull(Expression<Func<T, object>> property)
+		public TableMappingBuilder<T> NotNull (Expression<Func<T, object>> property)
 		{
-			_notNull.AddProperty(property);
+			_notNull.AddProperty (property);
 			return this;
 		}
 
-		public TableMappingBuilder<T> NotNull(params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> NotNull (params Expression<Func<T, object>>[] properties)
 		{
-			_notNull.AddProperties(properties);
+			_notNull.AddProperties (properties);
 			return this;
 		}
 
-		public TableMappingBuilder<T> StoreAsText(Expression<Func<T, object>> property)
+		public TableMappingBuilder<T> StoreAsText (Expression<Func<T, object>> property)
 		{
-			_storeAsText.AddProperty(property);
+			_storeAsText.AddProperty (property);
 			return this;
 		}
 
-		public TableMappingBuilder<T> StoreAsText(params Expression<Func<T, object>>[] properties)
+		public TableMappingBuilder<T> StoreAsText (params Expression<Func<T, object>>[] properties)
 		{
-			_storeAsText.AddProperties(properties);
+			_storeAsText.AddProperties (properties);
 			return this;
 		}
 
@@ -2850,7 +2860,9 @@ namespace SQLite
 		/// <returns>The table mapping as created by the builder.</returns>
 		public TableMapping ToMapping ()
 		{
-			var tableMapping = new TableMapping (MappedType, _tableName ?? MappedType.Name);
+			var tableMapping = new TableMapping (MappedType, _tableName ?? MappedType.Name) {
+				WithoutRowId = _withoutRowId
+			};
 
 			var props = new List<PropertyInfo> ();
 			var baseType = MappedType;
