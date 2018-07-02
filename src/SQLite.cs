@@ -400,12 +400,12 @@ namespace SQLite
 			lock (_mappings) {
 				if (_mappings.TryGetValue (key, out map)) {
 					if (createFlags != CreateFlags.None && createFlags != map.CreateFlags) {
-						map = new TableMapping (type, createFlags);
+						map = new TableMappingFromAttributes (type, createFlags);
 						_mappings[key] = map;
 					}
 				}
 				else {
-					map = new TableMapping (type, createFlags);
+					map = new TableMappingFromAttributes (type, createFlags);
 					_mappings.Add (key, map);
 				}
 			}
@@ -2171,27 +2171,67 @@ namespace SQLite
 
 	public class TableMapping
 	{
-		public Type MappedType { get; private set; }
+		public Type MappedType { get; }
 
-		public string TableName { get; private set; }
+		public string TableName { get; protected set; }
 
-		public bool WithoutRowId { get; private set; }
+		public bool WithoutRowId { get; protected set; }
 
-		public ColumnMapping[] Columns { get; private set; }
+		public ColumnMapping[] Columns { get; protected set; }
 
-		public ColumnMapping PK { get; private set; }
+		public ColumnMapping PK { get; protected set; }
 
-		public string GetByPrimaryKeySql { get; private set; }
+		public string GetByPrimaryKeySql { get; protected set; }
 
-		public CreateFlags CreateFlags { get; private set; }
+		public CreateFlags CreateFlags { get; protected set; }
 
-		readonly ColumnMapping _autoPk;
-		readonly ColumnMapping[] _insertColumns;
-		readonly ColumnMapping[] _insertOrReplaceColumns;
+		protected ColumnMapping _autoPk;
+		protected ColumnMapping[] _insertColumns;
+		protected ColumnMapping[] _insertOrReplaceColumns;
+		
+		public bool HasAutoIncPK { get; protected set; }
 
-		public TableMapping (Type type, CreateFlags createFlags = CreateFlags.None)
+		public void SetAutoIncPK (object obj, long id)
+		{
+			if (_autoPk != null) {
+				_autoPk.SetValue (obj, Convert.ChangeType (id, _autoPk.ColumnType, null));
+			}
+		}
+
+		public ColumnMapping[] InsertColumns {
+			get {
+				return _insertColumns;
+			}
+		}
+
+		public ColumnMapping[] InsertOrReplaceColumns {
+			get {
+				return _insertOrReplaceColumns;
+			}
+		}
+
+		public ColumnMapping FindColumnWithPropertyName (string propertyName)
+		{
+			var exact = Columns.FirstOrDefault (c => c.PropertyName == propertyName);
+			return exact;
+		}
+
+		public ColumnMapping FindColumn (string columnName)
+		{
+			var exact = Columns.FirstOrDefault (c => c.Name.ToLower () == columnName.ToLower ());
+			return exact;
+		}
+
+		public TableMapping (Type type)
 		{
 			MappedType = type;
+		}
+	}
+
+	class TableMappingFromAttributes : TableMapping
+	{
+		internal TableMappingFromAttributes (Type type, CreateFlags createFlags = CreateFlags.None) : base(type)
+		{
 			CreateFlags = createFlags;
 
 			var typeInfo = type.GetTypeInfo ();
@@ -2254,39 +2294,6 @@ namespace SQLite
 
 			_insertColumns = Columns.Where (c => !c.IsAutoInc).ToArray ();
 			_insertOrReplaceColumns = Columns.ToArray ();
-		}
-
-		public bool HasAutoIncPK { get; private set; }
-
-		public void SetAutoIncPK (object obj, long id)
-		{
-			if (_autoPk != null) {
-				_autoPk.SetValue (obj, Convert.ChangeType (id, _autoPk.ColumnType, null));
-			}
-		}
-
-		public ColumnMapping[] InsertColumns {
-			get {
-				return _insertColumns;
-			}
-		}
-
-		public ColumnMapping[] InsertOrReplaceColumns {
-			get {
-				return _insertOrReplaceColumns;
-			}
-		}
-
-		public ColumnMapping FindColumnWithPropertyName (string propertyName)
-		{
-			var exact = Columns.FirstOrDefault (c => c.PropertyName == propertyName);
-			return exact;
-		}
-
-		public ColumnMapping FindColumn (string columnName)
-		{
-			var exact = Columns.FirstOrDefault (c => c.Name.ToLower () == columnName.ToLower ());
-			return exact;
 		}
 	}
 
