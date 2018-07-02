@@ -2055,6 +2055,13 @@ namespace SQLite
 		}
 	}
 
+	public interface IColumnIndex
+	{
+		string Name { get; set; }
+		int Order { get; set; }
+		bool Unique { get; set; }
+	}
+
 	[AttributeUsage (AttributeTargets.Class)]
 	public class TableAttribute : Attribute
 	{
@@ -2095,7 +2102,7 @@ namespace SQLite
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]
-	public class IndexedAttribute : Attribute
+	public class IndexedAttribute : Attribute, IColumnIndex
 	{
 		public string Name { get; set; }
 		public int Order { get; set; }
@@ -2167,6 +2174,13 @@ namespace SQLite
 	[AttributeUsage (AttributeTargets.Enum)]
 	public class StoreAsTextAttribute : Attribute
 	{
+	}
+
+	public class ColumnIndex : IColumnIndex
+	{
+		public string Name { get; set; }
+		public int Order { get; set; }
+		public bool Unique { get; set; }
 	}
 
 	public class TableMapping
@@ -2316,7 +2330,7 @@ namespace SQLite
 
 		public bool IsPK { get; protected set; }
 
-		public IEnumerable<IndexedAttribute> Indices { get; set; }
+		public IEnumerable<IColumnIndex> Indices { get; set; }
 
 		public bool IsNullable { get; protected set; }
 
@@ -2372,7 +2386,7 @@ namespace SQLite
 			    && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
 			    && Name.EndsWith (Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
 			) {
-				Indices = new IndexedAttribute[] { new IndexedAttribute () };
+				Indices = new IColumnIndex[] { new IndexedAttribute () };
 			}
 			IsNullable = !(IsPK || Orm.IsMarkedNotNull (prop));
 			MaxStringLength = Orm.MaxStringLength (prop);
