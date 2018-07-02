@@ -426,6 +426,23 @@ namespace SQLite
 		{
 			return GetMapping (typeof (T), createFlags);
 		}
+		
+		/// <summary>
+		/// Adds or replaces a table mapping in the collection. 
+		/// </summary>
+		/// <param name="tableMapping">The table mapping to add or replace.</param>
+		void UseMapping (TableMapping tableMapping)
+		{
+			var key = tableMapping.MappedType.FullName;
+			lock (_mappings) {
+				if (_mappings.ContainsKey(key)) {
+					_mappings[key] = tableMapping;
+				}
+				else {
+					_mappings.Add (key, tableMapping);
+				}
+			}
+		}
 
 		private struct IndexedColumn
 		{
