@@ -74,7 +74,7 @@ namespace SQLite
 
 	public class NotNullConstraintViolationException : SQLiteException
 	{
-		public IEnumerable<TableMapping.Column> Columns { get; protected set; }
+		public IEnumerable<ColumnMapping> Columns { get; protected set; }
 
 		protected NotNullConstraintViolationException (SQLite3.Result r, string message)
 			: this (r, message, null, null)
@@ -762,7 +762,7 @@ namespace SQLite
 
 		void MigrateTable (TableMapping map, List<ColumnInfo> existingCols)
 		{
-			var toBeAdded = new List<TableMapping.Column> ();
+			var toBeAdded = new List<ColumnMapping> ();
 
 			foreach (var p in map.Columns) {
 				var found = false;
@@ -2177,17 +2177,17 @@ namespace SQLite
 
 		public bool WithoutRowId { get; private set; }
 
-		public Column[] Columns { get; private set; }
+		public ColumnMapping[] Columns { get; private set; }
 
-		public Column PK { get; private set; }
+		public ColumnMapping PK { get; private set; }
 
 		public string GetByPrimaryKeySql { get; private set; }
 
 		public CreateFlags CreateFlags { get; private set; }
 
-		readonly Column _autoPk;
-		readonly Column[] _insertColumns;
-		readonly Column[] _insertOrReplaceColumns;
+		readonly ColumnMapping _autoPk;
+		readonly ColumnMapping[] _insertColumns;
+		readonly ColumnMapping[] _insertOrReplaceColumns;
 
 		public TableMapping (Type type, CreateFlags createFlags = CreateFlags.None)
 		{
@@ -2225,11 +2225,11 @@ namespace SQLite
 				baseType = ti.BaseType;
 			}
 
-			var cols = new List<Column> ();
+			var cols = new List<ColumnMapping> ();
 			foreach (var p in props) {
 				var ignore = p.IsDefined (typeof (IgnoreAttribute), true);
 				if (!ignore) {
-					cols.Add (new Column (p, createFlags));
+					cols.Add (new ColumnMapping (p, createFlags));
 				}
 			}
 			Columns = cols.ToArray ();
@@ -2265,105 +2265,105 @@ namespace SQLite
 			}
 		}
 
-		public Column[] InsertColumns {
+		public ColumnMapping[] InsertColumns {
 			get {
 				return _insertColumns;
 			}
 		}
 
-		public Column[] InsertOrReplaceColumns {
+		public ColumnMapping[] InsertOrReplaceColumns {
 			get {
 				return _insertOrReplaceColumns;
 			}
 		}
 
-		public Column FindColumnWithPropertyName (string propertyName)
+		public ColumnMapping FindColumnWithPropertyName (string propertyName)
 		{
 			var exact = Columns.FirstOrDefault (c => c.PropertyName == propertyName);
 			return exact;
 		}
 
-		public Column FindColumn (string columnName)
+		public ColumnMapping FindColumn (string columnName)
 		{
 			var exact = Columns.FirstOrDefault (c => c.Name.ToLower () == columnName.ToLower ());
 			return exact;
 		}
+	}
 
-		public class Column
+	public class ColumnMapping
+	{
+		PropertyInfo _prop;
+
+		public string Name { get; private set; }
+
+		public PropertyInfo PropertyInfo => _prop;
+
+		public string PropertyName { get { return _prop.Name; } }
+
+		public Type ColumnType { get; private set; }
+
+		public string Collation { get; private set; }
+
+		public bool IsAutoInc { get; private set; }
+		public bool IsAutoGuid { get; private set; }
+
+		public bool IsPK { get; private set; }
+
+		public IEnumerable<IndexedAttribute> Indices { get; set; }
+
+		public bool IsNullable { get; private set; }
+
+		public int? MaxStringLength { get; private set; }
+
+		public bool StoreAsText { get; private set; }
+
+		public ColumnMapping (PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
 		{
-			PropertyInfo _prop;
+			var colAttr = prop.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (ColumnAttribute));
 
-			public string Name { get; private set; }
+			_prop = prop;
+			Name = (colAttr != null && colAttr.ConstructorArguments.Count > 0) ?
+				colAttr.ConstructorArguments[0].Value?.ToString () :
+				prop.Name;
+			//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
+			ColumnType = Nullable.GetUnderlyingType (prop.PropertyType) ?? prop.PropertyType;
+			Collation = Orm.Collation (prop);
 
-			public PropertyInfo PropertyInfo => _prop;
+			IsPK = Orm.IsPK (prop) ||
+			       (((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
+			        String.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
-			public string PropertyName { get { return _prop.Name; } }
+			var isAuto = Orm.IsAutoInc (prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+			IsAutoGuid = isAuto && ColumnType == typeof (Guid);
+			IsAutoInc = isAuto && !IsAutoGuid;
 
-			public Type ColumnType { get; private set; }
-
-			public string Collation { get; private set; }
-
-			public bool IsAutoInc { get; private set; }
-			public bool IsAutoGuid { get; private set; }
-
-			public bool IsPK { get; private set; }
-
-			public IEnumerable<IndexedAttribute> Indices { get; set; }
-
-			public bool IsNullable { get; private set; }
-
-			public int? MaxStringLength { get; private set; }
-
-			public bool StoreAsText { get; private set; }
-
-			public Column (PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
-			{
-				var colAttr = prop.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (ColumnAttribute));
-
-				_prop = prop;
-				Name = (colAttr != null && colAttr.ConstructorArguments.Count > 0) ?
-						colAttr.ConstructorArguments[0].Value?.ToString () :
-						prop.Name;
-				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
-				ColumnType = Nullable.GetUnderlyingType (prop.PropertyType) ?? prop.PropertyType;
-				Collation = Orm.Collation (prop);
-
-				IsPK = Orm.IsPK (prop) ||
-					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
-					 	string.Compare (prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
-
-				var isAuto = Orm.IsAutoInc (prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
-				IsAutoGuid = isAuto && ColumnType == typeof (Guid);
-				IsAutoInc = isAuto && !IsAutoGuid;
-
-				Indices = Orm.GetIndices (prop);
-				if (!Indices.Any ()
-					&& !IsPK
-					&& ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
-					&& Name.EndsWith (Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
-					) {
-					Indices = new IndexedAttribute[] { new IndexedAttribute () };
-				}
-				IsNullable = !(IsPK || Orm.IsMarkedNotNull (prop));
-				MaxStringLength = Orm.MaxStringLength (prop);
-
-				StoreAsText = prop.PropertyType.GetTypeInfo ().CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
+			Indices = Orm.GetIndices (prop);
+			if (!Indices.Any ()
+			    && !IsPK
+			    && ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
+			    && Name.EndsWith (Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
+			) {
+				Indices = new IndexedAttribute[] { new IndexedAttribute () };
 			}
+			IsNullable = !(IsPK || Orm.IsMarkedNotNull (prop));
+			MaxStringLength = Orm.MaxStringLength (prop);
 
-			public void SetValue (object obj, object val)
-			{
-				if (val != null && ColumnType.GetTypeInfo ().IsEnum) {
-					_prop.SetValue (obj, Enum.ToObject (ColumnType, val));
-				}
-				else {
-					_prop.SetValue (obj, val, null);
-				}
-			}
+			StoreAsText = prop.PropertyType.GetTypeInfo ().CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
+		}
 
-			public object GetValue (object obj)
-			{
-				return _prop.GetValue (obj, null);
+		public void SetValue (object obj, object val)
+		{
+			if (val != null && ColumnType.GetTypeInfo ().IsEnum) {
+				_prop.SetValue (obj, Enum.ToObject (ColumnType, val));
 			}
+			else {
+				_prop.SetValue (obj, val, null);
+			}
+		}
+
+		public object GetValue (object obj)
+		{
+			return _prop.GetValue (obj, null);
 		}
 	}
 
@@ -2433,7 +2433,7 @@ namespace SQLite
 			return obj.GetType ();
 		}
 
-		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
+		public static string SqlDecl (ColumnMapping p, bool storeDateTimeAsTicks)
 		{
 			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
 
@@ -2453,7 +2453,7 @@ namespace SQLite
 			return decl;
 		}
 
-		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
+		public static string SqlType (ColumnMapping p, bool storeDateTimeAsTicks)
 		{
 			var clrType = p.ColumnType;
 			if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64)) {
@@ -2657,7 +2657,7 @@ namespace SQLite
 
 			var stmt = Prepare ();
 			try {
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+				var cols = new ColumnMapping[SQLite3.ColumnCount (stmt)];
 
 				for (int i = 0; i < cols.Length; i++) {
 					var name = SQLite3.ColumnName16 (stmt, i);
