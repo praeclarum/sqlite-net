@@ -2263,6 +2263,17 @@ namespace SQLite
 			MappedType = type;
 			TableName = tableName ?? type.Name;
 		}
+		
+		/// <summary>
+		/// Returns a TableMappingBuilder for constructing table mappings with a Fluent API.
+		/// Please note: the SQLite attributes on the type's properties will be ignored (by design) if this method is used.
+		/// </summary>
+		/// <typeparam name="T">The entity type to build a table mapping for.</typeparam>
+		/// <returns>The table mapping builder.</returns>
+		public static TableMappingBuilder<T> Build<T>()
+		{
+			return new TableMappingBuilder<T>();
+		}
 	}
 
 	class TableMappingFromAttributes : TableMapping
