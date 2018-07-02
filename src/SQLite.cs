@@ -431,7 +431,7 @@ namespace SQLite
 		/// Adds or replaces a table mapping in the collection. 
 		/// </summary>
 		/// <param name="tableMapping">The table mapping to add or replace.</param>
-		void UseMapping (TableMapping tableMapping)
+		public void UseMapping (TableMapping tableMapping)
 		{
 			var key = tableMapping.MappedType.FullName;
 			lock (_mappings) {
