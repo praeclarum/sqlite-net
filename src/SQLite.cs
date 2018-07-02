@@ -2310,6 +2310,17 @@ namespace SQLite
 		{
 			return new TableMappingBuilder<T>();
 		}
+
+		/// <summary>
+		/// Returns a TableMapping by retrieving the attributes of the given type using reflection.
+		/// </summary>
+		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>
+		/// <typeparam name="T">The type to reflect to create the table mapping.</typeparam>
+		/// <returns>The table mapping for the reflected type.</returns>
+		public static TableMapping From<T> (CreateFlags createFlags = CreateFlags.None)
+		{
+			return new TableMappingFromAttributes (typeof(T), createFlags);
+		}
 	}
 
 	class TableMappingFromAttributes : TableMapping
