@@ -507,9 +507,14 @@ namespace SQLite
 		{
 			var map = GetMapping (ty, createFlags);
 
+			return CreateTableFromMapping (map, createFlags);
+		}
+
+		CreateTableResult CreateTableFromMapping (TableMapping map, CreateFlags createFlags)
+		{
 			// Present a nice error if no columns specified
 			if (map.Columns.Length == 0) {
-				throw new Exception (string.Format ("Cannot create a table without columns (does '{0}' have public properties?)", ty.FullName));
+				throw new Exception (string.Format ("Cannot create a table without columns (does '{0}' have public properties?)", map.MappedType.FullName));
 			}
 
 			// Check if the table exists
@@ -518,7 +523,6 @@ namespace SQLite
 
 			// Create or migrate it
 			if (existingCols.Count == 0) {
-
 				// Facilitate virtual tables a.k.a. full-text search.
 				bool fts3 = (createFlags & CreateFlags.FullTextSearch3) != 0;
 				bool fts4 = (createFlags & CreateFlags.FullTextSearch4) != 0;
@@ -532,7 +536,7 @@ namespace SQLite
 				var decl = string.Join (",\n", decls.ToArray ());
 				query += decl;
 				query += ")";
-				if(map.WithoutRowId) {
+				if (map.WithoutRowId) {
 					query += " without rowid";
 				}
 
