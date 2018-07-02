@@ -580,6 +580,21 @@ namespace SQLite
 
 			return result;
 		}
+		
+		/// <summary>
+		/// Executes a "create table if not exists" on the database. It also
+		/// creates any specified indexes on the columns of the table. 
+		/// </summary>
+		/// <param name="map">The table mapping to create the table from.</param>
+		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>
+		/// <returns>
+		/// Whether the table was created or migrated.
+		/// </returns>
+		public CreateTableResult CreateTable (TableMapping map, CreateFlags createFlags = CreateFlags.None)
+		{
+			UseMapping (map);
+			return CreateTableFromMapping (map, createFlags);
+		}
 
 		/// <summary>
 		/// Executes a "create table if not exists" on the database for each type. It also
@@ -666,6 +681,23 @@ namespace SQLite
 			foreach (Type type in types) {
 				var aResult = CreateTable (type, createFlags);
 				result.Results[type] = aResult;
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table.
+		/// </summary>
+		/// <returns>
+		/// Whether the table was created or migrated for each type.
+		/// </returns>
+		public CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params TableMapping[] mappings)
+		{
+			var result = new CreateTablesResult ();
+			foreach (var mapping in mappings) {
+				var aResult = CreateTable (mapping, createFlags);
+				result.Results[mapping.MappedType] = aResult;
 			}
 			return result;
 		}
