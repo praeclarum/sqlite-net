@@ -2229,7 +2229,7 @@ namespace SQLite
 			foreach (var p in props) {
 				var ignore = p.IsDefined (typeof (IgnoreAttribute), true);
 				if (!ignore) {
-					cols.Add (new ColumnMapping (p, createFlags));
+					cols.Add (new ColumnMappingFromAttributes (p, createFlags));
 				}
 			}
 			Columns = cols.ToArray ();
@@ -2292,36 +2292,58 @@ namespace SQLite
 
 	public class ColumnMapping
 	{
-		PropertyInfo _prop;
+		readonly PropertyInfo _prop;
 
-		public string Name { get; private set; }
+		public string Name { get; protected set; }
 
 		public PropertyInfo PropertyInfo => _prop;
 
 		public string PropertyName { get { return _prop.Name; } }
 
-		public Type ColumnType { get; private set; }
+		public Type ColumnType { get; protected set; }
 
-		public string Collation { get; private set; }
+		public string Collation { get; protected set; }
 
-		public bool IsAutoInc { get; private set; }
-		public bool IsAutoGuid { get; private set; }
+		public bool IsAutoInc { get; protected set; }
+		public bool IsAutoGuid { get; protected set; }
 
-		public bool IsPK { get; private set; }
+		public bool IsPK { get; protected set; }
 
 		public IEnumerable<IndexedAttribute> Indices { get; set; }
 
-		public bool IsNullable { get; private set; }
+		public bool IsNullable { get; protected set; }
 
-		public int? MaxStringLength { get; private set; }
+		public int? MaxStringLength { get; protected set; }
 
-		public bool StoreAsText { get; private set; }
+		public bool StoreAsText { get; protected set; }
 
-		public ColumnMapping (PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
+		public ColumnMapping (PropertyInfo prop)
+		{
+			_prop = prop;
+		}
+
+		public void SetValue (object obj, object val)
+		{
+			if (val != null && ColumnType.GetTypeInfo ().IsEnum) {
+				_prop.SetValue (obj, Enum.ToObject (ColumnType, val));
+			}
+			else {
+				_prop.SetValue (obj, val, null);
+			}
+		}
+
+		public object GetValue (object obj)
+		{
+			return _prop.GetValue (obj, null);
+		}
+	}
+
+	class ColumnMappingFromAttributes : ColumnMapping
+	{
+		internal ColumnMappingFromAttributes (PropertyInfo prop, CreateFlags createFlags = CreateFlags.None) : base(prop)
 		{
 			var colAttr = prop.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (ColumnAttribute));
 
-			_prop = prop;
 			Name = (colAttr != null && colAttr.ConstructorArguments.Count > 0) ?
 				colAttr.ConstructorArguments[0].Value?.ToString () :
 				prop.Name;
@@ -2349,21 +2371,6 @@ namespace SQLite
 			MaxStringLength = Orm.MaxStringLength (prop);
 
 			StoreAsText = prop.PropertyType.GetTypeInfo ().CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
-		}
-
-		public void SetValue (object obj, object val)
-		{
-			if (val != null && ColumnType.GetTypeInfo ().IsEnum) {
-				_prop.SetValue (obj, Enum.ToObject (ColumnType, val));
-			}
-			else {
-				_prop.SetValue (obj, val, null);
-			}
-		}
-
-		public object GetValue (object obj)
-		{
-			return _prop.GetValue (obj, null);
 		}
 	}
 
