@@ -2417,8 +2417,6 @@ namespace SQLite
 		public CreateFlags CreateFlags { get; protected set; }
 
 		protected ColumnMapping _autoPk;
-		protected ColumnMapping[] _insertColumns;
-		protected ColumnMapping[] _insertOrReplaceColumns;
 
 		internal ColumnMapping AutoIncPK {
 			get { return _autoPk; }
@@ -2433,18 +2431,9 @@ namespace SQLite
 				_autoPk.SetValue (obj, Convert.ChangeType (id, _autoPk.ColumnType, null));
 			}
 		}
-
-		public ColumnMapping[] InsertColumns {
-			get {
-				return _insertColumns;
-			}
-		}
-
-		public ColumnMapping[] InsertOrReplaceColumns {
-			get {
-				return _insertOrReplaceColumns;
-			}
-		}
+		
+		public ColumnMapping[] InsertColumns => Columns.Where (c => !c.IsAutoInc).ToArray ();
+		public ColumnMapping[] InsertOrReplaceColumns => Columns.ToArray ();
 
 		public ColumnMapping FindColumnWithPropertyName (string propertyName)
 		{
@@ -2548,9 +2537,6 @@ namespace SQLite
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
-
-			_insertColumns = Columns.Where (c => !c.IsAutoInc).ToArray ();
-			_insertOrReplaceColumns = Columns.ToArray ();
 		}
 	}
 
