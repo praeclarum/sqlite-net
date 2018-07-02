@@ -3643,12 +3643,12 @@ namespace SQLite
 
 		Expression _selector;
 
-		TableQuery (SQLiteConnection conn, TableMapping table)
+		public TableQuery (SQLiteConnection conn, TableMapping table)
 		{
 			Connection = conn;
 			Table = table;
 		}
-
+		
 		public TableQuery (SQLiteConnection conn)
 		{
 			Connection = conn;
