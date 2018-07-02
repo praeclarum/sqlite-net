@@ -64,29 +64,29 @@ namespace SQLite.Tests
 		}
 		
 		//[Test]
-		public void JoinThenWhere ()
-		{
-			var q = from ol in _db.Table<OrderLine> ()
-					join o in _db.Table<Order> () on ol.OrderId equals o.Id
-					where o.Id == 1
-					select new { o.Id, ol.ProductId, ol.Quantity };
+		//public void JoinThenWhere ()
+		//{
+		//	var q = from ol in _db.Table<OrderLine> ()
+		//			join o in _db.Table<Order> () on ol.OrderId equals o.Id
+		//			where o.Id == 1
+		//			select new { o.Id, ol.ProductId, ol.Quantity };
 			
-			var r = System.Linq.Enumerable.ToList (q);
+		//	var r = System.Linq.Enumerable.ToList (q);
 			
-			Assert.AreEqual (2, r.Count);
-		}
+		//	Assert.AreEqual (2, r.Count);
+		//}
 		
 		//[Test]
-		public void WhereThenJoin ()
-		{
-			var q = from ol in _db.Table<OrderLine> ()
-					where ol.OrderId == 1
-					join o in _db.Table<Order> () on ol.OrderId equals o.Id
-					select new { o.Id, ol.ProductId, ol.Quantity };
+		//public void WhereThenJoin ()
+		//{
+		//	var q = from ol in _db.Table<OrderLine> ()
+		//			where ol.OrderId == 1
+		//			join o in _db.Table<Order> () on ol.OrderId equals o.Id
+		//			select new { o.Id, ol.ProductId, ol.Quantity };
 			
-			var r = System.Linq.Enumerable.ToList (q);
+		//	var r = System.Linq.Enumerable.ToList (q);
 			
-			Assert.AreEqual (2, r.Count);
-		}
+		//	Assert.AreEqual (2, r.Count);
+		//}
 	}
 }

@@ -45,6 +45,16 @@ namespace SQLite.Tests
 
 			Assert.AreEqual (Count * 2, r);
 		}
+
+		[Test]
+		public void SelectSingleRowValue ()
+		{
+			var db = CreateDb ();
+
+			var r = db.ExecuteScalar<int> ("SELECT Two FROM TestTable WHERE Id = 1 LIMIT 1");
+
+			Assert.AreEqual (2, r);
+		}
 	}
 }
 

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.1</TargetFramework>
+    <AssemblyName>SQLite-net</AssemblyName>
+    <Version>1.0.0</Version>
+    <AssemblyTitle>SQLite-net Official .NET Standard Base Library</AssemblyTitle>
+    <Description>Light weight library providing easy SQLite database storage</Description>
+    <Company>Krueger Systems, Inc.</Company>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;DEBUG;NETSTANDARD1_1</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType></DebugType>
+    <DefineConstants>USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;RELEASE;NETSTANDARD1_1</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\SQLite.cs">
+      <Link>SQLite.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\SQLiteAsync.cs">
+      <Link>SQLiteAsync.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.core" Version="1.1.8" />
+  </ItemGroup>
+</Project>
