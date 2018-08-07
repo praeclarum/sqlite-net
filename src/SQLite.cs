@@ -2777,7 +2777,7 @@ namespace SQLite
 
 		const string DateTimeExactStoreFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
 
-		internal static void BindParameter (IntPtr stmt, int index, object value, 
+		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, 
 			bool storeDateTimeAsTicks,
 			bool connStoreGuidsAsBlobs)
 		{
