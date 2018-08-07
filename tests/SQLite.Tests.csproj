@@ -48,6 +48,7 @@
     <Compile Include="EnumNullableTest.cs" />
     <Compile Include="EnumTest.cs" />
     <Compile Include="ExceptionAssert.cs" />
+    <Compile Include="GuidAsBlobsTests.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
     <Compile Include="GuidTests.cs" />

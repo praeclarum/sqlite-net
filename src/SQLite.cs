@@ -207,6 +207,11 @@ namespace SQLite
 		/// </summary>
 		public bool StoreDateTimeAsTicks { get; private set; }
 
+		/// <summary>
+		/// Whether to store Guid properties as strings (false) or blobs (true). The default is (false)
+		/// </summary>
+		public bool StoreGuidsAsBlobs { get; private set; }
+
 #if USE_SQLITEPCL_RAW && !NO_SQLITEPCL_RAW_BATTERIES
 		static SQLiteConnection ()
 		{
@@ -228,8 +233,9 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+		/// <param name="storeGuidsAsBlobs"></param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, storeGuidsAsBlobs)
 		{
 		}
 
@@ -250,7 +256,8 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+		/// <param name="storeGuidsAsBlobs"></param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
 		{
 			if (databasePath==null)
 				throw new ArgumentException ("Must be specified", nameof(databasePath));
@@ -282,6 +289,7 @@ namespace SQLite
 			_open = true;
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
+			StoreGuidsAsBlobs = storeGuidsAsBlobs;
 
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 			if (openFlags.HasFlag (SQLiteOpenFlags.ReadWrite)) {
@@ -511,7 +519,7 @@ namespace SQLite
 
 				// Build query.
 				var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
-				var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
+				var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks, StoreGuidsAsBlobs));
 				var decl = string.Join (",\n", decls.ToArray ());
 				query += decl;
 				query += ")";
@@ -777,7 +785,7 @@ namespace SQLite
 			}
 
 			foreach (var p in toBeAdded) {
-				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p, StoreDateTimeAsTicks);
+				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p, StoreDateTimeAsTicks, StoreGuidsAsBlobs);
 				Execute (addCol);
 			}
 		}
@@ -2432,9 +2440,9 @@ namespace SQLite
 			return obj.GetType ();
 		}
 
-		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
+		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks, bool storeGuidsAsBlobs)
 		{
-			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
+			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks, storeGuidsAsBlobs) + " ";
 
 			if (p.IsPK) {
 				decl += "primary key ";
@@ -2452,7 +2460,7 @@ namespace SQLite
 			return decl;
 		}
 
-		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
+		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks, bool storeGuidsAsBlobs)
 		{
 			var clrType = p.ColumnType;
 			if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64)) {
@@ -2488,6 +2496,9 @@ namespace SQLite
 				return "blob";
 			}
 			else if (clrType == typeof (Guid)) {
+				if (storeGuidsAsBlobs)
+					return "blob";
+				
 				return "varchar(36)";
 			}
 			else {
@@ -2758,7 +2769,7 @@ namespace SQLite
 					b.Index = nextIdx++;
 				}
 
-				BindParameter (stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks);
+				BindParameter (stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks, _conn.StoreGuidsAsBlobs);
 			}
 		}
 
@@ -2766,7 +2777,9 @@ namespace SQLite
 
 		const string DateTimeExactStoreFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
 
-		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
+		internal static void BindParameter (IntPtr stmt, int index, object value, 
+			bool storeDateTimeAsTicks,
+			bool connStoreGuidsAsBlobs)
 		{
 			if (value == null) {
 				SQLite3.BindNull (stmt, index);
@@ -2808,7 +2821,13 @@ namespace SQLite
 					SQLite3.BindBlob (stmt, index, (byte[])value, ((byte[])value).Length, NegativePointer);
 				}
 				else if (value is Guid) {
-					SQLite3.BindText (stmt, index, ((Guid)value).ToString (), 72, NegativePointer);
+					if (connStoreGuidsAsBlobs) {
+						var rawGuid = ((Guid)value).ToByteArray ();
+						SQLite3.BindBlob (stmt, index, rawGuid, rawGuid.Length, NegativePointer);
+					}
+					else {
+						SQLite3.BindText (stmt, index, ((Guid)value).ToString (), 72, NegativePointer);
+					}
 				}
 				else if (value is Uri) {
 					SQLite3.BindText (stmt, index, ((Uri)value).ToString (), -1, NegativePointer);
@@ -2920,6 +2939,10 @@ namespace SQLite
 					return SQLite3.ColumnByteArray (stmt, index);
 				}
 				else if (clrType == typeof (Guid)) {
+					if (_conn.StoreGuidsAsBlobs) {
+						var array = SQLite3.ColumnByteArray (stmt, index);
+						return new Guid (array);
+					}
 					var text = SQLite3.ColumnString (stmt, index);
 					return new Guid (text);
 				}
@@ -2982,7 +3005,7 @@ namespace SQLite
 			//bind the values.
 			if (source != null) {
 				for (int i = 0; i < source.Length; i++) {
-					SQLiteCommand.BindParameter (Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks);
+					SQLiteCommand.BindParameter (Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks, Connection.StoreGuidsAsBlobs);
 				}
 			}
 			r = SQLite3.Step (Statement);
