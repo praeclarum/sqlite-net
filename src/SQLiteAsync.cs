@@ -1379,7 +1379,8 @@ namespace SQLite
 				}
 			}
 
-			entry.Close ();
+			if(entry != null)
+				entry.Close ();
 		}
 
 		/// <summary>
