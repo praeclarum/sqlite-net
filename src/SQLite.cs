@@ -2029,6 +2029,7 @@ namespace SQLite
 		public string ConnectionString { get; private set; }
 		public string DatabasePath { get; private set; }
 		public bool StoreDateTimeAsTicks { get; private set; }
+		public bool StoreGuidsAsBlobs { get; private set; }
 
 #if NETFX_CORE
 		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
@@ -2046,10 +2047,11 @@ namespace SQLite
 
 #endif
 
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks, bool storeGuidsAsBlobs)
 		{
 			ConnectionString = databasePath;
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
+			StoreGuidsAsBlobs = storeGuidsAsBlobs;
 
 #if NETFX_CORE
 			DatabasePath = IsInMemoryPath(databasePath)

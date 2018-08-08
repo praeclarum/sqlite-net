@@ -151,7 +151,7 @@ namespace SQLite.Tests
 			catch (Exception) {
 			}
 #else
-			_connectionString = Path.Combine (Path.GetTempPath (), DatabaseName);
+			_connectionString = Path.Combine (Path.GetTempPath (), $"{TestContext.CurrentContext.Test.Name}_{DatabaseName}");
 			_path = _connectionString;
 			System.IO.File.Delete (_path);
 #endif
@@ -797,8 +797,7 @@ namespace SQLite.Tests
 			// check...
 			Assert.AreEqual ("7", loaded.FirstName);
 		}
-
-
+		
         [Test]
         public void TestAsyncGetWithExpression()
         {
@@ -857,7 +856,6 @@ namespace SQLite.Tests
 
 			conn.CloseAsync ().Wait ();
 		}
-
-
+		
 	}
 }

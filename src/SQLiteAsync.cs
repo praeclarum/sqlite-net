@@ -54,8 +54,9 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+		/// <param name="storeGuidsAsBlobs"></param>
+		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
+			: this (databasePath, SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, storeGuidsAsBlobs)
 		{
 		}
 
@@ -76,11 +77,12 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+		/// <param name="storeGuidsAsBlobs"></param>
+		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
 		{
 			_openFlags = openFlags;
 			isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
-			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks);
+			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks, storeGuidsAsBlobs);
 			if(isFullMutex)
 				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString, openFlags) { SkipLock = true };
 		}
@@ -1411,7 +1413,7 @@ namespace SQLite
 		/// <param name="connectionString">Connection string containing the DatabasePath.</param>
 		/// <param name="openFlags">Open flags.</param>
 		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
-			: base (connectionString.DatabasePath, openFlags, connectionString.StoreDateTimeAsTicks)
+			: base (connectionString.DatabasePath, openFlags, connectionString.StoreDateTimeAsTicks, connectionString.StoreGuidsAsBlobs)
 		{
 		}
 
