@@ -151,8 +151,10 @@ namespace SQLite.Tests
 			catch (Exception) {
 			}
 #else
-			_connectionString = Path.Combine (Path.GetTempPath (), $"{TestContext.CurrentContext.Test.Name}_{DatabaseName}");
+			_connectionString = Path.Combine (Path.GetTempPath (), DatabaseName);
 			_path = _connectionString;
+			GC.Collect ();
+			GC.WaitForPendingFinalizers ();
 			System.IO.File.Delete (_path);
 #endif
 		}
@@ -856,6 +858,5 @@ namespace SQLite.Tests
 
 			conn.CloseAsync ().Wait ();
 		}
-		
 	}
 }
