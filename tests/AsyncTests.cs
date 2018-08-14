@@ -153,6 +153,8 @@ namespace SQLite.Tests
 #else
 			_connectionString = Path.Combine (Path.GetTempPath (), DatabaseName);
 			_path = _connectionString;
+			GC.Collect ();
+			GC.WaitForPendingFinalizers ();
 			System.IO.File.Delete (_path);
 #endif
 		}
@@ -797,8 +799,7 @@ namespace SQLite.Tests
 			// check...
 			Assert.AreEqual ("7", loaded.FirstName);
 		}
-
-
+		
         [Test]
         public void TestAsyncGetWithExpression()
         {
@@ -857,7 +858,5 @@ namespace SQLite.Tests
 
 			conn.CloseAsync ().Wait ();
 		}
-
-
 	}
 }
