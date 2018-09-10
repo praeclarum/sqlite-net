@@ -31,19 +31,15 @@ namespace SQLite.Tests
 
 			var key = "SecretPassword";
 
-			using (var db = new TestDb ()) {
+			using (var db = new TestDb (key: key)) {
 				path = db.DatabasePath;
-
-				db.SetKey (key);
 
 				db.CreateTable<TestTable> ();
 				db.Insert (new TestTable { Value = "Hello" });
 			}
 
-			using (var db = new TestDb (path)) {
+			using (var db = new TestDb (path, key: key)) {
 				path = db.DatabasePath;
-
-				db.SetKey (key);
 
 				var r = db.Table<TestTable> ().First ();
 
@@ -60,19 +56,15 @@ namespace SQLite.Tests
 			var key = new byte[32];
 			rand.NextBytes (key);
 
-			using (var db = new TestDb ()) {
+			using (var db = new TestDb (key: key)) {
 				path = db.DatabasePath;
-
-				db.SetKey (key);
 
 				db.CreateTable<TestTable> ();
 				db.Insert (new TestTable { Value = "Hello" });
 			}
 
-			using (var db = new TestDb (path)) {
+			using (var db = new TestDb (path, key: key)) {
 				path = db.DatabasePath;
-
-				db.SetKey (key);
 
 				var r = db.Table<TestTable> ().First ();
 
@@ -81,11 +73,29 @@ namespace SQLite.Tests
 		}
 
 		[Test]
+		public void SetEmptyStringKey ()
+		{
+			using (var db = new TestDb (key: "")) {
+			}
+		}
+
+		[Test]
+		public void SetBadTypeKey ()
+		{
+			try {
+				using (var db = new TestDb (key: 42)) {
+				}
+				Assert.Fail ("Should have thrown");
+			}
+			catch (ArgumentException) {
+			}
+		}
+
+		[Test]
 		public void SetBadBytesKey ()
 		{
 			try {
-				using (var db = new TestDb ()) {
-					db.SetKey (new byte[] { 1, 2, 3, 4 });
+				using (var db = new TestDb (key: new byte[] { 1, 2, 3, 4 })) {
 				}
 				Assert.Fail ("Should have thrown");
 			}

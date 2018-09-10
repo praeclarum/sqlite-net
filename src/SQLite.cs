@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2017 Krueger Systems, Inc.
+// Copyright (c) 2009-2018 Krueger Systems, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -228,8 +228,11 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+		/// <param name="key">
+		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
+		/// </param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key)
 		{
 		}
 
@@ -250,7 +253,10 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+		/// <param name="key">
+		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null)
 		{
 			if (databasePath==null)
 				throw new ArgumentException ("Must be specified", nameof(databasePath));
@@ -284,10 +290,20 @@ namespace SQLite
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
+			Tracer = line => Debug.WriteLine (line);
+
+			if (key is string stringKey) {
+				SetKey (stringKey);
+			}
+			else if (key is byte[] bytesKey) {
+				SetKey (bytesKey);
+			}
+			else if (key != null) {
+				throw new ArgumentException ("Encryption keys must be strings or byte arrays", nameof (key));
+			}
 			if (openFlags.HasFlag (SQLiteOpenFlags.ReadWrite)) {
 				ExecuteScalar<string> ("PRAGMA journal_mode=WAL");
 			}
-			Tracer = line => Debug.WriteLine (line);
 		}
 
 		/// <summary>
@@ -304,13 +320,13 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Sets the key used to encrypt/decrypt the database.
+		/// Sets the key used to encrypt/decrypt the database with "pragma key = ...".
 		/// This must be the first thing you call before doing anything else with this connection
 		/// if your database is encrypted.
 		/// This only has an effect if you are using the SQLCipher nuget package.
 		/// </summary>
 		/// <param name="key">Ecryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
-		public void SetKey (string key)
+		void SetKey (string key)
 		{
 			if (key == null) throw new ArgumentNullException (nameof (key));
 			var q = Quote (key);
@@ -324,7 +340,7 @@ namespace SQLite
 		/// This only has an effect if you are using the SQLCipher nuget package.
 		/// </summary>
 		/// <param name="key">256-bit (32 byte) ecryption key data</param>
-		public void SetKey (byte[] key)
+		void SetKey (byte[] key)
 		{
 			if (key == null) throw new ArgumentNullException (nameof (key));
 			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof(key));
@@ -2021,6 +2037,7 @@ namespace SQLite
 		public string ConnectionString { get; private set; }
 		public string DatabasePath { get; private set; }
 		public bool StoreDateTimeAsTicks { get; private set; }
+		public object Key { get; private set; }
 
 #if NETFX_CORE
 		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
@@ -2038,10 +2055,11 @@ namespace SQLite
 
 #endif
 
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks, object key)
 		{
 			ConnectionString = databasePath;
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
+			Key = key;
 
 #if NETFX_CORE
 			DatabasePath = IsInMemoryPath(databasePath)

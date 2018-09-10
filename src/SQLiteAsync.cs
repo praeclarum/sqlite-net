@@ -37,7 +37,7 @@ namespace SQLite
 	{
 		SQLiteConnectionString _connectionString;
 		SQLiteConnectionWithLock _fullMutexReadConnection;
-		bool isFullMutex;
+		readonly bool isFullMutex;
 		SQLiteOpenFlags _openFlags;
 
 		/// <summary>
@@ -54,8 +54,11 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+		/// <param name="key">
+		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
+		/// </param>
+		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null)
+			: this (databasePath, SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key)
 		{
 		}
 
@@ -76,12 +79,15 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+		/// <param name="key">
+		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
+		/// </param>
+		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null)
 		{
 			_openFlags = openFlags;
 			isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
-			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks);
-			if(isFullMutex)
+			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks, key);
+			if (isFullMutex)
 				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString, openFlags) { SkipLock = true };
 		}
 
@@ -201,39 +207,6 @@ namespace SQLite
 					return write (conn);
 				}
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-		}
-
-		/// <summary>
-		/// Sets the key used to encrypt/decrypt the database.
-		/// This must be the first thing you call before doing anything else with this connection
-		/// if your database is encrypted.
-		/// This only has an effect if you are using the SQLCipher nuget package.
-		/// </summary>
-		/// <param name="key">Ecryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
-		public Task SetKeyAsync (string key)
-		{
-			if (key == null) throw new ArgumentNullException (nameof (key));
-			return WriteAsync<object> (conn => {
-				conn.SetKey (key);
-				return null;
-			});
-		}
-
-		/// <summary>
-		/// Sets the key used to encrypt/decrypt the database.
-		/// This must be the first thing you call before doing anything else with this connection
-		/// if your database is encrypted.
-		/// This only has an effect if you are using the SQLCipher nuget package.
-		/// </summary>
-		/// <param name="key">256-bit (32 byte) ecryption key data</param>
-		public Task SetKeyAsync (byte[] key)
-		{
-			if (key == null) throw new ArgumentNullException (nameof (key));
-			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof (key));
-			return WriteAsync<object> (conn => {
-				conn.SetKey (key);
-				return null;
-			});
 		}
 
 		/// <summary>
@@ -1411,7 +1384,7 @@ namespace SQLite
 		/// <param name="connectionString">Connection string containing the DatabasePath.</param>
 		/// <param name="openFlags">Open flags.</param>
 		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
-			: base (connectionString.DatabasePath, openFlags, connectionString.StoreDateTimeAsTicks)
+			: base (connectionString.DatabasePath, openFlags, connectionString.StoreDateTimeAsTicks, key: connectionString.Key)
 		{
 		}
 
