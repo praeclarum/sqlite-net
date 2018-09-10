@@ -24,12 +24,12 @@ srcnuget: sqlite-net.nuspec $(SRC)
 pclnuget: sqlite-net-pcl.nuspec packages $(SRC)
 	msbuild "/p:Configuration=Release" nuget/SQLite-net/SQLite-net.csproj
 	msbuild "/p:Configuration=Release" nuget/SQLite-net-std/SQLite-net-std.csproj 
-	nuget pack sqlite-net-pcl.nuspec -o .\
+	nuget pack sqlite-net-pcl.nuspec
 
 basenuget: sqlite-net-pcl.nuspec packages $(SRC)
 	msbuild "/p:Configuration=Release" nuget/SQLite-net-base/SQLite-net-base.csproj 
-	nuget pack sqlite-net-base.nuspec -o .\
+	nuget pack sqlite-net-base.nuspec
 
 sqlciphernuget: sqlite-net-sqlcipher.nuspec packages $(SRC)
 	msbuild "/p:Configuration=Release" nuget/SQLite-net-sqlcipher/SQLite-net-sqlcipher.csproj 
-	nuget pack sqlite-net-sqlcipher.nuspec -o .\
+	nuget pack sqlite-net-sqlcipher.nuspec
