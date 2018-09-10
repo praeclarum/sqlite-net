@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		sqlite-net.nuspec = sqlite-net.nuspec
 		Makefile = Makefile
 		sqlite-net-base.nuspec = sqlite-net-base.nuspec
+		sqlite-net-sqlcipher.nuspec = sqlite-net-sqlcipher.nuspec
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net", "nuget\SQLite-net\SQLite-net.csproj", "{7F946494-8EE0-432B-8A87-98961143D5C1}"
