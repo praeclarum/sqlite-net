@@ -30,6 +30,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.core" Version="1.1.8" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="1.1.11" />
   </ItemGroup>
 </Project>

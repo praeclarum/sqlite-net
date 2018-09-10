@@ -22,7 +22,7 @@
     <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_sqlcipher" Version="1.1.8" />
+    <PackageReference Include="SQLitePCLRaw.bundle_sqlcipher" Version="1.1.11" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
