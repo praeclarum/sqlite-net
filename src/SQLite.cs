@@ -2600,7 +2600,7 @@ namespace SQLite
 
 		public string CommandText { get; set; }
 
-		internal SQLiteCommand (SQLiteConnection conn)
+		public SQLiteCommand (SQLiteConnection conn)
 		{
 			_conn = conn;
 			_bindings = new List<Binding> ();
@@ -2658,8 +2658,6 @@ namespace SQLite
 		/// <remarks>
 		/// This can be overridden in combination with the <see cref="SQLiteConnection.NewCommand"/>
 		/// method to hook into the life-cycle of objects.
-		///
-		/// Type safety is not possible because MonoTouch does not support virtual generic methods.
 		/// </remarks>
 		protected virtual void OnInstanceCreated (object obj)
 		{
@@ -2780,7 +2778,7 @@ namespace SQLite
 			}
 		}
 
-		internal static IntPtr NegativePointer = new IntPtr (-1);
+		static IntPtr NegativePointer = new IntPtr (-1);
 
 		const string DateTimeExactStoreFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
 
