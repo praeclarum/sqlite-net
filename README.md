@@ -3,7 +3,14 @@
 
 [![Build Status](https://app.bitrise.io/app/bf752c26c31aec6c/status.svg?token=puU-yHhMNdAwJUusm9swlA&branch=master)](https://app.bitrise.io/app/bf752c26c31aec6c)
 
-SQLite-net is an open source, minimal library to allow .NET and Mono applications to store data in
+Use one of these packages:
+
+| Version | Package | Description |
+| ------- | ------- | ----------- |
+| [![NuGet Package](https://img.shields.io/nuget/v/sqlite-net-pcl.svg)](https://www.nuget.org/packages/sqlite-net-pcl) | [sqlite-net-pcl](https://www.nuget.org/packages/sqlite-net-pcl) | .NET Standard Library |
+| [![NuGet Package with Encryption](https://img.shields.io/nuget/v/sqlite-net-sqlcipher.svg)](https://www.nuget.org/packages/sqlite-net-sqlcipher) | [sqlite-net-sqlcipher](https://www.nuget.org/packages/sqlite-net-sqlcipher) | With Encryption Support |
+
+SQLite-net is an open source, minimal library to allow .NET, .NET Core, and Mono applications to store data in
 [SQLite 3 databases](http://www.sqlite.org). It was first designed to work with [Xamarin.iOS](http://xamarin.com),
 but has since grown up to work on all the platforms (Xamarin.*, .NET, UWP, Azure, etc.).
 
