@@ -19,9 +19,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-#if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
-#define USE_CSHARP_SQLITE
-#endif
 
 using System;
 using System.Collections;
@@ -36,15 +33,8 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 
-#if USE_CSHARP_SQLITE
-using Sqlite3 = Community.CsharpSqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Community.CsharpSqlite.Sqlite3.sqlite3;
-using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
-#elif USE_WP8_NATIVE_SQLITE
-using Sqlite3 = Sqlite.Sqlite3;
-using Sqlite3DatabaseHandle = Sqlite.Database;
-using Sqlite3Statement = Sqlite.Statement;
-#elif USE_SQLITEPCL_RAW
+
+#if USE_SQLITEPCL_RAW
 using Sqlite3DatabaseHandle = SQLitePCL.sqlite3;
 using Sqlite3Statement = SQLitePCL.sqlite3_stmt;
 using Sqlite3 = SQLitePCL.raw;
@@ -271,7 +261,7 @@ namespace SQLite
 
 			Sqlite3DatabaseHandle handle;
 
-#if SILVERLIGHT || USE_CSHARP_SQLITE || USE_SQLITEPCL_RAW
+#if SILVERLIGHT || USE_SQLITEPCL_RAW
 			var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
 #else
 			// open using the byte[]
@@ -3814,7 +3804,7 @@ namespace SQLite
 
 		const string LibraryPath = "sqlite3";
 
-#if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
+#if !USE_SQLITEPCL_RAW
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
 		public static extern int Threadsafe ();
 
@@ -3985,11 +3975,7 @@ namespace SQLite
 
 		public static Result Open (string filename, out Sqlite3DatabaseHandle db, int flags, IntPtr zVfs)
 		{
-#if USE_WP8_NATIVE_SQLITE
-			return (Result)Sqlite3.sqlite3_open_v2(filename, out db, flags, "");
-#else
 			return (Result)Sqlite3.sqlite3_open_v2 (filename, out db, flags, null);
-#endif
 		}
 
 		public static Result Close (Sqlite3DatabaseHandle db)
@@ -4015,7 +4001,7 @@ namespace SQLite
 		public static Sqlite3Statement Prepare2 (Sqlite3DatabaseHandle db, string query)
 		{
 			Sqlite3Statement stmt = default (Sqlite3Statement);
-#if USE_WP8_NATIVE_SQLITE || USE_SQLITEPCL_RAW
+#if USE_SQLITEPCL_RAW
 			var r = Sqlite3.sqlite3_prepare_v2 (db, query, out stmt);
 #else
 			stmt = new Sqlite3Statement();
@@ -4079,9 +4065,8 @@ namespace SQLite
 
 		public static int BindText (Sqlite3Statement stmt, int index, string val, int n, IntPtr free)
 		{
-#if USE_WP8_NATIVE_SQLITE
-			return Sqlite3.sqlite3_bind_text(stmt, index, val, n);
-#elif USE_SQLITEPCL_RAW
+
+#if USE_SQLITEPCL_RAW
 			return Sqlite3.sqlite3_bind_text (stmt, index, val);
 #else
 			return Sqlite3.sqlite3_bind_text(stmt, index, val, n, null);
@@ -4090,9 +4075,7 @@ namespace SQLite
 
 		public static int BindBlob (Sqlite3Statement stmt, int index, byte[] val, int n, IntPtr free)
 		{
-#if USE_WP8_NATIVE_SQLITE
-			return Sqlite3.sqlite3_bind_blob(stmt, index, val, n);
-#elif USE_SQLITEPCL_RAW
+#if USE_SQLITEPCL_RAW
 			return Sqlite3.sqlite3_bind_blob (stmt, index, val);
 #else
 			return Sqlite3.sqlite3_bind_blob(stmt, index, val, n, null);
