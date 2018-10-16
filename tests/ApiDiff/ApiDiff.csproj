@@ -33,6 +33,8 @@
     <Reference Include="ListDiff">
       <HintPath>..\..\packages\ListDiff.1.0.7\lib\netstandard1.0\ListDiff.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
