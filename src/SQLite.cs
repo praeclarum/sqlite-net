@@ -231,8 +231,14 @@ namespace SQLite
 		/// <param name="key">
 		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key)
+		/// <param name="preKeyAction">
+		/// Executes prior to setting key for SQLCipher databases
+		/// </param>
+		/// <param name="postKeyAction">
+		/// Executes after setting key for SQLCipher databases
+		/// </param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key, preKeyAction: preKeyAction, postKeyAction: postKeyAction)
 		{
 		}
 
@@ -256,7 +262,13 @@ namespace SQLite
 		/// <param name="key">
 		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null)
+		/// <param name="preKeyAction">
+		/// Executes prior to setting key for SQLCipher databases
+		/// </param>
+		/// <param name="postKeyAction">
+		/// Executes after setting key for SQLCipher databases
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null)
 		{
 			if (databasePath==null)
 				throw new ArgumentException ("Must be specified", nameof(databasePath));
@@ -292,6 +304,9 @@ namespace SQLite
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 			Tracer = line => Debug.WriteLine (line);
 
+			if (preKeyAction != null) {
+				preKeyAction (this);
+			}
 			if (key is string stringKey) {
 				SetKey (stringKey);
 			}
@@ -301,7 +316,10 @@ namespace SQLite
 			else if (key != null) {
 				throw new ArgumentException ("Encryption keys must be strings or byte arrays", nameof (key));
 			}
-			if (openFlags.HasFlag (SQLiteOpenFlags.ReadWrite)) {
+			if (postKeyAction != null) {
+				postKeyAction (this);
+			}
+			if (key == null && openFlags.HasFlag (SQLiteOpenFlags.ReadWrite)) {
 				ExecuteScalar<string> ("PRAGMA journal_mode=WAL");
 			}
 		}
