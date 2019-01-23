@@ -55,7 +55,7 @@ namespace SQLite
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
 		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
+			: this (new SQLiteConnectionString (databasePath, storeDateTimeAsTicks))
 		{
 		}
 
@@ -77,15 +77,41 @@ namespace SQLite
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
 		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+			: this (new SQLiteConnectionString (databasePath, openFlags, storeDateTimeAsTicks))
 		{
-			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks);
-			_openFlags = openFlags;
+		}
+
+		/// <summary>
+		/// Constructs a new SQLiteAsyncConnection and opens a pooled SQLite database specified by databasePath.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		/// <param name="key">
+		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
+		/// </param>
+		public SQLiteAsyncConnection (string databasePath, object key)
+			: this (new SQLiteConnectionString (databasePath, true, key: key))
+		{
+		}
+
+		/// <summary>
+		/// Constructs a new SQLiteAsyncConnection and opens a pooled SQLite database
+		/// using the given connection string.
+		/// </summary>
+		/// <param name="connectionString">
+		/// Details on how to find and open the database.
+		/// </param>
+		public SQLiteAsyncConnection (SQLiteConnectionString connectionString)
+		{
+			_connectionString = connectionString;
+			_openFlags = connectionString.OpenFlags;
 			isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
 			// Get a writeable connection to make sure our open options take effect
 			// before getting the readonly connection.
 			var writeConnection = GetConnection ();
 			if (isFullMutex) {
-				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString, openFlags) { SkipLock = true };
+				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString) { SkipLock = true };
 			}
 		}
 
@@ -1293,10 +1319,10 @@ namespace SQLite
 			public SQLiteConnectionString ConnectionString { get; private set; }
 			public SQLiteConnectionWithLock Connection { get; private set; }
 
-			public Entry (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
+			public Entry (SQLiteConnectionString connectionString)
 			{
 				ConnectionString = connectionString;
-				Connection = new SQLiteConnectionWithLock (connectionString, openFlags);
+				Connection = new SQLiteConnectionWithLock (connectionString);
 			}
 
 			public void Close ()
@@ -1331,7 +1357,7 @@ namespace SQLite
 				string key = connectionString.ConnectionString;
 
 				if (!_entries.TryGetValue (key, out entry)) {
-					entry = new Entry (connectionString, openFlags);
+					entry = new Entry (connectionString);
 					_entries[key] = entry;
 				}
 
@@ -1382,8 +1408,7 @@ namespace SQLite
 		/// Initializes a new instance of the <see cref="T:SQLite.SQLiteConnectionWithLock"/> class.
 		/// </summary>
 		/// <param name="connectionString">Connection string containing the DatabasePath.</param>
-		/// <param name="openFlags">Open flags.</param>
-		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
+		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString)
 			: base (connectionString)
 		{
 		}
