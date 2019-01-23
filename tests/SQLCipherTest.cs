@@ -118,8 +118,8 @@ namespace SQLite.Tests
 			var path = TestPath.GetTempFileName ();
 			var key = "SecretKey";
 
-			using (var db = new SQLiteConnection (path, true, key,
-				preKeyAction:  conn => conn.Execute("PRAGMA page_size = 8192;"))) {
+			using (var db = new SQLiteConnection (new SQLiteConnectionString (path, true, key,
+				preKeyAction: conn => conn.Execute ("PRAGMA page_size = 8192;")))) {
 				db.CreateTable<TestTable> ();
 				db.Insert (new TestTable { Value = "Secret Value" });
 				Assert.AreEqual ("8192", db.ExecuteScalar<string> ("PRAGMA page_size;"));
@@ -132,8 +132,8 @@ namespace SQLite.Tests
 			var path = TestPath.GetTempFileName ();
 			var key = "SecretKey";
 
-			using (var db = new SQLiteConnection (path, true, key,
-				postKeyAction: conn => conn.Execute ("PRAGMA page_size = 512;"))) {
+			using (var db = new SQLiteConnection (new SQLiteConnectionString (path, true, key,
+				postKeyAction: conn => conn.Execute ("PRAGMA page_size = 512;")))) {
 				db.CreateTable<TestTable> ();
 				db.Insert (new TestTable { Value = "Secret Value" });
 				Assert.AreEqual ("512", db.ExecuteScalar<string> ("PRAGMA page_size;"));

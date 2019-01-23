@@ -229,7 +229,7 @@ namespace SQLite
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
 		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: null)
+			: this (new SQLiteConnectionString (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks))
 		{
 		}
 
@@ -251,7 +251,7 @@ namespace SQLite
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
 		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
-			: this (databasePath, openFlags, storeDateTimeAsTicks, key: null)
+			: this (new SQLiteConnectionString (databasePath, openFlags, storeDateTimeAsTicks))
 		{
 		}
 
@@ -261,74 +261,28 @@ namespace SQLite
 		/// <param name="databasePath">
 		/// Specifies the path to the database file.
 		/// </param>
-		/// <param name="storeDateTimeAsTicks">
-		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-		/// absolutely do want to store them as Ticks in all new projects. The value of false is
-		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
-		/// down sides, when setting storeDateTimeAsTicks = true.
-		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
-		/// the storeDateTimeAsTicks parameter.
-		/// </param>
 		/// <param name="key">
 		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
 		/// </param>
-		/// <param name="preKeyAction">
-		/// Executes prior to setting key for SQLCipher databases
-		/// </param>
-		/// <param name="postKeyAction">
-		/// Executes after setting key for SQLCipher databases
-		/// </param>
-		/// <param name="vfsName">
-		/// Specifies the Virtual File System to use on the database.
-		/// </param>
-		/// <param name="enableWal">
-		/// Whether to enable WAL mode for high-performance read and write access to the database.
-		/// The default is to enable it.
-		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key, preKeyAction, postKeyAction, vfsName, enableWal)
+		public SQLiteConnection (string databasePath, object key)
+			: this (new SQLiteConnectionString (databasePath, true, key: key))
 		{
 		}
 
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
-		/// <param name="databasePath">
-		/// Specifies the path to the database file.
+		/// <param name="connectionString">
+		/// Details on how to find and open the database.
 		/// </param>
-		/// <param name="openFlags">
-		/// Flags controlling how the connection should be opened.
-		/// </param>
-		/// <param name="storeDateTimeAsTicks">
-		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-		/// absolutely do want to store them as Ticks in all new projects. The value of false is
-		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
-		/// down sides, when setting storeDateTimeAsTicks = true.
-		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
-		/// the storeDateTimeAsTicks parameter.
-		/// </param>
-		/// <param name="key">
-		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
-		/// </param>
-		/// <param name="preKeyAction">
-		/// Executes prior to setting key for SQLCipher databases
-		/// </param>
-		/// <param name="postKeyAction">
-		/// Executes after setting key for SQLCipher databases
-		/// </param>
-		/// <param name="vfsName">
-		/// Specifies the Virtual File System to use on the database.
-		/// </param>
-		/// <param name="enableWal">
-		/// Whether to enable WAL mode for high-performance read and write access to the database.
-		/// The default is to enable it.
-		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
+		public SQLiteConnection (SQLiteConnectionString connectionString)
 		{
-			if (databasePath==null)
-				throw new ArgumentException ("Must be specified", nameof(databasePath));
+			if (connectionString == null)
+				throw new ArgumentNullException (nameof (connectionString));
+			if (connectionString.DatabasePath == null)
+				throw new InvalidOperationException ("DatabasePath must be specified");
 
-			DatabasePath = databasePath;
+			DatabasePath = connectionString.DatabasePath;
 
 			LibVersionNumber = SQLite3.LibVersionNumber ();
 
@@ -339,13 +293,13 @@ namespace SQLite
 			Sqlite3DatabaseHandle handle;
 
 #if SILVERLIGHT || USE_CSHARP_SQLITE || USE_SQLITEPCL_RAW
-			var r = SQLite3.Open (databasePath, out handle, (int)openFlags, vfsName);
+			var r = SQLite3.Open (connectionString.DatabasePath, out handle, (int)connectionString.OpenFlags, connectionString.VfsName);
 #else
 			// open using the byte[]
 			// in the case where the path may include Unicode
 			// force open to using UTF-8 using sqlite3_open_v2
-			var databasePathAsBytes = GetNullTerminatedUtf8 (DatabasePath);
-			var r = SQLite3.Open (databasePathAsBytes, out handle, (int)openFlags, vfsName);
+			var databasePathAsBytes = GetNullTerminatedUtf8 (connectionString.DatabasePath);
+			var r = SQLite3.Open (databasePathAsBytes, out handle, (int)connectionString.OpenFlags, connectionString.VfsName);
 #endif
 
 			Handle = handle;
@@ -354,27 +308,24 @@ namespace SQLite
 			}
 			_open = true;
 
-			StoreDateTimeAsTicks = storeDateTimeAsTicks;
+			StoreDateTimeAsTicks = connectionString.StoreDateTimeAsTicks;
 
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 			Tracer = line => Debug.WriteLine (line);
 
-			if (preKeyAction != null) {
-				preKeyAction (this);
-			}
-			if (key is string stringKey) {
+			connectionString.PreKeyAction?.Invoke (this);
+			if (connectionString.Key is string stringKey) {
 				SetKey (stringKey);
 			}
-			else if (key is byte[] bytesKey) {
+			else if (connectionString.Key is byte[] bytesKey) {
 				SetKey (bytesKey);
 			}
-			else if (key != null) {
-				throw new ArgumentException ("Encryption keys must be strings or byte arrays", nameof (key));
+			else if (connectionString.Key != null) {
+				throw new InvalidOperationException ("Encryption keys must be strings or byte arrays");
 			}
-			if (postKeyAction != null) {
-				postKeyAction (this);
-			}
-			if (key == null && (enableWal && openFlags.HasFlag (SQLiteOpenFlags.ReadWrite))) {
+			connectionString.PostKeyAction?.Invoke (this);
+
+			if (connectionString.Key == null && (connectionString.EnableWal && connectionString.OpenFlags.HasFlag (SQLiteOpenFlags.ReadWrite))) {
 				ExecuteScalar<string> ("PRAGMA journal_mode=WAL");
 			}
 		}
@@ -2107,10 +2058,15 @@ namespace SQLite
 	/// </summary>
 	public class SQLiteConnectionString
 	{
-		public string ConnectionString { get; private set; }
-		public string DatabasePath { get; private set; }
-		public bool StoreDateTimeAsTicks { get; private set; }
-		public object Key { get; private set; }
+		public string ConnectionString { get; }
+		public string DatabasePath { get; }
+		public bool StoreDateTimeAsTicks { get; }
+		public object Key { get; }
+		public SQLiteOpenFlags OpenFlags { get; }
+		public Action<SQLiteConnection> PreKeyAction { get; }
+		public Action<SQLiteConnection> PostKeyAction { get; }
+		public string VfsName { get; }
+		public bool EnableWal { get; }
 
 #if NETFX_CORE
 		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
@@ -2128,16 +2084,104 @@ namespace SQLite
 
 #endif
 
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
-			: this (databasePath, storeDateTimeAsTicks, null)
+		/// <summary>
+		/// Constructs a new SQLiteConnectionString with all the data needed to open an SQLiteConnection.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		/// <param name="storeDateTimeAsTicks">
+		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		/// absolutely do want to store them as Ticks in all new projects. The value of false is
+		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
+		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
+		/// the storeDateTimeAsTicks parameter.
+		/// </param>
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks = true)
+			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks)
 		{
 		}
 
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks, object key)
+		/// <summary>
+		/// Constructs a new SQLiteConnectionString with all the data needed to open an SQLiteConnection.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		/// <param name="storeDateTimeAsTicks">
+		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		/// absolutely do want to store them as Ticks in all new projects. The value of false is
+		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
+		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
+		/// the storeDateTimeAsTicks parameter.
+		/// </param>
+		/// <param name="key">
+		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
+		/// </param>
+		/// <param name="preKeyAction">
+		/// Executes prior to setting key for SQLCipher databases
+		/// </param>
+		/// <param name="postKeyAction">
+		/// Executes after setting key for SQLCipher databases
+		/// </param>
+		/// <param name="vfsName">
+		/// Specifies the Virtual File System to use on the database.
+		/// </param>
+		/// <param name="enableWal">
+		/// Whether to enable WAL journal mode. Defaults to true.
+		/// </param>
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
+			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks, key, preKeyAction, postKeyAction, vfsName, enableWal)
 		{
+		}
+
+		/// <summary>
+		/// Constructs a new SQLiteConnectionString with all the data needed to open an SQLiteConnection.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		/// <param name="openFlags">
+		/// Flags controlling how the connection should be opened.
+		/// </param>
+		/// <param name="storeDateTimeAsTicks">
+		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		/// absolutely do want to store them as Ticks in all new projects. The value of false is
+		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
+		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
+		/// the storeDateTimeAsTicks parameter.
+		/// </param>
+		/// <param name="key">
+		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
+		/// </param>
+		/// <param name="preKeyAction">
+		/// Executes prior to setting key for SQLCipher databases
+		/// </param>
+		/// <param name="postKeyAction">
+		/// Executes after setting key for SQLCipher databases
+		/// </param>
+		/// <param name="vfsName">
+		/// Specifies the Virtual File System to use on the database.
+		/// </param>
+		/// <param name="enableWal">
+		/// Whether to enable WAL journal mode. Defaults to true.
+		/// </param>
+		public SQLiteConnectionString (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
+		{
+			if (key != null && !((key is byte[]) || (key is string)))
+				throw new ArgumentException ("Encryption keys must be strings or byte arrays", nameof (key));
+
 			ConnectionString = databasePath;
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			Key = key;
+			PreKeyAction = preKeyAction;
+			PostKeyAction = postKeyAction;
+			OpenFlags = openFlags;
+			VfsName = vfsName;
+			EnableWal = enableWal;
 
 #if NETFX_CORE
 			DatabasePath = IsInMemoryPath(databasePath)

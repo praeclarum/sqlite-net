@@ -1384,7 +1384,7 @@ namespace SQLite
 		/// <param name="connectionString">Connection string containing the DatabasePath.</param>
 		/// <param name="openFlags">Open flags.</param>
 		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
-			: base (connectionString.DatabasePath, openFlags, connectionString.StoreDateTimeAsTicks, key: connectionString.Key)
+			: base (connectionString)
 		{
 		}
 

@@ -53,12 +53,12 @@ namespace SQLite.Tests
 
 	public class TestDb : SQLiteConnection
 	{
-		public TestDb (bool storeDateTimeAsTicks = true, object key = null) : base (TestPath.GetTempFileName (), storeDateTimeAsTicks, key: key)
+		public TestDb (bool storeDateTimeAsTicks = true, object key = null) : base (new SQLiteConnectionString (TestPath.GetTempFileName (), storeDateTimeAsTicks, key: key))
 		{
 			Trace = true;
 		}
 
-		public TestDb (string path, bool storeDateTimeAsTicks = true, object key = null) : base (path, storeDateTimeAsTicks, key: key)
+		public TestDb (string path, bool storeDateTimeAsTicks = true, object key = null) : base (new SQLiteConnectionString (path, storeDateTimeAsTicks, key: key))
 		{
 			Trace = true;
 		}
