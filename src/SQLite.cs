@@ -2887,6 +2887,11 @@ namespace SQLite
 			}
 			else {
 				var clrTypeInfo = clrType.GetTypeInfo ();
+				if (clrTypeInfo.IsGenericType && clrTypeInfo.GetGenericTypeDefinition () == typeof (Nullable<>)) {
+					clrType = clrTypeInfo.GenericTypeArguments[0];
+					clrTypeInfo = clrType.GetTypeInfo ();
+				}
+
 				if (clrType == typeof (String)) {
 					return SQLite3.ColumnString (stmt, index);
 				}

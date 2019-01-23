@@ -55,6 +55,37 @@ namespace SQLite.Tests
 
 			Assert.AreEqual (2, r);
 		}
+
+		[Test]
+		public void SelectNullableSingleRowValue ()
+		{
+			var db = CreateDb ();
+
+			var r = db.ExecuteScalar<int?> ("SELECT Two FROM TestTable WHERE Id = 1 LIMIT 1");
+
+			Assert.AreEqual (true, r.HasValue);
+			Assert.AreEqual (2, r);
+		}
+
+		[Test]
+		public void SelectNoRowValue ()
+		{
+			var db = CreateDb ();
+
+			var r = db.ExecuteScalar<int?> ("SELECT Two FROM TestTable WHERE Id = 999");
+
+			Assert.AreEqual (false, r.HasValue);
+		}
+
+		[Test]
+		public void SelectNullRowValue ()
+		{
+			var db = CreateDb ();
+
+			var r = db.ExecuteScalar<int?> ("SELECT null AS Unknown FROM TestTable WHERE Id = 1 LIMIT 1");
+
+			Assert.AreEqual (false, r.HasValue);
+		}
 	}
 }
 
