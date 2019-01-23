@@ -119,10 +119,10 @@ namespace SQLite.Tests
 			var key = "SecretKey";
 
 			using (var db = new SQLiteConnection (path, true, key,
-				preKeyAction:  conn => conn.Execute("PRAGMA cipher_default_use_hmac = OFF;"))) {
+				preKeyAction:  conn => conn.Execute("PRAGMA page_size = 8192;"))) {
 				db.CreateTable<TestTable> ();
 				db.Insert (new TestTable { Value = "Secret Value" });
-				Assert.AreEqual ("0", db.ExecuteScalar<string> ("PRAGMA cipher_default_use_hmac;"));
+				Assert.AreEqual ("8192", db.ExecuteScalar<string> ("PRAGMA page_size;"));
 			}
 		}
 
@@ -133,10 +133,10 @@ namespace SQLite.Tests
 			var key = "SecretKey";
 
 			using (var db = new SQLiteConnection (path, true, key,
-				postKeyAction: conn => conn.Execute ("PRAGMA kdf_iter = 128000;"))) {
+				postKeyAction: conn => conn.Execute ("PRAGMA page_size = 512;"))) {
 				db.CreateTable<TestTable> ();
 				db.Insert (new TestTable { Value = "Secret Value" });
-				Assert.AreEqual ("128000", db.ExecuteScalar<string> ("PRAGMA kdf_iter;"));
+				Assert.AreEqual ("512", db.ExecuteScalar<string> ("PRAGMA page_size;"));
 			}
 		}
 
