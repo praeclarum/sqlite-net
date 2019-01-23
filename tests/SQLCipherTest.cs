@@ -24,6 +24,15 @@ namespace SQLite.Tests
 			public string Value { get; set; }
 		}
 
+		[SetUp]
+		public void Setup ()
+		{
+			// open an in memory connection and reset SQLCipher default pragma settings
+			using (var c = new SQLiteConnection (":memory:", true)) {
+				c.Execute ("PRAGMA cipher_default_use_hmac = ON;");
+			}
+		}
+
 		[Test]
 		public void SetStringKey ()
 		{
@@ -100,6 +109,53 @@ namespace SQLite.Tests
 				Assert.Fail ("Should have thrown");
 			}
 			catch (ArgumentException) {
+			}
+		}
+
+		[Test]
+		public void SetPreKeyAction ()
+		{
+			var path = TestPath.GetTempFileName ();
+			var key = "SecretKey";
+
+			using (var db = new SQLiteConnection (path, true, key,
+				preKeyAction:  conn => conn.Execute("PRAGMA cipher_default_use_hmac = OFF;"))) {
+				db.CreateTable<TestTable> ();
+				db.Insert (new TestTable { Value = "Secret Value" });
+				Assert.AreEqual ("0", db.ExecuteScalar<string> ("PRAGMA cipher_default_use_hmac;"));
+			}
+		}
+
+		[Test]
+		public void SetPostKeyAction ()
+		{
+			var path = TestPath.GetTempFileName ();
+			var key = "SecretKey";
+
+			using (var db = new SQLiteConnection (path, true, key,
+				postKeyAction: conn => conn.Execute ("PRAGMA kdf_iter = 128000;"))) {
+				db.CreateTable<TestTable> ();
+				db.Insert (new TestTable { Value = "Secret Value" });
+				Assert.AreEqual ("128000", db.ExecuteScalar<string> ("PRAGMA kdf_iter;"));
+			}
+		}
+
+		[Test]
+		public void CheckJournalModeForKeyed ()
+		{
+			var key = "SecretKey";
+			using (var db = new TestDb (key: key)) {
+				db.CreateTable<TestTable> ();
+				Assert.AreEqual ("delete", db.ExecuteScalar<string> ("PRAGMA journal_mode;"));
+			}
+		}
+
+		[Test]
+		public void CheckJournalModeForNonKeyed ()
+		{
+			using (var db = new TestDb ()) {
+				db.CreateTable<TestTable> ();
+				Assert.AreEqual ("wal", db.ExecuteScalar<string> ("PRAGMA journal_mode;"));
 			}
 		}
 	}
