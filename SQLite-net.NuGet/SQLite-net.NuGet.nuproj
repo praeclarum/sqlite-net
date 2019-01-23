@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(NuGetAuthoringPath)\NuGet.Packaging.Authoring.props" Condition="Exists('$(NuGetAuthoringPath)\NuGet.Packaging.Authoring.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{812D5EDE-88BD-444C-AD2A-994EA55EB2F3}</ProjectGuid>
+    <Description>sqlite-net is an open source, minimal library to allow .NET and Mono applications to store data in SQLite databases. It is written in C# 3.0 and is meant to be simply compiled in with your projects. It was first designed to work with MonoTouch on the iPhone, but should work in any other CLI environment.</Description>
+    <PackageId>sqlite-net</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>Frank Krueger</Authors>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SQLitenet.NuGet</RootNamespace>
+    <UsePartialTypes>false</UsePartialTypes>
+    <AssemblyName>SQLite-net.NuGet</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <Owners>Frank Krueger,Tim Heuer</Owners>
+    <PackageTags>sqlite-net sqlite sql monotouch database metro winrt</PackageTags>
+    <Title>sqlite-net</Title>
+    <PackageReleaseNotes>See project page</PackageReleaseNotes>
+    <Summary>A .NET client library to access SQLite embedded database files in a LINQ manner.</Summary>
+    <PackageProjectUrl>https://github.com/praeclarum/sqlite-net</PackageProjectUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/nuget/Logo-low.png</PackageIconUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE.md</PackageLicenseUrl>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <OutputPath>bin\Debug</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NuGet.Build.Packaging">
+      <Version>0.2.2</Version>
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\nuget\SQLite-net-std\SQLite-net-std.csproj">
+      <Project>{081D08D6-10F1-431B-88FE-469FD9FE898C}</Project>
+      <Name>SQLite-net-std</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\nuget\SQLite-net\SQLite-net.csproj">
+      <Project>{7F946494-8EE0-432B-8A87-98961143D5C1}</Project>
+      <Name>SQLite-net</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />
+  <Import Project="$(NuGetAuthoringPath)\NuGet.Packaging.Authoring.targets" Condition="Exists('$(NuGetAuthoringPath)\NuGet.Packaging.Authoring.targets')" />
+</Project>
