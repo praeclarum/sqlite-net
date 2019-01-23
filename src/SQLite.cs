@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2018 Krueger Systems, Inc.
+// Copyright (c) 2009-2019 Krueger Systems, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2127,6 +2127,11 @@ namespace SQLite
         }
 
 #endif
+
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
+			: this (databasePath, storeDateTimeAsTicks, null)
+		{
+		}
 
 		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks, object key)
 		{

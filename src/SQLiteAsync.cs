@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2017 Krueger Systems, Inc.
+// Copyright (c) 2012-2019 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -54,11 +54,8 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		/// <param name="key">
-		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
-		/// </param>
-		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null)
-			: this (databasePath, SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key)
+		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true)
+			: this (databasePath, SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
 		{
 		}
 
@@ -79,16 +76,17 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		/// <param name="key">
-		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
-		/// </param>
-		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null)
+		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
 		{
+			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks);
 			_openFlags = openFlags;
 			isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
-			_connectionString = new SQLiteConnectionString (databasePath, storeDateTimeAsTicks, key);
-			if (isFullMutex)
+			// Get a writeable connection to make sure our open options take effect
+			// before getting the readonly connection.
+			var writeConnection = GetConnection ();
+			if (isFullMutex) {
 				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString, openFlags) { SkipLock = true };
+			}
 		}
 
 		/// <summary>
@@ -186,13 +184,15 @@ namespace SQLite
 		{
 			return Task.Factory.StartNew (() => {
 				SQLiteConnectionPool.Shared.CloseConnection (_connectionString, _openFlags);
+				_fullMutexReadConnection?.Close ();
+				_fullMutexReadConnection = null;
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
 		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = isFullMutex ? _fullMutexReadConnection : GetConnection ();
+				var conn = _fullMutexReadConnection ?? GetConnection ();
 				using (conn.Lock ()) {
 					return read (conn);
 				}
