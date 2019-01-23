@@ -1350,7 +1350,7 @@ namespace SQLite
 				}
 			}
 
-			entry.Close ();
+			entry?.Close ();
 		}
 
 		/// <summary>
