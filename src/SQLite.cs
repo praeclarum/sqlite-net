@@ -228,6 +228,47 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: null)
+		{
+		}
+
+		/// <summary>
+		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		/// <param name="openFlags">
+		/// Flags controlling how the connection should be opened.
+		/// </param>
+		/// <param name="storeDateTimeAsTicks">
+		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		/// absolutely do want to store them as Ticks in all new projects. The value of false is
+		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
+		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
+		/// the storeDateTimeAsTicks parameter.
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+			: this (databasePath, openFlags, storeDateTimeAsTicks, key: null)
+		{
+		}
+
+		/// <summary>
+		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		/// </summary>
+		/// <param name="databasePath">
+		/// Specifies the path to the database file.
+		/// </param>
+		/// <param name="storeDateTimeAsTicks">
+		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		/// absolutely do want to store them as Ticks in all new projects. The value of false is
+		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
+		/// down sides, when setting storeDateTimeAsTicks = true.
+		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
+		/// the storeDateTimeAsTicks parameter.
+		/// </param>
 		/// <param name="key">
 		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
 		/// </param>
@@ -240,8 +281,12 @@ namespace SQLite
 		/// <param name="vfsName">
 		/// Specifies the Virtual File System to use on the database.
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key, preKeyAction: preKeyAction, postKeyAction: postKeyAction, vfsName: vfsName)
+		/// <param name="enableWal">
+		/// Whether to enable WAL mode for high-performance read and write access to the database.
+		/// The default is to enable it.
+		/// </param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key, preKeyAction, postKeyAction, vfsName, enableWal)
 		{
 		}
 
@@ -274,7 +319,11 @@ namespace SQLite
 		/// <param name="vfsName">
 		/// Specifies the Virtual File System to use on the database.
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null)
+		/// <param name="enableWal">
+		/// Whether to enable WAL mode for high-performance read and write access to the database.
+		/// The default is to enable it.
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
 		{
 			if (databasePath==null)
 				throw new ArgumentException ("Must be specified", nameof(databasePath));
@@ -325,7 +374,7 @@ namespace SQLite
 			if (postKeyAction != null) {
 				postKeyAction (this);
 			}
-			if (key == null && openFlags.HasFlag (SQLiteOpenFlags.ReadWrite)) {
+			if (key == null && (enableWal && openFlags.HasFlag (SQLiteOpenFlags.ReadWrite))) {
 				ExecuteScalar<string> ("PRAGMA journal_mode=WAL");
 			}
 		}
