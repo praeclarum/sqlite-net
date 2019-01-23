@@ -237,8 +237,11 @@ namespace SQLite
 		/// <param name="postKeyAction">
 		/// Executes after setting key for SQLCipher databases
 		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null)
-			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key, preKeyAction: preKeyAction, postKeyAction: postKeyAction)
+		/// <param name="vfsName">
+		/// Specifies the Virtual File System to use on the database.
+		/// </param>
+		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null)
+			: this (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, key: key, preKeyAction: preKeyAction, postKeyAction: postKeyAction, vfsName: vfsName)
 		{
 		}
 
@@ -268,7 +271,10 @@ namespace SQLite
 		/// <param name="postKeyAction">
 		/// Executes after setting key for SQLCipher databases
 		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null)
+		/// <param name="vfsName">
+		/// Specifies the Virtual File System to use on the database.
+		/// </param>
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null)
 		{
 			if (databasePath==null)
 				throw new ArgumentException ("Must be specified", nameof(databasePath));
@@ -284,13 +290,13 @@ namespace SQLite
 			Sqlite3DatabaseHandle handle;
 
 #if SILVERLIGHT || USE_CSHARP_SQLITE || USE_SQLITEPCL_RAW
-			var r = SQLite3.Open (databasePath, out handle, (int)openFlags, IntPtr.Zero);
+			var r = SQLite3.Open (databasePath, out handle, (int)openFlags, vfsName);
 #else
 			// open using the byte[]
 			// in the case where the path may include Unicode
 			// force open to using UTF-8 using sqlite3_open_v2
 			var databasePathAsBytes = GetNullTerminatedUtf8 (DatabasePath);
-			var r = SQLite3.Open (databasePathAsBytes, out handle, (int) openFlags, IntPtr.Zero);
+			var r = SQLite3.Open (databasePathAsBytes, out handle, (int)openFlags, vfsName);
 #endif
 
 			Handle = handle;
@@ -3845,10 +3851,10 @@ namespace SQLite
 		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db);
 
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention=CallingConvention.Cdecl)]
-		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db, int flags, IntPtr zvfs);
+		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db, int flags, [MarshalAs (UnmanagedType.LPStr)] string zvfs);
 
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-		public static extern Result Open(byte[] filename, out IntPtr db, int flags, IntPtr zvfs);
+		public static extern Result Open(byte[] filename, out IntPtr db, int flags, [MarshalAs (UnmanagedType.LPStr)] string zvfs);
 
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr db);
@@ -4006,12 +4012,12 @@ namespace SQLite
 			return (Result)Sqlite3.sqlite3_open (filename, out db);
 		}
 
-		public static Result Open (string filename, out Sqlite3DatabaseHandle db, int flags, IntPtr zVfs)
+		public static Result Open (string filename, out Sqlite3DatabaseHandle db, int flags, string vfsName)
 		{
 #if USE_WP8_NATIVE_SQLITE
-			return (Result)Sqlite3.sqlite3_open_v2(filename, out db, flags, "");
+			return (Result)Sqlite3.sqlite3_open_v2(filename, out db, flags, vfsName ?? "");
 #else
-			return (Result)Sqlite3.sqlite3_open_v2 (filename, out db, flags, null);
+			return (Result)Sqlite3.sqlite3_open_v2 (filename, out db, flags, vfsName);
 #endif
 		}
 
