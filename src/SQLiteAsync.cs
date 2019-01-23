@@ -688,6 +688,19 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Backup the entire database to the specified path.
+		/// </summary>
+		/// <param name="destinationDatabasePath">Path to backup file.</param>
+		/// <param name="databaseName">The name of the database to backup (usually "main").</param>
+		public Task BackupAsync (string destinationDatabasePath, string databaseName = "main")
+		{
+			return WriteAsync (conn => {
+				conn.Backup (destinationDatabasePath, databaseName);
+				return 0;
+			});
+		}
+
+		/// <summary>
 		/// Attempts to retrieve an object with the given primary key from the table
 		/// associated with the specified type. Use of this method requires that
 		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).

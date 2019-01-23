@@ -46,10 +46,12 @@ using Sqlite3DatabaseHandle = Sqlite.Database;
 using Sqlite3Statement = Sqlite.Statement;
 #elif USE_SQLITEPCL_RAW
 using Sqlite3DatabaseHandle = SQLitePCL.sqlite3;
+using Sqlite3BackupHandle = SQLitePCL.sqlite3_backup;
 using Sqlite3Statement = SQLitePCL.sqlite3_stmt;
 using Sqlite3 = SQLitePCL.raw;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
+using Sqlite3BackupHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
 #endif
 
@@ -174,6 +176,7 @@ namespace SQLite
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 		static readonly Sqlite3DatabaseHandle NullHandle = default (Sqlite3DatabaseHandle);
+		static readonly Sqlite3BackupHandle NullBackupHandle = default (Sqlite3BackupHandle);
 
 		/// <summary>
 		/// Gets the database path used by this connection.
@@ -1975,6 +1978,44 @@ namespace SQLite
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Delete);
 			return count;
+		}
+
+		/// <summary>
+		/// Backup the entire database to the specified path.
+		/// </summary>
+		/// <param name="destinationDatabasePath">Path to backup file.</param>
+		/// <param name="databaseName">The name of the database to backup (usually "main").</param>
+		public void Backup (string destinationDatabasePath, string databaseName = "main")
+		{
+			// Open the destination
+			var r = SQLite3.Open (destinationDatabasePath, out var destHandle);
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, "Failed to open destination database");
+			}
+
+			// Init the backup
+			var backup = SQLite3.BackupInit (destHandle, databaseName, Handle, databaseName);
+			if (backup == NullBackupHandle) {
+				SQLite3.Close (destHandle);
+				throw new Exception ("Failed to create backup");
+			}
+
+			// Perform it
+			SQLite3.BackupStep (backup, -1);
+			SQLite3.BackupFinish (backup);
+
+			// Check for errors
+			r = SQLite3.GetResult (destHandle);
+			string msg = "";
+			if (r != SQLite3.Result.OK) {
+				msg = SQLite3.GetErrmsg (destHandle);
+			}
+
+			// Close everything and report errors
+			SQLite3.Close (destHandle);
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, msg);
+			}
 		}
 
 		~SQLiteConnection ()
@@ -4099,11 +4140,23 @@ namespace SQLite
 			return result;
 		}
 
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_errcode", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result GetResult (Sqlite3DatabaseHandle db);
+
 		[DllImport (LibraryPath, EntryPoint = "sqlite3_extended_errcode", CallingConvention = CallingConvention.Cdecl)]
 		public static extern ExtendedResult ExtendedErrCode (IntPtr db);
 
 		[DllImport (LibraryPath, EntryPoint = "sqlite3_libversion_number", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int LibVersionNumber ();
+
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_backup_init", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Sqlite3BackupHandle BackupInit (Sqlite3DatabaseHandle destDb, [MarshalAs (UnmanagedType.LPStr)] string destName, Sqlite3DatabaseHandle sourceDb, [MarshalAs (UnmanagedType.LPStr)] string sourceName);
+
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_backup_step", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result BackupStep (Sqlite3BackupHandle backup, int numPages);
+
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_backup_finish", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result BackupFinish (Sqlite3BackupHandle backup);
 #else
 		public static Result Open (string filename, out Sqlite3DatabaseHandle db)
 		{
@@ -4305,9 +4358,29 @@ namespace SQLite
 			return Sqlite3.sqlite3_libversion_number ();
 		}
 
+		public static Result GetResult (Sqlite3DatabaseHandle db)
+		{
+			return (Result)Sqlite3.sqlite3_errcode (db);
+		}
+
 		public static ExtendedResult ExtendedErrCode (Sqlite3DatabaseHandle db)
 		{
 			return (ExtendedResult)Sqlite3.sqlite3_extended_errcode (db);
+		}
+
+		public static Sqlite3BackupHandle BackupInit (Sqlite3DatabaseHandle destDb, string destName, Sqlite3DatabaseHandle sourceDb, string sourceName)
+		{
+			return Sqlite3.sqlite3_backup_init (destDb, destName, sourceDb, sourceName);
+		}
+
+		public static Result BackupStep (Sqlite3BackupHandle backup, int numPages)
+		{
+			return (Result)Sqlite3.sqlite3_backup_step (backup, numPages);
+		}
+
+		public static Result BackupFinish (Sqlite3BackupHandle backup)
+		{
+			return (Result)Sqlite3.sqlite3_backup_finish (backup);
 		}
 #endif
 
