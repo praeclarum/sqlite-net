@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -84,6 +85,33 @@ namespace SQLite.Tests
 			db.Insert (o);
 			o2 = db.Get<TestObj> (o.Id);
 			Assert.AreEqual (o.ModifiedTime, o2.ModifiedTime);
+		}
+
+		class NullableDateObj
+		{
+			public DateTime? Time { get; set; }
+		}
+
+		[Test]
+		public async Task LinqNullable ()
+		{
+			foreach (var option in new[] { true, false }) {
+				var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), option);
+				await db.CreateTableAsync<NullableDateObj> ().ConfigureAwait (false);
+
+				var epochTime = new DateTime (1970, 1, 1);
+
+				await db.InsertAsync (new NullableDateObj { Time = epochTime });
+				await db.InsertAsync (new NullableDateObj { Time = new DateTime (1980, 7, 23) });
+				await db.InsertAsync (new NullableDateObj { Time = null });
+				await db.InsertAsync (new NullableDateObj { Time = new DateTime (2019, 1, 23) });
+
+				var res = await db.Table<NullableDateObj> ().Where (x => x.Time == epochTime).ToListAsync ();
+				Assert.AreEqual (1, res.Count);
+
+				res = await db.Table<NullableDateObj> ().Where (x => x.Time > epochTime).ToListAsync ();
+				Assert.AreEqual (2, res.Count);
+			}
 		}
 	}
 }
