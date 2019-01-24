@@ -189,11 +189,10 @@ Console.WriteLine(string.Format("Found '{0}' stock items.", count));
 
 ## Manual SQL
 
-**sqlite-net** is normally used as a light ORM with the methods `CreateTable` and `Table`. However, you can use it as just a convenient
-way to execute explicit queries.
+**sqlite-net** is normally used as a light ORM (object-relational-mapper) using the methods `CreateTable` and `Table`.
+However, you can also use it as a convenient way to manually execute queries.
 
-Here is an example of create a table, inserting into it, and
-querying it without using the ORM.
+Here is an example of creating a table, inserting into it (with a parameterized command), and querying it without using ORM features.
 
 ```csharp
 db.Execute ("create table Stock(Symbol varchar(100) not null)");
