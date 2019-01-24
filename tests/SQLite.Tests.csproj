@@ -83,6 +83,7 @@
     <Compile Include="SQLCipherTest.cs" />
     <Compile Include="BackupTest.cs" />
     <Compile Include="ReadmeTest.cs" />
+    <Compile Include="QueryTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
