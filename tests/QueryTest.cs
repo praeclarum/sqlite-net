@@ -13,7 +13,7 @@ using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAtt
 using NUnit.Framework;
 #endif
 
-namespace SQLite.Test
+namespace SQLite.Tests
 {
 	[TestFixture]
 	public class QueryTest
