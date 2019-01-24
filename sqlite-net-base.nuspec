@@ -20,44 +20,44 @@
     <releaseNotes>See project page</releaseNotes>
     <dependencies>
       <group targetFramework="net">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="win">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="wp">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="wpa">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="netstandard1.1">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
         <dependency id="NETStandard.Library" version="1.6.1" />
       </group>
       <group targetFramework="MonoAndroid10">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="Xamarin.iOS10">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="Xamarin.Mac20">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="portable-net45+win+wpa81+wp80">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="uap">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="dotnet">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="xamarintvos">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
       <group targetFramework="xamarinwatchos">
-        <dependency id="SQLitePCLRaw.core" version="1.1.12" />
+        <dependency id="SQLitePCLRaw.core" version="1.1.13" />
       </group>
     </dependencies>
   </metadata>
