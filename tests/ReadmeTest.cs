@@ -141,5 +141,18 @@ namespace SQLite.Tests
 				postKeyAction: db => db.Execute ("PRAGMA kdf_iter = 128000;"));
 			var encryptedDb2 = new SQLiteAsyncConnection (options2);
 		}
+
+		[Test]
+		public void Manual()
+		{
+			var db = new SQLiteConnection (":memory:");
+
+			db.Execute ("create table Stock(Symbol varchar(100) not null)");
+			db.Execute ("insert into Stock(Symbol) values (?)", "MSFT");
+			var stocks = db.Query<Stock> ("select * from Stock");
+
+			Assert.AreEqual (1, stocks.Count);
+			Assert.AreEqual ("MSFT", stocks[0].Symbol);
+		}
 	}
 }

@@ -187,6 +187,20 @@ var count = await db.ExecuteScalarAsync<int>("select count(*) from Stock");
 Console.WriteLine(string.Format("Found '{0}' stock items.", count));
 ```
 
+## Manual SQL
+
+**sqlite-net** is normally used as a light ORM with the methods `CreateTable` and `Table`. However, you can use it as just a convenient
+way to execute explicit queries.
+
+Here is an example of create a table, inserting into it, and
+querying it without using the ORM.
+
+```csharp
+db.Execute ("create table Stock(Symbol varchar(100) not null)");
+db.Execute ("insert into Stock(Symbol) values (?)", "MSFT");
+var stocks = db.Query<Stock> ("select * from Stock");
+```
+
 ## Using SQLCipher
 
 You can use an encrypted database by using the [sqlite-net-sqlcipher NuGet package](https://www.nuget.org/packages/sqlite-net-sqlcipher).
