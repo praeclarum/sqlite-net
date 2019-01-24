@@ -141,16 +141,6 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void CheckJournalModeForKeyed ()
-		{
-			var key = "SecretKey";
-			using (var db = new TestDb (key: key)) {
-				db.CreateTable<TestTable> ();
-				Assert.AreEqual ("delete", db.ExecuteScalar<string> ("PRAGMA journal_mode;"));
-			}
-		}
-
-		[Test]
 		public void CheckJournalModeForNonKeyed ()
 		{
 			using (var db = new TestDb ()) {

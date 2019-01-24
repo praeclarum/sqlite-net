@@ -53,14 +53,18 @@ namespace SQLite.Tests
 
 	public class TestDb : SQLiteConnection
 	{
-		public TestDb (bool storeDateTimeAsTicks = true, object key = null) : base (new SQLiteConnectionString (TestPath.GetTempFileName (), storeDateTimeAsTicks, key: key))
+		public TestDb (bool storeDateTimeAsTicks = true, object key = null, bool wal = true) : base (new SQLiteConnectionString (TestPath.GetTempFileName (), storeDateTimeAsTicks, key: key))
 		{
 			Trace = true;
+			if (wal)
+				EnableWriteAheadLogging ();
 		}
 
-		public TestDb (string path, bool storeDateTimeAsTicks = true, object key = null) : base (new SQLiteConnectionString (path, storeDateTimeAsTicks, key: key))
+		public TestDb (string path, bool storeDateTimeAsTicks = true, object key = null, bool wal = true) : base (new SQLiteConnectionString (path, storeDateTimeAsTicks, key: key))
 		{
 			Trace = true;
+			if (wal)
+				EnableWriteAheadLogging ();
 		}
 	}
 

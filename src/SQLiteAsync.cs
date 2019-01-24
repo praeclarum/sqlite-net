@@ -144,6 +144,19 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Enables the write ahead logging. WAL is significantly faster in most scenarios
+		/// by providing better concurrency and better disk IO performance than the normal
+		/// jounral mode. You only need to call this function once in the lifetime of the database.
+		/// </summary>
+		public Task EnableWriteAheadLoggingAsync ()
+		{
+			return WriteAsync<object> (conn => {
+				conn.EnableWriteAheadLogging ();
+				return null;
+			});
+		}
+
+		/// <summary>
 		/// Whether to store DateTime properties as ticks (true) or strings (false).
 		/// </summary>
 		public bool StoreDateTimeAsTicks => GetConnection ().StoreDateTimeAsTicks;

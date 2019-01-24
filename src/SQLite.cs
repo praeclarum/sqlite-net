@@ -327,10 +327,16 @@ namespace SQLite
 				throw new InvalidOperationException ("Encryption keys must be strings or byte arrays");
 			}
 			connectionString.PostKeyAction?.Invoke (this);
+		}
 
-			if (connectionString.Key == null && (connectionString.EnableWal && connectionString.OpenFlags.HasFlag (SQLiteOpenFlags.ReadWrite))) {
-				ExecuteScalar<string> ("PRAGMA journal_mode=WAL");
-			}
+		/// <summary>
+		/// Enables the write ahead logging. WAL is significantly faster in most scenarios
+		/// by providing better concurrency and better disk IO performance than the normal
+		/// jounral mode. You only need to call this function once in the lifetime of the database.
+		/// </summary>
+		public void EnableWriteAheadLogging()
+		{
+			ExecuteScalar<string> ("PRAGMA journal_mode=WAL");
 		}
 
 		/// <summary>
@@ -2107,7 +2113,6 @@ namespace SQLite
 		public Action<SQLiteConnection> PreKeyAction { get; }
 		public Action<SQLiteConnection> PostKeyAction { get; }
 		public string VfsName { get; }
-		public bool EnableWal { get; }
 
 #if NETFX_CORE
 		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
@@ -2170,11 +2175,8 @@ namespace SQLite
 		/// <param name="vfsName">
 		/// Specifies the Virtual File System to use on the database.
 		/// </param>
-		/// <param name="enableWal">
-		/// Whether to enable WAL journal mode. Defaults to true.
-		/// </param>
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
-			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks, key, preKeyAction, postKeyAction, vfsName, enableWal)
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null)
+			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks, key, preKeyAction, postKeyAction, vfsName)
 		{
 		}
 
@@ -2207,10 +2209,7 @@ namespace SQLite
 		/// <param name="vfsName">
 		/// Specifies the Virtual File System to use on the database.
 		/// </param>
-		/// <param name="enableWal">
-		/// Whether to enable WAL journal mode. Defaults to true.
-		/// </param>
-		public SQLiteConnectionString (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, bool enableWal = true)
+		public SQLiteConnectionString (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null)
 		{
 			if (key != null && !((key is byte[]) || (key is string)))
 				throw new ArgumentException ("Encryption keys must be strings or byte arrays", nameof (key));
@@ -2222,7 +2221,6 @@ namespace SQLite
 			PostKeyAction = postKeyAction;
 			OpenFlags = openFlags;
 			VfsName = vfsName;
-			EnableWal = enableWal;
 
 #if NETFX_CORE
 			DatabasePath = IsInMemoryPath(databasePath)

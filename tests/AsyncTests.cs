@@ -44,6 +44,15 @@ namespace SQLite.Tests
 		private const string DatabaseName = "async.db";
 
 		[Test]
+		public async Task EnableWalAsync ()
+		{
+			var path = Path.GetTempFileName ();
+			var connection = new SQLiteAsyncConnection (path);
+
+			await connection.EnableWriteAheadLoggingAsync ().ConfigureAwait (false);
+		}
+
+		[Test]
 		public async Task QueryAsync ()
 		{
 			var connection = GetConnection ();
