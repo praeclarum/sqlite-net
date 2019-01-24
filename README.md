@@ -24,9 +24,9 @@ SQLite-net was designed as a quick and convenient database layer. Its design fol
   
 * Works with your data model without forcing you to change your classes. (Contains a small reflection-driven ORM layer.)
   
-## Nuget Installation
+## NuGet Installation
 
-Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from nuget.
+Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from NuGet.
 
 **Important:** You will need to add the NuGet package to **both** your *PCL project* and your *platform-dependent project*.
 
@@ -36,7 +36,7 @@ SQLite-net is all contained in 1 file (I know, so cool right?) and is easy to ad
 
 ## Please Contribute!
 
-This is an open source project that welcomes contributions/suggestions/bug reports from those who use it. If you have any ideas on how to improve the library, please [post an issue here on github](https://github.com/praeclarum/sqlite-net/issues). Please check out the [How to Contribute](https://github.com/praeclarum/sqlite-net/wiki/How-to-Contribute).
+This is an open source project that welcomes contributions/suggestions/bug reports from those who use it. If you have any ideas on how to improve the library, please [post an issue here on GitHub](https://github.com/praeclarum/sqlite-net/issues). Please check out the [How to Contribute](https://github.com/praeclarum/sqlite-net/wiki/How-to-Contribute).
 
 
 # Example Time!
