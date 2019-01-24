@@ -28,7 +28,7 @@ SQLite-net was designed as a quick and convenient database layer. Its design fol
 
 Install [SQLite-net PCL](https://www.nuget.org/packages/sqlite-net-pcl) from nuget.
 
-**Important:** You will need to add the nuget package to **both** your *PCL project* and your *platform-dependent project*.
+**Important:** You will need to add the NuGet package to **both** your *PCL project* and your *platform-dependent project*.
 
 ## Source Installation
 
@@ -66,7 +66,7 @@ public class Valuation
 
 Once you've defined the objects in your model you have a choice of APIs. You can use the "synchronous API" where calls
 block one at a time, or you can use the "asynchronous API" where calls do not block. You may care to use the asynchronous
-API for mobile applications in order to increase reponsiveness.
+API for mobile applications in order to increase responsiveness.
 
 Both APIs are explained in the two sections below.
 
@@ -87,10 +87,11 @@ You can insert rows in the database using `Insert`. If the table contains an aut
 
 ```csharp
 public static void AddStock(SQLiteConnection db, string symbol) {
-	var s = db.Insert(new Stock() {
+	var stock = new Stock() {
 		Symbol = symbol
-	});
-	Console.WriteLine("{0} == {1}", s.Symbol, s.Id);
+	};
+	db.Insert(stock);
+	Console.WriteLine("{0} == {1}", stock.Symbol, stock.Id);
 }
 ```
 
@@ -99,11 +100,10 @@ Similar methods exist for `Update` and `Delete`.
 The most straightforward way to query for data is using the `Table` method. This can take predicates for constraining via WHERE clauses and/or adding ORDER BY clauses:
 
 ```csharp
-var conn = new SQLiteConnection(databasePath);
-var query = conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+var query = db.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
 foreach (var stock in query)
-	Debug.WriteLine("Stock: " + stock.Symbol);
+	Console.WriteLine("Stock: " + stock.Symbol);
 ```
 
 You can also query the database at a low-level using the `Query` method:
@@ -141,42 +141,39 @@ Once you have defined your entity, you can automatically generate tables by call
 // Get an absolute path to the database file
 var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MyData.db");
 
-var conn = new SQLiteAsyncConnection(databasePath);
+var db = new SQLiteAsyncConnection(databasePath);
 
-await conn.CreateTableAsync<Stock>();
+await db.CreateTableAsync<Stock>();
 
-Debug.WriteLine("Table created!");
+Console.WriteLine("Table created!");
 ```
 
 You can insert rows in the database using `Insert`. If the table contains an auto-incremented primary key, then the value for that key will be available to you after the insert:
 
 ```csharp
-Stock stock = new Stock()
+var stock = new Stock()
 {
 	Symbol = "AAPL"
 };
 
-var conn = new SQLiteAsyncConnection(databasePath);
+await db.InsertAsync(stock);
 
-await conn.InsertAsync(stock);
-
-Debug.WriteLine("New customer ID: {0}", stock.Id);
+Console.WriteLine("Auto stock id: {0}", stock.Id);
 ```
 
 Similar methods exist for `UpdateAsync` and `DeleteAsync`.
 
 Querying for data is most straightforwardly done using the `Table` method. This will return an `AsyncTableQuery` instance back, whereupon
-you can add predictates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special 
+you can add predicates for constraining via WHERE clauses and/or adding ORDER BY. The database is not physically touched until one of the special 
 retrieval methods - `ToListAsync`, `FirstAsync`, or `FirstOrDefaultAsync` - is called.
 
 ```csharp
-var conn = new SQLiteAsyncConnection(databasePath);
-var query = await conn.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
+var query = db.Table<Stock>().Where(s => s.Symbol.StartsWith("A"));
 
 var result = await query.ToListAsync();
 
-foreach (var stock in result)
-	Debug.WriteLine("Stock: " + stock.Symbol);
+foreach (var s in result)
+	Console.WriteLine("Stock: " + s.Symbol);
 ```
 
 There are a number of low-level methods available. You can also query the database directly via the `QueryAsync` method. Over and above the change 
@@ -185,21 +182,33 @@ operations provided by `InsertAsync` etc you can issue `ExecuteAsync` methods to
 Another helpful method is `ExecuteScalarAsync`. This allows you to return a scalar value from the database easily:
 
 ```csharp
-var conn = new SQLiteAsyncConnection(databasePath);
+var count = await db.ExecuteScalarAsync<int>("select count(*) from Stock");
 
-var result = await conn.ExecuteScalarAsync<int>("select count(*) from Stock");
-
-Debug.WriteLine(string.Format("Found '{0}' stock items.", result));
+Console.WriteLine(string.Format("Found '{0}' stock items.", count));
 ```
 
 ## Using SQLCipher
 
-You can add support for encrypted databases using SQLCipher by including an additional package [SQLitePCLRaw.bundle_sqlcipher](https://www.nuget.org/packages/SQLitePCLRaw.bundle_sqlcipher/).
+You can use an encrypted database by using the [sqlite-net-sqlcipher NuGet package](https://www.nuget.org/packages/sqlite-net-sqlcipher).
 
-I'll let [Eric Sink explain how to use SQLCipher with SQLite-net](https://github.com/ericsink/SQLitePCL.raw/wiki/How-to-use-SQLCipher-with-SQLite-net):
+The database key is set in the `SqliteConnectionString` passed to the connection constructor:
 
-> The reference to bundle_sqlcipher must be placed in your app project.
-> What happens here is that SQLite-net references bundle_green, but at build time, bundle_sqlcipher gets substituted in its place.
+```csharp
+var options = new SQLiteConnectionString(databasePath, true,
+	key: "password");
+var encryptedDb = new SQLiteAsyncConnection(options);
+```
+
+If you need set pragmas to control the encryption, actions can be passed to the connection string:
+
+```csharp
+var options2 = new SQLiteConnectionString (databasePath, true,
+	key: "password",
+	preKeyAction: db => db.Execute("PRAGMA cipher_default_use_hmac = OFF;"),
+	postKeyAction: db => db.Execute ("PRAGMA kdf_iter = 128000;"));
+var encryptedDb2 = new SQLiteAsyncConnection (options2);
+```
+
 
 ## Thank you!
 
