@@ -37,7 +37,6 @@ namespace SQLite
 	{
 		SQLiteConnectionString _connectionString;
 		SQLiteConnectionWithLock _fullMutexReadConnection;
-		readonly bool isFullMutex;
 		SQLiteOpenFlags _openFlags;
 
 		/// <summary>
@@ -106,11 +105,11 @@ namespace SQLite
 		{
 			_connectionString = connectionString;
 			_openFlags = connectionString.OpenFlags;
-			isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
+			var isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
 			// Get a writeable connection to make sure our open options take effect
 			// before getting the readonly connection.
 			var writeConnection = GetConnection ();
-			if (isFullMutex) {
+			if (isFullMutex && connectionString.DatabasePath != ":memory:") {
 				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString) { SkipLock = true };
 			}
 		}
