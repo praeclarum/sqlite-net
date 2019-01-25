@@ -2091,7 +2091,7 @@ namespace SQLite
 	/// </summary>
 	public class SQLiteConnectionString
 	{
-		public string ConnectionString { get; }
+		public string UniqueKey { get; }
 		public string DatabasePath { get; }
 		public bool StoreDateTimeAsTicks { get; }
 		public object Key { get; }
@@ -2200,7 +2200,7 @@ namespace SQLite
 			if (key != null && !((key is byte[]) || (key is string)))
 				throw new ArgumentException ("Encryption keys must be strings or byte arrays", nameof (key));
 
-			ConnectionString = databasePath;
+			UniqueKey = string.Format ("{0}_{1:X8}", databasePath, (uint)openFlags);
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			Key = key;
 			PreKeyAction = preKeyAction;

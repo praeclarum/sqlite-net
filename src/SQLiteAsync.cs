@@ -1363,9 +1363,9 @@ namespace SQLite
 
 		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString)
 		{
+			var key = connectionString.UniqueKey;
 			Entry entry;
 			lock (_entriesLock) {
-				string key = connectionString.ConnectionString;
 				if (!_entries.TryGetValue (key, out entry)) {
 					entry = new Entry (connectionString);
 					_entries[key] = entry;
@@ -1376,15 +1376,13 @@ namespace SQLite
 
 		public void CloseConnection (SQLiteConnectionString connectionString)
 		{
-			var key = connectionString.ConnectionString;
-
+			var key = connectionString.UniqueKey;
 			Entry entry;
 			lock (_entriesLock) {
 				if (_entries.TryGetValue (key, out entry)) {
 					_entries.Remove (key);
 				}
 			}
-
 			entry?.Close ();
 		}
 
@@ -1407,7 +1405,8 @@ namespace SQLite
 
 	/// <summary>
 	/// This is a normal connection except it contains a Lock method that
-	/// can be used to serialize access to the database.
+	/// can be used to serialize access to the database
+	/// in lieu of using the sqlite's FullMutex support.
 	/// </summary>
 	public class SQLiteConnectionWithLock : SQLiteConnection
 	{
