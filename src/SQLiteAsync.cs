@@ -35,9 +35,7 @@ namespace SQLite
 	/// </summary>
 	public partial class SQLiteAsyncConnection
 	{
-		SQLiteConnectionString _connectionString;
-		SQLiteConnectionWithLock _fullMutexReadConnection;
-		SQLiteOpenFlags _openFlags;
+		readonly SQLiteConnectionString _connectionString;
 
 		/// <summary>
 		/// Constructs a new SQLiteAsyncConnection and opens a pooled SQLite database specified by databasePath.
@@ -54,7 +52,7 @@ namespace SQLite
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
 		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (new SQLiteConnectionString (databasePath, storeDateTimeAsTicks))
+			: this (new SQLiteConnectionString (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, storeDateTimeAsTicks))
 		{
 		}
 
@@ -66,6 +64,7 @@ namespace SQLite
 		/// </param>
 		/// <param name="openFlags">
 		/// Flags controlling how the connection should be opened.
+		/// Async connections should have the FullMutex flag set to provide best performance.
 		/// </param>
 		/// <param name="storeDateTimeAsTicks">
 		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
@@ -81,20 +80,6 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Constructs a new SQLiteAsyncConnection and opens a pooled SQLite database specified by databasePath.
-		/// </summary>
-		/// <param name="databasePath">
-		/// Specifies the path to the database file.
-		/// </param>
-		/// <param name="key">
-		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
-		/// </param>
-		public SQLiteAsyncConnection (string databasePath, object key)
-			: this (new SQLiteConnectionString (databasePath, true, key: key))
-		{
-		}
-
-		/// <summary>
 		/// Constructs a new SQLiteAsyncConnection and opens a pooled SQLite database
 		/// using the given connection string.
 		/// </summary>
@@ -104,14 +89,6 @@ namespace SQLite
 		public SQLiteAsyncConnection (SQLiteConnectionString connectionString)
 		{
 			_connectionString = connectionString;
-			_openFlags = connectionString.OpenFlags;
-			var isFullMutex = _openFlags.HasFlag (SQLiteOpenFlags.FullMutex);
-			// Get a writeable connection to make sure our open options take effect
-			// before getting the readonly connection.
-			var writeConnection = GetConnection ();
-			if (isFullMutex && connectionString.DatabasePath != ":memory:") {
-				_fullMutexReadConnection = new SQLiteConnectionWithLock (_connectionString) { SkipLock = true };
-			}
 		}
 
 		/// <summary>
@@ -212,7 +189,7 @@ namespace SQLite
 		/// </summary>
 		public SQLiteConnectionWithLock GetConnection ()
 		{
-			return SQLiteConnectionPool.Shared.GetConnection (_connectionString, _openFlags);
+			return SQLiteConnectionPool.Shared.GetConnection (_connectionString);
 		}
 
 		/// <summary>
@@ -221,16 +198,14 @@ namespace SQLite
 		public Task CloseAsync ()
 		{
 			return Task.Factory.StartNew (() => {
-				SQLiteConnectionPool.Shared.CloseConnection (_connectionString, _openFlags);
-				_fullMutexReadConnection?.Close ();
-				_fullMutexReadConnection = null;
+				SQLiteConnectionPool.Shared.CloseConnection (_connectionString);
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
 		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = _fullMutexReadConnection ?? GetConnection ();
+				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return read (conn);
 				}
@@ -1151,11 +1126,6 @@ namespace SQLite
 		}
 	}
 
-	//
-	// TODO: Bind to AsyncConnection.GetConnection instead so that delayed
-	// execution can still work after a Pool.Reset.
-	//
-
 	/// <summary>
 	/// Query to an asynchronous database connection.
 	/// </summary>
@@ -1375,7 +1345,7 @@ namespace SQLite
 			}
 		}
 
-		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
+		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString)
 		{
 			lock (_entriesLock) {
 				Entry entry;
@@ -1386,11 +1356,16 @@ namespace SQLite
 					_entries[key] = entry;
 				}
 
+				// If the database is FullMutex, then we don't need to bother locking
+				if (connectionString.OpenFlags.HasFlag (SQLiteOpenFlags.FullMutex)) {
+					entry.Connection.SkipLock = true;
+				}
+
 				return entry.Connection;
 			}
 		}
 
-		public void CloseConnection (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
+		public void CloseConnection (SQLiteConnectionString connectionString)
 		{
 			var key = connectionString.ConnectionString;
 
