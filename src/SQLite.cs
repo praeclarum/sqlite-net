@@ -261,20 +261,6 @@ namespace SQLite
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
-		/// <param name="databasePath">
-		/// Specifies the path to the database file.
-		/// </param>
-		/// <param name="key">
-		/// Specifies the encryption key to use on the database. Should be a string or a byte[].
-		/// </param>
-		public SQLiteConnection (string databasePath, object key)
-			: this (new SQLiteConnectionString (databasePath, true, key: key))
-		{
-		}
-
-		/// <summary>
-		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
-		/// </summary>
 		/// <param name="connectionString">
 		/// Details on how to find and open the database.
 		/// </param>
