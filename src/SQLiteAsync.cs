@@ -1311,23 +1311,39 @@ namespace SQLite
 	{
 		class Entry
 		{
-			public SQLiteConnectionString ConnectionString { get; private set; }
-			public SQLiteConnectionWithLock Connection { get; private set; }
+			WeakReference<SQLiteConnectionWithLock> connection;
+
+			public SQLiteConnectionString ConnectionString { get; }
 
 			public Entry (SQLiteConnectionString connectionString)
 			{
 				ConnectionString = connectionString;
-				Connection = new SQLiteConnectionWithLock (connectionString);
+			}
+
+			public SQLiteConnectionWithLock Connect ()
+			{
+				SQLiteConnectionWithLock c = null;
+				var wc = connection;
+				if (wc == null || !wc.TryGetTarget (out c)) {
+					c = new SQLiteConnectionWithLock (ConnectionString);
+
+					// If the database is FullMutex, then we don't need to bother locking
+					if (ConnectionString.OpenFlags.HasFlag (SQLiteOpenFlags.FullMutex)) {
+						c.SkipLock = true;
+					}
+
+					connection = new WeakReference<SQLiteConnectionWithLock> (c);
+				}
+				return c;
 			}
 
 			public void Close ()
 			{
-				if (Connection == null)
-					return;
-				using (var l = Connection.Lock ()) {
-					Connection.Dispose ();
+				var wc = connection;
+				if (wc != null && wc.TryGetTarget (out var c)) {
+					c.Close ();
 				}
-				Connection = null;
+				connection = null;
 			}
 		}
 
@@ -1347,22 +1363,15 @@ namespace SQLite
 
 		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString)
 		{
+			Entry entry;
 			lock (_entriesLock) {
-				Entry entry;
 				string key = connectionString.ConnectionString;
-
 				if (!_entries.TryGetValue (key, out entry)) {
 					entry = new Entry (connectionString);
 					_entries[key] = entry;
 				}
-
-				// If the database is FullMutex, then we don't need to bother locking
-				if (connectionString.OpenFlags.HasFlag (SQLiteOpenFlags.FullMutex)) {
-					entry.Connection.SkipLock = true;
-				}
-
-				return entry.Connection;
 			}
+			return entry.Connect ();
 		}
 
 		public void CloseConnection (SQLiteConnectionString connectionString)
