@@ -536,6 +536,38 @@ namespace SQLite.Tests
 		}
 
 		[Test]
+		public void TestBulkInsertAllAsync () {
+			// create a bunch of customers...
+			List<Customer> customers = new List<Customer> ();
+			for (int index = 0; index < 100; index++) {
+				Customer customer = new Customer ();
+				customer.FirstName = "foo";
+				customer.LastName = "bar";
+				customer.Email = Guid.NewGuid ().ToString ();
+				customers.Add (customer);
+			}
+
+			// connect...
+			string path = null;
+			var conn = GetConnection (ref path);
+			conn.CreateTableAsync<Customer> ().Wait ();
+
+			// insert them all...
+			conn.InsertAllAsync (customers, bulkInsert: true).Wait ();
+
+			var inObjs = conn.GetConnection().CreateCommand ("select * from Customer").ExecuteQuery<Customer> ().ToList ();
+
+			// check...
+			using (SQLiteConnection check = new SQLiteConnection (path)) {
+				for (int index = 0; index < inObjs.Count; index++) {
+					// load it back and check...
+					Customer loaded = check.Get<Customer> (inObjs[index].Id);
+					Assert.AreEqual (loaded.Email, inObjs[index].Email);
+				}
+			}
+		}
+
+		[Test]
 		public void TestRunInTransactionAsync ()
 		{
 			// connect...

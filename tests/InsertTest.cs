@@ -279,5 +279,78 @@ namespace SQLite.Tests
 			Assert.AreEqual (20, r.Count);
 			Assert.AreEqual ("Foo", r[4].Text);
 		}
-    }
+
+		[Test]
+		public void BulkInsertALot () {
+			int n = 10000;
+			var q = from i in Enumerable.Range (1, n)
+				select new TestObj () {
+					Text = "I am"
+				};
+			var objs = q.ToArray ();
+			_db.Trace = false;
+
+			var sw = new Stopwatch ();
+			sw.Start ();
+
+			var numIn = _db.InsertAll (objs, bulkInsert: true);
+
+			sw.Stop ();
+
+			Assert.AreEqual (numIn, n, "Num inserted must = num objects");
+
+			var inObjs = _db.CreateCommand ("select * from TestObj").ExecuteQuery<TestObj> ().ToArray ();
+
+			for (var i = 0; i < inObjs.Length; i++) {
+				Assert.AreEqual (i + 1, inObjs[i].Id);
+				Assert.AreEqual ("I am", inObjs[i].Text);
+			}
+
+			var numCount = _db.CreateCommand ("select count(*) from TestObj").ExecuteScalar<int> ();
+
+			Assert.AreEqual (numCount, n, "Num counted must = num objects");
+		}
+
+		[Test]
+		public void BulkInsertAllSuccessOutsideTransaction () {
+			var testObjects = Enumerable.Range (1, 20).Select (i => new UniqueObj { Id = i }).ToList ();
+
+			_db.InsertAll (testObjects, bulkInsert: true);
+
+			Assert.AreEqual (testObjects.Count, _db.Table<UniqueObj> ().Count ());
+		}
+
+		[Test]
+		public void BulkInsertAllFailureOutsideTransaction () {
+			var testObjects = Enumerable.Range (1, 20).Select (i => new UniqueObj { Id = i }).ToList ();
+			testObjects[testObjects.Count - 1].Id = 1; // causes the insert to fail because of duplicate key
+
+			ExceptionAssert.Throws<SQLiteException> (() => _db.InsertAll (testObjects, bulkInsert: true));
+
+			Assert.AreEqual (0, _db.Table<UniqueObj> ().Count ());
+		}
+
+		[Test]
+		public void BulkInsertAllSuccessInsideTransaction () {
+			var testObjects = Enumerable.Range (1, 20).Select (i => new UniqueObj { Id = i }).ToList ();
+
+			_db.RunInTransaction (() => {
+				_db.InsertAll (testObjects, bulkInsert: true);
+			});
+
+			Assert.AreEqual (testObjects.Count, _db.Table<UniqueObj> ().Count ());
+		}
+
+		[Test]
+		public void BulkInsertAllFailureInsideTransaction () {
+			var testObjects = Enumerable.Range (1, 20).Select (i => new UniqueObj { Id = i }).ToList ();
+			testObjects[testObjects.Count - 1].Id = 1; // causes the insert to fail because of duplicate key
+
+			ExceptionAssert.Throws<SQLiteException> (() => _db.RunInTransaction (() => {
+				_db.InsertAll (testObjects, bulkInsert: true);
+			}));
+
+			Assert.AreEqual (0, _db.Table<UniqueObj> ().Count ());
+		}
+	}
 }
