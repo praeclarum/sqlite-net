@@ -3573,40 +3573,34 @@ namespace SQLite
 				}
 				else if (call.Method.Name == "StartsWith" && args.Length >= 1) {
 					var startsWithCmpOp = StringComparison.CurrentCulture;
-					string sDummyCondForParamTwo = string.Empty;
 					if (args.Length == 2) {
 						startsWithCmpOp = (StringComparison)args[1].Value;
-						var enumIntValue = Convert.ToInt32 (startsWithCmpOp);
-						sDummyCondForParamTwo = " and (" + args[1].CommandText + " = " + enumIntValue.ToString () + ")";
 					}
 					switch (startsWithCmpOp) {
 						case StringComparison.Ordinal:
 						case StringComparison.CurrentCulture:
-							sqlCall = "(( substr(" + obj.CommandText + ", 1, " + args[0].Value.ToString ().Length + ") =  " + args[0].CommandText + ")" + sDummyCondForParamTwo + ")";
+							sqlCall = "( substr(" + obj.CommandText + ", 1, " + args[0].Value.ToString ().Length + ") =  " + args[0].CommandText + ")";
 							break;
 						case StringComparison.OrdinalIgnoreCase:
 						case StringComparison.CurrentCultureIgnoreCase:
-							sqlCall = "((" + obj.CommandText + " like (" + args[0].CommandText + " || '%'))" + sDummyCondForParamTwo + ")";
+							sqlCall = "(" + obj.CommandText + " like (" + args[0].CommandText + " || '%'))";
 							break;
 					}
 
 				}
 				else if (call.Method.Name == "EndsWith" && args.Length >= 1) {
 					var endsWithCmpOp = StringComparison.CurrentCulture;
-					string sDummyCondForParamTwo = string.Empty;
 					if (args.Length == 2) {
 						endsWithCmpOp = (StringComparison)args[1].Value;
-						var enumIntValue = Convert.ToInt32 (endsWithCmpOp);
-						sDummyCondForParamTwo = " and (" + args[1].CommandText + " = " + enumIntValue.ToString () + ")";
 					}
 					switch (endsWithCmpOp) {
 						case StringComparison.Ordinal:
 						case StringComparison.CurrentCulture:
-							sqlCall = "(( substr(" + obj.CommandText + ", length(" + obj.CommandText + ") - " + args[0].Value.ToString ().Length + "+1, " + args[0].Value.ToString ().Length + ") =  " + args[0].CommandText + ")" + sDummyCondForParamTwo + ")";
+							sqlCall = "( substr(" + obj.CommandText + ", length(" + obj.CommandText + ") - " + args[0].Value.ToString ().Length + "+1, " + args[0].Value.ToString ().Length + ") =  " + args[0].CommandText + ")";
 							break;
 						case StringComparison.OrdinalIgnoreCase:
 						case StringComparison.CurrentCultureIgnoreCase:
-							sqlCall = "((" + obj.CommandText + " like ('%' || " + args[0].CommandText + "))" + sDummyCondForParamTwo + ")";
+							sqlCall = "(" + obj.CommandText + " like ('%' || " + args[0].CommandText + "))";
 							break;
 					}
 				}

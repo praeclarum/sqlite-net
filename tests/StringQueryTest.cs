@@ -73,14 +73,6 @@ namespace SQLite.Tests
 
             var bs = db.Table<Product> ().Where (x => x.Name.StartsWith ("B")).ToList ();
 			Assert.AreEqual (1, bs.Count);
-
-			var lfs3 = db.Table<Product> ().Where (x => x.Name.StartsWith ("f", StringComparison.OrdinalIgnoreCase)
-				&& x.Name.StartsWith ("f", StringComparison.OrdinalIgnoreCase)).ToList ();
-			Assert.AreEqual (2, lfs3.Count);
-
-			var lfs4 = db.Table<Product> ().Where (x => x.Name.StartsWith ("f", StringComparison.OrdinalIgnoreCase))
-				.Where (x => x.Name.StartsWith ("foob", StringComparison.OrdinalIgnoreCase)).ToList ();
-			Assert.AreEqual (1, lfs4.Count);
 		}
 		
 		[Test]
@@ -90,21 +82,10 @@ namespace SQLite.Tests
 		    Assert.AreEqual (2, fs.Count);
 
 		    var lfs = db.Table<Product>().Where(x => x.Name.EndsWith("Ar")).ToList();
-		    Assert.AreEqual(0, lfs.Count);			
-
-			var bs = db.Table<Product> ().Where (x => x.Name.EndsWith ("o")).ToList ();
+		    Assert.AreEqual(0, lfs.Count);
+		    
+            var bs = db.Table<Product> ().Where (x => x.Name.EndsWith ("o")).ToList ();
 			Assert.AreEqual (1, bs.Count);
-
-			var lfs2 = db.Table<Product> ().Where (x => x.Name.EndsWith ("Ar", StringComparison.OrdinalIgnoreCase)).ToList ();
-			Assert.AreEqual (2, lfs2.Count);
-
-			var lfs3 = db.Table<Product> ().Where (x => x.Name.EndsWith ("Ar", StringComparison.OrdinalIgnoreCase)
-							&& x.Name.EndsWith ("Ar", StringComparison.OrdinalIgnoreCase)).ToList ();
-			Assert.AreEqual (2, lfs3.Count);
-
-			var lfs4 = db.Table<Product> ().Where (x => x.Name.EndsWith ("Ar", StringComparison.OrdinalIgnoreCase))
-							.Where (x => x.Name.EndsWith ("oBar", StringComparison.OrdinalIgnoreCase)).ToList ();
-			Assert.AreEqual (1, lfs4.Count);
 		}
 		
 		[Test]
