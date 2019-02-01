@@ -3551,8 +3551,14 @@ namespace SQLite
 				var args = new CompileResult[call.Arguments.Count];
 				var obj = call.Object != null ? CompileExpr (call.Object, queryArgs) : null;
 
+				List<object> notUsedQueryArgs = new List<object> ();
 				for (var i = 0; i < args.Length; i++) {
-					args[i] = CompileExpr (call.Arguments[i], queryArgs);
+					if (i == 1 && (call.Method.Name == "StartsWith" || call.Method.Name == "EndsWith")) {
+						args[i] = CompileExpr (call.Arguments[i], notUsedQueryArgs);
+					}
+					else {
+						args[i] = CompileExpr (call.Arguments[i], queryArgs);
+					}
 				}
 
 				var sqlCall = "";
