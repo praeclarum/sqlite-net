@@ -362,7 +362,7 @@ namespace SQLite
 		void SetKey (byte[] key)
 		{
 			if (key == null) throw new ArgumentNullException (nameof (key));
-			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof(key));
+			if (key.Length != 32 && key.Length != 48) throw new ArgumentException ("Key must be 32 bytes (256-bit) or 48 bytes (384-bit)", nameof(key));
 			var s = String.Join ("", key.Select (x => x.ToString ("X2")));
 			Execute ("pragma key = \"x'" + s + "'\"");
 		}
