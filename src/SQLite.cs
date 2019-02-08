@@ -2498,7 +2498,6 @@ namespace SQLite
 
 				var isAuto = Orm.IsAutoInc (prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
 				IsAutoGuid = isAuto && ColumnType == typeof (Guid);
-				IsAutoInc = isAuto && !IsAutoGuid;
 
 				Indices = Orm.GetIndices (prop);
 				if (!Indices.Any ()
@@ -2512,6 +2511,8 @@ namespace SQLite
 				MaxStringLength = Orm.MaxStringLength (prop);
 
 				StoreAsText = prop.PropertyType.GetTypeInfo ().CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
+
+				IsAutoInc = isAuto && !IsAutoGuid && Orm.CanBeAutoIncPK (this);
 			}
 
 			public void SetValue (object obj, object val)
@@ -2675,6 +2676,11 @@ namespace SQLite
 					 return args.Count > 0 ? ((args[0].Value as string) ?? "") : "";
 				 })
 				 .FirstOrDefault ()) ?? "";
+		}
+
+		public static bool CanBeAutoIncPK (TableMapping.Column column)
+		{
+			return string.Equals (SqlType (column, false), "INTEGER", StringComparison.OrdinalIgnoreCase);
 		}
 
 		public static bool IsAutoInc (MemberInfo p)
