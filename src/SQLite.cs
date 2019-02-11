@@ -3561,6 +3561,20 @@ namespace SQLite
 					sqlCall = "(" + args[0].CommandText + " like " + args[1].CommandText + ")";
 				}
 				else if (call.Method.Name == "Contains" && args.Length == 2) {
+					if (call.Object != null && call.Object.Type == typeof(string)) {
+						var startsWithCmpOp = (StringComparison)args[1].Value;
+						switch (startsWithCmpOp) {
+							case StringComparison.Ordinal:
+							case StringComparison.CurrentCulture:
+								sqlCall = "( instr(" + obj.CommandText + "," + args[0].CommandText + ") >0 )";
+								break;
+							case StringComparison.OrdinalIgnoreCase:
+							case StringComparison.CurrentCultureIgnoreCase:
+								sqlCall = "(" + obj.CommandText + " like ( '%' || " + args[0].CommandText + " || '%'))";
+								break;
+						}
+					}
+					else
 					sqlCall = "(" + args[1].CommandText + " in " + args[0].CommandText + ")";
 				}
 				else if (call.Method.Name == "Contains" && args.Length == 1) {
