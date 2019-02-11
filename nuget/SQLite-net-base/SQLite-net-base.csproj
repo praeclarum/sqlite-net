@@ -28,6 +28,9 @@
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
+	<Compile Include="..\..\src\StringContainsExtension.cs">
+	<Link>StringContainsExtension.cs</Link>
+	</Compile>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SQLitePCLRaw.core" Version="1.1.13" />

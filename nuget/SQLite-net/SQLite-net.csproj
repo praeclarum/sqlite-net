@@ -32,7 +32,8 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
-    <DebugType></DebugType>
+    <DebugType>
+    </DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>RELEASE;USE_SQLITEPCL_RAW</DefineConstants>
@@ -51,6 +52,9 @@
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\StringContainsExtension.cs">
+	<Link>StringContainsExtension.cs</Link>
+	</Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
