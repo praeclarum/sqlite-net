@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using System.Reflection;
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
@@ -15,6 +15,56 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class MappingTest
 	{
+		class TemplatedTableMapper : ITableMapper
+		{
+			public List<TableMapping.Column> GetColumns (Type t, CreateFlags createFlags)
+			{
+				var schema = GetSchema (t);
+				var props = schema.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
+
+				var cols = new List<TableMapping.Column> ();
+				foreach (var p in props) {
+					if (p.Name == nameof(TemplatedTable.Id)) {
+						cols.Add (new TableMapping.Column (p, 
+							(prop, column, obj, val) => prop.SetValue (obj, val, null),
+							(prop, column, obj) => prop.GetValue (obj, null), createFlags));
+					}
+
+					if (p.Name == nameof(TemplatedTable.Test)) {
+						cols.Add (new TableMapping.Column (p,
+							(prop, column, obj, val) => ((TemplatedTable)obj).SetTest(val as string),
+							(prop, column, obj) => prop.GetValue (obj, null), createFlags));
+					}
+				}
+
+				return cols;
+			}
+
+			public object CreateInstance (Type t) => TemplatedTable.CreateInstance ();
+
+			public Type GetSchema (Type t) => t;
+		}
+
+		[TableMapper(typeof(TemplatedTableMapper))]
+		class TemplatedTable
+		{
+			public static TemplatedTable CreateInstance () => new TemplatedTable () {
+				Test = "Hi"
+			};
+
+			private TemplatedTable () { }
+
+			[PrimaryKey]
+			public int Id { get; set; }
+
+			public string Test { get; private set; }
+
+			public void SetTest (string test)
+			{
+				Test = test;
+			}
+		}
+
 		[Table ("AGoodTableName")]
 		class AFunnyTableName
 		{
@@ -80,6 +130,27 @@ namespace SQLite.Tests
 
 			Assert.AreEqual ("Foo", oo.Name);
 			Assert.AreEqual ("Bar", oo.Value);
+		}
+
+		[Test]
+		public void TemplatedTableTest ()
+		{
+			var db = new TestDb ();
+			db.CreateTable<TemplatedTable> ();
+
+			var map = db.GetMapping<TemplatedTable> ();
+			var obj = map.CreateInstance () as TemplatedTable;
+
+			Assert.That (obj, Is.Not.Null);
+			Assert.That (obj.Test, Is.EqualTo ("Hi"));
+
+			obj.SetTest ("Bye");
+			db.Insert (obj);
+
+			var oo = db.Table<TemplatedTable> ().FirstOrDefault ();
+
+			Assert.That (oo, Is.Not.Null);
+			Assert.That (oo.Test, Is.EqualTo ("Bye"));
 		}
 
 		#region Issue #86

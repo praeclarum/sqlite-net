@@ -55,6 +55,7 @@ namespace SQLite.Tests
 	{
 		public TestDb (bool storeDateTimeAsTicks = true, object key = null, bool wal = true) : base (new SQLiteConnectionString (TestPath.GetTempFileName (), storeDateTimeAsTicks, key: key))
 		{
+			TableMapping.ClearCache();
 			Trace = true;
 			if (wal)
 				EnableWriteAheadLogging ();

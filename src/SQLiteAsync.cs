@@ -243,7 +243,6 @@ namespace SQLite
 		/// Whether the table was created or migrated.
 		/// </returns>
 		public Task<CreateTableResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
 		{
 			return WriteAsync (conn => conn.CreateTable<T> (createFlags));
 		}
@@ -274,8 +273,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
 		{
 			return CreateTablesAsync (createFlags, typeof (T), typeof (T2));
 		}
@@ -290,9 +287,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
 		{
 			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3));
 		}
@@ -307,10 +301,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
-			where T4 : new()
 		{
 			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4));
 		}
@@ -325,11 +315,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
-			where T4 : new()
-			where T5 : new()
 		{
 			return CreateTablesAsync (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
 		}
@@ -352,7 +337,6 @@ namespace SQLite
 		/// Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
 		public Task<int> DropTableAsync<T> ()
-			where T : new()
 		{
 			return WriteAsync (conn => conn.DropTable<T> ());
 		}
@@ -700,7 +684,6 @@ namespace SQLite
 		/// if the object is not found.
 		/// </returns>
 		public Task<T> GetAsync<T> (object pk)
-			where T : new()
 		{
 			return ReadAsync (conn => conn.Get<T> (pk));
 		}
@@ -737,7 +720,6 @@ namespace SQLite
 		/// if the object is not found.
 		/// </returns>
 		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
-			where T : new()
 		{
 			return ReadAsync (conn => conn.Get<T> (predicate));
 		}
@@ -755,7 +737,6 @@ namespace SQLite
 		/// if the object is not found.
 		/// </returns>
 		public Task<T> FindAsync<T> (object pk)
-			where T : new()
 		{
 			return ReadAsync (conn => conn.Find<T> (pk));
 		}
@@ -792,7 +773,6 @@ namespace SQLite
 		/// if the object is not found.
 		/// </returns>
 		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate)
-			where T : new()
 		{
 			return ReadAsync (conn => conn.Find<T> (predicate));
 		}
@@ -812,7 +792,6 @@ namespace SQLite
 		/// if the object is not found.
 		/// </returns>
 		public Task<T> FindWithQueryAsync<T> (string query, params object[] args)
-			where T : new()
 		{
 			return ReadAsync (conn => conn.FindWithQuery<T> (query, args));
 		}
@@ -845,32 +824,41 @@ namespace SQLite
 		/// <param name="type">
 		/// The type whose mapping to the database is returned.
 		/// </param>         
-		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>     
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public Task<TableMapping> GetMappingAsync (Type type, CreateFlags createFlags = CreateFlags.None)
+		public Task<TableMapping> GetMappingAsync (Type type)
 		{
-			return ReadAsync (conn => conn.GetMapping (type, createFlags));
+			return ReadAsync (conn => conn.GetMapping (type));
+		}
+
+		/// <summary>
+		/// Retrieves the mapping that is automatically generated for the given type.
+		/// </summary>
+		/// <returns>
+		/// The mapping represents the schema of the columns of the database and contains
+		/// methods to set and get properties of objects.
+		/// </returns>
+		public Task<TableMapping> GetMappingAsync<T> ()
+		{
+			return ReadAsync (conn => conn.GetMapping<T> ());
 		}
 
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
 		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>     
+		/// Optional flags allowing implicit PK and indexes based on naming conventions.
+		/// </param>
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
+		[Obsolete ("It is recommended that you include createFlags in your TableAttribute instead for consitancy in creating TableMappings.")]
+		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags)
 		{
-			return ReadAsync (conn => conn.GetMapping<T> (createFlags));
+			return ReadAsync (conn => conn.GetMapping<T> ());
 		}
 
 		/// <summary>
@@ -910,7 +898,8 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
+		/// </param>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
@@ -995,7 +984,6 @@ namespace SQLite
 		/// queries into native SQL.
 		/// </returns>
 		public AsyncTableQuery<T> Table<T> ()
-			where T : new()
 		{
 			//
 			// This isn't async as the underlying connection doesn't go out to the database
@@ -1045,7 +1033,6 @@ namespace SQLite
 		/// An enumerable with one result for each row returned by the query.
 		/// </returns>
 		public Task<List<T>> QueryAsync<T> (string query, params object[] args)
-			where T : new()
 		{
 			return ReadAsync (conn => conn.Query<T> (query, args));
 		}
@@ -1093,7 +1080,6 @@ namespace SQLite
 		/// connection must remain open for the lifetime of the enumerator.
 		/// </returns>
 		public Task<IEnumerable<T>> DeferredQueryAsync<T> (string query, params object[] args)
-			where T : new()
 		{
 			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ());
 		}
@@ -1130,7 +1116,6 @@ namespace SQLite
 	/// Query to an asynchronous database connection.
 	/// </summary>
 	public class AsyncTableQuery<T>
-		where T : new()
 	{
 		TableQuery<T> _innerQuery;
 

@@ -167,7 +167,6 @@ namespace SQLite
 	{
 		private bool _open;
 		private TimeSpan _busyTimeout;
-		readonly static Dictionary<string, TableMapping> _mappings = new Dictionary<string, TableMapping> ();
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
 
@@ -403,17 +402,24 @@ namespace SQLite
 			}
 		}
 
+	    /// <summary>
+	    /// Returns the mappings from types to tables that the connection
+	    /// currently understands.
+	    /// </summary>
+	    public IEnumerable<TableMapping> TableMappings => TableMapping.TableMappings;
+
 		/// <summary>
-		/// Returns the mappings from types to tables that the connection
-		/// currently understands.
+		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
-		public IEnumerable<TableMapping> TableMappings {
-			get {
-				lock (_mappings) {
-					return new List<TableMapping> (_mappings.Values);
-				}
-			}
-		}
+		/// <param name="createFlags">
+		/// Optional flags allowing implicit PK and indexes based on naming conventions.
+		/// </param>
+		/// <returns>
+		/// The mapping represents the schema of the columns of the database and contains 
+		/// methods to set and get properties of objects.
+		/// </returns>
+		[Obsolete ("It is recommended that you include createFlags in your TableAttribute instead for consitancy in creating TableMappings.")]
+		public TableMapping GetMapping<T> (CreateFlags createFlags) => TableMapping.GetMapping(typeof(T), createFlags);
 
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
@@ -421,67 +427,27 @@ namespace SQLite
 		/// <param name="type">
 		/// The type whose mapping to the database is returned.
 		/// </param>
-		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None)
-		{
-			TableMapping map;
-			var key = type.FullName;
-			lock (_mappings) {
-				if (_mappings.TryGetValue (key, out map)) {
-					if (createFlags != CreateFlags.None && createFlags != map.CreateFlags) {
-						map = new TableMapping (type, createFlags);
-						_mappings[key] = map;
-					}
-				}
-				else {
-					map = new TableMapping (type, createFlags);
-					_mappings.Add (key, map);
-				}
-			}
-			return map;
-		}
+		public TableMapping GetMapping (Type type) => TableMapping.GetMapping (type);
 
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
-		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>
 		/// <returns>
 		/// The mapping represents the schema of the columns of the database and contains
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public TableMapping GetMapping<T> (CreateFlags createFlags = CreateFlags.None)
-		{
-			return GetMapping (typeof (T), createFlags);
-		}
-
-		private struct IndexedColumn
-		{
-			public int Order;
-			public string ColumnName;
-		}
-
-		private struct IndexInfo
-		{
-			public string IndexName;
-			public string TableName;
-			public bool Unique;
-			public List<IndexedColumn> Columns;
-		}
+		public TableMapping GetMapping<T>() => TableMapping.GetMapping<T>();
 
 		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
 		public int DropTable<T> ()
 		{
-			return DropTable (GetMapping (typeof (T)));
+			return DropTable (GetMapping<T>());
 		}
 
 		/// <summary>
@@ -523,11 +489,11 @@ namespace SQLite
 		/// </returns>
 		public CreateTableResult CreateTable (Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
-			var map = GetMapping (ty, createFlags);
+			var map = TableMapping.GetMapping (ty, createFlags);
 
 			// Present a nice error if no columns specified
 			if (map.Columns.Length == 0) {
-				throw new Exception (string.Format ("Cannot create a table without columns (does '{0}' have public properties?)", ty.FullName));
+				throw new Exception (string.Format ("Cannot create a table with zero columns (does '{0}' have public properties?)", ty.FullName));
 			}
 
 			// Check if the table exists
@@ -561,37 +527,14 @@ namespace SQLite
 				MigrateTable (map, existingCols);
 			}
 
-			var indexes = new Dictionary<string, IndexInfo> ();
-			foreach (var c in map.Columns) {
-				foreach (var i in c.Indices) {
-					var iname = i.Name ?? map.TableName + "_" + c.Name;
-					IndexInfo iinfo;
-					if (!indexes.TryGetValue (iname, out iinfo)) {
-						iinfo = new IndexInfo {
-							IndexName = iname,
-							TableName = map.TableName,
-							Unique = i.Unique,
-							Columns = new List<IndexedColumn> ()
-						};
-						indexes.Add (iname, iinfo);
-					}
-
-					if (i.Unique != iinfo.Unique)
-						throw new Exception ("All the columns in an index must have the same value for their Unique property");
-
-					iinfo.Columns.Add (new IndexedColumn {
-						Order = i.Order,
-						ColumnName = c.Name
-					});
-				}
+		    var success = true;
+		    var indexes = map.GetIndexs();
+			foreach (var index in indexes) {
+				var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
+				success = success && CreateIndex (index.IndexName, index.TableName, columns, index.Unique) == 0;
 			}
 
-			foreach (var indexName in indexes.Keys) {
-				var index = indexes[indexName];
-				var columns = index.Columns.OrderBy (i => i.Order).Select (i => i.ColumnName).ToArray ();
-				CreateIndex (indexName, index.TableName, columns, index.Unique);
-			}
-
+			result = success ? result : CreateTableResult.Error;
 			return result;
 		}
 
@@ -605,8 +548,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2));
 		}
@@ -621,9 +562,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3));
 		}
@@ -638,10 +576,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
-			where T4 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4));
 		}
@@ -656,11 +590,6 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 		public CreateTablesResult CreateTables<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
-			where T : new()
-			where T2 : new()
-			where T3 : new()
-			where T4 : new()
-			where T5 : new()
 		{
 			return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
 		}
@@ -946,7 +875,7 @@ namespace SQLite
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
 		/// </returns>
-		public List<T> Query<T> (string query, params object[] args) where T : new()
+		public List<T> Query<T> (string query, params object[] args) 
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<T> ();
@@ -970,7 +899,7 @@ namespace SQLite
 		/// will call sqlite3_step on each call to MoveNext, so the database
 		/// connection must remain open for the lifetime of the enumerator.
 		/// </returns>
-		public IEnumerable<T> DeferredQuery<T> (string query, params object[] args) where T : new()
+		public IEnumerable<T> DeferredQuery<T> (string query, params object[] args) 
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteDeferredQuery<T> ();
@@ -1038,7 +967,7 @@ namespace SQLite
 		/// A queryable object that is able to translate Where, OrderBy, and Take
 		/// queries into native SQL.
 		/// </returns>
-		public TableQuery<T> Table<T> () where T : new()
+		public TableQuery<T> Table<T> ()
 		{
 			return new TableQuery<T> (this);
 		}
@@ -1055,7 +984,7 @@ namespace SQLite
 		/// The object with the given primary key. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public T Get<T> (object pk) where T : new()
+		public T Get<T> (object pk)
 		{
 			var map = GetMapping (typeof (T));
 			return Query<T> (map.GetByPrimaryKeySql, pk).First ();
@@ -1092,7 +1021,7 @@ namespace SQLite
 		/// The object that matches the given predicate. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
+		public T Get<T> (Expression<Func<T, bool>> predicate) 
 		{
 			return Table<T> ().Where (predicate).First ();
 		}
@@ -1109,7 +1038,7 @@ namespace SQLite
 		/// The object with the given primary key or null
 		/// if the object is not found.
 		/// </returns>
-		public T Find<T> (object pk) where T : new()
+		public T Find<T> (object pk) 
 		{
 			var map = GetMapping (typeof (T));
 			return Query<T> (map.GetByPrimaryKeySql, pk).FirstOrDefault ();
@@ -1146,7 +1075,7 @@ namespace SQLite
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public T Find<T> (Expression<Func<T, bool>> predicate) where T : new()
+		public T Find<T> (Expression<Func<T, bool>> predicate) 
 		{
 			return Table<T> ().Where (predicate).FirstOrDefault ();
 		}
@@ -1165,7 +1094,7 @@ namespace SQLite
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public T FindWithQuery<T> (string query, params object[] args) where T : new()
+		public T FindWithQuery<T> (string query, params object[] args)
 		{
 			return Query<T> (query, args).FirstOrDefault ();
 		}
@@ -1441,7 +1370,8 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
+		/// </param>
+		/// <param name="runInTransaction">
 		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
 		/// <returns>
@@ -1701,60 +1631,39 @@ namespace SQLite
 			return count;
 		}
 
-		readonly Dictionary<Tuple<string, string>, PreparedSqlLiteInsertCommand> _insertCommandMap = new Dictionary<Tuple<string, string>, PreparedSqlLiteInsertCommand> ();
+		readonly Dictionary<string, PreparedSqlLiteInsertCommand> _insertCommandMap = new Dictionary<string, PreparedSqlLiteInsertCommand> ();
 
-		PreparedSqlLiteInsertCommand GetInsertCommand (TableMapping map, string extra)
-		{
-			PreparedSqlLiteInsertCommand prepCmd;
+	    private PreparedSqlLiteInsertCommand GetInsertCommand (TableMapping map, string extra)
+	    {
+	        var commandName = $"insert {extra} into \"{map.TableName}\"";
 
-			var key = Tuple.Create (map.MappedType.FullName, extra);
+		    PreparedSqlLiteInsertCommand cachedCommand;
 
-			lock (_insertCommandMap) {
-				_insertCommandMap.TryGetValue (key, out prepCmd);
-			}
+			lock (_insertCommandMap) { 
+				if (!_insertCommandMap.TryGetValue(commandName, out cachedCommand)) {
+					var cols = map.InsertColumns;
+					string insertSql;
 
-			if (prepCmd == null) {
-				prepCmd = CreateInsertCommand (map, extra);
-				var added = false;
-				lock (_insertCommandMap) {
-					if (!_insertCommandMap.ContainsKey (key)) {
-						_insertCommandMap.Add (key, prepCmd);
-						added = true;
+					// weird case to handle where there is only one column in the database, and it is an auto incrementing column
+					if (!cols.Any() && map.Columns.Count() == 1 && map.Columns[0].IsAutoInc) {
+						insertSql = $"insert {extra} into \"{map.TableName}\" default values";
 					}
-				}
-				if (!added) {
-					prepCmd.Dispose ();
+					else {
+						if (String.Equals(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase))
+							cols = map.InsertOrReplaceColumns;
+
+						insertSql = String.Format("insert {3} into \"{0}\"({1}) values ({2})", map.TableName,
+							String.Join(",", cols.Select(c => $"\"{c.Name}\"")),
+							String.Join(",", cols.Select(c => "?")), extra);
+					}
+
+					cachedCommand = new PreparedSqlLiteInsertCommand (this, insertSql);
+					_insertCommandMap.Add (commandName, cachedCommand);
 				}
 			}
 
-			return prepCmd;
-		}
-
-		PreparedSqlLiteInsertCommand CreateInsertCommand (TableMapping map, string extra)
-		{
-			var cols = map.InsertColumns;
-			string insertSql;
-			if (cols.Length == 0 && map.Columns.Length == 1 && map.Columns[0].IsAutoInc) {
-				insertSql = string.Format ("insert {1} into \"{0}\" default values", map.TableName, extra);
-			}
-			else {
-				var replacing = string.Compare (extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
-
-				if (replacing) {
-					cols = map.InsertOrReplaceColumns;
-				}
-
-				insertSql = string.Format ("insert {3} into \"{0}\"({1}) values ({2})", map.TableName,
-								   string.Join (",", (from c in cols
-													  select "\"" + c.Name + "\"").ToArray ()),
-								   string.Join (",", (from c in cols
-													  select "?").ToArray ()), extra);
-
-			}
-
-			var insertCommand = new PreparedSqlLiteInsertCommand (this, insertSql);
-			return insertCommand;
-		}
+	        return cachedCommand;
+	    }
 
 		/// <summary>
 		/// Updates all of the columns of a table using the specified object
@@ -2219,6 +2128,17 @@ namespace SQLite
 		}
 	}
 
+	[AttributeUsage(AttributeTargets.Class)]
+	public class TableMapperAttribute : Attribute
+	{
+		public Type Mapper { get; set; }
+
+		public TableMapperAttribute(Type mapper)
+		{
+			Mapper = mapper;
+		}
+	}
+
 	[AttributeUsage (AttributeTargets.Class)]
 	public class TableAttribute : Attribute
 	{
@@ -2230,6 +2150,11 @@ namespace SQLite
 		/// The default is <c>false</c> so that sqlite adds an implicit <c>rowid</c> to every table created.
 		/// </summary>
 		public bool WithoutRowId { get; set; }
+
+		/// <summary>
+		/// Optional flags allowing implicit PK and indexes based on naming conventions.  The default is None.
+		/// </summary>
+		public CreateFlags CreateFlags { get; set; } = CreateFlags.None;
 
 		public TableAttribute (string name)
 		{
@@ -2333,71 +2258,142 @@ namespace SQLite
 	{
 	}
 
-	public class TableMapping
-	{
-		public Type MappedType { get; private set; }
+	public interface ITableMapper
+    {
+        List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags);
 
-		public string TableName { get; private set; }
+        object CreateInstance(Type t);
 
-		public bool WithoutRowId { get; private set; }
+        Type GetSchema(Type t);
+    }
 
-		public Column[] Columns { get; private set; }
+    public class TableMapping
+    {
+        private static readonly System.Collections.Generic.Dictionary<System.Type, SQLite.TableMapping> _mappings = new System.Collections.Generic.Dictionary<System.Type, SQLite.TableMapping>();
 
-		public Column PK { get; private set; }
+	    public static void ClearCache () => _mappings.Clear ();
 
-		public string GetByPrimaryKeySql { get; private set; }
+        public static IEnumerable<TableMapping> TableMappings => _mappings.Values;
 
-		public CreateFlags CreateFlags { get; private set; }
+        /// <summary>
+        /// Retrieves the mapping that is automatically generated for the given type.
+        /// </summary>
+        /// <returns>
+        /// The mapping represents the schema of the columns of the database and contains
+        /// methods to set and get properties of objects.
+        /// </returns>
+        public static TableMapping GetMapping(Type type, CreateFlags? createFlags = null)
+        {
+            TableMapping map;
 
-		readonly Column _autoPk;
-		readonly Column[] _insertColumns;
-		readonly Column[] _insertOrReplaceColumns;
+			lock (_mappings) 
+			{ 
+				if (!_mappings.TryGetValue(type, out map))
+				{
+					map = new TableMapping(type, createFlags);
+					_mappings.Add (type, map);
+				}
+			}
 
-		public TableMapping (Type type, CreateFlags createFlags = CreateFlags.None)
+            return map;
+        }
+
+        /// <summary>
+        /// Retrieves the mapping that is automatically generated for the given type.
+        /// </summary>
+        /// <returns>
+        /// The mapping represents the schema of the columns of the database and contains
+        /// methods to set and get properties of objects.
+        /// </returns>
+        public static TableMapping GetMapping<T>(CreateFlags? createFlags = null) 
 		{
-			MappedType = type;
-			CreateFlags = createFlags;
+            return GetMapping(typeof(T));
+        }
 
-			var typeInfo = type.GetTypeInfo ();
-			var tableAttr =
-				typeInfo.CustomAttributes
-						.Where (x => x.AttributeType == typeof (TableAttribute))
-						.Select (x => (TableAttribute)Orm.InflateAttribute (x))
-						.FirstOrDefault ();
+        private Type Schema { get; }
 
-			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
-			WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
+        public string TableName { get; }
 
-			var props = new List<PropertyInfo> ();
-			var baseType = type;
-			var propNames = new HashSet<string> ();
-			while (baseType != typeof (object)) {
-				var ti = baseType.GetTypeInfo ();
-				var newProps = (
-					from p in ti.DeclaredProperties
-					where
-						!propNames.Contains (p.Name) &&
-						p.CanRead && p.CanWrite &&
-						(p.GetMethod != null) && (p.SetMethod != null) &&
-						(p.GetMethod.IsPublic && p.SetMethod.IsPublic) &&
-						(!p.GetMethod.IsStatic) && (!p.SetMethod.IsStatic)
-					select p).ToList ();
-				foreach (var p in newProps) {
-					propNames.Add (p.Name);
-				}
-				props.AddRange (newProps);
-				baseType = ti.BaseType;
-			}
+		public bool WithoutRowId { get; }
 
-			var cols = new List<Column> ();
-			foreach (var p in props) {
-				var ignore = p.IsDefined (typeof (IgnoreAttribute), true);
-				if (!ignore) {
-					cols.Add (new Column (p, createFlags));
-				}
-			}
-			Columns = cols.ToArray ();
-			foreach (var c in Columns) {
+		public Column[] Columns { get; }
+
+        public Column PK { get; }
+
+		public string GetByPrimaryKeySql { get; }
+
+		public CreateFlags CreateFlags { get; }
+
+	    public bool HasAutoIncPK { get; }
+
+		private readonly ITableMapper _mapper;
+		private readonly Column _autoPk;
+        private Column[] _insertColumns;
+        private Column[] _insertOrReplaceColumns;
+        private Dictionary<string, Column> _columnNameIndex;
+        private Dictionary<string, Column> _columnPropertyNameIndex;
+        private Column[] _updateColumns;
+
+        public List<Index> GetIndexs()
+        {
+            var indexes = new Dictionary<string, Index>();
+            foreach (var c in Columns)
+            {
+                foreach (var i in c.Indices)
+                {
+                    var iname = i.Name ?? TableName + "_" + c.Name;
+                    Index iinfo;
+                    if (!indexes.TryGetValue(iname, out iinfo))
+                    {
+                        iinfo = new Index
+                        {
+                            IndexName = iname,
+                            TableName = TableName,
+                            Unique = i.Unique,
+                            Columns = new List<IndexedColumn>()
+                        };
+                        indexes.Add(iname, iinfo);
+                    }
+
+                    if (i.Unique != iinfo.Unique)
+                        throw new Exception("All the columns in an index must have the same value for their Unique property");
+
+                    iinfo.Columns.Add(new IndexedColumn
+                    {
+                        Order = i.Order,
+                        ColumnName = c.Name
+                    });
+                }
+            }
+
+            return indexes.Values.ToList();
+        }
+
+        private TableMapping(Type type, CreateFlags? createFlags = null)
+        {
+	        var typeInfo = type.GetTypeInfo ();
+            var mapperAttr = (TableMapperAttribute)typeInfo.GetCustomAttributes(typeof(TableMapperAttribute), true).FirstOrDefault();
+            var mapperType = mapperAttr != null ? mapperAttr.Mapper : typeof(DefaultTableMapper);
+
+            _mapper = Activator.CreateInstance(mapperType) as ITableMapper;
+            if (_mapper == null)
+                throw new Exception($"{mapperType.Name} is not of type {nameof(ITableMapper)}.");
+
+            Schema = _mapper.GetSchema(type);
+            var schemaInfo = Schema.GetTypeInfo();
+
+            var tableAttr =
+                schemaInfo.CustomAttributes
+                    .Where(x => x.AttributeType == typeof(TableAttribute))
+                    .Select(x => (TableAttribute)Orm.InflateAttribute(x))
+                    .FirstOrDefault();
+
+	        TableName = string.IsNullOrEmpty (tableAttr?.Name) ? Schema.Name : tableAttr.Name;
+	        WithoutRowId = tableAttr?.WithoutRowId ?? false;
+	        CreateFlags = createFlags ?? tableAttr?.CreateFlags ?? CreateFlags.None;
+
+			Columns = _mapper.GetColumns(type, CreateFlags).ToArray();
+            foreach (var c in Columns) {
 				if (c.IsAutoInc && c.IsPK) {
 					_autoPk = c;
 				}
@@ -2408,89 +2404,141 @@ namespace SQLite
 
 			HasAutoIncPK = _autoPk != null;
 
-			if (PK != null) {
-				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" where \"{1}\" = ?", TableName, PK.Name);
-			}
-			else {
-				// People should not be calling Get/Find without a PK
-				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
-			}
+            GetByPrimaryKeySql = PK != null
+                ? $"select * from \"{TableName}\" where \"{PK.Name}\" = ?"
+                : $"select * from \"{TableName}\" limit 1";
+        }
 
-			_insertColumns = Columns.Where (c => !c.IsAutoInc).ToArray ();
-			_insertOrReplaceColumns = Columns.ToArray ();
-		}
+        public object CreateInstance() => _mapper.CreateInstance(Schema);
 
-		public bool HasAutoIncPK { get; private set; }
+        public void SetAutoIncPK(object obj, long id)
+        {
+            _autoPk?.SetValue(obj, Convert.ChangeType(id, _autoPk.ColumnType, null));
+        }
 
-		public void SetAutoIncPK (object obj, long id)
-		{
-			if (_autoPk != null) {
-				_autoPk.SetValue (obj, Convert.ChangeType (id, _autoPk.ColumnType, null));
-			}
-		}
+        public Column[] UpdateColumns => _updateColumns ?? (_updateColumns = Columns.Where(c => !c.IsPK).ToArray());
 
-		public Column[] InsertColumns {
-			get {
-				return _insertColumns;
-			}
-		}
+        public Column[] InsertColumns => _insertColumns ?? (_insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray());
 
-		public Column[] InsertOrReplaceColumns {
-			get {
-				return _insertOrReplaceColumns;
-			}
-		}
+        public Column[] InsertOrReplaceColumns => _insertOrReplaceColumns ?? (_insertOrReplaceColumns = Columns.ToArray());
 
-		public Column FindColumnWithPropertyName (string propertyName)
-		{
-			var exact = Columns.FirstOrDefault (c => c.PropertyName == propertyName);
-			return exact;
-		}
+        private Dictionary<string, Column> ColumnNameIndex => _columnNameIndex ?? (_columnNameIndex = Columns.ToDictionary(x => x.Name));
 
-		public Column FindColumn (string columnName)
-		{
-			var exact = Columns.FirstOrDefault (c => c.Name.ToLower () == columnName.ToLower ());
-			return exact;
-		}
+        private Dictionary<string, Column> ColumnPropertyNameIndex => _columnPropertyNameIndex ?? (_columnPropertyNameIndex = Columns.ToDictionary(x => x.PropertyName));
 
-		public class Column
-		{
-			PropertyInfo _prop;
+        public Column FindColumnWithPropertyName(string propertyName)
+        {
+            Column col = null;
+            ColumnPropertyNameIndex.TryGetValue(propertyName, out col);
+            return col;
+        }
 
-			public string Name { get; private set; }
+        public Column FindColumn(string columnName)
+        {
+            Column col = null;
+            ColumnNameIndex.TryGetValue(columnName, out col);
+            return col;
+        }
 
-			public PropertyInfo PropertyInfo => _prop;
+        public override string ToString() => TableName;
 
-			public string PropertyName { get { return _prop.Name; } }
+        private class DefaultTableMapper : ITableMapper
+        {
+	        private static readonly Action<PropertyInfo, Column, object, object> _setValue = (prop, col, obj, val) => {
+		        if (val != null && col.ColumnType.GetTypeInfo ().IsEnum)
+			        prop.SetValue (obj, Enum.ToObject (col.ColumnType, val), null);
+		        else
+			        prop.SetValue (obj, val, null);
+	        };
+            private static readonly Func<PropertyInfo, Column, object, object> _getValue = (prop, col, obj) => prop.GetValue(obj, null);
 
-			public Type ColumnType { get; private set; }
+            public List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags)
+            {
+                var props = new List<PropertyInfo>();
+                var baseType = GetSchema(t);
+                var propNames = new HashSet<string>();
+                while (baseType != typeof(object))
+                {
+                    var ti = baseType.GetTypeInfo();
+                    var newProps = (
+                        from p in ti.DeclaredProperties
+                        where
+                        !propNames.Contains(p.Name) &&
+                        p.CanRead && p.CanWrite &&
+                        (p.GetMethod != null) && (p.SetMethod != null) &&
+                        (p.GetMethod.IsPublic && p.SetMethod.IsPublic) &&
+                        (!p.GetMethod.IsStatic) && (!p.SetMethod.IsStatic)
+                        select p).ToList();
 
-			public string Collation { get; private set; }
+                    foreach (var p in newProps)
+                        propNames.Add(p.Name);
 
-			public bool IsAutoInc { get; private set; }
-			public bool IsAutoGuid { get; private set; }
+                    props.AddRange(newProps);
+                    baseType = ti.BaseType;
+                }
 
-			public bool IsPK { get; private set; }
+                var cols = new List<Column>();
+	            foreach (var p in props)
+				{
+		            var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Any ();
 
-			public IEnumerable<IndexedAttribute> Indices { get; set; }
+		            if (p.CanWrite && !ignore)
+			            cols.Add (new Column (p, _setValue, _getValue, createFlags));
+	            }
 
-			public bool IsNullable { get; private set; }
+	            return cols;
+            }
 
-			public int? MaxStringLength { get; private set; }
+            public object CreateInstance(Type t)
+            {
+                return Activator.CreateInstance(t);
+            }
+
+            public Type GetSchema(Type t) => t;
+        }
+
+        public class Column
+        {
+            private readonly PropertyInfo _prop;
+            private readonly Action<PropertyInfo, Column, object, object> _setValue;
+            private readonly Func<PropertyInfo, Column, object, object> _getValue;
+
+            public string Name { get; }
+
+            public string PropertyName { get; }
+
+            public Type ColumnType { get; }
+
+            public string Collation { get; }
+
+            public bool IsAutoInc { get; }
+
+            public bool IsAutoGuid { get; }
+
+            public bool IsPK { get; }
+
+            public IEnumerable<IndexedAttribute> Indices { get; }
+
+            public bool IsNullable { get; }
+
+			public int? MaxStringLength { get; }
 
 			public bool StoreAsText { get; private set; }
 
-			public Column (PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
-			{
-				var colAttr = prop.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (ColumnAttribute));
+            public Column(PropertyInfo prop, Action<PropertyInfo, Column, object, object> setValue, Func<PropertyInfo, Column, object, object> getValue, CreateFlags createFlags)
+            {
+                var colAttr = (ColumnAttribute)prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
-				_prop = prop;
-				Name = (colAttr != null && colAttr.ConstructorArguments.Count > 0) ?
-						colAttr.ConstructorArguments[0].Value?.ToString () :
-						prop.Name;
-				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
-				ColumnType = Nullable.GetUnderlyingType (prop.PropertyType) ?? prop.PropertyType;
-				Collation = Orm.Collation (prop);
+                _prop = prop;
+                PropertyName = prop.Name;
+
+                _setValue = setValue;
+                _getValue = getValue;
+
+                Name = colAttr == null ? prop.Name : colAttr.Name;
+                //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
+                ColumnType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                Collation = Orm.Collation(prop);
 
 				IsPK = Orm.IsPK (prop) ||
 					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
@@ -2514,22 +2562,27 @@ namespace SQLite
 				StoreAsText = prop.PropertyType.GetTypeInfo ().CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
 			}
 
-			public void SetValue (object obj, object val)
-			{
-				if (val != null && ColumnType.GetTypeInfo ().IsEnum) {
-					_prop.SetValue (obj, Enum.ToObject (ColumnType, val));
-				}
-				else {
-					_prop.SetValue (obj, val, null);
-				}
-			}
+            public void SetValue(object obj, object val) => _setValue(_prop, this, obj, val);
 
-			public object GetValue (object obj)
-			{
-				return _prop.GetValue (obj, null);
-			}
-		}
-	}
+            public object GetValue(object obj) => _getValue(_prop, this, obj);
+
+            public override string ToString() => $"{Name} ({ColumnType.Name})";
+        }
+
+        public class IndexedColumn
+        {
+            public int Order { get; set; }
+            public string ColumnName { get; set; }
+        }
+
+        public class Index
+        {
+            public string IndexName { get; set; }
+            public string TableName { get; set; }
+            public bool Unique { get; set; }
+            public List<IndexedColumn> Columns { get; set; }
+        }
+    }
 
 	class EnumCacheInfo
 	{
@@ -2827,7 +2880,7 @@ namespace SQLite
 				}
 
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var obj = Activator.CreateInstance (map.MappedType);
+					var obj = map.CreateInstance ();
 					for (int i = 0; i < cols.Length; i++) {
 						if (cols[i] == null)
 							continue;
@@ -3201,6 +3254,7 @@ namespace SQLite
 	{
 		Created,
 		Migrated,
+		Error
 	}
 
 	public class CreateTablesResult
