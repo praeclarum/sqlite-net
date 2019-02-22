@@ -381,7 +381,7 @@ namespace SQLite
 		void SetKey (byte[] key)
 		{
 			if (key == null) throw new ArgumentNullException (nameof (key));
-			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof(key));
+			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof (key));
 			var s = String.Join ("", key.Select (x => x.ToString ("X2")));
 			Execute ("pragma key = \"x'" + s + "'\"");
 		}
@@ -970,7 +970,11 @@ namespace SQLite
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<T> ();
 		}
-
+		public List<T> SingleQuery<T> (string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExcuteSingleQuery<T> ().ToList ();
+		}
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -2845,6 +2849,31 @@ namespace SQLite
 		{
 			// Can be overridden.
 		}
+		public IEnumerable<T> ExcuteSingleQuery<T> ()
+		{
+			if (_conn.Trace) {
+				_conn.Tracer?.Invoke ("Executing Query: " + this);
+			}
+			var stmt = Prepare ();
+			try {
+				if (SQLite3.ColumnCount (stmt) != 1) {
+					throw new NotSupportedException ("Column count error");
+				}
+				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					var colType = SQLite3.ColumnType (stmt, 0);
+					var val = ReadCol (stmt, 0, colType, typeof (T));
+					if (val == null) {
+						yield return default (T);
+					}
+					else {
+						yield return (T)val;
+					}
+				}
+			}
+			finally {
+				Finalize (stmt);
+			}
+		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
@@ -2893,7 +2922,10 @@ namespace SQLite
 				var r = SQLite3.Step (stmt);
 				if (r == SQLite3.Result.Row) {
 					var colType = SQLite3.ColumnType (stmt, 0);
-					val = (T)ReadCol (stmt, 0, colType, typeof (T));
+					var colval = ReadCol (stmt, 0, colType, typeof (T));
+					if (colval != null) {
+						val = (T)colval;
+					}
 				}
 				else if (r == SQLite3.Result.Done) {
 				}
@@ -3139,18 +3171,18 @@ namespace SQLite
 					var text = SQLite3.ColumnString (stmt, index);
 					return new Guid (text);
 				}
-                else if (clrType == typeof(Uri)) {
-                    var text = SQLite3.ColumnString(stmt, index);
-                    return new Uri(text);
-                }
+				else if (clrType == typeof(Uri)) {
+					var text = SQLite3.ColumnString(stmt, index);
+					return new Uri(text);
+				}
 				else if (clrType == typeof (StringBuilder)) {
 					var text = SQLite3.ColumnString (stmt, index);
 					return new StringBuilder (text);
 				}
 				else if (clrType == typeof(UriBuilder)) {
-                    var text = SQLite3.ColumnString(stmt, index);
-                    return new UriBuilder(text);
-                }
+					var text = SQLite3.ColumnString(stmt, index);
+					return new UriBuilder(text);
+				}
 				else {
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
@@ -3663,6 +3695,9 @@ namespace SQLite
 				}
 				else if (call.Method.Name == "Replace" && args.Length == 2) {
 					sqlCall = "(replace(" + obj.CommandText + "," + args[0].CommandText + "," + args[1].CommandText + "))";
+				}
+				else if (call.Method.Name == "IsNullOrEmpty" && args.Length == 1) {
+					sqlCall = "(" + args[0].CommandText + " is null or" + args[0].CommandText + " ='' )";
 				}
 				else {
 					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";

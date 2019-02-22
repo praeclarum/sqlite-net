@@ -29,7 +29,7 @@ namespace SQLite.Tests
 			var db = new TestDb ();
 			db.CreateTable<TestTable> ();
 			var items = from i in Enumerable.Range (0, Count)
-				select new TestTable { Two = 2 };
+						select new TestTable { Two = 2 };
 			db.InsertAll (items);
 			Assert.AreEqual (Count, db.Table<TestTable> ().Count ());
 			return db;
@@ -40,10 +40,16 @@ namespace SQLite.Tests
 		public void Int32 ()
 		{
 			var db = CreateDb ();
-			
+
 			var r = db.ExecuteScalar<int> ("SELECT SUM(Two) FROM TestTable");
 
 			Assert.AreEqual (Count * 2, r);
+
+			db.DeleteAll<TestTable> ();
+
+			var r1 = db.ExecuteScalar<int> ("SELECT SUM(Two) FROM TestTable");
+
+			Assert.AreEqual (0, r1);
 		}
 
 		[Test]
