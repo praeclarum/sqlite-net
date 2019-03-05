@@ -2817,23 +2817,54 @@ namespace SQLite
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
 
+			var values = new Dictionary<int, Tuple<string, string>> ();
 			var stmt = Prepare ();
 			try {
 				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 
 				for (int i = 0; i < cols.Length; i++) {
 					var name = SQLite3.ColumnName16 (stmt, i);
-					cols[i] = map.FindColumn (name);
+					if (name.Contains (".")) {
+						var properties = name.Split ('.');
+						if (properties.Length == 2)
+							values[i] = Tuple.Create (properties[0], properties[1]);
+					}
+					else {
+						cols[i] = map.FindColumn (name);
+					}
 				}
 
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
 					var obj = Activator.CreateInstance (map.MappedType);
 					for (int i = 0; i < cols.Length; i++) {
-						if (cols[i] == null)
-							continue;
-						var colType = SQLite3.ColumnType (stmt, i);
-						var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
-						cols[i].SetValue (obj, val);
+						if (cols[i] == null) {
+							if (!values.ContainsKey (i))
+								continue;
+
+							var valueStore = values[i];
+							string propertyName = valueStore.Item1;
+							string subPropertyName = valueStore.Item2;
+							var column = map.Columns.FirstOrDefault (x => x.Name == propertyName);
+							var property = column?.ColumnType?.GetRuntimeProperty (subPropertyName);
+							if (column is null || property is null)
+								continue;
+
+							var colType = SQLite3.ColumnType (stmt, i);
+							var val = ReadCol (stmt, i, colType, property.PropertyType);
+							var nestedObject = (obj.GetType ().GetRuntimeProperty (propertyName)).GetValue (obj);
+							if (nestedObject is null) {
+								var newObjectType = (obj.GetType ().GetRuntimeProperty (propertyName)).PropertyType;
+								nestedObject = Activator.CreateInstance (newObjectType);
+								(obj.GetType ().GetRuntimeProperty (propertyName)).SetValue (obj, nestedObject);
+							}
+							var nestedObjectProperty = nestedObject?.GetType ().GetRuntimeProperty (subPropertyName);
+							nestedObjectProperty?.SetValue (nestedObject, val);
+						}
+						else {
+							var colType = SQLite3.ColumnType (stmt, i);
+							var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
+							cols[i].SetValue (obj, val);
+						}
 					}
 					OnInstanceCreated (obj);
 					yield return (T)obj;

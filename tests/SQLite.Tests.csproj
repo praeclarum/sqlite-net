@@ -84,6 +84,7 @@
     <Compile Include="BackupTest.cs" />
     <Compile Include="ReadmeTest.cs" />
     <Compile Include="QueryTest.cs" />
+    <Compile Include="NestedObjectPropertyMappingTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
