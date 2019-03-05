@@ -153,6 +153,9 @@
     <Compile Include="..\QueryTest.cs">
       <Link>QueryTest.cs</Link>
     </Compile>
+    <Compile Include="..\NestedObjectPropertyMappingTest.cs">
+      <Link>NestedObjectPropertyMappingTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
 </Project>
