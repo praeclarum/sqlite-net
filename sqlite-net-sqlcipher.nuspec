@@ -11,7 +11,7 @@
     <title>SQLite-net Official SQLCipher .NET Standard Library</title>
     <summary>SQLite-net Official Portable Library is the easy way to access sqlite from .NET apps.</summary>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite with the SQLCipher extension. This enables secure access to the datbase with password (key) access.</description>
+    <description>SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications. This version uses SQLitePCLRaw to provide platform independent versions of SQLite with the SQLCipher extension. This enables secure access to the database with password (key) access.</description>
     <tags>sqlite-net sqlite pcl database orm mobile encryption sqlcipher</tags>
     <releaseNotes>See project page</releaseNotes>
     <dependencies>
