@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>SQLite-net</AssemblyName>
-    <Version>1.0.0</Version>
-    <AssemblyTitle>SQLite-net Official SQLCipher .NET Standard Library</AssemblyTitle>
+    <AssemblyName>SQLite-NET</AssemblyName>
+    <Version>2.0.0</Version>
+    <AssemblyTitle>SQLite.NET Unofficial SQLCipher .NET Standard Library</AssemblyTitle>
     <Description>Light weight library providing easy SQLite database storage</Description>
-    <Company>Krueger Systems, Inc.</Company>
+    <Company>Compile</Company>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -14,12 +14,12 @@
     <DebugType></DebugType>
     <DefineConstants>USE_SQLITEPCL_RAW;RELEASE;NETSTANDARD1_1</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;DEBUG;NETSTANDARD1_1</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
