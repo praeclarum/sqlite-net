@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.0.0" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.0.1" />
   </ItemGroup>
 
   <ItemGroup>
