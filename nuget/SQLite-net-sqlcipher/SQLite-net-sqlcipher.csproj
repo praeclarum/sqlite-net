@@ -25,12 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\SQLite.cs">
-      <Link>SQLite.cs</Link>
-    </Compile>
-    <Compile Include="..\..\src\SQLiteAsync.cs">
-      <Link>SQLiteAsync.cs</Link>
-    </Compile>
+    <Compile Include="..\..\src\*.cs" />
   </ItemGroup>
 
   <PropertyGroup>
