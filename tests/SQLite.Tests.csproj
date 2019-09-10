@@ -84,6 +84,7 @@
     <Compile Include="BackupTest.cs" />
     <Compile Include="ReadmeTest.cs" />
     <Compile Include="QueryTest.cs" />
+    <Compile Include="TimeSpanTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

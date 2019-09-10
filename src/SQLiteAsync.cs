@@ -137,6 +137,11 @@ namespace SQLite
 		/// Whether to store DateTime properties as ticks (true) or strings (false).
 		/// </summary>
 		public bool StoreDateTimeAsTicks => GetConnection ().StoreDateTimeAsTicks;
+		
+		/// <summary>
+		/// Whether to store TimeSpan properties as ticks (true) or strings (false).
+		/// </summary>
+		public bool StoreTimeSpanAsTicks => GetConnection ().StoreTimeSpanAsTicks;
 
 		/// <summary>
 		/// Whether to writer queries to <see cref="Tracer"/> during execution.
