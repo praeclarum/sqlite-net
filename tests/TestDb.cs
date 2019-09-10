@@ -60,6 +60,13 @@ namespace SQLite.Tests
 				EnableWriteAheadLogging ();
 		}
 
+		public TestDb (bool storeDateTimeAsTicks, string dateTimeFormat, bool wal = true) : base (new SQLiteConnectionString (TestPath.GetTempFileName (), storeDateTimeAsTicks, dateTimeStringFormat: dateTimeFormat))
+		{
+			Trace = true;
+			if (wal)
+				EnableWriteAheadLogging ();
+		}
+
 		public TestDb (string path, bool storeDateTimeAsTicks = true, object key = null, bool wal = true) : base (new SQLiteConnectionString (path, storeDateTimeAsTicks, key: key))
 		{
 			Trace = true;

@@ -39,6 +39,14 @@ namespace SQLite.Tests
 			TestDateTime (db);
 		}
 
+		[TestCase("o")]
+		[TestCase("MMM'-'dd'-'yyyy' 'HH':'mm':'ss'.'fffffff")]
+		public void AsCustomStrings (string format)
+		{
+			var db = new TestDb (false, format);
+			TestDateTime (db);
+		}
+
 		[Test]
 		public void AsyncAsTicks ()
 		{
@@ -50,6 +58,14 @@ namespace SQLite.Tests
 		public void AsyncAsString ()
 		{
 			var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), false);
+			TestAsyncDateTime (db);
+		}
+
+		[TestCase("o")]
+		[TestCase("MMM'-'dd'-'yyyy' 'HH':'mm':'ss'.'fffffff")]
+		public void AsyncAsCustomStrings (string format)
+		{
+			var db = new SQLiteAsyncConnection (new SQLiteConnectionString (TestPath.GetTempFileName (), false, dateTimeStringFormat: format));
 			TestAsyncDateTime (db);
 		}
 

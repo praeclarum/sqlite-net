@@ -210,6 +210,18 @@ namespace SQLite
 		/// </summary>
 		public bool StoreDateTimeAsTicks { get; private set; }
 
+		/// <summary>
+		/// The format to use when storing DateTime properties as strings. Ignored if StoreDateTimeAsTicks is true.
+		/// </summary>
+		/// <value>The date time string format.</value>
+		public string DateTimeStringFormat { get; private set; }
+
+		/// <summary>
+		/// The DateTimeStyles value to use when parsing a DateTime property string.
+		/// </summary>
+		/// <value>The date time style.</value>
+		internal System.Globalization.DateTimeStyles DateTimeStyle { get; private set; }
+
 #if USE_SQLITEPCL_RAW && !NO_SQLITEPCL_RAW_BATTERIES
 		static SQLiteConnection ()
 		{
@@ -298,6 +310,8 @@ namespace SQLite
 			_open = true;
 
 			StoreDateTimeAsTicks = connectionString.StoreDateTimeAsTicks;
+			DateTimeStringFormat = connectionString.DateTimeStringFormat;
+			DateTimeStyle = connectionString.DateTimeStyle;
 
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 			Tracer = line => Debug.WriteLine (line);
@@ -2091,9 +2105,13 @@ namespace SQLite
 	/// </summary>
 	public class SQLiteConnectionString
 	{
+		const string DateTimeSqliteDefaultFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
+
 		public string UniqueKey { get; }
 		public string DatabasePath { get; }
 		public bool StoreDateTimeAsTicks { get; }
+		public string DateTimeStringFormat { get; }
+		public System.Globalization.DateTimeStyles DateTimeStyle { get; }
 		public object Key { get; }
 		public SQLiteOpenFlags OpenFlags { get; }
 		public Action<SQLiteConnection> PreKeyAction { get; }
@@ -2130,8 +2148,11 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks)
+		/// <param name="dateTimeStringFormat">
+		/// Specifies the format to use when storing DateTime properties as strings.
+		/// </param>
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks = true, string dateTimeStringFormat = DateTimeSqliteDefaultFormat)
+			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks, dateTimeStringFormat: dateTimeStringFormat)
 		{
 		}
 
@@ -2195,13 +2216,18 @@ namespace SQLite
 		/// <param name="vfsName">
 		/// Specifies the Virtual File System to use on the database.
 		/// </param>
-		public SQLiteConnectionString (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null)
+		/// <param name="dateTimeStringFormat">
+		/// Specifies the format to use when storing DateTime properties as strings.
+		/// </param>
+		public SQLiteConnectionString (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks, object key = null, Action<SQLiteConnection> preKeyAction = null, Action<SQLiteConnection> postKeyAction = null, string vfsName = null, string dateTimeStringFormat = DateTimeSqliteDefaultFormat)
 		{
 			if (key != null && !((key is byte[]) || (key is string)))
 				throw new ArgumentException ("Encryption keys must be strings or byte arrays", nameof (key));
 
 			UniqueKey = string.Format ("{0}_{1:X8}", databasePath, (uint)openFlags);
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
+			DateTimeStringFormat = dateTimeStringFormat;
+			DateTimeStyle = "o".Equals (DateTimeStringFormat, StringComparison.OrdinalIgnoreCase) || "r".Equals (DateTimeStringFormat, StringComparison.OrdinalIgnoreCase) ? System.Globalization.DateTimeStyles.RoundtripKind : System.Globalization.DateTimeStyles.None;
 			Key = key;
 			PreKeyAction = preKeyAction;
 			PostKeyAction = postKeyAction;
@@ -2921,15 +2947,13 @@ namespace SQLite
 					b.Index = nextIdx++;
 				}
 
-				BindParameter (stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks);
+				BindParameter (stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks, _conn.DateTimeStringFormat);
 			}
 		}
 
 		static IntPtr NegativePointer = new IntPtr (-1);
 
-		const string DateTimeExactStoreFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
-
-		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
+		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks, string dateTimeStringFormat)
 		{
 			if (value == null) {
 				SQLite3.BindNull (stmt, index);
@@ -2961,7 +2985,7 @@ namespace SQLite
 						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
 					}
 					else {
-						SQLite3.BindText (stmt, index, ((DateTime)value).ToString (DateTimeExactStoreFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
+						SQLite3.BindText (stmt, index, ((DateTime)value).ToString (dateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
 					}
 				}
 				else if (value is DateTimeOffset) {
@@ -3046,7 +3070,7 @@ namespace SQLite
 					else {
 						var text = SQLite3.ColumnString (stmt, index);
 						DateTime resultDate;
-						if (!DateTime.TryParseExact (text, DateTimeExactStoreFormat, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out resultDate)) {
+						if (!DateTime.TryParseExact (text, _conn.DateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture, _conn.DateTimeStyle, out resultDate)) {
 							resultDate = DateTime.Parse (text);
 						}
 						return resultDate;
@@ -3150,7 +3174,7 @@ namespace SQLite
 			//bind the values.
 			if (source != null) {
 				for (int i = 0; i < source.Length; i++) {
-					SQLiteCommand.BindParameter (Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks);
+					SQLiteCommand.BindParameter (Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks, Connection.DateTimeStringFormat);
 				}
 			}
 			r = SQLite3.Step (Statement);
