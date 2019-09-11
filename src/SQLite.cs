@@ -2154,11 +2154,8 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		/// <param name="dateTimeStringFormat">
-		/// Specifies the format to use when storing DateTime properties as strings.
-		/// </param>
-		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks = true, string dateTimeStringFormat = DateTimeSqliteDefaultFormat)
-			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks, dateTimeStringFormat: dateTimeStringFormat)
+		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks = true)
+			: this (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, storeDateTimeAsTicks)
 		{
 		}
 
