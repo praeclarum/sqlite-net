@@ -3,15 +3,16 @@ SRC=src/SQLite.cs src/SQLiteAsync.cs
 
 all: test nuget
 
-test: tests/bin/Debug/SQLite.Tests.dll tests/ApiDiff/bin/Debug/ApiDiff.exe
-	mono packages/NUnit.ConsoleRunner.3.10.0/tools/nunit3-console.exe tests/bin/Debug/SQLite.Tests.dll
-	mono tests/ApiDiff/bin/Debug/ApiDiff.exe
+test: tests/bin/Release/SQLite.Tests.dll tests/ApiDiff/bin/Release/ApiDiff.exe
+	mono packages/NUnit.ConsoleRunner.3.10.0/tools/nunit3-console.exe tests/bin/Release/SQLite.Tests.dll
+	mono tests/ApiDiff/bin/Release/ApiDiff.exe
 
-tests/bin/Debug/SQLite.Tests.dll: tests/SQLite.Tests.csproj $(SRC)
-	msbuild tests/SQLite.Tests.csproj
+tests/bin/Release/SQLite.Tests.dll: tests/SQLite.Tests.csproj $(SRC)
+	msbuild /p:Configuration=Release /t:Restore tests/SQLite.Tests.csproj
+	msbuild /p:Configuration=Release tests/SQLite.Tests.csproj
 
-tests/ApiDiff/bin/Debug/ApiDiff.exe: tests/ApiDiff/ApiDiff.csproj $(SRC)
-	msbuild tests/ApiDiff/ApiDiff.csproj
+tests/ApiDiff/bin/Release/ApiDiff.exe: tests/ApiDiff/ApiDiff.csproj $(SRC)
+	msbuild /p:Configuration=Release tests/ApiDiff/ApiDiff.csproj
 
 nuget: srcnuget pclnuget basenuget sqlciphernuget
 
