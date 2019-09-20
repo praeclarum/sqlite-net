@@ -1,0 +1,21 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: macOS-10.14
+    
+    steps:
+        
+    - uses: actions/checkout@v1
+    
+    - name: Build and Test
+      run: make test
+      
+    - name: Make nuget
+      run: |
+        make nuget
+        mkdir PackageOut
+        mv *.nupkg PackageOut
