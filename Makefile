@@ -1,7 +1,7 @@
 
 SRC=src/SQLite.cs src/SQLiteAsync.cs
 
-PACKAGES_OUT=PackagesOut
+PACKAGES_OUT=$(abspath PackagesOut)
 
 all: test nuget
 
