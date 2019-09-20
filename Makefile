@@ -8,7 +8,6 @@ test: tests/bin/Release/SQLite.Tests.dll tests/ApiDiff/bin/Release/ApiDiff.exe
 	mono tests/ApiDiff/bin/Release/ApiDiff.exe
 
 tests/bin/Release/SQLite.Tests.dll: tests/SQLite.Tests.csproj $(SRC)
-	msbuild /p:Configuration=Release /t:Restore tests/SQLite.Tests.csproj
 	msbuild /p:Configuration=Release tests/SQLite.Tests.csproj
 
 tests/ApiDiff/bin/Release/ApiDiff.exe: tests/ApiDiff/ApiDiff.csproj $(SRC)
