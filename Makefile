@@ -4,7 +4,7 @@ SRC=src/SQLite.cs src/SQLiteAsync.cs
 all: test nuget
 
 test: tests/bin/Debug/SQLite.Tests.dll tests/ApiDiff/bin/Debug/ApiDiff.exe
-	nunit-console tests/bin/Debug/SQLite.Tests.dll
+	mono packages/NUnit.ConsoleRunner.3.10.0/tools/nunit3-console.exe tests/bin/Debug/SQLite.Tests.dll
 	mono tests/ApiDiff/bin/Debug/ApiDiff.exe
 
 tests/bin/Debug/SQLite.Tests.dll: tests/SQLite.Tests.csproj $(SRC)
