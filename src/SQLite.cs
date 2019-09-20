@@ -1710,21 +1710,20 @@ namespace SQLite
 			var key = Tuple.Create (map.MappedType.FullName, extra);
 
 			lock (_insertCommandMap) {
-				_insertCommandMap.TryGetValue (key, out prepCmd);
+				if (_insertCommandMap.TryGetValue (key, out prepCmd)) {
+					return prepCmd;
+				}
 			}
 
-			if (prepCmd == null) {
-				prepCmd = CreateInsertCommand (map, extra);
-				var added = false;
-				lock (_insertCommandMap) {
-					if (!_insertCommandMap.ContainsKey (key)) {
-						_insertCommandMap.Add (key, prepCmd);
-						added = true;
-					}
-				}
-				if (!added) {
+			prepCmd = CreateInsertCommand (map, extra);
+			
+			lock (_insertCommandMap) {
+				if (_insertCommandMap.TryGetValue (key, out var existing)) {
 					prepCmd.Dispose ();
+					return existing;
 				}
+
+				_insertCommandMap.Add (key, prepCmd);
 			}
 
 			return prepCmd;
