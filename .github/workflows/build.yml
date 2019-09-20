@@ -8,13 +8,16 @@ jobs:
     runs-on: macOS-10.14
     
     steps:
-        
+
     - uses: actions/checkout@v1
     
+    - name: Restore NuGets
+      run: nuget restore SQLite.sln
+
     - name: Build and Test
       run: make test
       
-    - name: Make nuget
+    - name: Make NuGet
       run: |
         make nuget
         mkdir PackageOut
