@@ -17,8 +17,12 @@ jobs:
     - name: Build and Test
       run: make test
       
-    - name: Make NuGet
+    - name: Package
       run: |
         make nuget
-        mkdir PackageOut
-        mv *.nupkg PackageOut
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: Packages
+        path: PackagesOut
+
