@@ -13,8 +13,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net", "nuget\SQLite-net\SQLite-net.csproj", "{7F946494-8EE0-432B-8A87-98961143D5C1}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLiteTestsiOS", "tests\SQLite.Tests.iOS\SQLiteTestsiOS.csproj", "{81850129-71C3-40C7-A48B-AA5D2C2E365E}"
@@ -49,18 +47,6 @@ Global
 		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|iPhone.ActiveCfg = Debug|Any CPU
 		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Release|iPhone.Build.0 = Release|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{7F946494-8EE0-432B-8A87-98961143D5C1}.Debug|iPhone.Build.0 = Debug|Any CPU
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Debug|Any CPU.ActiveCfg = Debug|iPhoneSimulator
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Debug|Any CPU.Build.0 = Debug|iPhoneSimulator
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Release|Any CPU.ActiveCfg = Release|iPhone

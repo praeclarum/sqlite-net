@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>SQLite-net</AssemblyName>
     <Version>1.0.0</Version>
     <AssemblyTitle>SQLite-net Official .NET Standard Base Library</AssemblyTitle>
@@ -12,14 +12,14 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;DEBUG;NETSTANDARD1_1</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
     <DebugType></DebugType>
     <DefineConstants>USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;RELEASE;NETSTANDARD1_1</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
@@ -30,7 +30,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.core" Version="1.1.13" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="2.0.1" />
     <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
   </ItemGroup>
 </Project>
