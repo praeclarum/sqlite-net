@@ -15,6 +15,8 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class DateTimeTest
 	{
+		const string DefaultSQLiteDateTimeString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff";
+
 		class TestObj
 		{
 			[PrimaryKey, AutoIncrement]
@@ -28,50 +30,56 @@ namespace SQLite.Tests
 		[Test]
 		public void AsTicks ()
 		{
+			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new TestDb (storeDateTimeAsTicks: true);
-			TestDateTime (db);
+			TestDateTime (db, dateTime, dateTime.Ticks.ToString ());
 		}
 
 		[Test]
 		public void AsStrings ()
 		{
+			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new TestDb (storeDateTimeAsTicks: false);
-			TestDateTime (db);
+			TestDateTime (db, dateTime, dateTime.ToString (DefaultSQLiteDateTimeString));
 		}
 
 		[TestCase ("o")]
 		[TestCase ("MMM'-'dd'-'yyyy' 'HH':'mm':'ss'.'fffffff")]
 		public void AsCustomStrings (string format)
 		{
+			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new TestDb (CustomDateTimeString (format));
-			TestDateTime (db);
+			TestDateTime (db, dateTime, dateTime.ToString (format));
 		}
 
 		[Test]
 		public void AsyncAsTicks ()
 		{
+			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), true);
-			TestAsyncDateTime (db);
+			TestAsyncDateTime (db, dateTime, dateTime.Ticks.ToString ());
 		}
 
 		[Test]
 		public void AsyncAsString ()
 		{
+			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), false);
-			TestAsyncDateTime (db);
+			TestAsyncDateTime (db, dateTime, dateTime.ToString (DefaultSQLiteDateTimeString));
 		}
 
 		[TestCase ("o")]
 		[TestCase ("MMM'-'dd'-'yyyy' 'HH':'mm':'ss'.'fffffff")]
 		public void AsyncAsCustomStrings (string format)
 		{
+			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new SQLiteAsyncConnection (CustomDateTimeString (format));
-			TestAsyncDateTime (db);
+			TestAsyncDateTime (db, dateTime, dateTime.ToString (format));
 		}
 
-		SQLiteConnectionString CustomDateTimeString (string dateTimeFormat) => new SQLiteConnectionString (TestPath.GetTempFileName (), false, dateTimeFormat);
+		SQLiteConnectionString CustomDateTimeString (string dateTimeFormat) => new SQLiteConnectionString (TestPath.GetTempFileName (), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, false, dateTimeStringFormat: dateTimeFormat);
 
-		void TestAsyncDateTime (SQLiteAsyncConnection db)
+		void TestAsyncDateTime (SQLiteAsyncConnection db, DateTime dateTime, string expected)
 		{
 			db.CreateTableAsync<TestObj> ().Wait ();
 
@@ -81,14 +89,17 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234),
+				ModifiedTime = dateTime,
 			};
 			db.InsertAsync (o).Wait ();
 			o2 = db.GetAsync<TestObj> (o.Id).Result;
 			Assert.AreEqual (o.ModifiedTime, o2.ModifiedTime);
+
+			var stored = db.ExecuteScalarAsync<string> ("SELECT ModifiedTime FROM TestObj;").Result;
+			Assert.AreEqual (expected, stored);
 		}
 
-		void TestDateTime (TestDb db)
+		void TestDateTime (TestDb db, DateTime dateTime, string expected)
 		{
 			db.CreateTable<TestObj> ();
 
@@ -98,11 +109,14 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234),
+				ModifiedTime = dateTime,
 			};
 			db.Insert (o);
 			o2 = db.Get<TestObj> (o.Id);
 			Assert.AreEqual (o.ModifiedTime, o2.ModifiedTime);
+
+			var stored = db.ExecuteScalar<string> ("SELECT ModifiedTime FROM TestObj;");
+			Assert.AreEqual (expected, stored);
 		}
 
 		class NullableDateObj
