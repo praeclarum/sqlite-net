@@ -20,12 +20,11 @@ namespace SQLite.Tests
 		{
 		}
 
-		[Test, ExpectedException]
+		[Test]
 		public void CreateTypeWithNoProps ()
 		{
 			var db = new TestDb ();
-
-			db.CreateTable<NoPropObject> ();
+			Assert.Throws<Exception> (() => db.CreateTable<NoPropObject> ());
 		}
 
 		[Test]

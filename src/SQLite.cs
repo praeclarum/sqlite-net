@@ -1730,21 +1730,20 @@ namespace SQLite
 			var key = Tuple.Create (map.MappedType.FullName, extra);
 
 			lock (_insertCommandMap) {
-				_insertCommandMap.TryGetValue (key, out prepCmd);
+				if (_insertCommandMap.TryGetValue (key, out prepCmd)) {
+					return prepCmd;
+				}
 			}
 
-			if (prepCmd == null) {
-				prepCmd = CreateInsertCommand (map, extra);
-				var added = false;
-				lock (_insertCommandMap) {
-					if (!_insertCommandMap.ContainsKey (key)) {
-						_insertCommandMap.Add (key, prepCmd);
-						added = true;
-					}
-				}
-				if (!added) {
+			prepCmd = CreateInsertCommand (map, extra);
+			
+			lock (_insertCommandMap) {
+				if (_insertCommandMap.TryGetValue (key, out var existing)) {
 					prepCmd.Dispose ();
+					return existing;
 				}
+
+				_insertCommandMap.Add (key, prepCmd);
 			}
 
 			return prepCmd;
@@ -4263,7 +4262,7 @@ namespace SQLite
 
 		public static string GetErrmsg (Sqlite3DatabaseHandle db)
 		{
-			return Sqlite3.sqlite3_errmsg (db);
+			return Sqlite3.sqlite3_errmsg (db).utf8_to_string();
 		}
 
 		public static int BindParameterIndex (Sqlite3Statement stmt, string name)
@@ -4320,12 +4319,12 @@ namespace SQLite
 
 		public static string ColumnName (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_name (stmt, index);
+			return Sqlite3.sqlite3_column_name (stmt, index).utf8_to_string ();
 		}
 
 		public static string ColumnName16 (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_name (stmt, index);
+			return Sqlite3.sqlite3_column_name (stmt, index).utf8_to_string ();
 		}
 
 		public static ColType ColumnType (Sqlite3Statement stmt, int index)
@@ -4350,17 +4349,17 @@ namespace SQLite
 
 		public static string ColumnText (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_text (stmt, index);
+			return Sqlite3.sqlite3_column_text (stmt, index).utf8_to_string ();
 		}
 
 		public static string ColumnText16 (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_text (stmt, index);
+			return Sqlite3.sqlite3_column_text (stmt, index).utf8_to_string ();
 		}
 
 		public static byte[] ColumnBlob (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_blob (stmt, index);
+			return Sqlite3.sqlite3_column_blob (stmt, index).ToArray ();
 		}
 
 		public static int ColumnBytes (Sqlite3Statement stmt, int index)
@@ -4370,7 +4369,7 @@ namespace SQLite
 
 		public static string ColumnString (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_text (stmt, index);
+			return Sqlite3.sqlite3_column_text (stmt, index).utf8_to_string ();
 		}
 
 		public static byte[] ColumnByteArray (Sqlite3Statement stmt, int index)

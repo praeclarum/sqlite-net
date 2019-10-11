@@ -1,29 +1,32 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>SQLite-net</AssemblyName>
-    <Version>1.0.0</Version>
-    <AssemblyTitle>SQLite-net Official SQLCipher .NET Standard Library</AssemblyTitle>
-    <Description>Light weight library providing easy SQLite database storage</Description>
-    <Company>Krueger Systems, Inc.</Company>
+    <PackageId>sqlite-net-sqlcipher</PackageId>
+    <AssemblyTitle>SQLite-net SQLCipher .NET Standard Library</AssemblyTitle>
+    <Description>
+      SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
+      This version uses SQLitePCLRaw to provide platform independent versions of SQLite with the SQLCipher extension.
+      This enables secure access to the database with password (key) access.
+    </Description>
+    <PackageTags>sqlite-net;sqlite;database;orm;encryption;sqlcipher</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
     <DebugType></DebugType>
-    <DefineConstants>USE_SQLITEPCL_RAW;RELEASE;NETSTANDARD1_1</DefineConstants>
+    <DefineConstants>USE_SQLITEPCL_RAW;RELEASE</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Release\netstandard1.1\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>USE_SQLITEPCL_RAW;DEBUG;NETSTANDARD1_1</DefineConstants>
+    <DefineConstants>USE_SQLITEPCL_RAW;DEBUG</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Debug\netstandard1.1\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_sqlcipher" Version="1.1.13" />
-    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
@@ -32,5 +35,6 @@
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
+    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>
