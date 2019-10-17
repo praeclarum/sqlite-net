@@ -368,7 +368,7 @@ namespace SQLite
 		{
 			if (key == null) throw new ArgumentNullException (nameof (key));
 			var q = Quote (key);
-			Execute ("pragma key = " + q);
+			ExecuteScalar<string> ("pragma key = " + q);
 		}
 
 		/// <summary>
@@ -383,7 +383,7 @@ namespace SQLite
 			if (key == null) throw new ArgumentNullException (nameof (key));
 			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof(key));
 			var s = String.Join ("", key.Select (x => x.ToString ("X2")));
-			Execute ("pragma key = \"x'" + s + "'\"");
+			ExecuteScalar<string> ("pragma key = \"x'" + s + "'\"");
 		}
 
 		/// <summary>
