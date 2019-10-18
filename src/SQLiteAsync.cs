@@ -1426,5 +1426,57 @@ namespace SQLite
 			}
 		}
 	}
+
+	/// <summary>
+	/// Async wrapper for prepared statements.
+	/// </summary>
+	public class SQLiteAsyncPreparedStatement : IDisposable {
+		SQLiteAsyncConnection Connection { get; set; }
+		SQLitePreparedStatement Statement { get; set; }
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:SQLite.SQLiteAsyncPreparedStatement"/> class.
+		/// </summary>
+		/// <param name="conn">The Connection.</param>
+		/// <param name="sql">The sql to prepare.</param>
+		public SQLiteAsyncPreparedStatement(SQLiteAsyncConnection conn, string sql)
+		{
+			Connection = conn;
+			Statement = new SQLitePreparedStatement(conn.GetConnection() as SQLiteConnection, sql);
+		}
+
+		/// <summary>
+		/// Dispose
+		/// </summary>
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		bool disposed = false;
+		/// <summary>
+		/// Dispose
+		/// </summary>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposed)
+				return;
+			if (disposing) {
+				Statement.Dispose();
+			}
+			disposed = true;
+		}
+
+		Task<U> WriteAsync<U> (Func<SQLiteConnectionWithLock, U> exe)
+		{
+			return Task.Factory.StartNew (() => {
+					var conn = Connection.GetConnection();
+					using (conn.Lock ()) {
+					return exe (conn);
+					}
+					}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+		}
+	}
 }
 
