@@ -2604,9 +2604,37 @@ namespace SQLite
 			Statement = SQLite3.Prepare2(Handle, sql);
 		}
 
+		public int ExecuteNonQuery (params object[] args)
+		{
+			ResetAndBind(args);
+			if (Connection.Trace) {
+				Connection.Tracer?.Invoke ("Executing: " + this);
+			}
+
+			var r = SQLite3.Result.OK;
+			r = SQLite3.Step (Statement);
+			if (r == SQLite3.Result.Done) {
+				int rowsAffected = SQLite3.Changes (Handle);
+				return rowsAffected;
+			}
+			else if (r == SQLite3.Result.Error) {
+				string msg = SQLite3.GetErrmsg (Handle);
+				throw SQLiteException.New (r, msg);
+			}
+			else if (r == SQLite3.Result.Constraint) {
+				if (SQLite3.ExtendedErrCode (Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+					throw NotNullConstraintViolationException.New (r, SQLite3.GetErrmsg (Handle));
+				}
+			}
+			throw SQLiteException.New (r, r.ToString ());
+		}
+
 		public IEnumerable<T> ExecuteDeferredQuery<T> (params object[] args)
 		{
-			//ResetAndBind(args);
+			ResetAndBind(args);
+			if (Connection.Trace) {
+				Connection.Tracer?.Invoke ("Executing Query: " + this);
+			}
 			var cols = new SQLite.TableMapping.Column[SQLite3.ColumnCount(Statement)];
 
 			var map = new TableMapping(typeof(T), CreateFlags.None);
@@ -2629,6 +2657,29 @@ namespace SQLite
 			}
 		}
 
+		public T ExecuteScalar<T> (params object[] args)
+		{
+			ResetAndBind(args);
+			if (Connection.Trace) {
+				Connection.Tracer?.Invoke ("Executing Query: " + this);
+			}
+
+			T val = default (T);
+
+			var r = SQLite3.Step (Statement);
+			if (r == SQLite3.Result.Row) {
+				var colType = SQLite3.ColumnType (Statement, 0);
+				val = (T)SQLitePreparedStatement.ReadCol (Statement, 0, colType, typeof (T), Connection.StoreDateTimeAsTicks);
+			}
+			else if (r == SQLite3.Result.Done) {
+			}
+			else {
+				throw SQLiteException.New (r, SQLite3.GetErrmsg (Handle));
+			}
+
+			return val;
+		}
+
 		public void Dispose()
 		{
 			Dispose(true);
@@ -2644,6 +2695,13 @@ namespace SQLite
 				SQLite3.Finalize(Statement);
 			}
 			disposed = true;
+		}
+
+		void ResetAndBind(params object[] args) {
+			SQLite3.Reset(Statement);
+			for (int i = 0; i < args.Length; i++) {
+				BindParameter(Statement, i + 1, args[i], Connection.StoreDateTimeAsTicks);
+			}
 		}
 
 		static IntPtr NegativePointer = new IntPtr (-1);
