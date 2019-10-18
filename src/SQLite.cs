@@ -2597,18 +2597,24 @@ namespace SQLite
 		Sqlite3Statement Statement;
 		SQLiteConnection Connection { get;  set; }
 		Sqlite3DatabaseHandle Handle => Connection.Handle;
+		public string CommandText { get; private set; }
 
 		public SQLitePreparedStatement(SQLiteConnection conn, string sql)
 		{
+			CommandText = sql;
 			Connection = conn;
-			Statement = SQLite3.Prepare2(Handle, sql);
+			Statement = SQLite3.Prepare2(Handle, CommandText);
+		}
+		
+		~SQLitePreparedStatement() {
+			Dispose(false);
 		}
 
 		public int ExecuteNonQuery (params object[] args)
 		{
 			ResetAndBind(args);
 			if (Connection.Trace) {
-				Connection.Tracer?.Invoke ("Executing: " + this);
+				Connection.Tracer?.Invoke ("Executing: " + ToString(args));
 			}
 
 			var r = SQLite3.Result.OK;
@@ -2633,7 +2639,7 @@ namespace SQLite
 		{
 			ResetAndBind(args);
 			if (Connection.Trace) {
-				Connection.Tracer?.Invoke ("Executing Query: " + this);
+				Connection.Tracer?.Invoke ("Executing Query: " + ToString(args));
 			}
 			var cols = new SQLite.TableMapping.Column[SQLite3.ColumnCount(Statement)];
 
@@ -2661,7 +2667,7 @@ namespace SQLite
 		{
 			ResetAndBind(args);
 			if (Connection.Trace) {
-				Connection.Tracer?.Invoke ("Executing Query: " + this);
+				Connection.Tracer?.Invoke ("Executing Query: " + ToString(args));
 			}
 
 			T val = default (T);
@@ -2687,13 +2693,11 @@ namespace SQLite
 		}
 
 		bool disposed = false;
-		protected virtual void Dispose(bool disposing)
+		protected virtual void Dispose(bool _disposing)
 		{
 			if (disposed)
 				return;
-			if (disposing) {
-				SQLite3.Finalize(Statement);
-			}
+			SQLite3.Finalize(Statement);
 			disposed = true;
 		}
 
@@ -2872,6 +2876,18 @@ namespace SQLite
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
 			}
+		}
+
+		public string ToString (params object[] args)
+		{
+			var parts = new string[1 + args.Count()];
+			parts[0] = CommandText;
+			var i = 1;
+			foreach (var b in args) {
+				parts[i] = string.Format ("  {0}: {1}", i - 1, b);
+				i++;
+			}
+			return string.Join (Environment.NewLine, parts);
 		}
 	}
 
