@@ -1431,8 +1431,10 @@ namespace SQLite
 	/// Async wrapper for prepared statements.
 	/// </summary>
 	public class SQLiteAsyncPreparedStatement : IDisposable {
-		SQLiteAsyncConnection Connection { get; set; }
-		SQLitePreparedStatement Statement { get; set; }
+		SQLiteConnectionWithLock Connection { get; set; }
+
+		/// Get the inner, synchronous, statement;
+		public SQLitePreparedStatement Inner { get; private set; }
 
 		/// <summary>
 		/// Creates a prepared statement given the command text (SQL) with arguments. Place a '?'
@@ -1445,10 +1447,23 @@ namespace SQLite
 		/// <param name="query">
 		/// The fully escaped SQL.
 		/// </param>
-		public SQLiteAsyncPreparedStatement(SQLiteAsyncConnection conn, string query)
+		public SQLiteAsyncPreparedStatement(SQLiteAsyncConnection conn, string query) : this(conn.GetConnection(), query) { }
+
+		/// <summary>
+		/// Creates a prepared statement given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method when return primitive values.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="conn">The Connection.</param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		public SQLiteAsyncPreparedStatement(SQLiteConnectionWithLock conn, string query)
 		{
 			Connection = conn;
-			Statement = new SQLitePreparedStatement(conn.GetConnection() as SQLiteConnection, query);
+			Inner = new SQLitePreparedStatement(Connection as SQLiteConnection, query);
 		}
 
 		/// <summary>
@@ -1462,7 +1477,7 @@ namespace SQLite
 		/// </returns>
 		public Task<int> ExecuteNonQueryAsync (params object[] args)
 		{
-			return WrapAsync<int>(() => Statement.ExecuteNonQuery(args));
+			return WrapAsync<int>(() => Inner.ExecuteNonQuery(args));
 		}
 
 		/// <summary>
@@ -1481,7 +1496,7 @@ namespace SQLite
 		/// </returns>
 		public Task<IEnumerable<T>> ExecuteDeferredQueryAsync<T> (params object[] args)
 		{
-			return WrapAsync<IEnumerable<T>>(() => Statement.ExecuteDeferredQuery<T>(args).ToList());
+			return WrapAsync<IEnumerable<T>>(() => Inner.ExecuteDeferredQuery<T>(args).ToList());
 		}
 
 		/// <summary>
@@ -1495,7 +1510,7 @@ namespace SQLite
 		/// </returns>
 		public Task<T> ExecuteScalarAsync<T> (params object[] args)
 		{
-			return WrapAsync<T>(() => Statement.ExecuteScalar<T>(args));
+			return WrapAsync<T>(() => Inner.ExecuteScalar<T>(args));
 		}
 
 		/// <summary>
@@ -1516,7 +1531,7 @@ namespace SQLite
 			if (disposed)
 				return;
 			if (disposing) {
-				Statement.Dispose();
+				Inner.Dispose();
 			}
 			disposed = true;
 		}
@@ -1524,8 +1539,7 @@ namespace SQLite
 		Task<T> WrapAsync<T> (Func<T> exe)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = Connection.GetConnection();
-				using (conn.Lock ()) {
+				using (Connection.Lock ()) {
 					return exe();
 				}
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
