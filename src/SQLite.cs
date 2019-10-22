@@ -2675,7 +2675,7 @@ namespace SQLite
 			var r = SQLite3.Step (Statement);
 			if (r == SQLite3.Result.Row) {
 				var colType = SQLite3.ColumnType (Statement, 0);
-				val = (T)SQLitePreparedStatement.ReadCol (Statement, 0, colType, typeof (T), Connection.StoreDateTimeAsTicks);
+				val = (T)ReadCol (Statement, 0, colType, typeof (T), Connection.StoreDateTimeAsTicks);
 			}
 			else if (r == SQLite3.Result.Done) {
 			}
