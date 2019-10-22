@@ -1516,25 +1516,7 @@ namespace SQLite
 		/// <summary>
 		/// Dispose
 		/// </summary>
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		bool disposed = false;
-		/// <summary>
-		/// Dispose
-		/// </summary>
-		protected virtual void Dispose(bool disposing)
-		{
-			if (disposed)
-				return;
-			if (disposing) {
-				Inner.Dispose();
-			}
-			disposed = true;
-		}
+		public void Dispose() => Inner.Dispose();
 
 		Task<T> WrapAsync<T> (Func<T> exe)
 		{
