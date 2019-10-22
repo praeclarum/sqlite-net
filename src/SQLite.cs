@@ -2900,6 +2900,7 @@ namespace SQLite
 	{
 		SQLiteConnection _conn;
 		private List<Binding> _bindings;
+		object[] BindingParams => _bindings.Select(b => b.Value).ToArray();
 
 		public string CommandText { get; set; }
 
@@ -2913,7 +2914,7 @@ namespace SQLite
 		public int ExecuteNonQuery ()
 		{
 			using (var stmt = new SQLitePreparedStatement(_conn, CommandText)) {
-				return stmt.ExecuteNonQuery(_bindings.ToArray());
+				return stmt.ExecuteNonQuery(BindingParams);
 			}
 		}
 
@@ -2950,17 +2951,17 @@ namespace SQLite
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
 			using (var stmt = new SQLitePreparedStatement(_conn, CommandText)) {
-				return stmt.ExecuteDeferredQuery<T>(map, _bindings.ToArray()).Select(obj => {
+				foreach (var obj in stmt.ExecuteDeferredQuery<T>(map, BindingParams)) {
 					OnInstanceCreated(obj);
-					return obj;
-				});
+					yield return obj;
+				}
 			}
 		}
 
 		public T ExecuteScalar<T> ()
 		{
 			using (var stmt = new SQLitePreparedStatement(_conn, CommandText)) {
-				return stmt.ExecuteScalar<T>(_bindings.ToArray());
+				return stmt.ExecuteScalar<T>(BindingParams);
 			}
 		}
 
