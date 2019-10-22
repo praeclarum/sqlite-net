@@ -2595,7 +2595,7 @@ namespace SQLite
 
 	public class SQLitePreparedStatement : IDisposable {
 		Sqlite3Statement Statement;
-		SQLiteConnection Connection { get;  set; }
+		SQLiteConnection Connection { get; set; }
 		Sqlite3DatabaseHandle Handle => Connection.Handle;
 		public string CommandText { get; private set; }
 
@@ -2605,9 +2605,14 @@ namespace SQLite
 			Connection = conn;
 			Statement = SQLite3.Prepare2(Handle, CommandText);
 		}
-		
-		~SQLitePreparedStatement() {
-			Dispose(false);
+
+		bool disposed = false;
+		public void Dispose()
+		{
+			if (disposed)
+				return;
+			disposed = true;
+			SQLite3.Finalize(Statement);
 		}
 
 		public int ExecuteNonQuery (params object[] args)
@@ -2688,21 +2693,6 @@ namespace SQLite
 			}
 
 			return val;
-		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		bool disposed = false;
-		protected virtual void Dispose(bool _disposing)
-		{
-			if (disposed)
-				return;
-			SQLite3.Finalize(Statement);
-			disposed = true;
 		}
 
 		void ResetAndBind(params object[] args) {
