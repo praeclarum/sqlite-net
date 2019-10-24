@@ -2703,6 +2703,7 @@ namespace SQLite
 
 		void ResetAndBind(params object[] args) {
 			SQLite3.Reset(Statement);
+			SQLite3.ClearBindings(Statement);
 			for (int i = 0; i < args.Length; i++) {
 				BindParameter(Statement, i + 1, args[i], Connection.StoreDateTimeAsTicks);
 			}
@@ -4018,6 +4019,9 @@ namespace SQLite
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_finalize", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Finalize (IntPtr stmt);
 
+		[DllImport(LibraryPath, EntryPoint = "sqlite3_clear_bindings", CallingConvention=CallingConvention.Cdecl)]
+		public static extern int ClearBindings (IntPtr stmt);
+
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_last_insert_rowid", CallingConvention=CallingConvention.Cdecl)]
 		public static extern long LastInsertRowid (IntPtr db);
 
@@ -4169,6 +4173,11 @@ namespace SQLite
 		public static Result Finalize (Sqlite3Statement stmt)
 		{
 			return (Result)Sqlite3.sqlite3_finalize (stmt);
+		}
+
+		public static Result ClearBindings (Sqlite3Statement stmt)
+		{
+			return (Result)Sqlite3.sqlite3_clear_bindings (stmt);
 		}
 
 		public static long LastInsertRowid (Sqlite3DatabaseHandle db)
