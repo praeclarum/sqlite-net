@@ -1470,5 +1470,106 @@ namespace SQLite
 			}
 		}
 	}
+
+	/// <summary>
+	/// Async wrapper for prepared statements.
+	/// </summary>
+	public class SQLiteAsyncPreparedStatement : IDisposable {
+		SQLiteConnectionWithLock Connection { get; set; }
+
+		/// Get the inner, synchronous, statement;
+		public SQLitePreparedStatement Inner { get; private set; }
+
+		/// <summary>
+		/// Creates a prepared statement given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method when return primitive values.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="conn">The Connection.</param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		public SQLiteAsyncPreparedStatement(SQLiteAsyncConnection conn, string query) : this(conn.GetConnection(), query) { }
+
+		/// <summary>
+		/// Creates a prepared statement given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method when return primitive values.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="conn">The Connection.</param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		public SQLiteAsyncPreparedStatement(SQLiteConnectionWithLock conn, string query)
+		{
+			Connection = conn;
+			Inner = new SQLitePreparedStatement(Connection as SQLiteConnection, query);
+		}
+
+		/// <summary>
+		/// Executes a prepared statement.
+		/// </summary>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified in the database as a result of this execution.
+		/// </returns>
+		public Task<int> ExecuteNonQueryAsync (params object[] args)
+		{
+			return WrapAsync<int>(() => Inner.ExecuteNonQuery(args));
+		}
+
+		/// <summary>
+		/// Executes a prepared statement.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public Task<IEnumerable<T>> ExecuteDeferredQueryAsync<T> (params object[] args)
+		{
+			return WrapAsync<IEnumerable<T>>(() => Inner.ExecuteDeferredQuery<T>(args).ToList());
+		}
+
+		/// <summary>
+		/// Executes a prepared statement.
+		/// </summary>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The resultant object of this execution.
+		/// </returns>
+		public Task<T> ExecuteScalarAsync<T> (params object[] args)
+		{
+			return WrapAsync<T>(() => Inner.ExecuteScalar<T>(args));
+		}
+
+		/// <summary>
+		/// Dispose
+		/// </summary>
+		public void Dispose() => Inner.Dispose();
+
+		Task<T> WrapAsync<T> (Func<T> exe)
+		{
+			return Task.Factory.StartNew (() => {
+				using (Connection.Lock ()) {
+					return exe();
+				}
+			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+		}
+	}
 }
 
