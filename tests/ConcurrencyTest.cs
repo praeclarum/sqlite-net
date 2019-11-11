@@ -187,7 +187,28 @@ namespace SQLite.Tests
             }
         }
 
+        /// <summary>
+        /// Test for issue #761. Because the nature of this test is a race condition,
+        /// it is not guaranteed to fail if the issue is present. It does appear to
+        /// fail most of the time, though.
+        /// </summary>
+        [Test]
+        public void TestInsertCommandCreation ()
+        {
+	        using (var dbConnection =
+		        new DbConnection (SQLiteOpenFlags.FullMutex | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create)) {
+		        var obj1 = new TestObj ();
+		        var obj2 = new TestObj ();
+		        var taskA = Task.Run (() => {
+			        dbConnection.Insert (obj1);
+		        });
+		        var taskB = Task.Run (() => {
+			        dbConnection.Insert (obj2);
+		        });
 
+		        Task.WhenAll (taskA, taskB).Wait ();
+	        }
+        }
     }
 }
 

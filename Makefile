@@ -1,35 +1,28 @@
 
 SRC=src/SQLite.cs src/SQLiteAsync.cs
 
+PACKAGES_OUT=$(abspath PackagesOut)
+
 all: test nuget
 
-test: tests/bin/Debug/SQLite.Tests.dll tests/ApiDiff/bin/Debug/ApiDiff.exe
-	nunit-console tests/bin/Debug/SQLite.Tests.dll
-	mono tests/ApiDiff/bin/Debug/ApiDiff.exe
+test: tests/bin/Release/SQLite.Tests.dll tests/ApiDiff/bin/Release/ApiDiff.exe
+	mono packages/NUnit.ConsoleRunner.3.10.0/tools/nunit3-console.exe tests/bin/Release/SQLite.Tests.dll --labels=On --trace=Info
+	mono tests/ApiDiff/bin/Release/ApiDiff.exe
 
-tests/bin/Debug/SQLite.Tests.dll: tests/SQLite.Tests.csproj $(SRC)
-	msbuild tests/SQLite.Tests.csproj
-
-tests/ApiDiff/bin/Debug/ApiDiff.exe: tests/ApiDiff/ApiDiff.csproj $(SRC)
-	msbuild tests/ApiDiff/ApiDiff.csproj
-
-nuget: srcnuget pclnuget basenuget sqlciphernuget
-
-packages: nuget/SQLite-net/packages.config
+tests/bin/Release/SQLite.Tests.dll: tests/SQLite.Tests.csproj $(SRC)
 	nuget restore SQLite.sln
+	msbuild /p:Configuration=Release tests/SQLite.Tests.csproj
 
-srcnuget: sqlite-net.nuspec $(SRC)
-	nuget pack sqlite-net.nuspec
+tests/ApiDiff/bin/Release/ApiDiff.exe: tests/ApiDiff/ApiDiff.csproj $(SRC)
+	msbuild /p:Configuration=Release tests/ApiDiff/ApiDiff.csproj
 
-pclnuget: sqlite-net-pcl.nuspec packages $(SRC)
-	msbuild "/p:Configuration=Release" nuget/SQLite-net/SQLite-net.csproj
-	msbuild "/p:Configuration=Release" nuget/SQLite-net-std/SQLite-net-std.csproj 
-	nuget pack sqlite-net-pcl.nuspec
+nuget: pclnuget basenuget sqlciphernuget
 
-basenuget: sqlite-net-pcl.nuspec packages $(SRC)
-	msbuild "/p:Configuration=Release" nuget/SQLite-net-base/SQLite-net-base.csproj 
-	nuget pack sqlite-net-base.nuspec
+pclnuget: nuget/SQLite-net-std/SQLite-net-std.csproj $(SRC)
+	dotnet pack -c Release -o $(PACKAGES_OUT) $<
 
-sqlciphernuget: sqlite-net-sqlcipher.nuspec packages $(SRC)
-	msbuild "/p:Configuration=Release" nuget/SQLite-net-sqlcipher/SQLite-net-sqlcipher.csproj 
-	nuget pack sqlite-net-sqlcipher.nuspec
+basenuget: nuget/SQLite-net-base/SQLite-net-base.csproj $(SRC)
+	dotnet pack -c Release -o $(PACKAGES_OUT) $<
+
+sqlciphernuget: nuget/SQLite-net-sqlcipher/SQLite-net-sqlcipher.csproj $(SRC)
+	dotnet pack -c Release -o $(PACKAGES_OUT) $<

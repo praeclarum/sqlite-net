@@ -60,6 +60,13 @@ namespace SQLite.Tests
 				EnableWriteAheadLogging ();
 		}
 
+		public TestDb (SQLiteConnectionString connectionString, bool wal = true) : base (connectionString)
+		{
+			Trace = true;
+			if (wal)
+				EnableWriteAheadLogging ();
+		}
+
 		public TestDb (string path, bool storeDateTimeAsTicks = true, object key = null, bool wal = true) : base (new SQLiteConnectionString (path, storeDateTimeAsTicks, key: key))
 		{
 			Trace = true;

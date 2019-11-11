@@ -102,6 +102,12 @@ namespace SQLite
 		public int LibVersionNumber => GetConnection ().LibVersionNumber;
 
 		/// <summary>
+		/// The format to use when storing DateTime properties as strings. Ignored if StoreDateTimeAsTicks is true.
+		/// </summary>
+		/// <value>The date time string format.</value>
+		public string DateTimeStringFormat => GetConnection ().DateTimeStringFormat;
+
+		/// <summary>
 		/// The amount of time to wait for a table to become unlocked.
 		/// </summary>
 		public TimeSpan GetBusyTimeout ()
@@ -137,6 +143,11 @@ namespace SQLite
 		/// Whether to store DateTime properties as ticks (true) or strings (false).
 		/// </summary>
 		public bool StoreDateTimeAsTicks => GetConnection ().StoreDateTimeAsTicks;
+		
+		/// <summary>
+		/// Whether to store TimeSpan properties as ticks (true) or strings (false).
+		/// </summary>
+		public bool StoreTimeSpanAsTicks => GetConnection ().StoreTimeSpanAsTicks;
 
 		/// <summary>
 		/// Whether to writer queries to <see cref="Tracer"/> during execution.

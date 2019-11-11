@@ -1,0 +1,16 @@
+<Project>
+    <PropertyGroup>
+        <VersionPrefix>1.7</VersionPrefix>
+        <VersionSuffix>beta</VersionSuffix>
+
+        <PackageIconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/nuget/Logo-low.png</PackageIconUrl>
+        <PackageProjectUrl>https://github.com/praeclarum/sqlite-net</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/praeclarum/sqlite-net.git</RepositoryUrl>
+        <PackageTags>sqlite-net;sqlite;database;orm</PackageTags>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+
+        <Company>Krueger Systems, Inc.</Company>
+
+        <Deterministic>true</Deterministic>
+    </PropertyGroup>
+</Project>
