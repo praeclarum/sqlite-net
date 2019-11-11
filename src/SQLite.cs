@@ -2635,15 +2635,13 @@ namespace SQLite
 			throw SQLiteException.New (r, r.ToString ());
 		}
 
-		public IEnumerable<T> ExecuteDeferredQuery<T> (params object[] args)
+		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map, params object[] args)
 		{
 			ResetAndBind(args);
 			if (Connection.Trace) {
 				Connection.Tracer?.Invoke ("Executing Query: " + ToString(args));
 			}
 			var cols = new SQLite.TableMapping.Column[SQLite3.ColumnCount(Statement)];
-
-			var map = new TableMapping(typeof(T), CreateFlags.None);
 
 			for (int i = 0; i < cols.Length; i++) {
 				var name = SQLite3.ColumnName16(Statement, i);
@@ -2661,6 +2659,12 @@ namespace SQLite
 				}
 				yield return (T)obj;
 			}
+		}
+
+		public IEnumerable<T> ExecuteDeferredQuery<T> (params object[] args)
+		{
+			var map = new TableMapping(typeof(T), CreateFlags.None);
+			return ExecuteDeferredQuery<T>(map, args);
 		}
 
 		public T ExecuteScalar<T> (params object[] args)
@@ -2908,29 +2912,9 @@ namespace SQLite
 
 		public int ExecuteNonQuery ()
 		{
-			if (_conn.Trace) {
-				_conn.Tracer?.Invoke ("Executing: " + this);
+			using (var stmt = new SQLitePreparedStatement(_conn, CommandText)) {
+				return stmt.ExecuteNonQuery(_bindings);
 			}
-
-			var r = SQLite3.Result.OK;
-			var stmt = Prepare ();
-			r = SQLite3.Step (stmt);
-			Finalize (stmt);
-			if (r == SQLite3.Result.Done) {
-				int rowsAffected = SQLite3.Changes (_conn.Handle);
-				return rowsAffected;
-			}
-			else if (r == SQLite3.Result.Error) {
-				string msg = SQLite3.GetErrmsg (_conn.Handle);
-				throw SQLiteException.New (r, msg);
-			}
-			else if (r == SQLite3.Result.Constraint) {
-				if (SQLite3.ExtendedErrCode (_conn.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-					throw NotNullConstraintViolationException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-				}
-			}
-
-			throw SQLiteException.New (r, r.ToString ());
 		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> ()
@@ -2965,64 +2949,19 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
-			if (_conn.Trace) {
-				_conn.Tracer?.Invoke ("Executing Query: " + this);
-			}
-
-			var stmt = Prepare ();
-			try {
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
-
-				for (int i = 0; i < cols.Length; i++) {
-					var name = SQLite3.ColumnName16 (stmt, i);
-					cols[i] = map.FindColumn (name);
-				}
-
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var obj = Activator.CreateInstance (map.MappedType);
-					for (int i = 0; i < cols.Length; i++) {
-						if (cols[i] == null)
-							continue;
-						var colType = SQLite3.ColumnType (stmt, i);
-						var val = SQLitePreparedStatement.ReadCol (stmt, i, colType, cols[i].ColumnType, _conn.StoreDateTimeAsTicks);
-						cols[i].SetValue (obj, val);
-					}
-					OnInstanceCreated (obj);
-					yield return (T)obj;
-				}
-			}
-			finally {
-				SQLite3.Finalize (stmt);
+			using (var stmt = new SQLitePreparedStatement(_conn, CommandText)) {
+				return stmt.ExecuteDeferredQuery<T>(map, _bindings).Select(obj => {
+					OnInstanceCreated(obj);
+					return obj;
+				});
 			}
 		}
 
 		public T ExecuteScalar<T> ()
 		{
-			if (_conn.Trace) {
-				_conn.Tracer?.Invoke ("Executing Query: " + this);
+			using (var stmt = new SQLitePreparedStatement(_conn, CommandText)) {
+				return stmt.ExecuteScalar<T>(_bindings);
 			}
-
-			T val = default (T);
-
-			var stmt = Prepare ();
-
-			try {
-				var r = SQLite3.Step (stmt);
-				if (r == SQLite3.Result.Row) {
-					var colType = SQLite3.ColumnType (stmt, 0);
-					val = (T)SQLitePreparedStatement.ReadCol (stmt, 0, colType, typeof (T), _conn.StoreDateTimeAsTicks);
-				}
-				else if (r == SQLite3.Result.Done) {
-				}
-				else {
-					throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-				}
-			}
-			finally {
-				Finalize (stmt);
-			}
-
-			return val;
 		}
 
 		public void Bind (string name, object val)
@@ -3048,33 +2987,6 @@ namespace SQLite
 				i++;
 			}
 			return string.Join (Environment.NewLine, parts);
-		}
-
-		Sqlite3Statement Prepare ()
-		{
-			var stmt = SQLite3.Prepare2 (_conn.Handle, CommandText);
-			BindAll (stmt);
-			return stmt;
-		}
-
-		void Finalize (Sqlite3Statement stmt)
-		{
-			SQLite3.Finalize (stmt);
-		}
-
-		void BindAll (Sqlite3Statement stmt)
-		{
-			int nextIdx = 1;
-			foreach (var b in _bindings) {
-				if (b.Name != null) {
-					b.Index = SQLite3.BindParameterIndex (stmt, b.Name);
-				}
-				else {
-					b.Index = nextIdx++;
-				}
-
-				SQLitePreparedStatement.BindParameter (stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks);
-			}
 		}
 
 		class Binding
