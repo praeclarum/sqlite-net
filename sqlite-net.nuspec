@@ -4,7 +4,7 @@
     <version>1.0.0</version>
     <authors>Frank Krueger</authors>
     <owners>Frank Krueger,Tim Heuer</owners>
-    <licenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE.md</licenseUrl>
+    <licenseUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/praeclarum/sqlite-net</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/nuget/Logo-low.png</iconUrl>
     <id>sqlite-net</id>

@@ -42,7 +42,46 @@ namespace SQLite.Tests
 	public class AsyncTests
 	{
 		private const string DatabaseName = "async.db";
-		
+
+		[Test]
+		public async Task EnableWalAsync ()
+		{
+			var path = Path.GetTempFileName ();
+			var connection = new SQLiteAsyncConnection (path);
+
+			await connection.EnableWriteAheadLoggingAsync ().ConfigureAwait (false);
+		}
+
+		[Test]
+		public async Task QueryAsync ()
+		{
+			var connection = GetConnection ();
+			await connection.CreateTableAsync<Customer> ().ConfigureAwait (false);
+
+			var customer = new Customer {
+				FirstName = "Joe"
+			};
+
+			await connection.InsertAsync (customer);
+
+			await connection.QueryAsync<Customer> ("select * from Customer");
+		}
+
+		[Test]
+		public async Task MemoryQueryAsync ()
+		{
+			var connection = new SQLiteAsyncConnection (":memory:", false);
+			await connection.CreateTableAsync<Customer> ().ConfigureAwait (false);
+
+			var customer = new Customer {
+				FirstName = "Joe"
+			};
+
+			await connection.InsertAsync (customer);
+
+			await connection.QueryAsync<Customer> ("select * from Customer");
+		}
+
 		[Test]
 		public void StressAsync ()
 		{
