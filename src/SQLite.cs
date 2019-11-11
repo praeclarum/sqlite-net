@@ -2841,7 +2841,7 @@ namespace SQLite
 					if (cols[i] == null)
 						continue;
 					var colType = SQLite3.ColumnType(Statement, i);
-					var val = ReadCol(Statement, i, colType, cols[i].ColumnType, Connection.StoreDateTimeAsTicks);
+					var val = ReadCol(Statement, i, colType, cols[i].ColumnType, Connection);
 					cols[i].SetValue(obj, val);
 				}
 				yield return (T)obj;
@@ -2866,7 +2866,7 @@ namespace SQLite
 			var r = SQLite3.Step (Statement);
 			if (r == SQLite3.Result.Row) {
 				var colType = SQLite3.ColumnType (Statement, 0);
-				val = (T)ReadCol (Statement, 0, colType, typeof (T), Connection.StoreDateTimeAsTicks);
+				val = (T)ReadCol (Statement, 0, colType, typeof (T), Connection);
 			}
 			else if (r == SQLite3.Result.Done) {
 			}
@@ -2881,13 +2881,13 @@ namespace SQLite
 			SQLite3.Reset(Statement);
 			SQLite3.ClearBindings(Statement);
 			for (int i = 0; i < args.Length; i++) {
-				BindParameter(Statement, i + 1, args[i], Connection.StoreDateTimeAsTicks, Connection.DateTimeStringFormat, Connection.StoreTimeSpanAsTicks);
+				BindParameter(Statement, i + 1, args[i], Connection);
 			}
 		}
 
 		static IntPtr NegativePointer = new IntPtr (-1);
 
-		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks, string dateTimeStringFormat, bool storeTimeSpanAsTicks)
+		internal static void BindParameter (Sqlite3Statement stmt, int index, object value, SQLiteConnection connection)
 		{
 			if (value == null) {
 				SQLite3.BindNull (stmt, index);
@@ -2912,7 +2912,7 @@ namespace SQLite
 					SQLite3.BindDouble (stmt, index, Convert.ToDouble (value));
 				}
 				else if (value is TimeSpan) {
-					if (storeTimeSpanAsTicks) {
+					if (connection.StoreTimeSpanAsTicks) {
 						SQLite3.BindInt64 (stmt, index, ((TimeSpan)value).Ticks);
 					}
 					else {
@@ -2920,11 +2920,11 @@ namespace SQLite
 					}
 				}
 				else if (value is DateTime) {
-					if (storeDateTimeAsTicks) {
+					if (connection.StoreDateTimeAsTicks) {
 						SQLite3.BindInt64 (stmt, index, ((DateTime)value).Ticks);
 					}
 					else {
-						SQLite3.BindText (stmt, index, ((DateTime)value).ToString (dateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
+						SQLite3.BindText (stmt, index, ((DateTime)value).ToString (connection.DateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
 					}
 				}
 				else if (value is DateTimeOffset) {
@@ -2963,7 +2963,7 @@ namespace SQLite
 			}
 		}
 
-		internal static object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType, bool storeDateTimeAsTicks)
+		internal static object ReadCol (Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType, SQLiteConnection connection)
 		{
 			if (type == SQLite3.ColType.Null) {
 				return null;
@@ -2991,7 +2991,7 @@ namespace SQLite
 					return (float)SQLite3.ColumnDouble (stmt, index);
 				}
 				else if (clrType == typeof (TimeSpan)) {
-					if (_conn.StoreTimeSpanAsTicks) {
+					if (connection.StoreTimeSpanAsTicks) {
 						return new TimeSpan (SQLite3.ColumnInt64 (stmt, index));
 					}
 					else {
@@ -3004,13 +3004,13 @@ namespace SQLite
 					}
 				}
 				else if (clrType == typeof (DateTime)) {
-					if (storeDateTimeAsTicks) {
+					if (connection.StoreDateTimeAsTicks) {
 						return new DateTime (SQLite3.ColumnInt64 (stmt, index));
 					}
 					else {
 						var text = SQLite3.ColumnString (stmt, index);
 						DateTime resultDate;
-						if (!DateTime.TryParseExact (text, _conn.DateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture, _conn.DateTimeStyle, out resultDate)) {
+						if (!DateTime.TryParseExact (text, connection.DateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture, connection.DateTimeStyle, out resultDate)) {
 							resultDate = DateTime.Parse (text);
 						}
 						return resultDate;
@@ -3231,7 +3231,7 @@ namespace SQLite
 			//bind the values.
 			if (source != null) {
 				for (int i = 0; i < source.Length; i++) {
-					SQLitePreparedStatement.BindParameter (Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks, Connection.DateTimeStringFormat, Connection.StoreTimeSpanAsTicks);
+					SQLitePreparedStatement.BindParameter (Statement, i + 1, source[i], Connection);
 				}
 			}
 			r = SQLite3.Step (Statement);
