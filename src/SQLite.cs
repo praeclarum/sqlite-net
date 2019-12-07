@@ -194,9 +194,8 @@ namespace SQLite
 		public bool TimeExecution { get; set; }
 
 		/// <summary>
-		/// Whether to writer queries to <see cref="Tracer"/> during execution.
+		/// Whether to write queries to <see cref="Tracer"/> during execution.
 		/// </summary>
-		/// <value>The tracer.</value>
 		public bool Trace { get; set; }
 
 		/// <summary>
