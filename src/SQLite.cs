@@ -2902,10 +2902,14 @@ namespace SQLite
 			var stmt = Prepare ();
 			try {
 				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+				var fastColumnSetters = new Action<T, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
 
 				for (int i = 0; i < cols.Length; i++) {
 					var name = SQLite3.ColumnName16 (stmt, i);
+					var colType = SQLite3.ColumnType (stmt, i);
 					cols[i] = map.FindColumn (name);
+					if (cols[i] != null)
+						fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T> (_conn, colType, cols[i]);
 				}
 
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
@@ -2913,9 +2917,15 @@ namespace SQLite
 					for (int i = 0; i < cols.Length; i++) {
 						if (cols[i] == null)
 							continue;
-						var colType = SQLite3.ColumnType (stmt, i);
-						var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
-						cols[i].SetValue (obj, val);
+
+						if (fastColumnSetters[i] != null) {
+							fastColumnSetters[i].Invoke ((T)obj, stmt, i);
+						}
+						else {
+							var colType = SQLite3.ColumnType (stmt, i);
+							var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
+							cols[i].SetValue (obj, val);
+						}
 					}
 					OnInstanceCreated (obj);
 					yield return (T)obj;
@@ -3231,6 +3241,201 @@ namespace SQLite
 					throw new NotSupportedException ("Don't know how to read " + clrType);
 				}
 			}
+		}
+	}
+
+	internal class FastColumnSetter
+	{
+		/// <summary>
+		/// Creates a delegate that can be used to quickly set object members from query columns.
+		///
+		/// Note that this frontloads the slow reflection-based type checking for columns to only happen once at the beginning of a query,
+		/// and then afterwards each row of the query can invoke the delegate returned by this function to get much better performance (up to 10x speed boost, depending on query size and platform).
+		/// </summary>
+		/// <typeparam name="T">The type of the destination object that the query will read into</typeparam>
+		/// <param name="conn">The active connection.  Note that this is primarily needed in order to read preferences regarding how certain data types (such as TimeSpan / DateTime) should be encoded in the database.</param>
+		/// <param name="colType">The column type as stored in SQLite</param>
+		/// <param name="column">The table mapping used to map the statement column to a member of the destination object type</param>
+		/// <returns>
+		/// A delegate for fast-setting of object members from statement columns.
+		///
+		/// If no fast setter is available for the requested column (enums in particular cause headache), then this function returns null.
+		/// </returns>
+		internal static Action<T, Sqlite3Statement, int> GetFastSetter<T> (SQLiteConnection conn, SQLite3.ColType colType, TableMapping.Column column)
+		{
+			Action<T, Sqlite3Statement, int> fastSetter = null;
+
+			Type clrType = column.ColumnType;
+
+			if (colType == SQLite3.ColType.Null) {
+				return null;
+			}
+
+			var clrTypeInfo = clrType.GetTypeInfo ();
+			if (clrTypeInfo.IsGenericType && clrTypeInfo.GetGenericTypeDefinition () == typeof (Nullable<>)) {
+				clrType = clrTypeInfo.GenericTypeArguments[0];
+				clrTypeInfo = clrType.GetTypeInfo ();
+			}
+
+			if (clrType == typeof (String)) {
+				fastSetter = CreateTypedSetterDelegate<T, string> (column, (stmt, index) => {
+					return SQLite3.ColumnString (stmt, index);
+				});
+			}
+			else if (clrType == typeof (Int32)) {
+				fastSetter = CreateTypedSetterDelegate<T, int> (column, (stmt, index)=>{
+					return SQLite3.ColumnInt (stmt, index);
+				});
+			}
+			else if (clrType == typeof (Boolean)) {
+				fastSetter = CreateTypedSetterDelegate<T, bool> (column, (stmt, index) => {
+					return SQLite3.ColumnInt (stmt, index) == 1;
+				});
+			}
+			else if (clrType == typeof (double)) {
+				fastSetter = CreateTypedSetterDelegate<T, double> (column, (stmt, index) => {
+					return SQLite3.ColumnDouble (stmt, index);
+				});
+			}
+			else if (clrType == typeof (float)) {
+				fastSetter = CreateTypedSetterDelegate<T, float> (column, (stmt, index) => {
+					return (float) SQLite3.ColumnDouble (stmt, index);
+				});
+			}
+			else if (clrType == typeof (TimeSpan)) {
+				if (conn.StoreTimeSpanAsTicks) {
+					fastSetter = CreateTypedSetterDelegate<T, TimeSpan> (column, (stmt, index) => {
+						return new TimeSpan (SQLite3.ColumnInt64 (stmt, index));
+					});
+				}
+				else {
+					fastSetter = CreateTypedSetterDelegate<T, TimeSpan> (column, (stmt, index) => {
+						var text = SQLite3.ColumnString (stmt, index);
+						TimeSpan resultTime;
+						if (!TimeSpan.TryParseExact (text, "c", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.TimeSpanStyles.None, out resultTime)) {
+							resultTime = TimeSpan.Parse (text);
+						}
+						return resultTime;
+					});
+				}
+			}
+			else if (clrType == typeof (DateTime)) {
+				if (conn.StoreDateTimeAsTicks) {
+					fastSetter = CreateTypedSetterDelegate<T, DateTime> (column, (stmt, index) => {
+						return new DateTime (SQLite3.ColumnInt64 (stmt, index));
+					});
+				}
+				else {
+					fastSetter = CreateTypedSetterDelegate<T, DateTime> (column, (stmt, index) => {
+						var text = SQLite3.ColumnString (stmt, index);
+						DateTime resultDate;
+						if (!DateTime.TryParseExact (text, conn.DateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture, conn.DateTimeStyle, out resultDate)) {
+							resultDate = DateTime.Parse (text);
+						}
+						return resultDate;
+					});
+				}
+			}
+			else if (clrType == typeof (DateTimeOffset)) {
+				fastSetter = CreateTypedSetterDelegate<T, DateTimeOffset> (column, (stmt, index) => {
+					return new DateTimeOffset (SQLite3.ColumnInt64 (stmt, index), TimeSpan.Zero);
+				});
+			}
+			else if (clrTypeInfo.IsEnum) {
+				// NOTE: Not sure of a good way (if any?) to do a strongly-typed fast setter like this for enumerated types -- for now, return null and column sets will revert back to the safe (but slow) Reflection-based method of column prop.Set()
+			}
+			else if (clrType == typeof (Int64)) {
+				fastSetter = CreateTypedSetterDelegate<T, Int64> (column, (stmt, index) => {
+					return SQLite3.ColumnInt64 (stmt, index);
+				});
+			}
+			else if (clrType == typeof (UInt32)) {
+				fastSetter = CreateTypedSetterDelegate<T, UInt32> (column, (stmt, index) => {
+					return (uint)SQLite3.ColumnInt64 (stmt, index);
+				});
+			}
+			else if (clrType == typeof (decimal)) {
+				fastSetter = CreateTypedSetterDelegate<T, decimal> (column, (stmt, index) => {
+					return (decimal)SQLite3.ColumnDouble (stmt, index);
+				});
+			}
+			else if (clrType == typeof (Byte)) {
+				fastSetter = CreateTypedSetterDelegate<T, Byte> (column, (stmt, index) => {
+					return (byte)SQLite3.ColumnInt (stmt, index);
+				});
+			}
+			else if (clrType == typeof (UInt16)) {
+				fastSetter = CreateTypedSetterDelegate<T, UInt16> (column, (stmt, index) => {
+					return (ushort)SQLite3.ColumnInt (stmt, index);
+				});
+			}
+			else if (clrType == typeof (Int16)) {
+				fastSetter = CreateTypedSetterDelegate<T, Int16> (column, (stmt, index) => {
+					return (short)SQLite3.ColumnInt (stmt, index);
+				});
+			}
+			else if (clrType == typeof (sbyte)) {
+				fastSetter = CreateTypedSetterDelegate<T, sbyte> (column, (stmt, index) => {
+					return (sbyte)SQLite3.ColumnInt (stmt, index);
+				});
+			}
+			else if (clrType == typeof (byte[])) {
+				fastSetter = CreateTypedSetterDelegate<T, byte[]> (column, (stmt, index) => {
+					return SQLite3.ColumnByteArray (stmt, index);
+				});
+			}
+			else if (clrType == typeof (Guid)) {
+				fastSetter = CreateTypedSetterDelegate<T, Guid> (column, (stmt, index) => {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new Guid (text);
+				});
+			}
+			else if (clrType == typeof (Uri)) {
+				fastSetter = CreateTypedSetterDelegate<T, Uri> (column, (stmt, index) => {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new Uri (text);
+				});
+			}
+			else if (clrType == typeof (StringBuilder)) {
+				fastSetter = CreateTypedSetterDelegate<T, StringBuilder> (column, (stmt, index) => {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new StringBuilder (text);
+				});
+			}
+			else if (clrType == typeof (UriBuilder)) {
+				fastSetter = CreateTypedSetterDelegate<T, UriBuilder> (column, (stmt, index) => {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new UriBuilder (text);
+				});
+			}
+			else {
+				// Note: Will fall back to the slow setter method in the event that we are unable to create a fast setter delegate for a particular column type
+			}
+			return fastSetter;
+		}
+
+		/// <summary>
+		/// This creates a strongly typed delegate that will permit fast setting of column values given a Sqlite3Statement and a column index.
+		/// </summary>
+		/// <typeparam name="ObjectType">The type of the object whose member column is being set</typeparam>
+		/// <typeparam name="ColumnMemberType">The CLR type of the member in the object which corresponds to the given SQLite columnn</typeparam>
+		/// <param name="column">The column mapping that identifies the target member of the destination object</param>
+		/// <param name="getColumnValue">A lambda that can be used to retrieve the column value at query-time</param>
+		/// <returns>A strongly-typed delegate</returns>
+		private static Action<ObjectType, Sqlite3Statement, int> CreateTypedSetterDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column, Func<Sqlite3Statement, int, ColumnMemberType> getColumnValue)
+		{
+			Action<ObjectType, Sqlite3Statement, int> fastSetter;
+
+			// Create a delegate that points to the Set accessor of the destination object property
+			var setProperty = (Action<ObjectType, ColumnMemberType>)Delegate.CreateDelegate (
+					typeof (Action<ObjectType, ColumnMemberType>), null,
+					column.PropertyInfo.GetSetMethod ());
+
+			// Wrapping the setter delegate allows us to maintain strong typing for these dynamic methods
+			fastSetter = (o, stmt, i) => {
+				setProperty.Invoke (o, getColumnValue.Invoke(stmt, i));
+			};
+			return fastSetter;
 		}
 	}
 
