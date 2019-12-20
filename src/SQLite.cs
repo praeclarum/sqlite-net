@@ -3444,8 +3444,6 @@ namespace SQLite
 
 		/// <summary>
 		/// This creates a strongly typed delegate that will permit fast setting of column values given a Sqlite3Statement and a column index.
-		///
-		/// Note that this has an extra check to see if it should create a nullable version of the delegate.
 		/// </summary>
 		/// <typeparam name="ObjectType">The type of the object whose member column is being set</typeparam>
 		/// <typeparam name="ColumnMemberType">The CLR type of the member in the object which corresponds to the given SQLite columnn</typeparam>
