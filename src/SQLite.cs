@@ -3219,7 +3219,7 @@ namespace SQLite
 			}
 			else {
 				SQLite3.Reset (Statement);
-				throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+				throw SQLiteException.New (r, SQLite3.GetErrmsg (Connection.Handle));
 			}
 		}
 
