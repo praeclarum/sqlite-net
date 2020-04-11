@@ -4414,7 +4414,7 @@ namespace SQLite
 		{
 			return (ExtendedResult)Sqlite3.sqlite3_extended_errcode (db);
 		}
-
+		 
 		public static Sqlite3BackupHandle BackupInit (Sqlite3DatabaseHandle destDb, string destName, Sqlite3DatabaseHandle sourceDb, string sourceName)
 		{
 			return Sqlite3.sqlite3_backup_init (destDb, destName, sourceDb, sourceName);
