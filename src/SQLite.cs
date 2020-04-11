@@ -4394,7 +4394,7 @@ namespace SQLite
 			}
 			return new byte[0];
 		}
-
+		 
 		public static Result EnableLoadExtension (Sqlite3DatabaseHandle db, int onoff)
 		{
 			return (Result)Sqlite3.sqlite3_enable_load_extension (db, onoff);
