@@ -2676,7 +2676,7 @@ namespace SQLite
 				return storeDateTimeAsTicks ? "bigint" : "datetime";
 			}
 			else if (clrType == typeof (DateTimeOffset)) {
-				return "bigint";
+				return "blob";
 			}
 			else if (clrType.GetTypeInfo ().IsEnum) {
 				if (p.StoreAsText)
@@ -3002,8 +3002,9 @@ namespace SQLite
 						SQLite3.BindText (stmt, index, ((DateTime)value).ToString (dateTimeStringFormat, System.Globalization.CultureInfo.InvariantCulture), -1, NegativePointer);
 					}
 				}
-				else if (value is DateTimeOffset) {
-					SQLite3.BindInt64 (stmt, index, ((DateTimeOffset)value).UtcTicks);
+				else if (value is DateTimeOffset dto) {
+					var dtoAsBytes = DateTimeOffsetToBytes(dto);
+					SQLite3.BindBlob(stmt, index, dtoAsBytes, dtoAsBytes.Length, NegativePointer);
 				}
 				else if (value is byte[]) {
 					SQLite3.BindBlob (stmt, index, (byte[])value, ((byte[])value).Length, NegativePointer);
@@ -3037,7 +3038,21 @@ namespace SQLite
 				}
 			}
 		}
-
+		static DateTimeOffset BytesToDateTimeOffset(byte[] bytes)
+		{
+			var date = BitConverter.ToInt64(bytes, 0);
+			var offset = BitConverter.ToInt16(bytes, 8);
+			return new DateTimeOffset(new DateTime(date), TimeSpan.FromMinutes(offset));
+		}
+		static byte[] DateTimeOffsetToBytes(DateTimeOffset dto)
+		{
+			var arr1 = BitConverter.GetBytes(dto.DateTime.Ticks);
+			var arr2 = BitConverter.GetBytes((short)dto.Offset.TotalMinutes);
+			var result = new byte[10];
+			Array.Copy(arr1, 0, result, 0, arr1.Length);
+			Array.Copy(arr2, 0, result, 8, arr2.Length);
+			return result;
+		}
 		class Binding
 		{
 			public string Name { get; set; }
@@ -3101,7 +3116,7 @@ namespace SQLite
 					}
 				}
 				else if (clrType == typeof (DateTimeOffset)) {
-					return new DateTimeOffset (SQLite3.ColumnInt64 (stmt, index), TimeSpan.Zero);
+					return BytesToDateTimeOffset(SQLite3.ColumnByteArray(stmt, index));
 				}
 				else if (clrTypeInfo.IsEnum) {
 					if (type == SQLite3.ColType.Text) {

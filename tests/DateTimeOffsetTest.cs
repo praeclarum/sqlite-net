@@ -15,7 +15,7 @@ namespace SQLite.Tests
 	public class DateTimeOffsetTest
 	{
 		class TestObj
-		{
+		{ 
 			[PrimaryKey, AutoIncrement]
 			public int Id { get; set; }
 
@@ -49,7 +49,7 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-                ModifiedTime = new DateTimeOffset (2012, 1, 14, 3, 2, 1, TimeSpan.Zero),
+                ModifiedTime = new DateTimeOffset (2012, 1, 14, 3, 2, 1, TimeSpan.FromMinutes(120)),
 			};
 			db.InsertAsync (o).Wait ();
 			o2 = db.GetAsync<TestObj> (o.Id).Result;
@@ -66,7 +66,7 @@ namespace SQLite.Tests
 			// Ticks
 			//
 			o = new TestObj {
-				ModifiedTime = new DateTimeOffset (2012, 1, 14, 3, 2, 1, TimeSpan.Zero),
+				ModifiedTime = new DateTimeOffset (2012, 1, 14, 3, 2, 1, TimeSpan.FromMinutes(-120)),
 			};
 			db.Insert (o);
 			o2 = db.Get<TestObj> (o.Id);
