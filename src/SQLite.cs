@@ -3036,7 +3036,6 @@ namespace SQLite
 					else {
 						SQLite3.BindText (stmt, index, ((Guid)value).ToString (), 72, NegativePointer);
 					}
-					SQLite3.BindText (stmt, index, ((Guid)value).ToString (), 72, NegativePointer);
 				}
 				else if (value is Uri) {
 					SQLite3.BindText (stmt, index, ((Uri)value).ToString (), -1, NegativePointer);
