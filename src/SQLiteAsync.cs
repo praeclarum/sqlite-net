@@ -51,8 +51,13 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true)
-			: this (new SQLiteConnectionString (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, storeDateTimeAsTicks))
+		/// <param name="storeGuidsAsBlobs">
+		/// Specifies whether to store Guid properties as BLOBS (true) or strings (false).
+		/// Storing guids as blobs has multiple benefits: Faster indexing time, smaller footprint
+		/// and most importantly: compatibility with Microsoft.Data.Sqlite
+		/// </param>
+		public SQLiteAsyncConnection (string databasePath, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
+			: this (new SQLiteConnectionString (databasePath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, storeDateTimeAsTicks, storeGuidsAsBlobs: storeGuidsAsBlobs))
 		{
 		}
 
@@ -74,8 +79,13 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
-			: this (new SQLiteConnectionString (databasePath, openFlags, storeDateTimeAsTicks))
+		/// <param name="storeGuidsAsBlobs">
+		/// Specifies whether to store Guid properties as BLOBS (true) or strings (false).
+		/// Storing guids as blobs has multiple benefits: Faster indexing time, smaller footprint
+		/// and most importantly: compatibility with Microsoft.Data.Sqlite
+		/// </param>
+		public SQLiteAsyncConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
+			: this (new SQLiteConnectionString (databasePath, openFlags, storeDateTimeAsTicks, storeGuidsAsBlobs:storeGuidsAsBlobs))
 		{
 		}
 
@@ -143,6 +153,11 @@ namespace SQLite
 		/// Whether to store DateTime properties as ticks (true) or strings (false).
 		/// </summary>
 		public bool StoreDateTimeAsTicks => GetConnection ().StoreDateTimeAsTicks;
+
+		/// <summary>
+		/// Whether to store Guid properties as strings (false) or blobs (true). The default is (false)
+		/// </summary>
+		public bool StoreGuidsAsBlobs => GetConnection ().StoreGuidsAsBlobs;
 		
 		/// <summary>
 		/// Whether to store TimeSpan properties as ticks (true) or strings (false).
