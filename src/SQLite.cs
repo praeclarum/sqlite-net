@@ -253,16 +253,11 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		/// <param name="storeGuidsAsBlobs">
-		/// Specifies whether to store Guid properties as BLOBS (true) or strings (false).
-		/// Storing guids as blobs has multiple benefits: Faster indexing time, smaller footprint
-		/// and most importantly: compatibility with Microsoft.Data.Sqlite
-		/// </param>
-		public SQLiteConnection (string databasePath, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
-			: this (new SQLiteConnectionString (databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks, storeGuidsAsBlobs:storeGuidsAsBlobs))
+		public SQLiteConnection(string databasePath, bool storeDateTimeAsTicks = true)
+			: this(new SQLiteConnectionString(databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks))
 		{
 		}
-
+		
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
@@ -280,13 +275,8 @@ namespace SQLite
 		/// If you use DateTimeOffset properties, it will be always stored as ticks regardingless
 		/// the storeDateTimeAsTicks parameter.
 		/// </param>
-		/// <param name="storeGuidsAsBlobs">
-		/// Specifies whether to store Guid properties as BLOBS (true) or strings (false).
-		/// Storing guids as blobs has multiple benefits: Faster indexing time, smaller footprint
-		/// and most importantly: compatibility with Microsoft.Data.Sqlite
-		/// </param>
-		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true, bool storeGuidsAsBlobs = false)
-			: this (new SQLiteConnectionString (databasePath, openFlags, storeDateTimeAsTicks, storeGuidsAsBlobs: storeGuidsAsBlobs))
+		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true)
+			: this (new SQLiteConnectionString (databasePath, openFlags, storeDateTimeAsTicks))
 		{
 		}
 
