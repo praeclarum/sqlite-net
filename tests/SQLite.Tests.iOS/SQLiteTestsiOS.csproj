@@ -101,41 +101,41 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="UnitTestAppDelegate.cs" />
-    <Compile Include="..\AsyncTests.cs" />
-    <Compile Include="..\BooleanTest.cs" />
-    <Compile Include="..\ByteArrayTest.cs" />
-    <Compile Include="..\CollateTest.cs" />
-    <Compile Include="..\ContainsTest.cs" />
-    <Compile Include="..\CreateTableImplicitTest.cs" />
-    <Compile Include="..\CreateTableTest.cs" />
-    <Compile Include="..\DateTimeOffsetTest.cs" />
-    <Compile Include="..\DateTimeTest.cs" />
-    <Compile Include="..\DeleteTest.cs" />
-    <Compile Include="..\DropTableTest.cs" />
-    <Compile Include="..\EnumCacheTest.cs" />
-    <Compile Include="..\EnumTest.cs" />
-    <Compile Include="..\EqualsTest.cs" />
-    <Compile Include="..\ExceptionAssert.cs" />
-    <Compile Include="..\GuidTests.cs" />
-    <Compile Include="..\IgnoreTest.cs" />
-    <Compile Include="..\InheritanceTest.cs" />
-    <Compile Include="..\InsertTest.cs" />
-    <Compile Include="..\JoinTest.cs" />
-    <Compile Include="..\LinqTest.cs" />
-    <Compile Include="..\MappingTest.cs" />
-    <Compile Include="..\MigrationTest.cs" />
-    <Compile Include="..\NotNullAttributeTest.cs" />
-    <Compile Include="..\NullableTest.cs" />
-    <Compile Include="..\OpenTests.cs" />
-    <Compile Include="..\ScalarTest.cs" />
-    <Compile Include="..\SkipTest.cs" />
-    <Compile Include="..\StringQueryTest.cs" />
-    <Compile Include="..\TableChangedTest.cs" />
-    <Compile Include="..\TestDb.cs" />
-    <Compile Include="..\TransactionTest.cs" />
-    <Compile Include="..\UnicodeTest.cs" />
-    <Compile Include="..\UniqueTest.cs" />
-    <Compile Include="..\ConcurrencyTest.cs">
+    <Compile Include="..\SQLite.Tests\AsyncTests.cs" />
+    <Compile Include="..\SQLite.Tests\BooleanTest.cs" />
+    <Compile Include="..\SQLite.Tests\ByteArrayTest.cs" />
+    <Compile Include="..\SQLite.Tests\CollateTest.cs" />
+    <Compile Include="..\SQLite.Tests\ContainsTest.cs" />
+    <Compile Include="..\SQLite.Tests\CreateTableImplicitTest.cs" />
+    <Compile Include="..\SQLite.Tests\CreateTableTest.cs" />
+    <Compile Include="..\SQLite.Tests\DateTimeOffsetTest.cs" />
+    <Compile Include="..\SQLite.Tests\DateTimeTest.cs" />
+    <Compile Include="..\SQLite.Tests\DeleteTest.cs" />
+    <Compile Include="..\SQLite.Tests\DropTableTest.cs" />
+    <Compile Include="..\SQLite.Tests\EnumCacheTest.cs" />
+    <Compile Include="..\SQLite.Tests\EnumTest.cs" />
+    <Compile Include="..\SQLite.Tests\EqualsTest.cs" />
+    <Compile Include="..\SQLite.Tests\ExceptionAssert.cs" />
+    <Compile Include="..\SQLite.Tests\GuidTests.cs" />
+    <Compile Include="..\SQLite.Tests\IgnoreTest.cs" />
+    <Compile Include="..\SQLite.Tests\InheritanceTest.cs" />
+    <Compile Include="..\SQLite.Tests\InsertTest.cs" />
+    <Compile Include="..\SQLite.Tests\JoinTest.cs" />
+    <Compile Include="..\SQLite.Tests\LinqTest.cs" />
+    <Compile Include="..\SQLite.Tests\MappingTest.cs" />
+    <Compile Include="..\SQLite.Tests\MigrationTest.cs" />
+    <Compile Include="..\SQLite.Tests\NotNullAttributeTest.cs" />
+    <Compile Include="..\SQLite.Tests\NullableTest.cs" />
+    <Compile Include="..\SQLite.Tests\OpenTests.cs" />
+    <Compile Include="..\SQLite.Tests\ScalarTest.cs" />
+    <Compile Include="..\SQLite.Tests\SkipTest.cs" />
+    <Compile Include="..\SQLite.Tests\StringQueryTest.cs" />
+    <Compile Include="..\SQLite.Tests\TableChangedTest.cs" />
+    <Compile Include="..\SQLite.Tests\TestDb.cs" />
+    <Compile Include="..\SQLite.Tests\TransactionTest.cs" />
+    <Compile Include="..\SQLite.Tests\UnicodeTest.cs" />
+    <Compile Include="..\SQLite.Tests\UniqueTest.cs" />
+    <Compile Include="..\SQLite.Tests\ConcurrencyTest.cs">
       <Link>ConcurrencyTest.cs</Link>
     </Compile>
     <Compile Include="..\..\src\SQLite.cs">
@@ -144,13 +144,13 @@
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
-    <Compile Include="..\BackupTest.cs">
+    <Compile Include="..\SQLite.Tests\BackupTest.cs">
       <Link>BackupTest.cs</Link>
     </Compile>
-    <Compile Include="..\ReadmeTest.cs">
+    <Compile Include="..\SQLite.Tests\ReadmeTest.cs">
       <Link>ReadmeTest.cs</Link>
     </Compile>
-    <Compile Include="..\QueryTest.cs">
+    <Compile Include="..\SQLite.Tests\QueryTest.cs">
       <Link>QueryTest.cs</Link>
     </Compile>
   </ItemGroup>
