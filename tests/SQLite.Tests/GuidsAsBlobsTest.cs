@@ -35,7 +35,7 @@ namespace SQLite.Tests
 		public class TestDb : SQLiteConnection
 		{
 			public TestDb(string path)
-				: base(new SQLiteConnectionString (path, storeGuidsAsBlobs:true))
+				: base(new SQLiteConnectionString (path, storeGuidsAsBlobs: true))
 			{
 				CreateTable<TestObj>();
 			}
@@ -160,7 +160,7 @@ namespace SQLite.Tests
 		[Test]
 		public void AutoGuid_HasGuid()
 		{
-			var db = new SQLiteConnection(new SQLiteConnectionString(TestPath.GetTempFileName(), storeGuidsAsBlobs: true));
+			var db = new SQLiteConnection(new SQLiteConnectionString (TestPath.GetTempFileName(), storeGuidsAsBlobs: true));
 			db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
 
 			var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
