@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -29,9 +29,36 @@
     <ExternalConsole>true</ExternalConsole>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Nito.AsyncEx.Context, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.Context.5.0.0\lib\netstandard2.0\Nito.AsyncEx.Context.dll</HintPath>
+    </Reference>
+    <Reference Include="Nito.AsyncEx.Coordination, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.Coordination.5.0.0\lib\netstandard2.0\Nito.AsyncEx.Coordination.dll</HintPath>
+    </Reference>
+    <Reference Include="Nito.AsyncEx.Interop.WaitHandles, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.Interop.WaitHandles.5.0.0\lib\netstandard2.0\Nito.AsyncEx.Interop.WaitHandles.dll</HintPath>
+    </Reference>
+    <Reference Include="Nito.AsyncEx.Oop, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.Oop.5.0.0\lib\netstandard2.0\Nito.AsyncEx.Oop.dll</HintPath>
+    </Reference>
+    <Reference Include="Nito.AsyncEx.Tasks, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.AsyncEx.Tasks.5.0.0\lib\netstandard2.0\Nito.AsyncEx.Tasks.dll</HintPath>
+    </Reference>
+    <Reference Include="Nito.Cancellation, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.Cancellation.1.0.5\lib\netstandard2.0\Nito.Cancellation.dll</HintPath>
+    </Reference>
+    <Reference Include="Nito.Collections.Deque, Version=1.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.Collections.Deque.1.0.4\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
+    </Reference>
+    <Reference Include="Nito.Disposables, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Nito.Disposables.2.0.0\lib\netstandard2.0\Nito.Disposables.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="ListDiff">
       <HintPath>..\..\packages\ListDiff.1.0.7\lib\netstandard1.0\ListDiff.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable, Version=1.2.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Collections.Immutable.1.4.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

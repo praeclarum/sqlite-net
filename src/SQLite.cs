@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2019 Krueger Systems, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,15 +26,19 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
-#if !USE_SQLITEPCL_RAW
-using System.Runtime.InteropServices;
-#endif
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
+using Nito.AsyncEx;
+using System.Threading.Tasks;
+
+
+#if !USE_SQLITEPCL_RAW
+using System.Runtime.InteropServices;
+#endif
 
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
@@ -159,6 +163,113 @@ namespace SQLite
 		FullTextSearch4 = 0x200
 	}
 
+
+	internal class Mappings : ObjectWithLock<Dictionary<string, TableMapping>> { }
+	internal class InsertCommandMap : ObjectWithLock<Dictionary<Tuple<string, string>, ObjectWithLock<PreparedSqlLiteInsertCommand>>> { }
+
+	internal class TransactionDepthTracker
+	{
+		private AsyncLock Lock = new AsyncLock();
+		private int CurrentDepth = 0;
+
+		public int Value 
+		{ 
+			get
+			{
+				using (Lock.Lock()) return CurrentDepth;
+			}
+        }
+
+		// sets explicitly a new value and returns the previous value
+		public int SetDepth(int value)
+		{
+			using (Lock.Lock())
+			{
+				var result = CurrentDepth;
+				CurrentDepth = value;
+				return result;
+			}
+		}
+
+		/// <summary>
+		/// returns true if previous value was zero. if it isn't zero, Depth remains unchanged
+		/// </summary>
+		public bool IncrementIfZero()
+		{
+			using (Lock.Lock())
+			{
+				if (CurrentDepth > 0)
+					return false;
+				CurrentDepth++;
+				return true;
+			}
+		}
+
+		// sets CurrentDepth to zero and returns the previous value it has overwritten
+		internal int Reset()
+		{
+			using (Lock.Lock())
+			{
+				var result = CurrentDepth;
+				CurrentDepth = 0;
+				return result;
+			}
+		}
+
+		// sets CurrentDepth to zero and returns the previous value it has overwritten
+		internal int ResetAndExecuteIfWasNotZero(Action proc)
+		{
+			using (Lock.Lock())
+			{
+				var result = CurrentDepth;
+				CurrentDepth = 0;
+				if (result != 0)
+					proc();
+				return result;
+			}
+		}
+
+		internal int Increment()
+		{
+			using (Lock.Lock())
+			{
+				CurrentDepth++;
+				return CurrentDepth;
+			}
+		}
+		
+		internal int Decrement()
+		{
+			using (Lock.Lock())
+			{
+				if (CurrentDepth >0)
+				   CurrentDepth--;
+				return CurrentDepth;
+			}
+		}
+
+		/// <summary>
+		/// if newval is lower than the current value, 
+		///   sets the new value, excecutes proc and returns true;
+		/// </summary>
+		/// <param name="newval"></param>
+		/// <param name="proc"></param>
+		/// <returns></returns>
+		internal bool DecreaseToNewValueAndExecute(int newval, Action proc)
+		{
+			using (Lock.Lock())
+			{
+				if (0 <= newval && newval < CurrentDepth)
+				{
+					CurrentDepth = newval;
+					proc();
+					return true;
+				}
+				else return false;
+			}
+		}
+	}
+
 	/// <summary>
 	/// An open connection to a SQLite database.
 	/// </summary>
@@ -167,11 +278,11 @@ namespace SQLite
 	{
 		private bool _open;
 		private TimeSpan _busyTimeout;
-		readonly static Dictionary<string, TableMapping> _mappings = new Dictionary<string, TableMapping> ();
+		readonly static Mappings _mappings = new Mappings ();
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
 
-		private int _transactionDepth = 0;
+		private TransactionDepthTracker _transactionDepth = new TransactionDepthTracker();
 		private Random _rand = new Random ();
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
@@ -196,7 +307,7 @@ namespace SQLite
 		/// <summary>
 		/// Whether to writer queries to <see cref="Tracer"/> during execution.
 		/// </summary>
-		/// <value>The tracer.</value>
+
 		public bool Trace { get; set; }
 
 		/// <summary>
@@ -428,8 +539,8 @@ namespace SQLite
 		/// </summary>
 		public IEnumerable<TableMapping> TableMappings {
 			get {
-				lock (_mappings) {
-					return new List<TableMapping> (_mappings.Values);
+				using(var locked = _mappings.Lock()) {
+					return new List<TableMapping> (locked.Obj.Values);
 				}
 			}
 		}
@@ -451,16 +562,16 @@ namespace SQLite
 		{
 			TableMapping map;
 			var key = type.FullName;
-			lock (_mappings) {
-				if (_mappings.TryGetValue (key, out map)) {
+			using (var obtained_lock = _mappings.Lock()) { 
+				if (obtained_lock.Obj.TryGetValue (key, out map)) {
 					if (createFlags != CreateFlags.None && createFlags != map.CreateFlags) {
 						map = new TableMapping (type, createFlags);
-						_mappings[key] = map;
+						obtained_lock.Obj[key] = map;
 					}
 				}
 				else {
 					map = new TableMapping (type, createFlags);
-					_mappings.Add (key, map);
+					obtained_lock.Obj.Add (key, map);
 				}
 			}
 			return map;
@@ -1215,7 +1326,7 @@ namespace SQLite
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
 		public bool IsInTransaction {
-			get { return _transactionDepth > 0; }
+			get { return _transactionDepth.Value > 0; }
 		}
 
 		/// <summary>
@@ -1230,11 +1341,14 @@ namespace SQLite
 			//    then the command fails with an error.
 			// Rather than crash with an error, we will just ignore calls to BeginTransaction
 			//    that would result in an error.
-			if (Interlocked.CompareExchange (ref _transactionDepth, 1, 0) == 0) {
-				try {
-					Execute ("begin transaction");
-				}
-				catch (Exception ex) {
+			
+			if (!_transactionDepth.IncrementIfZero())
+				throw new InvalidOperationException("Cannot begin a transaction while already in a transaction.");
+			try {
+				Execute("begin transaction");
+			}
+			catch (Exception ex) {
+				try	{
 					var sqlExp = ex as SQLiteException;
 					if (sqlExp != null) {
 						// It is recommended that applications respond to the errors listed below
@@ -1250,18 +1364,11 @@ namespace SQLite
 								break;
 						}
 					}
-					else {
-						// Call decrement and not VolatileWrite in case we've already
-						//    created a transaction point in SaveTransactionPoint since the catch.
-						Interlocked.Decrement (ref _transactionDepth);
-					}
-
-					throw;
 				}
-			}
-			else {
-				// Calling BeginTransaction on an already open transaction is invalid
-				throw new InvalidOperationException ("Cannot begin a transaction while already in a transaction.");
+				finally {
+					_transactionDepth.Reset();
+					throw ex;
+				}
 			}
 		}
 
@@ -1276,7 +1383,7 @@ namespace SQLite
 		/// <returns>A string naming the savepoint.</returns>
 		public string SaveTransactionPoint ()
 		{
-			int depth = Interlocked.Increment (ref _transactionDepth) - 1;
+			int depth = _transactionDepth.Increment()- 1;
 			string retVal = "S" + _rand.Next (short.MaxValue) + "D" + depth;
 
 			try {
@@ -1299,7 +1406,7 @@ namespace SQLite
 					}
 				}
 				else {
-					Interlocked.Decrement (ref _transactionDepth);
+					_transactionDepth.Decrement();
 				}
 
 				throw;
@@ -1335,10 +1442,8 @@ namespace SQLite
 			// Rolling back without a TO clause rolls backs all transactions
 			//    and leaves the transaction stack empty.
 			try {
-				if (String.IsNullOrEmpty (savepoint)) {
-					if (Interlocked.Exchange (ref _transactionDepth, 0) > 0) {
-						Execute ("rollback");
-					}
+				if (string.IsNullOrEmpty (savepoint)) {
+					_transactionDepth.ResetAndExecuteIfWasNotZero(() => Execute("rollback"));
 				}
 				else {
 					DoSavePointExecute (savepoint, "rollback to ");
@@ -1388,20 +1493,9 @@ namespace SQLite
 			int firstLen = savepoint.IndexOf ('D');
 			if (firstLen >= 2 && savepoint.Length > firstLen + 1) {
 				int depth;
-				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
-					// TODO: Mild race here, but inescapable without locking almost everywhere.
-					if (0 <= depth && depth < _transactionDepth) {
-#if NETFX_CORE || USE_SQLITEPCL_RAW || NETCORE
-						Volatile.Write (ref _transactionDepth, depth);
-#elif SILVERLIGHT
-						_transactionDepth = depth;
-#else
-                        Thread.VolatileWrite (ref _transactionDepth, depth);
-#endif
-						Execute (cmd + savepoint);
+				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) 
+					if (_transactionDepth.DecreaseToNewValueAndExecute(depth, () => Execute(cmd + savepoint)))
 						return;
-					}
-				}
 			}
 
 			throw new ArgumentException ("savePoint is not valid, and should be the result of a call to SaveTransactionPoint.", "savePoint");
@@ -1410,24 +1504,22 @@ namespace SQLite
 		/// <summary>
 		/// Commits the transaction that was begun by <see cref="BeginTransaction"/>.
 		/// </summary>
-		public void Commit ()
+		public void Commit()
 		{
-			if (Interlocked.Exchange (ref _transactionDepth, 0) != 0) {
+			try {
+				_transactionDepth.ResetAndExecuteIfWasNotZero(() => Execute("commit"));
+			}
+			catch {
+				// Force a rollback since most people don't know this function can fail
+				// Don't call Rollback() since the _transactionDepth is 0 and it won't try
+				// Calling rollback makes our _transactionDepth variable correct.
 				try {
-					Execute ("commit");
+					Execute("rollback");
 				}
 				catch {
-					// Force a rollback since most people don't know this function can fail
-					// Don't call Rollback() since the _transactionDepth is 0 and it won't try
-					// Calling rollback makes our _transactionDepth variable correct.
-					try {
-						Execute ("rollback");
-					}
-					catch {
-						// rollback can fail in all sorts of wonderful version-dependent ways. Let's just hope for the best
-					}
-					throw;
+					// rollback can fail in all sorts of wonderful version-dependent ways. Let's just hope for the best
 				}
+				throw;
 			}
 			// Do nothing on a commit with no open transaction
 		}
@@ -1696,11 +1788,11 @@ namespace SQLite
 			var insertCmd = GetInsertCommand (map, extra);
 			int count;
 
-			lock (insertCmd) {
+			using (var obtainedLock = insertCmd.Lock()) {
 				// We lock here to protect the prepared statement returned via GetInsertCommand.
 				// A SQLite prepared statement can be bound for only one operation at a time.
 				try {
-					count = insertCmd.ExecuteNonQuery (vals);
+					count = obtainedLock.Obj.ExecuteNonQuery (vals);
 				}
 				catch (SQLiteException ex) {
 					if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
@@ -1720,32 +1812,22 @@ namespace SQLite
 			return count;
 		}
 
-		readonly Dictionary<Tuple<string, string>, PreparedSqlLiteInsertCommand> _insertCommandMap = new Dictionary<Tuple<string, string>, PreparedSqlLiteInsertCommand> ();
+		readonly InsertCommandMap _insertCommandMap = new InsertCommandMap();
 
-		PreparedSqlLiteInsertCommand GetInsertCommand (TableMapping map, string extra)
+		ObjectWithLock<PreparedSqlLiteInsertCommand> GetInsertCommand (TableMapping map, string extra)
 		{
-			PreparedSqlLiteInsertCommand prepCmd;
-
-			var key = Tuple.Create (map.MappedType.FullName, extra);
-
-			lock (_insertCommandMap) {
-				if (_insertCommandMap.TryGetValue (key, out prepCmd)) {
-					return prepCmd;
+			using (var obtainedLock = _insertCommandMap.Lock())
+			{
+				var key = Tuple.Create(map.MappedType.FullName, extra);
+				ObjectWithLock<PreparedSqlLiteInsertCommand> result;
+				if (!obtainedLock.Obj.TryGetValue(key, out result))
+				{
+					PreparedSqlLiteInsertCommand cmd = CreateInsertCommand(map, extra);
+					result = new ObjectWithLock<PreparedSqlLiteInsertCommand>(cmd);
+					obtainedLock.Obj.Add(key, result);
 				}
+				return result;
 			}
-
-			prepCmd = CreateInsertCommand (map, extra);
-			
-			lock (_insertCommandMap) {
-				if (_insertCommandMap.TryGetValue (key, out var existing)) {
-					prepCmd.Dispose ();
-					return existing;
-				}
-
-				_insertCommandMap.Add (key, prepCmd);
-			}
-
-			return prepCmd;
 		}
 
 		PreparedSqlLiteInsertCommand CreateInsertCommand (TableMapping map, string extra)
@@ -2047,32 +2129,34 @@ namespace SQLite
 		protected virtual void Dispose (bool disposing)
 		{
 			var useClose2 = LibVersionNumber >= 3007014;
-
-			if (_open && Handle != NullHandle) {
-				try {
-					if (disposing) {
-						lock (_insertCommandMap) {
-							foreach (var sqlInsertCommand in _insertCommandMap.Values) {
-								sqlInsertCommand.Dispose ();
-							}
-							_insertCommandMap.Clear ();
+			try
+			{
+				if (!_open) return;
+			  if (Handle == NullHandle) return;
+				if (disposing) {
+					using (var obtainedLock = _insertCommandMap.Lock()) {
+						foreach (var sqlInsertCommand in obtainedLock.Obj.Values)	{
+							using (var cmdlock = sqlInsertCommand.Lock())
+								cmdlock.Obj.Dispose();
 						}
-
-						var r = useClose2 ? SQLite3.Close2 (Handle) : SQLite3.Close (Handle);
-						if (r != SQLite3.Result.OK) {
-							string msg = SQLite3.GetErrmsg (Handle);
-							throw SQLiteException.New (r, msg);
-						}
+						obtainedLock.Obj.Clear ();
 					}
-					else {
-						var r = useClose2 ? SQLite3.Close2 (Handle) : SQLite3.Close (Handle);
+
+					var r = useClose2 ? SQLite3.Close2 (Handle) : SQLite3.Close (Handle);
+					if (r != SQLite3.Result.OK) {
+						string msg = SQLite3.GetErrmsg (Handle);
+						throw SQLiteException.New (r, msg);
 					}
 				}
-				finally {
-					Handle = NullHandle;
-					_open = false;
+				else {
+					var r = useClose2 ? SQLite3.Close2 (Handle) : SQLite3.Close (Handle);
 				}
 			}
+			finally {
+				Handle = NullHandle;
+				_open = false;
+			}
+			
 		}
 
 		void OnTableChanged (TableMapping table, NotifyTableChangedAction action)
@@ -2595,7 +2679,8 @@ namespace SQLite
 
 	static class EnumCache
 	{
-		static readonly Dictionary<Type, EnumCacheInfo> Cache = new Dictionary<Type, EnumCacheInfo> ();
+		protected class CacheWithLock : ObjectWithLock<Dictionary<Type, EnumCacheInfo>>{};
+		static readonly CacheWithLock Cache = new CacheWithLock();
 
 		public static EnumCacheInfo GetInfo<T> ()
 		{
@@ -2604,11 +2689,12 @@ namespace SQLite
 
 		public static EnumCacheInfo GetInfo (Type type)
 		{
-			lock (Cache) {
+			using (var access = Cache.Lock()) { 
 				EnumCacheInfo info = null;
-				if (!Cache.TryGetValue (type, out info)) {
-					info = new EnumCacheInfo (type);
-					Cache[type] = info;
+				if (!access.Obj.TryGetValue(type, out info))
+				{
+					info = new EnumCacheInfo(type);
+					access.Obj[type] = info;
 				}
 
 				return info;
@@ -4425,4 +4511,69 @@ namespace SQLite
 			Null = 5
 		}
 	}
+
+
+	/// <summary>
+	/// "Wraps" the AsyncLock locking mechanism (from Nito.AsincEx) around an instance of an object of type T.
+	///  To obtain access to the actual instance you need to call the either the "Lock()" (for synchronous code) or "AsyncLock()" (for async code) methods 
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
+	public class ObjectWithLock<T> :IDisposable where T: class
+	{
+		protected readonly T Instance;
+		protected readonly AsyncLock TheLock = new AsyncLock();
+		public interface IObjectAccess : IDisposable
+		{
+			T Obj { get; }
+		}
+
+		// this one can be used only if T has a parameterlessconstructor
+		public ObjectWithLock()
+		{
+			var constructor = typeof(T).GetConstructor(new Type[] { });
+			if (constructor == null)
+				throw new ArgumentException("The parameterless constructor of ObjectWithLock<T> can be invoked only if T provides a parameterless constructor too.");
+			Instance = (T)constructor.Invoke(new object[] { });
+		}
+
+		public ObjectWithLock(T InstanceToBeWrapped)
+		{
+			this.Instance = InstanceToBeWrapped ?? throw new ArgumentNullException(nameof(InstanceToBeWrapped));
+		}
+
+		public IObjectAccess Lock() 
+		{
+			return new ObjectAccess(TheLock.Lock(), Instance);
+		}
+
+		public async Task<IObjectAccess> AsyncLock()
+		{
+			return new ObjectAccess(await TheLock.LockAsync(), Instance);
+		}
+
+		void IDisposable.Dispose()
+		{
+			if (Instance is IDisposable i)
+				i.Dispose();
+		}
+
+		protected class ObjectAccess : IObjectAccess
+		{
+			private readonly IDisposable ObtainedLock;
+			private readonly T ObtainedObject;
+
+			public ObjectAccess(IDisposable obtainedLock, T obtainedObject)
+			{
+				ObtainedLock = obtainedLock;
+				ObtainedObject = obtainedObject;
+			}
+
+			T IObjectAccess.Obj => ObtainedObject;
+
+			void IDisposable.Dispose() => ObtainedLock.Dispose();
+		}
+	}
+
+
+
 }

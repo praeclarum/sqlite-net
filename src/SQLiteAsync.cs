@@ -27,6 +27,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Nito.AsyncEx;
 
 namespace SQLite
 {
@@ -143,7 +144,7 @@ namespace SQLite
 		/// Whether to store DateTime properties as ticks (true) or strings (false).
 		/// </summary>
 		public bool StoreDateTimeAsTicks => GetConnection ().StoreDateTimeAsTicks;
-		
+
 		/// <summary>
 		/// Whether to store TimeSpan properties as ticks (true) or strings (false).
 		/// </summary>
@@ -152,7 +153,6 @@ namespace SQLite
 		/// <summary>
 		/// Whether to writer queries to <see cref="Tracer"/> during execution.
 		/// </summary>
-		/// <value>The tracer.</value>
 		public bool Trace {
 			get { return GetConnection ().Trace; }
 			set { GetConnection ().Trace = value; }
@@ -213,22 +213,23 @@ namespace SQLite
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
-		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
+		Task<T> ReadAsync<T> (Func<SQLiteConnection, T> read)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return read (conn);
+				using (var connectionAccess = conn.Lock ()) {
+					return read (connectionAccess.Obj);
 				}
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
-		Task<T> WriteAsync<T> (Func<SQLiteConnectionWithLock, T> write)
+		Task<T> WriteAsync<T> (Func<SQLiteConnection, T> write)
 		{
 			return Task.Factory.StartNew (() => {
 				var conn = GetConnection ();
-				using (conn.Lock ()) {
-					return write (conn);
+				using (var connectionAccess = conn.Lock ()) {
+					var result = write (connectionAccess.Obj);
+					return result;
 				}
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
@@ -984,18 +985,19 @@ namespace SQLite
 		/// </param>
 		public Task RunInTransactionAsync (Action<SQLiteConnection> action)
 		{
-			return WriteAsync<object> (conn => {
-				conn.BeginTransaction ();
-				try {
-					action (conn);
-					conn.Commit ();
-					return null;
-				}
-				catch (Exception) {
-					conn.Rollback ();
-					throw;
-				}
-			});
+			return WriteAsync<object> (
+				conn => {
+					conn.BeginTransaction ();
+					try {
+						action (conn);
+						conn.Commit ();
+						return null;
+					}
+					catch (Exception) {
+						conn.Rollback ();
+						throw;
+					}
+				});
 		}
 
 		/// <summary>
@@ -1013,7 +1015,7 @@ namespace SQLite
 			// until the query is performed. The Async methods are on the query iteself.
 			//
 			var conn = GetConnection ();
-			return new AsyncTableQuery<T> (conn.Table<T> ());
+			return new AsyncTableQuery<T> (conn.Table<T> (), conn);
 		}
 
 		/// <summary>
@@ -1143,32 +1145,33 @@ namespace SQLite
 	public class AsyncTableQuery<T>
 		where T : new()
 	{
-		TableQuery<T> _innerQuery;
+		readonly TableQuery<T> _innerQuery;
+		readonly SQLiteConnectionWithLock _wrappedConnection;
 
 		/// <summary>
 		/// Creates a new async query that uses given the synchronous query.
 		/// </summary>
-		public AsyncTableQuery (TableQuery<T> innerQuery)
+		public AsyncTableQuery (TableQuery<T> innerQuery, SQLiteConnectionWithLock connection)
 		{
 			_innerQuery = innerQuery;
+			_wrappedConnection = connection;
 		}
 
-		Task<U> ReadAsync<U> (Func<SQLiteConnectionWithLock, U> read)
+		Task<U> ReadAsync<U> (Func<SQLiteConnection, U> read)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = (SQLiteConnectionWithLock)_innerQuery.Connection;
-				using (conn.Lock ()) {
-					return read (conn);
+				using (var connectionAccess = _wrappedConnection.Lock ()) {
+					return read (connectionAccess.Obj);
 				}
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
 
-		Task<U> WriteAsync<U> (Func<SQLiteConnectionWithLock, U> write)
+		Task<U> WriteAsync<U> (Func<SQLiteConnection, U> write)
 		{
 			return Task.Factory.StartNew (() => {
-				var conn = (SQLiteConnectionWithLock)_innerQuery.Connection;
-				using (conn.Lock ()) {
-					return write (conn);
+
+				using (var connectionAccess = _wrappedConnection.Lock ()) {
+					return write (connectionAccess.Obj);
 				}
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
@@ -1178,7 +1181,7 @@ namespace SQLite
 		/// </summary>
 		public AsyncTableQuery<T> Where (Expression<Func<T, bool>> predExpr)
 		{
-			return new AsyncTableQuery<T> (_innerQuery.Where (predExpr));
+			return new AsyncTableQuery<T> (_innerQuery.Where (predExpr), _wrappedConnection);
 		}
 
 		/// <summary>
@@ -1186,7 +1189,7 @@ namespace SQLite
 		/// </summary>
 		public AsyncTableQuery<T> Skip (int n)
 		{
-			return new AsyncTableQuery<T> (_innerQuery.Skip (n));
+			return new AsyncTableQuery<T> (_innerQuery.Skip (n), _wrappedConnection);
 		}
 
 		/// <summary>
@@ -1194,7 +1197,7 @@ namespace SQLite
 		/// </summary>
 		public AsyncTableQuery<T> Take (int n)
 		{
-			return new AsyncTableQuery<T> (_innerQuery.Take (n));
+			return new AsyncTableQuery<T> (_innerQuery.Take (n), _wrappedConnection);
 		}
 
 		/// <summary>
@@ -1202,7 +1205,7 @@ namespace SQLite
 		/// </summary>
 		public AsyncTableQuery<T> OrderBy<U> (Expression<Func<T, U>> orderExpr)
 		{
-			return new AsyncTableQuery<T> (_innerQuery.OrderBy<U> (orderExpr));
+			return new AsyncTableQuery<T> (_innerQuery.OrderBy<U> (orderExpr), _wrappedConnection);
 		}
 
 		/// <summary>
@@ -1210,7 +1213,7 @@ namespace SQLite
 		/// </summary>
 		public AsyncTableQuery<T> OrderByDescending<U> (Expression<Func<T, U>> orderExpr)
 		{
-			return new AsyncTableQuery<T> (_innerQuery.OrderByDescending<U> (orderExpr));
+			return new AsyncTableQuery<T> (_innerQuery.OrderByDescending<U> (orderExpr), _wrappedConnection);
 		}
 
 		/// <summary>
@@ -1218,7 +1221,7 @@ namespace SQLite
 		/// </summary>
 		public AsyncTableQuery<T> ThenBy<U> (Expression<Func<T, U>> orderExpr)
 		{
-			return new AsyncTableQuery<T> (_innerQuery.ThenBy<U> (orderExpr));
+			return new AsyncTableQuery<T> (_innerQuery.ThenBy<U> (orderExpr), _wrappedConnection);
 		}
 
 		/// <summary>
@@ -1226,7 +1229,7 @@ namespace SQLite
 		/// </summary>
 		public AsyncTableQuery<T> ThenByDescending<U> (Expression<Func<T, U>> orderExpr)
 		{
-			return new AsyncTableQuery<T> (_innerQuery.ThenByDescending<U> (orderExpr));
+			return new AsyncTableQuery<T> (_innerQuery.ThenByDescending<U> (orderExpr), _wrappedConnection);
 		}
 
 		/// <summary>
@@ -1320,6 +1323,7 @@ namespace SQLite
 
 	class SQLiteConnectionPool
 	{
+
 		class Entry
 		{
 			WeakReference<SQLiteConnectionWithLock> connection;
@@ -1338,10 +1342,11 @@ namespace SQLite
 				if (wc == null || !wc.TryGetTarget (out c)) {
 					c = new SQLiteConnectionWithLock (ConnectionString);
 
-					// If the database is FullMutex, then we don't need to bother locking
-					if (ConnectionString.OpenFlags.HasFlag (SQLiteOpenFlags.FullMutex)) {
-						c.SkipLock = true;
-					}
+					// *** If the database is FullMutex, then we don't need to bother locking ***
+					// THE ABOVE LINE IS WRONG!
+					// sqlite natively does JUST FILE LEVEL LOCKING: it is totally unaware and incapable of handling 
+					// the async/await model for which THE SAME THREAD OWNING THE FILE LOCK jumps randomly around executing pieces of different uncorrelated tasks
+					// YOU *** NEED *** A LOCKING MECHANISM THAT WORKS AMONG ASYNC TASKS
 
 					connection = new WeakReference<SQLiteConnectionWithLock> (c);
 				}
@@ -1358,7 +1363,9 @@ namespace SQLite
 			}
 		}
 
-		readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry> ();
+		class Entries : ObjectWithLock<Dictionary<string, Entry>> { };
+
+		readonly Entries _entries = new Entries ();
 		readonly object _entriesLock = new object ();
 
 		static readonly SQLiteConnectionPool _shared = new SQLiteConnectionPool ();
@@ -1376,10 +1383,10 @@ namespace SQLite
 		{
 			var key = connectionString.UniqueKey;
 			Entry entry;
-			lock (_entriesLock) {
-				if (!_entries.TryGetValue (key, out entry)) {
+			using (var access = _entries.Lock ()) {
+				if (!access.Obj.TryGetValue (key, out entry)) {
 					entry = new Entry (connectionString);
-					_entries[key] = entry;
+					access.Obj[key] = entry;
 				}
 			}
 			return entry.Connect ();
@@ -1389,9 +1396,10 @@ namespace SQLite
 		{
 			var key = connectionString.UniqueKey;
 			Entry entry;
-			lock (_entriesLock) {
-				if (_entries.TryGetValue (key, out entry)) {
-					_entries.Remove (key);
+
+			using (var access = _entries.Lock ()) {
+				if (access.Obj.TryGetValue (key, out entry)) {
+					access.Obj.Remove (key);
 				}
 			}
 			entry?.Close ();
@@ -1402,73 +1410,89 @@ namespace SQLite
 		/// </summary>
 		public void Reset ()
 		{
-			List<Entry> entries;
-			lock (_entriesLock) {
-				entries = new List<Entry> (_entries.Values);
-				_entries.Clear ();
+			List<Entry> entriesToBeClosed;
+			using (var unlockedEntries = _entries.Lock ()) {
+				entriesToBeClosed = new List<Entry> (unlockedEntries.Obj.Values);
+				unlockedEntries.Obj.Clear ();
 			}
 
-			foreach (var e in entries) {
+			foreach (var e in entriesToBeClosed) {
 				e.Close ();
 			}
 		}
 	}
 
 	/// <summary>
-	/// This is a normal connection except it contains a Lock method that
-	/// can be used to serialize access to the database
-	/// in lieu of using the sqlite's FullMutex support.
+	/// wraps a SQLiteConnection inside a locking mechanism.
+	/// Only one thread/task at a time can get access to the inner connection and this access can be obtained
+	/// only through the disposable interface returned by Lock() or AsyncLock().
+	/// To release the session you need to dispose such interface, so it is highly advisabl that you use the "using" c# construt
 	/// </summary>
-	public class SQLiteConnectionWithLock : SQLiteConnection
+	public class SQLiteConnectionWithLock : ObjectWithLock<SQLiteConnection>
 	{
-		readonly object _lockPoint = new object ();
+		internal SQLiteConnectionWithLock (string ConnectionString) : base (new SQLiteConnection (ConnectionString))
+		{ }
+		internal SQLiteConnectionWithLock (SQLiteConnectionString ConnectionString) : base (new SQLiteConnection (ConnectionString))
+		{ }
+
+		// these properties and methods of SqliteConnection can be safely called from mulitple threads without needing any locking
+		// so I make them directly accessible (no Lock() calls 
+		/// <summary>
+		/// Gets the database path used by this connection.
+		/// </summary>
+		public string DatabasePath => Instance.DatabasePath;
+		/// <summary>
+		/// Gets the SQLite library version number. 3007014 would be v3.7.14
+		/// </summary>
+		public int LibVersionNumber => Instance.LibVersionNumber;
+		/// <summary>
+		/// The format to use when storing DateTime properties as strings. Ignored if StoreDateTimeAsTicks is true.
+		/// </summary>
+		/// <value>The date time string format.</value>
+		public string DateTimeStringFormat => Instance.DateTimeStringFormat;
+		/// <summary>
+		/// The amount of time to wait for a table to become unlocked.
+		/// </summary>
+		public TimeSpan BusyTimeout => Instance.BusyTimeout;
+		/// <summary>
+		/// Whether to store DateTime properties as ticks (true) or strings (false).
+		/// </summary>
+		public bool StoreDateTimeAsTicks => Instance.StoreDateTimeAsTicks;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="T:SQLite.SQLiteConnectionWithLock"/> class.
+		/// Whether to store TimeSpan properties as ticks (true) or strings (false).
 		/// </summary>
-		/// <param name="connectionString">Connection string containing the DatabasePath.</param>
-		public SQLiteConnectionWithLock (SQLiteConnectionString connectionString)
-			: base (connectionString)
-		{
-		}
+		public bool StoreTimeSpanAsTicks => Instance.StoreTimeSpanAsTicks;
 
 		/// <summary>
-		/// Gets or sets a value indicating whether this <see cref="T:SQLite.SQLiteConnectionWithLock"/> skip lock.
+		/// Whether to writer queries to <see cref="Tracer"/> during execution.
 		/// </summary>
-		/// <value><c>true</c> if skip lock; otherwise, <c>false</c>.</value>
-		public bool SkipLock { get; set; }
+		public bool Trace { get => Instance.Trace; set => Instance.Trace = value; }
+		/// <summary>
+		/// The delegate responsible for writing trace lines.
+		/// </summary>
+		/// <value>The tracer.</value>
+		public Action<string> Tracer { get => Instance.Tracer; set => Instance.Tracer = value; }
 
 		/// <summary>
-		/// Lock the database to serialize access to it. To unlock it, call Dispose
-		/// on the returned object.
+		/// Whether Trace lines should be written that show the execution time of queries.
 		/// </summary>
-		/// <returns>The lock.</returns>
-		public IDisposable Lock ()
-		{
-			return SkipLock ? (IDisposable)new FakeLockWrapper() : new LockWrapper (_lockPoint);
-		}
+		public bool TimeExecution { get => Instance.TimeExecution; set => Instance.TimeExecution = value; }
 
-		class LockWrapper : IDisposable
-		{
-			object _lockPoint;
-
-			public LockWrapper (object lockPoint)
-			{
-				_lockPoint = lockPoint;
-				Monitor.Enter (_lockPoint);
-			}
-
-			public void Dispose ()
-			{
-				Monitor.Exit (_lockPoint);
-			}
-		}
-		class FakeLockWrapper : IDisposable
-		{
-			public void Dispose ()
-			{
-			}
-		}
+		/// <summary>
+		/// Returns the mappings from types to tables that the connection
+		/// currently understands.
+		/// </summary>
+		public IEnumerable<TableMapping> TableMappings => Instance.TableMappings;
+		/// <summary>
+		/// Returns a queryable interface to the table represented by the given type.
+		/// </summary>
+		/// <returns>
+		/// A queryable object that is able to translate Where, OrderBy, and Take
+		/// queries into native SQL.
+		/// </returns>
+		public TableQuery<T> Table<T> () where T : new() => Instance.Table<T> ();
+		internal void Close () => Instance.Close ();
 	}
 }
 
