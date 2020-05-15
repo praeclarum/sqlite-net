@@ -203,6 +203,11 @@ namespace SQLite
 			return SQLiteConnectionPool.Shared.GetConnection (_connectionString);
 		}
 
+		SQLiteConnectionWithLock GetConnectionAndTransactionLock (out object transactionLock)
+		{
+			return SQLiteConnectionPool.Shared.GetConnectionAndTransactionLock (_connectionString, out transactionLock);
+		}
+
 		/// <summary>
 		/// Closes any pooled connections used by the database.
 		/// </summary>
@@ -229,6 +234,18 @@ namespace SQLite
 				var conn = GetConnection ();
 				using (conn.Lock ()) {
 					return write (conn);
+				}
+			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+		}
+
+		Task<T> TransactAsync<T> (Func<SQLiteConnectionWithLock, T> transact)
+		{
+			return Task.Factory.StartNew (() => {
+				var conn = GetConnectionAndTransactionLock (out var transactionLock);
+				lock (transactionLock) {
+					using (conn.Lock ()) {
+						return transact (conn);
+					}
 				}
 			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 		}
@@ -984,7 +1001,7 @@ namespace SQLite
 		/// </param>
 		public Task RunInTransactionAsync (Action<SQLiteConnection> action)
 		{
-			return WriteAsync<object> (conn => {
+			return TransactAsync<object> (conn => {
 				conn.BeginTransaction ();
 				try {
 					action (conn);
@@ -1326,6 +1343,8 @@ namespace SQLite
 
 			public SQLiteConnectionString ConnectionString { get; }
 
+			public object TransactionLock { get; } = new object ();
+
 			public Entry (SQLiteConnectionString connectionString)
 			{
 				ConnectionString = connectionString;
@@ -1374,6 +1393,11 @@ namespace SQLite
 
 		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString)
 		{
+			return GetConnectionAndTransactionLock (connectionString, out var _);
+		}
+
+		public SQLiteConnectionWithLock GetConnectionAndTransactionLock (SQLiteConnectionString connectionString, out object transactionLock)
+		{
 			var key = connectionString.UniqueKey;
 			Entry entry;
 			lock (_entriesLock) {
@@ -1382,6 +1406,7 @@ namespace SQLite
 					_entries[key] = entry;
 				}
 			}
+			transactionLock = entry.TransactionLock;
 			return entry.Connect ();
 		}
 

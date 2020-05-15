@@ -897,6 +897,22 @@ namespace SQLite.Tests
 			conn.CloseAsync ().Wait ();
 		}
 
+		[Test]
+		public async Task Issue881 ()
+		{
+			var connection = GetConnection ();
 
+			var t1 = Task.Run (async () =>
+				 await connection.RunInTransactionAsync (db => Thread.Sleep (TimeSpan.FromSeconds (0.2))));
+
+			var t2 = Task.Run (async () =>
+			{
+				Thread.Sleep (TimeSpan.FromSeconds (0.1));
+				await connection.RunInTransactionAsync (db => Thread.Sleep (TimeSpan.FromSeconds (0.1)));
+			}
+			);
+
+			await Task.WhenAll (t1, t2);
+		}
 	}
 }
