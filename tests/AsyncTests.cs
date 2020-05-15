@@ -83,38 +83,45 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void StressAsync ()
+		public async Task BusyTime ()
 		{
-			string path = null;
-			var globalConn = GetConnection (ref path);
-			
-			globalConn.CreateTableAsync<Customer> ().Wait ();
-			
-			var threadCount = 0;
-			var doneEvent = new AutoResetEvent (false);
+			await GetConnection ().CreateTableAsync<Customer> ();
+
+			var defaultBusyTime = GetConnection ().GetBusyTimeout ();
+			Assert.True (defaultBusyTime > TimeSpan.FromMilliseconds (999));
+
+			await GetConnection ().SetBusyTimeoutAsync (TimeSpan.FromSeconds (10));
+			var newBusyTime = GetConnection ().GetBusyTimeout ();
+			Assert.True (newBusyTime > TimeSpan.FromMilliseconds (9999));
+		}
+
+		[Test]
+		public async Task StressAsync ()
+		{
+			await GetConnection ().CreateTableAsync<Customer> ();
+
+			await GetConnection ().SetBusyTimeoutAsync (TimeSpan.FromSeconds (1));
+
 			var n = 500;
 			var errors = new List<string> ();
+			var tasks = new List<Task> ();
 			for (var i = 0; i < n; i++) {
 				var ii = i;
 
-#if NETFX_CORE
-                Task.Run (
-#else
-				var th = new Thread ((ThreadStart)
-#endif
-                delegate {
+                tasks.Add (Task.Run (async () => {
 					try {
 						var conn = GetConnection ();
 						var obj = new Customer {
 							FirstName = ii.ToString (),
 						};
-						conn.InsertAsync (obj).Wait ();
+						await conn.InsertAsync (obj).ConfigureAwait (false);
 						if (obj.Id == 0) {
 							lock (errors) {
 								errors.Add ("Bad Id");
 							}
 						}
-						var obj2 = (from c in conn.Table<Customer> () where c.Id == obj.Id select c).ToListAsync ().Result.FirstOrDefault();
+						var query = await (from c in conn.Table<Customer> () where c.Id == obj.Id select c).ToListAsync ().ConfigureAwait (false);
+						var obj2 = query.FirstOrDefault();
 						if (obj2 == null) {
 							lock (errors) {
 								errors.Add ("Failed query");
@@ -123,28 +130,21 @@ namespace SQLite.Tests
 					}
 					catch (Exception ex) {
 						lock (errors) {
-							errors.Add (ex.Message);
+							errors.Add ($"[{ii}] {ex}");
 						}
 					}
-					threadCount++;
-					if (threadCount == n) {
-						doneEvent.Set();
-					}
-				});
-
-#if !NETFX_CORE
-				th.Start ();
-#endif
+				}));
 			}
-			doneEvent.WaitOne ();
+
+			await Task.WhenAll (tasks.ToArray ());
 			
-			var count = globalConn.Table<Customer> ().CountAsync ().Result;
+			var count = await GetConnection ().Table<Customer> ().CountAsync ();
 
 			foreach (var e in errors) {
 				Console.WriteLine ("ERROR " + e);
 			}
 			
-			Assert.AreEqual (0, errors.Count);
+			Assert.AreEqual (0, errors.Count, string.Join (", ", errors));
 			Assert.AreEqual (n, count);			
 		}
 

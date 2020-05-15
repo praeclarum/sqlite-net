@@ -1339,7 +1339,7 @@ namespace SQLite
 	{
 		class Entry
 		{
-			WeakReference<SQLiteConnectionWithLock> connection;
+			public SQLiteConnectionWithLock Connection { get; private set; }
 
 			public SQLiteConnectionString ConnectionString { get; }
 
@@ -1348,32 +1348,21 @@ namespace SQLite
 			public Entry (SQLiteConnectionString connectionString)
 			{
 				ConnectionString = connectionString;
-			}
+				Connection = new SQLiteConnectionWithLock (ConnectionString);
 
-			public SQLiteConnectionWithLock Connect ()
-			{
-				SQLiteConnectionWithLock c = null;
-				var wc = connection;
-				if (wc == null || !wc.TryGetTarget (out c)) {
-					c = new SQLiteConnectionWithLock (ConnectionString);
-
-					// If the database is FullMutex, then we don't need to bother locking
-					if (ConnectionString.OpenFlags.HasFlag (SQLiteOpenFlags.FullMutex)) {
-						c.SkipLock = true;
-					}
-
-					connection = new WeakReference<SQLiteConnectionWithLock> (c);
+				// If the database is FullMutex, then we don't need to bother locking
+				if (ConnectionString.OpenFlags.HasFlag (SQLiteOpenFlags.FullMutex)) {
+					Connection.SkipLock = true;
 				}
-				return c;
 			}
 
 			public void Close ()
 			{
-				var wc = connection;
-				if (wc != null && wc.TryGetTarget (out var c)) {
-					c.Close ();
+				var wc = Connection;
+				Connection = null;
+				if (wc != null) {
+					wc.Close ();
 				}
-				connection = null;
 			}
 		}
 
@@ -1402,12 +1391,14 @@ namespace SQLite
 			Entry entry;
 			lock (_entriesLock) {
 				if (!_entries.TryGetValue (key, out entry)) {
+					// The opens the database while we're locked
+					// This is to ensure another thread doesn't get an unopened database
 					entry = new Entry (connectionString);
 					_entries[key] = entry;
 				}
+				transactionLock = entry.TransactionLock;
+				return entry.Connection;
 			}
-			transactionLock = entry.TransactionLock;
-			return entry.Connect ();
 		}
 
 		public void CloseConnection (SQLiteConnectionString connectionString)

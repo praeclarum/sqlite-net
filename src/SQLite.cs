@@ -318,7 +318,7 @@ namespace SQLite
 			DateTimeStringFormat = connectionString.DateTimeStringFormat;
 			DateTimeStyle = connectionString.DateTimeStyle;
 
-			BusyTimeout = TimeSpan.FromSeconds (0.1);
+			BusyTimeout = TimeSpan.FromSeconds (1.0);
 			Tracer = line => Debug.WriteLine (line);
 
 			connectionString.PreKeyAction?.Invoke (this);
