@@ -337,7 +337,7 @@ namespace SQLite
 		/// <summary>
 		/// Enables the write ahead logging. WAL is significantly faster in most scenarios
 		/// by providing better concurrency and better disk IO performance than the normal
-		/// jounral mode. You only need to call this function once in the lifetime of the database.
+		/// journal mode. You only need to call this function once in the lifetime of the database.
 		/// </summary>
 		public void EnableWriteAheadLogging()
 		{
