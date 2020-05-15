@@ -128,7 +128,7 @@ namespace SQLite.Tests
 		{
 			
 			await connection.SetBusyTimeoutAsync(TimeSpan.FromMilliseconds(40)); // here we will surely meet the timeout
-			connection.EnforceBusyTimeout = true;
+			connection.GetConnection().EnforceBusyTimeout = true;
 			var t1 = new Thread(new ThreadStart(WorkerJob));
 			t1.Start();
 			// wait until the thread has obtained the lock to the session object

@@ -117,15 +117,6 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// if true the BusyTimeout will be used also as a timeout for the Lock() requests when trying to obtain exclusive access to the inner SqliteConnection
-		/// otherwise, we will wait forever until a lock is obtained (or until we get a database Busy Sqlite error message - if we get any -)
-		/// </summary>
-		public bool EnforceBusyTimeout {
-			get => GetConnection ().EnforceBusyTimeout;
-			set => GetConnection ().EnforceBusyTimeout = value;
-		}
-
-		/// <summary>
 		/// Sets the amount of time to wait for a table to become unlocked.
 		/// </summary>
 		public Task SetBusyTimeoutAsync (TimeSpan value)
