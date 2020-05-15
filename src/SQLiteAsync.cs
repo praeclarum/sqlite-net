@@ -117,6 +117,15 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// if true the BusyTimeout will be used also as a timeout for the Lock() requests when trying to obtain exclusive access to the inner SqliteConnection
+		/// otherwise, we will wait forever until a lock is obtained (or until we get a database Busy Sqlite error message - if we get any -)
+		/// </summary>
+		public bool EnforceBusyTimeout {
+			get => GetConnection ().EnforceBusyTimeout;
+			set => GetConnection ().EnforceBusyTimeout = value;
+		}
+
+		/// <summary>
 		/// Sets the amount of time to wait for a table to become unlocked.
 		/// </summary>
 		public Task SetBusyTimeoutAsync (TimeSpan value)
@@ -1341,13 +1350,6 @@ namespace SQLite
 				var wc = connection;
 				if (wc == null || !wc.TryGetTarget (out c)) {
 					c = new SQLiteConnectionWithLock (ConnectionString);
-
-					// *** If the database is FullMutex, then we don't need to bother locking ***
-					// THE ABOVE LINE IS WRONG!
-					// sqlite natively does JUST FILE LEVEL LOCKING: it is totally unaware and incapable of handling 
-					// the async/await model for which THE SAME THREAD OWNING THE FILE LOCK jumps randomly around executing pieces of different uncorrelated tasks
-					// YOU *** NEED *** A LOCKING MECHANISM THAT WORKS AMONG ASYNC TASKS
-
 					connection = new WeakReference<SQLiteConnectionWithLock> (c);
 				}
 				return c;
@@ -1434,6 +1436,25 @@ namespace SQLite
 		{ }
 		internal SQLiteConnectionWithLock (SQLiteConnectionString ConnectionString) : base (new SQLiteConnection (ConnectionString))
 		{ }
+
+		/// <summary>
+		/// if set the database BusyTimeout setting will be used also as a timeout for acquiring access to the sessions
+		/// if not set calls to Lock() and LockAsync will wait forever unless the database itself will signal a "Busy" error
+		/// </summary>
+		public bool EnforceBusyTimeout { get; set; }
+		/// <summary>
+		/// overrridden to make it equal to the database Busy Timeout (it makes absolutely no sense to different values for them)
+		/// </summary>
+		public override TimeSpan? DefaultTimeout {
+			get 
+			{
+				if (EnforceBusyTimeout)
+					return BusyTimeout;
+				else
+					return null;
+			} 
+			set => throw new Exception ("SQLiteConnectionWithLock.DefaultTimeout is supposed can be changed only by indirectly calling SetBusyTimeout");
+		}
 
 		// these properties and methods of SqliteConnection can be safely called from mulitple threads without needing any locking
 		// so I make them directly accessible (no Lock() calls 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualBasic.CompilerServices;
+using Nito.AsyncEx;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -15,11 +16,10 @@ namespace SQLite.Tests
 	///  before adopting Nito.AsyncEx locking library (which correctly handlers the await/async paradigm)
 	/// </summary>
 	[TestFixture]
-    public class AsyncConcurrencyTestWithThreads
-    {
-		string DbFilePath;
-		SQLiteAsyncConnection connection;
-		
+	public class AsyncConcurrencyTestWithThreads
+	{
+		private string DbFilePath;
+		private SQLiteAsyncConnection connection;
 
 		[OneTimeSetUp]
 		public void OneTimeSetup()
@@ -33,25 +33,16 @@ namespace SQLite.Tests
 		{
 			await connection?.CloseAsync();
 			if (File.Exists(DbFilePath))
-			{
-				try
-				{
-					File.Delete(DbFilePath);
-				}
-				catch (System.IO.IOException)
-				{
-					// file still is locked
-				}
-			}
-		}
+				File.Delete(DbFilePath);
+     	}
 
-		private void WorkerJob()
+		public  void WorkerJob()
 		{
 			Task t = connection.RunInTransactionAsync(
 					syncConn =>
 					{
-						// just pretend we are doing something time consuming using syncConn
-						Thread.Sleep(2000);
+					// just pretend we are doing something time consuming using syncConn
+					Thread.Sleep(2000);
 					}
 				);
 			t.ConfigureAwait(false);
@@ -59,13 +50,19 @@ namespace SQLite.Tests
 		}
 
 
+		/// <summary>
+		/// in this test we are checking that all tasks, running for multiple parallel threads will obtain 
+		/// access in turn to the database connection without ever having the 
+		/// "Cannot begin a transaction while already in a transaction." 
+		/// exception being raised.
+		/// </summary>
 		[Test]
-		public void ConcurrentRunInTransactionTest()
+		public async Task WithoutBusyTimeout()
 		{
-			const int WORKERSCOUNT = 20;
+			const int WORKERSCOUNT = 5;
+			await connection.SetBusyTimeoutAsync(TimeSpan.FromDays(10)); // just to be sure we don't meet the wait timeout before jobs end their transaction
 
 			var workers = new List<Thread>();
-
 			for (int i = 0; i < WORKERSCOUNT; i++)
 				workers.Add(new Thread(new ThreadStart(WorkerJob)));
 			// launch all background workers
@@ -75,7 +72,82 @@ namespace SQLite.Tests
 			foreach (var t in workers)
 				t.Join();
 		}
-
-	
 	}
+
+
+	/// <summary>
+	///  Very similar to former test in its strucure, but here we are testing that the "BusyTimeout" is taken in consideration
+	///  also when trying to acquire access to the SQLiteConnection wrapped inside a SqliteAsyncConnection, not just 
+	///  when trying to access the low-level database file
+	/// </summary>
+	[TestFixture]
+	public class BusyTimeoutWithThreads
+	{
+		private string DbFilePath;
+		private SQLiteAsyncConnection connection;
+
+		[OneTimeSetUp]
+		public void OneTimeSetup()
+		{
+			DbFilePath = Path.GetTempFileName();
+			connection = new SQLiteAsyncConnection(DbFilePath);
+		}
+
+		[OneTimeTearDown]
+		public async Task OneTimeTearDown()
+		{
+			await connection?.CloseAsync();
+			if (File.Exists(DbFilePath))
+				File.Delete(DbFilePath);
+		}
+
+		AsyncManualResetEvent ThreadHasBegunTransaction = new AsyncManualResetEvent();
+		public void WorkerJob()
+		{
+			Task t = connection.RunInTransactionAsync(
+					syncConn =>
+					{
+						ThreadHasBegunTransaction.Set();
+						// just pretend we are doing something time consuming using syncConn
+						Thread.Sleep(2000);
+					}
+				);
+			t.ConfigureAwait(false);
+			t.Wait();
+		}
+
+
+		/// <summary>
+		/// in this test we are checking that all tasks, running for multiple parallel threads will obtain 
+		/// access in turn to the database connection without ever having the 
+		/// "Cannot begin a transaction while already in a transaction." 
+		/// exception being raised.
+		/// </summary>
+		[Test]
+		public async Task BusyTimeoutTest()
+		{
+			
+			await connection.SetBusyTimeoutAsync(TimeSpan.FromMilliseconds(40)); // here we will surely meet the timeout
+			connection.EnforceBusyTimeout = true;
+			var t1 = new Thread(new ThreadStart(WorkerJob));
+			t1.Start();
+			// wait until the thread has obtained the lock to the session object
+			await ThreadHasBegunTransaction.WaitAsync();
+
+			Assert.ThrowsAsync<SQLite.LockTimeout>(async () =>
+		    {
+				// let's see what happens while I try to obtain a lock to the session while it is already locked
+				await connection.RunInTransactionAsync(
+				  syncConn =>
+				  {
+
+				  });
+		    });
+			
+			
+			t1.Join();
+		}
+	}
+
+
 }

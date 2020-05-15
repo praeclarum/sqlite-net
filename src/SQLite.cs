@@ -4513,19 +4513,50 @@ namespace SQLite
 	}
 
 
+
+	[Serializable]
+	public class LockTimeout : Exception
+	{
+		/// <summary>
+		/// the type of the object we were trying to access
+		/// </summary>
+		public Type WaitedObjectType { get; }
+		/// <summary>
+		/// the amount of time waited for before giving up
+		/// </summary>
+		public TimeSpan WaitTime { get; }
+		public LockTimeout (Type T,TimeSpan WaitTime) : base ($"Timeout Occourred after having waited for { WaitTime.TotalSeconds} seconds for a resource of Type {T.FullName}")
+		{
+			this.WaitTime = WaitTime;
+			this.WaitedObjectType = WaitedObjectType;
+		}
+		protected LockTimeout (
+		  System.Runtime.Serialization.SerializationInfo info,
+		  System.Runtime.Serialization.StreamingContext context) : base (info, context) { }
+	}
+
 	/// <summary>
 	/// "Wraps" the AsyncLock locking mechanism (from Nito.AsincEx) around an instance of an object of type T.
 	///  To obtain access to the actual instance you need to call the either the "Lock()" (for synchronous code) or "AsyncLock()" (for async code) methods 
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	public class ObjectWithLock<T> :IDisposable where T: class
+	public class ObjectWithLock<T> : IDisposable where T : class
 	{
 		protected readonly T Instance;
-		protected readonly AsyncLock TheLock = new AsyncLock();
+		protected readonly AsyncLock TheLock = new AsyncLock ();
+
+
+
 		public interface IObjectAccess : IDisposable
 		{
 			T Obj { get; }
 		}
+
+		/// <summary>
+		/// the parameterless versions of Lock() and AsyncLock() by default will wait for an indefinite amount of time.
+		/// this behaviour changes if DefaultTimeout is not null: in such case they will wait for the specified timespan duration
+		/// </summary>
+		public virtual TimeSpan? DefaultTimeout { get; set; } = null;
 
 		// this one can be used only if T has a parameterlessconstructor
 		public ObjectWithLock()
@@ -4541,15 +4572,54 @@ namespace SQLite
 			this.Instance = InstanceToBeWrapped ?? throw new ArgumentNullException(nameof(InstanceToBeWrapped));
 		}
 
-		public IObjectAccess Lock() 
+
+
+		public IObjectAccess Lock()
 		{
-			return new ObjectAccess(TheLock.Lock(), Instance);
+			if (DefaultTimeout == null) 
+				return new ObjectAccess (TheLock.Lock (), Instance);
+			else
+				return Lock (DefaultTimeout.Value);
 		}
 
-		public async Task<IObjectAccess> AsyncLock()
+		private IObjectAccess Lock (TimeSpan Timeout)
 		{
-			return new ObjectAccess(await TheLock.LockAsync(), Instance);
+			try 
+			{
+				var cts = new CancellationTokenSource (Timeout);
+				return new ObjectAccess (TheLock.Lock (cts.Token), Instance);
+			}
+			catch (TaskCanceledException)
+			{
+				throw new LockTimeout(typeof(T),Timeout);
+			}
 		}
+
+		public IObjectAccess Lock (int TimeOutMilliSecs) => Lock (TimeSpan.FromMilliseconds (TimeOutMilliSecs));
+
+
+		public async Task<IObjectAccess> AsyncLock ()
+		{
+			if (DefaultTimeout == null)
+				return new ObjectAccess (await TheLock.LockAsync (), Instance);
+			else
+				return await LockAsync (DefaultTimeout.Value);
+		}
+
+		private async Task<IObjectAccess> LockAsync (TimeSpan Timeout)
+		{
+			try {
+				var cts = new CancellationTokenSource (Timeout);
+				return new ObjectAccess (await TheLock.LockAsync (cts.Token), Instance);
+			}
+			catch (TaskCanceledException) {
+				throw new LockTimeout (typeof(T),Timeout);
+			}
+		}
+
+		public Task<IObjectAccess> AsyncLock (int TimeOutMilliSecs) => LockAsync (TimeSpan.FromMilliseconds (TimeOutMilliSecs));
+		
+
 
 		void IDisposable.Dispose()
 		{
