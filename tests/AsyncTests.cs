@@ -641,9 +641,9 @@ namespace SQLite.Tests
 			//delete 
 			conn.DeleteAllAsync<Customer>().Wait();
 			// check...
-			var nodatatask = conn.ExecuteScalarAsync<int> ("select Max(Id) from sqlite_master where type='table' and name='customer'");
+			var nodatatask = conn.ExecuteScalarAsync<int> ("select Max(Id) from customer where FirstName='hfiueyf8374fhi'");
 			task.Wait ();
-			Assert.AreNotEqual (0, nodatatask.Result);
+			Assert.AreEqual (0, nodatatask.Result);
 		}
 
 		[Test]
@@ -753,28 +753,29 @@ namespace SQLite.Tests
 			Customer customer1 = this.CreateCustomer(string.Empty, "country");
 			conn.InsertAsync (customer1).Wait ();
 			Customer customer2 = this.CreateCustomer("address");
-			conn.InsertAsync(customer1).Wait();
+			conn.InsertAsync(customer2).Wait();
+
 			// query...
 			var query = conn.Table<Customer>();
-			var task = query.ToListAsync();
-			task.Wait ();
-			var items = task.Result;
 
 			// check...
-			var loaded = items.Where(v => v.Id == customer1.Id).First();
+			var loaded = query.Where(v => v.Id == customer1.Id).ToListAsync().Result.First();
 			Assert.AreEqual(customer1.Email, loaded.Email);
 
 			// check...
-			var emptyaddress = items.Where(v => string.IsNullOrEmpty(v.Address)).First();
+			var emptyaddress = query.Where(v => string.IsNullOrEmpty(v.Address)).ToListAsync ().Result.First ();
+			Assert.True (string.IsNullOrEmpty (emptyaddress.Address));
 			Assert.AreEqual(customer1.Email, emptyaddress.Email);
 
 			// check...
-			var nullcountry = items.Where (v => string.IsNullOrEmpty (v.Country)).First ();
-			Assert.AreEqual (customer2.Email, emptyaddress.Email);
+			var nullcountry = query.Where (v => string.IsNullOrEmpty (v.Country)).ToListAsync ().Result.First ();
+			Assert.True (string.IsNullOrEmpty (nullcountry.Country));
+			Assert.AreEqual (customer2.Email, nullcountry.Email);
 
 			// check...
-			var isnotnullorempty = items.Where (v => !string.IsNullOrEmpty (v.Country)).First ();
-			Assert.AreEqual (customer1.Email, emptyaddress.Email);
+			var isnotnullorempty = query.Where (v => !string.IsNullOrEmpty (v.Country)).ToListAsync ().Result.First ();
+			Assert.True (!string.IsNullOrEmpty (isnotnullorempty.Country));
+			Assert.AreEqual (customer1.Email, isnotnullorempty.Email);
 		}
 
 		[Test]
@@ -956,9 +957,9 @@ namespace SQLite.Tests
 
 			var r2 = conn.CreateTableAsync<Customer> ().Result;
 
-			Assert.AreEqual (CreateTableResult.Migrated, r1);
+			Assert.AreEqual (CreateTableResult.Migrated, r2);
 
-			Assert.AreEqual (7, trace.Count);
+			Assert.AreEqual (4 * 3 + 1, trace.Count);
 		}
 
 		[Test]
