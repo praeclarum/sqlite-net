@@ -2813,7 +2813,7 @@ namespace SQLite
 				}
 			}
 
-			throw SQLiteException.New (r, r.ToString ());
+			throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
 		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> ()
@@ -3219,7 +3219,7 @@ namespace SQLite
 			}
 			else {
 				SQLite3.Reset (Statement);
-				throw SQLiteException.New (r, r.ToString ());
+				throw SQLiteException.New (r, SQLite3.GetErrmsg (Connection.Handle));
 			}
 		}
 
