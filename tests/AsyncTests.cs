@@ -474,7 +474,7 @@ namespace SQLite.Tests
 			}
 
 			// return the third one...
-			var task = conn.SingleQueryAsync<string> ("select Email from customer where id=?", customers[2].Id);
+			var task = conn.QueryScalarsAsync<string> ("select Email from customer where id=?", customers[2].Id);
 			task.Wait ();
 			var loaded = task.Result;
 
@@ -483,7 +483,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (customers[2].Email, loaded[0]);
 
 			// return the third one...
-			var inttest = conn.SingleQueryAsync<int> ("select Id from customer where id=?", customers[2].Id);
+			var inttest = conn.QueryScalarsAsync<int> ("select Id from customer where id=?", customers[2].Id);
 			task.Wait ();
 			var intloaded = inttest.Result;
 
@@ -492,7 +492,7 @@ namespace SQLite.Tests
 			Assert.AreEqual (customers[2].Id, intloaded[0]);
 
 			// return string list
-			var listtask = conn.SingleQueryAsync<string> ("select Email from customer order by Id");
+			var listtask = conn.QueryScalarsAsync<string> ("select Email from customer order by Id");
 			listtask.Wait ();
 			var listloaded = listtask.Result;
 
@@ -501,8 +501,8 @@ namespace SQLite.Tests
 			Assert.AreEqual (customers[2].Email, listloaded[2]);
 
 			// select columns
-			var columnstask= conn.SingleQueryAsync<string> ("select * from customer");
-			ExceptionAssert.Throws<AggregateException> (() => columnstask.Wait ());
+			var columnstask= conn.QueryScalarsAsync<string> ("select FirstName, LastName from customer");
+			Assert.AreEqual (5, columnstask.Result.Count);
 		}
 		[Test]
 		public void TestTableAsync ()

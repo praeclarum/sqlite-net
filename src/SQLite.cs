@@ -970,11 +970,27 @@ namespace SQLite
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<T> ();
 		}
-		public List<T> SingleQuery<T> (string query, params object[] args)
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns the first column of each row of the result.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for the first column of each row returned by the query.
+		/// </returns>
+		public List<T> QueryScalars<T> (string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			return cmd.ExcuteSingleQuery<T> ().ToList ();
+			return cmd.ExecuteQueryScalars<T> ().ToList ();
 		}
+
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -2849,31 +2865,6 @@ namespace SQLite
 		{
 			// Can be overridden.
 		}
-		public IEnumerable<T> ExcuteSingleQuery<T> ()
-		{
-			if (_conn.Trace) {
-				_conn.Tracer?.Invoke ("Executing Query: " + this);
-			}
-			var stmt = Prepare ();
-			try {
-				if (SQLite3.ColumnCount (stmt) != 1) {
-					throw new NotSupportedException ("Column count error");
-				}
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var colType = SQLite3.ColumnType (stmt, 0);
-					var val = ReadCol (stmt, 0, colType, typeof (T));
-					if (val == null) {
-						yield return default (T);
-					}
-					else {
-						yield return (T)val;
-					}
-				}
-			}
-			finally {
-				Finalize (stmt);
-			}
-		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
@@ -2938,6 +2929,32 @@ namespace SQLite
 			}
 
 			return val;
+		}
+
+		public IEnumerable<T> ExecuteQueryScalars<T> ()
+		{
+			if (_conn.Trace) {
+				_conn.Tracer?.Invoke ("Executing Query: " + this);
+			}
+			var stmt = Prepare ();
+			try {
+				if (SQLite3.ColumnCount (stmt) < 1) {
+					throw new InvalidOperationException ("QueryScalars should return at least one column");
+				}
+				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					var colType = SQLite3.ColumnType (stmt, 0);
+					var val = ReadCol (stmt, 0, colType, typeof (T));
+					if (val == null) {
+						yield return default (T);
+					}
+					else {
+						yield return (T)val;
+					}
+				}
+			}
+			finally {
+				Finalize (stmt);
+			}
 		}
 
 		public void Bind (string name, object val)

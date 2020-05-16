@@ -1070,17 +1070,18 @@ namespace SQLite
 		/// Arguments to substitute for the occurences of '?' in the query.
 		/// </param>
 		/// <returns>
-		/// An enumerable with one result for each row returned by the query.
+		/// A list with one result for each row returned by the query.
 		/// </returns>
 		public Task<List<T>> QueryAsync<T> (string query, params object[] args)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.Query<T> (query, args));
 		}
+
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
-		/// It returns single row of the result 
+		/// It returns the first column of each row of the result.
 		/// </summary>
 		/// <param name="query">
 		/// The fully escaped SQL.
@@ -1089,12 +1090,13 @@ namespace SQLite
 		/// Arguments to substitute for the occurences of '?' in the query.
 		/// </param>
 		/// <returns>
-		/// An enumerable with one result for single row returned by the query.
+		/// A list with one result for the first column of each row returned by the query.
 		/// </returns>
-		public Task<List<T>> SingleQueryAsync<T> (string query, params object[] args)
+		public Task<List<T>> QueryScalarsAsync<T> (string query, params object[] args)
 		{
-			return ReadAsync (conn => conn.SingleQuery<T> (query, args));
+			return ReadAsync (conn => conn.QueryScalars<T> (query, args));
 		}
+
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
