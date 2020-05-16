@@ -72,7 +72,6 @@ namespace SQLite.Tests
 		// (by test Nunit runners that allow it)
 		public class TestEnvironment : IDisposable
 		{
-			static Random rnd = new Random();
 			public string DatabaseFilePath { get; }
 			public SQLiteAsyncConnection Connection { get; }
 			public string ConnectionString { get; }
@@ -80,7 +79,7 @@ namespace SQLite.Tests
 			{
 				// each test gets its own database file named after the test itself.. and we include also a random number in the name
 				// so it is possible to run concurrently the same test on multiple threads (some task runners allow this "stress testing" execution mode
-				string DatabaseName = nameof(AsyncTests) + '_' + TestMethodName+ '_' + RandomIntStr() + ".db";
+				string DatabaseName = nameof(AsyncTests) + '_' + TestMethodName+ '_' + Guid.NewGuid() + ".db";
 #if NETFX_CORE
 				DatabaseFilePath = Path.Combine (Windows.Storage.ApplicationData.Current.LocalFolder.Path, DatabaseName);
 
@@ -92,8 +91,7 @@ namespace SQLite.Tests
 
 				Connection = new SQLiteAsyncConnection(ConnectionString);
 			}
-			private static string RandomIntStr() => rnd.Next(0, int.MaxValue).ToString() + rnd.Next(0, int.MaxValue).ToString();
-
+			
 			#region IDisposable Support
 			private bool alreadyDisposed = false; // To detect redundant calls
 
