@@ -32,7 +32,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
-using Nito.AsyncEx;
 using System.Threading.Tasks;
 
 
@@ -169,82 +168,106 @@ namespace SQLite
 
 	internal class TransactionDepthTracker
 	{
-		private AsyncLock Lock = new AsyncLock();
+
+		private object LockObject = new object ();
 		private int CurrentDepth = 0;
 
-		public int Value 
-		{ 
-			get
-			{
-				using (Lock.Lock()) return CurrentDepth;
+		public int Value {
+			get {
+				Monitor.Enter (LockObject);
+				try {
+					return CurrentDepth;
+				}
+				finally {
+					Monitor.Exit (LockObject);
+				}
 			}
-        }
+		}
 
 		// sets explicitly a new value and returns the previous value
-		public int SetDepth(int value)
+		public int SetDepth (int value)
 		{
-			using (Lock.Lock())
-			{
+			Monitor.Enter (LockObject);
+			try {
 				var result = CurrentDepth;
 				CurrentDepth = value;
 				return result;
+			}
+			finally {
+				Monitor.Exit (LockObject);
 			}
 		}
 
 		/// <summary>
 		/// returns true if previous value was zero. if it isn't zero, Depth remains unchanged
 		/// </summary>
-		public bool IncrementIfZero()
+		public bool IncrementIfZero ()
 		{
-			using (Lock.Lock())
-			{
+			Monitor.Enter (LockObject);
+			try {
 				if (CurrentDepth > 0)
 					return false;
 				CurrentDepth++;
 				return true;
 			}
-		}
-
-		// sets CurrentDepth to zero and returns the previous value it has overwritten
-		internal int Reset()
-		{
-			using (Lock.Lock())
-			{
-				var result = CurrentDepth;
-				CurrentDepth = 0;
-				return result;
+			finally {
+				Monitor.Exit (LockObject);
 			}
 		}
 
 		// sets CurrentDepth to zero and returns the previous value it has overwritten
-		internal int ResetAndExecuteIfWasNotZero(Action proc)
+		internal int Reset ()
 		{
-			using (Lock.Lock())
-			{
+			Monitor.Enter (LockObject);
+			try {
+				var result = CurrentDepth;
+				CurrentDepth = 0;
+				return result;
+			}
+			finally {
+				Monitor.Exit (LockObject);
+			}
+		}
+
+		// sets CurrentDepth to zero and returns the previous value it has overwritten
+		internal int ResetAndExecuteIfWasNotZero (Action proc)
+		{
+			Monitor.Enter (LockObject);
+			try {
 				var result = CurrentDepth;
 				CurrentDepth = 0;
 				if (result != 0)
-					proc();
+					proc ();
 				return result;
+			}
+			finally {
+				Monitor.Exit (LockObject);
 			}
 		}
 
-		internal int Increment()
+
+		internal int Increment ()
 		{
-			using (Lock.Lock())
-			{
+			Monitor.Enter (LockObject);
+			try {
 				CurrentDepth++;
 				return CurrentDepth;
 			}
+			finally {
+				Monitor.Exit (LockObject);
+			}
 		}
-		
-		internal int Decrement()
+
+		internal int Decrement ()
 		{
-			using (Lock.Lock())
-			{
-				if (CurrentDepth >0)
-				   CurrentDepth--;
+			Monitor.Enter (LockObject);
+			try {
+				if (CurrentDepth > 0)
+					CurrentDepth--;
 				return CurrentDepth;
+			}
+			finally {
+				Monitor.Exit (LockObject);
 			}
 		}
 
@@ -255,17 +278,19 @@ namespace SQLite
 		/// <param name="newval"></param>
 		/// <param name="proc"></param>
 		/// <returns></returns>
-		internal bool DecreaseToNewValueAndExecute(int newval, Action proc)
+		internal bool DecreaseToNewValueAndExecute (int newval, Action proc)
 		{
-			using (Lock.Lock())
-			{
-				if (0 <= newval && newval < CurrentDepth)
-				{
+			Monitor.Enter (LockObject);
+			try {
+				if (0 <= newval && newval < CurrentDepth) {
 					CurrentDepth = newval;
-					proc();
+					proc ();
 					return true;
 				}
 				else return false;
+			}
+			finally {
+				Monitor.Exit (LockObject);
 			}
 		}
 	}
@@ -4543,7 +4568,7 @@ namespace SQLite
 	public class ObjectWithLock<T> : IDisposable where T : class
 	{
 		protected readonly T Instance;
-		protected readonly AsyncLock TheLock = new AsyncLock ();
+		protected readonly object TheLock = new object ();
 
 
 
@@ -4572,54 +4597,20 @@ namespace SQLite
 			this.Instance = InstanceToBeWrapped ?? throw new ArgumentNullException(nameof(InstanceToBeWrapped));
 		}
 
-
-
 		public IObjectAccess Lock()
 		{
 			if (DefaultTimeout == null) 
-				return new ObjectAccess (TheLock.Lock (), Instance);
+				return new ObjectAccess (TheLock, Instance);
 			else
 				return Lock (DefaultTimeout.Value);
 		}
 
 		private IObjectAccess Lock (TimeSpan Timeout)
 		{
-			try 
-			{
-				var cts = new CancellationTokenSource (Timeout);
-				return new ObjectAccess (TheLock.Lock (cts.Token), Instance);
-			}
-			catch (TaskCanceledException)
-			{
-				throw new LockTimeout(typeof(T),Timeout);
-			}
+			return new ObjectAccess (TheLock, Instance,Timeout);
 		}
 
 		public IObjectAccess Lock (int TimeOutMilliSecs) => Lock (TimeSpan.FromMilliseconds (TimeOutMilliSecs));
-
-
-		public async Task<IObjectAccess> AsyncLock ()
-		{
-			if (DefaultTimeout == null)
-				return new ObjectAccess (await TheLock.LockAsync (), Instance);
-			else
-				return await LockAsync (DefaultTimeout.Value);
-		}
-
-		private async Task<IObjectAccess> LockAsync (TimeSpan Timeout)
-		{
-			try {
-				var cts = new CancellationTokenSource (Timeout);
-				return new ObjectAccess (await TheLock.LockAsync (cts.Token), Instance);
-			}
-			catch (TaskCanceledException) {
-				throw new LockTimeout (typeof(T),Timeout);
-			}
-		}
-
-		public Task<IObjectAccess> AsyncLock (int TimeOutMilliSecs) => LockAsync (TimeSpan.FromMilliseconds (TimeOutMilliSecs));
-		
-
 
 		void IDisposable.Dispose()
 		{
@@ -4629,21 +4620,56 @@ namespace SQLite
 
 		protected class ObjectAccess : IObjectAccess
 		{
-			private readonly IDisposable ObtainedLock;
-			private readonly T ObtainedObject;
+			private readonly object LockObject;
+			private readonly T ObjectToBeLocked;
+			private readonly bool LockSuccessful; // true if we didn't run into a timeout
 
-			public ObjectAccess(IDisposable obtainedLock, T obtainedObject)
+
+			public ObjectAccess(object LockObject, T obtainedObject)
 			{
-				ObtainedLock = obtainedLock;
-				ObtainedObject = obtainedObject;
+				this.LockObject = LockObject;
+				ObjectToBeLocked = obtainedObject;
+				Monitor.Enter (LockObject);
+				LockSuccessful = true;
 			}
 
-			T IObjectAccess.Obj => ObtainedObject;
+			public ObjectAccess (object LockObject, T obtainedObject,TimeSpan Timeout)
+			{
+				this.LockObject = LockObject;
+				ObjectToBeLocked = obtainedObject;
+				if (!Monitor.TryEnter (LockObject, Timeout)) {
+					LockSuccessful = false;
+					throw new LockTimeout (typeof (T), Timeout);
+				}
 
-			void IDisposable.Dispose() => ObtainedLock.Dispose();
+			}
+
+			T IObjectAccess.Obj => ObjectToBeLocked;
+
+			#region IDisposable Support
+			private bool AlreadyDisposed = false; // To detect redundant calls
+
+			protected virtual void Dispose()
+			{
+				if (AlreadyDisposed)
+					return;
+				AlreadyDisposed = true;
+				if (LockSuccessful) // don't try to release the lock if we haven't been able to obtain it
+				   Monitor.Exit(LockObject);
+			}
+
+			~ObjectAccess()
+			{
+			   Dispose (); 
+			}
+
+			void IDisposable.Dispose ()
+			{
+				
+				Dispose();
+				GC.SuppressFinalize(this);
+			}
+			#endregion
 		}
 	}
-
-
-
 }

@@ -26,7 +26,6 @@
     <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Nito.AsyncEx" Version="5.0.0" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>

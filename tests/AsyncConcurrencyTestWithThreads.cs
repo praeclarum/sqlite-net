@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualBasic.CompilerServices;
-using Nito.AsyncEx;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -101,7 +100,7 @@ namespace SQLite.Tests
 				File.Delete(DbFilePath);
 		}
 
-		AsyncManualResetEvent ThreadHasBegunTransaction = new AsyncManualResetEvent();
+		ManualResetEvent ThreadHasBegunTransaction = new ManualResetEvent(false);
 		public void WorkerJob()
 		{
 			Task t = connection.RunInTransactionAsync(
@@ -116,13 +115,6 @@ namespace SQLite.Tests
 			t.Wait();
 		}
 
-
-		/// <summary>
-		/// in this test we are checking that all tasks, running for multiple parallel threads will obtain 
-		/// access in turn to the database connection without ever having the 
-		/// "Cannot begin a transaction while already in a transaction." 
-		/// exception being raised.
-		/// </summary>
 		[Test]
 		public async Task BusyTimeoutTest()
 		{
@@ -132,7 +124,7 @@ namespace SQLite.Tests
 			var t1 = new Thread(new ThreadStart(WorkerJob));
 			t1.Start();
 			// wait until the thread has obtained the lock to the session object
-			await ThreadHasBegunTransaction.WaitAsync();
+			ThreadHasBegunTransaction.WaitOne();
 
 			Assert.ThrowsAsync<SQLite.LockTimeout>(async () =>
 		    {
