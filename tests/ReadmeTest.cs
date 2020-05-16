@@ -64,9 +64,8 @@ namespace SQLite.Tests
 		[Test]
 		public void Synchronous ()
 		{
-			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "SynchronousMyData.db");
-			File.Delete (databasePath);
-
+			var databasePath = Path.Combine (Path.GetTempPath(), "SynchronousMyData"+ Guid.NewGuid() +".db");
+			File.Delete(databasePath);
 			var db = new SQLiteConnection (databasePath);
 			try
 			{
@@ -100,7 +99,7 @@ namespace SQLite.Tests
 		public async Task Asynchronous()
 		{
 			// Get an absolute path to the database file
-			var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AsynchronousMyData.db");
+			var databasePath = Path.Combine(Path.GetTempPath(), "AsynchronousMyData" + Guid.NewGuid() + ".db");
 			File.Delete(databasePath);
 			var db = new SQLiteAsyncConnection(databasePath);
 			try
@@ -143,7 +142,7 @@ namespace SQLite.Tests
 		[Test]
 		public async Task Cipher()
 		{
-			var databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "CipherMyData.db");
+			var databasePath = Path.Combine(Path.GetTempPath(), "CipherMyData" + Guid.NewGuid() + ".db");
 			File.Delete(databasePath);
 
 			var options = new SQLiteConnectionString(databasePath, true, key: "password");
