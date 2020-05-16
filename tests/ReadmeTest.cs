@@ -64,7 +64,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Synchronous ()
 		{
-			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "MyData.db");
+			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "ReadmeTest_Synchronous.db");
 			File.Delete (databasePath);
 
 			var db = new SQLiteConnection (databasePath);
@@ -93,7 +93,7 @@ namespace SQLite.Tests
 			await Task.Delay (1).ConfigureAwait (false);
 
 			// Get an absolute path to the database file
-			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "MyData.db");
+			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "ReadmeTest_Asynchronous.db");
 			File.Delete (databasePath);
 
 			var db = new SQLiteAsyncConnection (databasePath);
