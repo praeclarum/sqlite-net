@@ -872,31 +872,31 @@ namespace SQLite
 		}
 
 		/// <summary>
-        ///     Creates a new SQLiteCommand given the command text with arguments. Place a "[@:]VVV"
-        ///     in the command text for each of the arguments.
-        /// </summary>
-        /// <param name="cmdText">
-        ///     The fully escaped SQL.
-        /// </param>
-        /// <param name="args">
-        ///     Arguments to substitute for the occurences of "[@:]VVV" in the command text.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="SQLiteCommand" />
-        /// </returns>
-        public SQLiteCommand CreateCommand(string cmdText, Dictionary<string, object> args)
-        {
-            if (!this._open)
-                throw SQLiteException.New(SQLite3.Result.Error, "Cannot create commands from unopened database");
+		/// Creates a new SQLiteCommand given the command text with named arguments. Place a "[@:$]VVV"
+		/// in the command text for each of the arguments. VVV represents an alphanumeric identifier.
+		/// For example, @name :name and $name can all be used in the query.
+		/// </summary>
+		/// <param name="cmdText">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of "[@:$]VVV" in the command text.
+		/// </param>
+		/// <returns>
+		/// A <see cref="SQLiteCommand" />
+		/// </returns>
+		public SQLiteCommand CreateCommand (string cmdText, Dictionary<string, object> args)
+		{
+			if (!_open)
+				throw SQLiteException.New (SQLite3.Result.Error, "Cannot create commands from unopened database");
 
-            SQLiteCommand cmd = NewCommand();
-            cmd.CommandText = cmdText;
-            foreach (var kv in args)
-            {
-                cmd.Bind(kv.Key, kv.Value);
-            }
-            return cmd;
-        }
+			SQLiteCommand cmd = NewCommand ();
+			cmd.CommandText = cmdText;
+			foreach (var kv in args) {
+				cmd.Bind (kv.Key, kv.Value);
+			}
+			return cmd;
+		}
 
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
