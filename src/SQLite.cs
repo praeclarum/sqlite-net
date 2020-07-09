@@ -454,7 +454,7 @@ namespace SQLite
 			lock (_mappings) {
 				if (_mappings.TryGetValue (key, out map)) {
 					if (createFlags != CreateFlags.None && createFlags != map.CreateFlags) {
-						map = new TableMapping (type, createFlags);
+						map = new TableMappingFromAttributes (type, createFlags);
 						_mappings[key] = map;
 					}
 				}
@@ -3839,7 +3839,7 @@ namespace SQLite
 
 		Expression _selector;
 
-		TableQuery (SQLiteConnection conn, TableMapping table)
+		public TableQuery (SQLiteConnection conn, TableMapping table)
 		{
 			Connection = conn;
 			Table = table;
