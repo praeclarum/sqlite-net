@@ -1052,6 +1052,7 @@ namespace SQLite
 			return cmd.ExecuteQuery<T> ();
 		}
 
+
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -1102,6 +1103,33 @@ namespace SQLite
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. 
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public IEnumerable<T> DeferredQuery<T> (TableMapping map, string query, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteDeferredQuery<T> (map);
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
 		/// It returns each row of the result using the specified mapping. This function is
 		/// only used by libraries in order to query the database via introspection. It is
 		/// normally not used.
@@ -1123,6 +1151,30 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<object> (map);
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. 
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// </returns>
+		public List<T> Query<T> (TableMapping map, string query, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteQuery<T> (map);
 		}
 
 		/// <summary>
@@ -1167,6 +1219,19 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Returns a queryable interface to the table represented by the given type.
+		/// </summary>
+		/// <param name="map">The table mapping to use.</param>
+		/// <returns>
+		/// A queryable object that is able to translate Where, OrderBy, and Take
+		/// queries into native SQL.
+		/// </returns>
+		public TableQuery<T> Table<T> (TableMapping map) where T : new()
+		{
+			return new TableQuery<T> (this, map);
+		}
+
+		/// <summary>
 		/// Attempts to retrieve an object with the given primary key from the table
 		/// associated with the specified type. Use of this method requires that
 		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
@@ -1204,25 +1269,25 @@ namespace SQLite
 			return Query (map, map.GetByPrimaryKeySql, pk).First ();
 		}
 
-		///// <summary>
-		///// Attempts to retrieve an object with the given primary key from the table
-		///// associated with the specified type. Use of this method requires that
-		///// the given type have a designated PrimaryKey.
-		///// </summary>
-		///// <param name="map">
-		///// The TableMapping used to identify the table.
-		///// </param>
-		///// <param name="pk">
-		///// The primary key.
-		///// </param> 
-		///// <returns>
-		///// The object with the given primary key. Throws a not found exception
-		///// if the object is not found.
-		///// </returns>
-		//public T Get<T> (TableMapping map, object pk) where T : new()
-		//{
-		//	return Query<T> (map, map.GetByPrimaryKeySql, pk).First ();
-		//}
+		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param> 
+		/// <returns>
+		/// The object with the given primary key. Throws a not found exception
+		/// if the object is not found.
+		/// </returns>
+		public T Get<T> (TableMapping map, object pk) where T : new()
+		{
+			return Query<T> (map, map.GetByPrimaryKeySql, pk).First ();
+		}
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the predicate from the table
@@ -1238,6 +1303,25 @@ namespace SQLite
 		public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
 		{
 			return Table<T> ().Where (predicate).First ();
+		}
+
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the predicate from the table
+		/// associated with the specified type.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="predicate">
+		/// A predicate for which object to find.
+		/// </param> 
+		/// <returns>
+		/// The object that matches the given predicate. Throws a not found exception
+		/// if the object is not found.
+		/// </returns>
+		public T Get<T> (TableMapping map, Expression<Func<T, bool>> predicate) where T : new()
+		{
+			return Table<T> (map).Where (predicate).First ();
 		}
 
 		/// <summary>
@@ -1279,6 +1363,26 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param> 
+		/// <returns>
+		/// The object with the given primary key or null
+		/// if the object is not found.
+		/// </returns>
+		public T Find<T> (TableMapping map, object pk) where T : new()
+		{
+			return Query<T> (map, map.GetByPrimaryKeySql, pk).FirstOrDefault ();
+		}
+
+		/// <summary>
 		/// Attempts to retrieve the first object that matches the predicate from the table
 		/// associated with the specified type.
 		/// </summary>
@@ -1294,24 +1398,24 @@ namespace SQLite
 			return Table<T> ().Where (predicate).FirstOrDefault ();
 		}
 
-		///// <summary>
-		///// Attempts to retrieve the first object that matches the predicate from the table
-		///// associated with the specified type.
-		///// </summary>
-		///// <param name="map">
-		///// The TableMapping used to identify the table.
-		///// </param>
-		///// <param name="predicate">
-		///// A predicate for which object to find.
-		///// </param> 
-		///// <returns>
-		///// The object that matches the given predicate or null
-		///// if the object is not found.
-		///// </returns>
-		//public T Find<T> (TableMapping map, Expression<Func<T, bool>> predicate) where T : new()
-		//{
-		//	return Table<T> (map).Where (predicate).FirstOrDefault ();
-		//}
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the predicate from the table
+		/// associated with the specified type.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="predicate">
+		/// A predicate for which object to find.
+		/// </param> 
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public T Find<T> (TableMapping map, Expression<Func<T, bool>> predicate) where T : new()
+		{
+			return Table<T> (map).Where (predicate).FirstOrDefault ();
+		}
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the query from the table
@@ -1332,27 +1436,27 @@ namespace SQLite
 			return Query<T> (query, args).FirstOrDefault ();
 		}
 
-		///// <summary>
-		///// Attempts to retrieve the first object that matches the query from the table
-		///// associated with the specified type.
-		///// </summary>
-		///// <param name="map">
-		///// The TableMapping used to identify the table.
-		///// </param>
-		///// <param name="query">
-		///// The fully escaped SQL.
-		///// </param>
-		///// <param name="args">
-		///// Arguments to substitute for the occurences of '?' in the query.
-		///// </param>
-		///// <returns>
-		///// The object that matches the given predicate or null
-		///// if the object is not found.
-		///// </returns>
-		//public T FindWithQuery<T> (TableMapping map, string query, params object[] args) where T : new()
-		//{
-		//	return Query<T> (map, query, args).FirstOrDefault ();
-		//}
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public T FindWithQuery<T> (TableMapping map, string query, params object[] args) where T : new()
+		{
+			return Query<T> (map, query, args).FirstOrDefault ();
+		}
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the query from the table
