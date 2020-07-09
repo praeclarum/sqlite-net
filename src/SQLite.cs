@@ -2940,13 +2940,14 @@ namespace SQLite
 	public class TableMappingBuilder<T>
 	{
 		string _tableName;
-		PropertyInfo _primaryKey;
+
+		readonly List<string> _primaryKeys = new List<string> ();
 		bool _withoutRowId;
 
-		readonly List<PropertyInfo> _ignore = new List<PropertyInfo> ();
-		readonly List<PropertyInfo> _autoInc = new List<PropertyInfo> ();
-		readonly List<PropertyInfo> _notNull = new List<PropertyInfo> ();
-		readonly List<PropertyInfo> _storeAsText = new List<PropertyInfo> ();
+		readonly List<string> _ignore = new List<string> ();
+		readonly List<string> _autoInc = new List<string> ();
+		readonly List<string> _notNull = new List<string> ();
+		readonly List<string> _storeAsText = new List<string> ();
 
 		readonly Dictionary<PropertyInfo, string> _columnNames = new Dictionary<PropertyInfo, string> ();
 		readonly Dictionary<PropertyInfo, int?> _maxLengths = new Dictionary<PropertyInfo, int?> ();
@@ -3053,9 +3054,11 @@ namespace SQLite
 
 		public TableMappingBuilder<T> PrimaryKey (Expression<Func<T, object>> property, bool autoIncrement = false)
 		{
-			_primaryKey = property.AsPropertyInfo ();
+			var propInfo = property.AsPropertyInfo ();
+
+			_primaryKeys.Add (propInfo.Name);
 			if (autoIncrement) {
-				_autoInc.Add (_primaryKey);
+				_autoInc.Add (propInfo.Name);
 			}
 
 			return this;
@@ -3063,49 +3066,49 @@ namespace SQLite
 
 		public TableMappingBuilder<T> Ignore (Expression<Func<T, object>> property)
 		{
-			_ignore.AddProperty (property);
+			_ignore.Add (property.AsPropertyInfo ().Name);
 			return this;
 		}
 
 		public TableMappingBuilder<T> Ignore (params Expression<Func<T, object>>[] properties)
 		{
-			_ignore.AddProperties (properties);
+			_ignore.AddRange (properties.Select (p => p.AsPropertyInfo ().Name));
 			return this;
 		}
 
 		public TableMappingBuilder<T> AutoIncrement (Expression<Func<T, object>> property)
 		{
-			_autoInc.AddProperty (property);
+			_autoInc.Add (property.AsPropertyInfo ().Name);
 			return this;
 		}
 
 		public TableMappingBuilder<T> AutoIncrement (params Expression<Func<T, object>>[] properties)
 		{
-			_autoInc.AddProperties (properties);
+			_autoInc.AddRange (properties.Select (p => p.AsPropertyInfo ().Name));
 			return this;
 		}
 
 		public TableMappingBuilder<T> NotNull (Expression<Func<T, object>> property)
 		{
-			_notNull.AddProperty (property);
+			_notNull.Add (property.AsPropertyInfo ().Name);
 			return this;
 		}
 
 		public TableMappingBuilder<T> NotNull (params Expression<Func<T, object>>[] properties)
 		{
-			_notNull.AddProperties (properties);
+			_notNull.AddRange (properties.Select (p => p.AsPropertyInfo ().Name));
 			return this;
 		}
 
 		public TableMappingBuilder<T> StoreAsText (Expression<Func<T, object>> property)
 		{
-			_storeAsText.AddProperty (property);
+			_storeAsText.Add (property.AsPropertyInfo ().Name);
 			return this;
 		}
 
 		public TableMappingBuilder<T> StoreAsText (params Expression<Func<T, object>>[] properties)
 		{
-			_storeAsText.AddProperties (properties);
+			_storeAsText.AddRange (properties.Select (p => p.AsPropertyInfo ().Name));
 			return this;
 		}
 
@@ -3144,24 +3147,24 @@ namespace SQLite
 			var cols = new List<ColumnMapping> ();
 
 			foreach (var p in props) {
-				if (p.CanWrite && !_ignore.Contains (p)) {
+				if (p.CanWrite && !_ignore.Contains (p.Name)) {
 					var col = new ColumnMapping (p) {
 						Name = _columnNames.GetOrDefault (p, p.Name),
 						//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
 						ColumnType = Nullable.GetUnderlyingType (p.PropertyType) ?? p.PropertyType,
 						Collation = _collations.GetOrDefault (p, ""),
-						IsPK = p == _primaryKey
+						IsPK = _primaryKeys.Contains (p.Name)
 					};
 
-					bool isAuto = _autoInc.Contains (p);
+					bool isAuto = _autoInc.Contains (p.Name);
 					col.IsAutoGuid = isAuto && col.ColumnType == typeof (Guid);
 					col.IsAutoInc = isAuto && !col.IsAutoGuid;
 
 					col.Indices = _indices.GetOrDefault (p, new List<ColumnIndex> (0));
 
-					col.IsNullable = !(col.IsPK || _notNull.Contains (p));
+					col.IsNullable = !(col.IsPK || _notNull.Contains (p.Name));
 					col.MaxStringLength = _maxLengths.GetOrDefault (p, null);
-					col.StoreAsText = _storeAsText.Contains (p);
+					col.StoreAsText = _storeAsText.Contains (p.Name);
 
 					cols.Add (col);
 				}
