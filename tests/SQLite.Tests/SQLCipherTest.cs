@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -147,6 +148,36 @@ namespace SQLite.Tests
 				db.CreateTable<TestTable> ();
 				Assert.AreEqual ("wal", db.ExecuteScalar<string> ("PRAGMA journal_mode;"));
 			}
+		}
+
+		class TestData
+		{
+			[PrimaryKey, AutoIncrement]
+			public int Id { get; set; }
+
+			public string Stuff { get; set; } = "";
+		}
+
+		[Test]
+		public void Regression655 ()
+		{
+			// Encrypted DBs with v1.6 cannot be opened in v1.7
+			var tempPath = System.IO.Path.GetTempFileName ();
+			var res = GetType ().Assembly.GetManifestResourceNames ();
+			using (var ins = GetType ().Assembly.GetManifestResourceStream ("SQLite.Tests.Regression655.sqlite"))
+			using (var outs = new System.IO.FileStream (tempPath, FileMode.Create, FileAccess.Write)) {
+				ins.CopyTo (outs);
+			}
+
+			var key = "FRANK";
+			var cstring = new SQLiteConnectionString (tempPath, storeDateTimeAsTicks: true, key: key);
+			using var db = new SQLiteConnection (cstring);
+
+			db.CreateTable<TestData> ();
+
+			var results = db.Table<TestData> ().ToList ();
+
+			Assert.AreEqual ("???", results[0].Stuff);
 		}
 	}
 }
