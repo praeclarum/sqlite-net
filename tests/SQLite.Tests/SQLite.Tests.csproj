@@ -5,6 +5,13 @@
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP;NETCOREAPP3_1;USE_SQLITEPCL_RAW</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType></DebugType>
+    <DefineConstants>TRACE;RELEASE;NETCOREAPP;NETCOREAPP3_1;USE_SQLITEPCL_RAW</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.0.3" />
     <PackageReference Include="NUnit" Version="3.12.0" />
@@ -25,6 +32,6 @@
     <None Remove="Regression655.sqlite" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Regression655.sqlite" />
+    <EmbeddedResource Include="EncryptedV3.sqlite" />
   </ItemGroup>
 </Project>
