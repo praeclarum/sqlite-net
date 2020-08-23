@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,5 +20,11 @@
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Regression655.sqlite" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Regression655.sqlite" />
   </ItemGroup>
 </Project>
