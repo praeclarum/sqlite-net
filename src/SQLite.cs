@@ -1558,7 +1558,7 @@ namespace SQLite
 			}
 			else {
 				foreach (var r in objects) {
-					c += Insert (r);
+					c += Insert (r, extra);
 				}
 			}
 			return c;
