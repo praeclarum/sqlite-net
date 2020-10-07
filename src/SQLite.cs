@@ -1729,9 +1729,9 @@ namespace SQLite
 		/// </summary>
 		/// <param name="objects">
 		/// An <see cref="IEnumerable"/> of the objects to insert.
-		/// <param name="runInTransaction"/>
-		/// A boolean indicating if the inserts should be wrapped in a transaction.
 		/// </param>
+		/// <param name="runInTransaction">
+		/// A boolean indicating if the inserts should be wrapped in a transaction.</param>
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
