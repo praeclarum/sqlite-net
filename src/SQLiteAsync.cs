@@ -1349,18 +1349,7 @@ namespace SQLite
 		{
 			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ());
 		}
-
-		/// <summary>
-		/// Adds or replaces a table mapping in the collection. 
-		/// </summary>
-		/// <param name="tableMapping">The table mapping to add or replace.</param>
-		public void UseMapping (TableMapping tableMapping)
-		{
-			var connection = GetConnection ();
-			using (connection.Lock ()) {
-				connection.UseMapping(tableMapping);
-			}
-		}
+		
 	}
 
 	/// <summary>
