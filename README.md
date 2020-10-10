@@ -1,3 +1,6 @@
+This is fork of official https://github.com/praeclarum/sqlite-net merged with code from old RoyGoode Fluent API fork.
+
+Main purpose is to play with it, see feasibility. I'm working on a project where this could be very useful. (Table mappings moved to storage layer instead of Model which is shared between multiple projects)
 
 # SQLite-net
 
