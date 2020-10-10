@@ -778,6 +778,45 @@ namespace SQLite
 		{
 			return ReadAsync (conn => conn.Get (pk, map));
 		}
+		
+		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param> 
+		/// <returns>
+		/// The object with the given primary key. Throws a not found exception
+		/// if the object is not found.
+		/// </returns>
+		public Task<T> GetAsync<T> (TableMapping map, object pk) where T : new()
+		{
+			return ReadAsync (conn => conn.Get<T> (map, pk));
+		}
+		
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the predicate from the table
+		/// associated with the specified type.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="predicate">
+		/// A predicate for which object to find.
+		/// </param> 
+		/// <returns>
+		/// The object that matches the given predicate. Throws a not found exception
+		/// if the object is not found.
+		/// </returns>
+		public Task<T> GetAsync<T> (TableMapping map, Expression<Func<T, bool>> predicate) where T : new()
+		{
+			return ReadAsync (conn => conn.Get<T> (map, predicate));
+		}
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the predicate from the table
@@ -812,6 +851,45 @@ namespace SQLite
 			where T : new()
 		{
 			return ReadAsync (conn => conn.Find<T> (pk));
+		}
+		
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the predicate from the table
+		/// associated with the specified type.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="predicate">
+		/// A predicate for which object to find.
+		/// </param> 
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public Task<T> FindAsync<T> (TableMapping map, Expression<Func<T, bool>> predicate) where T : new()
+		{
+			return ReadAsync (conn => conn.Find<T> (map, predicate));
+		}
+		
+		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param> 
+		/// <returns>
+		/// The object with the given primary key or null
+		/// if the object is not found.
+		/// </returns>
+		public Task<T> FindAsync<T> (TableMapping map, object pk) where T : new()
+		{
+			return ReadAsync (conn => conn.Find<T> (map, pk));
 		}
 
 		/// <summary>
@@ -870,6 +948,8 @@ namespace SQLite
 		{
 			return ReadAsync (conn => conn.FindWithQuery<T> (query, args));
 		}
+		
+
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the query from the table
@@ -891,6 +971,28 @@ namespace SQLite
 		public Task<object> FindWithQueryAsync (TableMapping map, string query, params object[] args)
 		{
 			return ReadAsync (conn => conn.FindWithQuery (map, query, args));
+		}
+		
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type.
+		/// </summary>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public Task<T> FindWithQueryAsync<T> (TableMapping map, string query, params object[] args) where T : new()
+		{
+			return ReadAsync (conn => conn.FindWithQuery<T> (map, query, args));
 		}
 
 		/// <summary>
@@ -1104,6 +1206,29 @@ namespace SQLite
 		{
 			return ReadAsync (conn => conn.Query<T> (query, args));
 		}
+		
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. 
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// </returns>
+		public Task<List<T>> QueryAsync<T> (TableMapping map, string query, params object[] args) where T : new()
+		{
+			return ReadAsync (conn => conn.Query<T> (map, query, args));
+		}
 
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
@@ -1171,6 +1296,32 @@ namespace SQLite
 		{
 			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ());
 		}
+		
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. 
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public Task<IEnumerable<T>> DeferredQueryAsync<T> (TableMapping map, string query, params object[] args) where T : new()
+		{
+			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (map, query, args).ToList ());
+		}
 
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
@@ -1197,6 +1348,18 @@ namespace SQLite
 		public Task<IEnumerable<object>> DeferredQueryAsync (TableMapping map, string query, params object[] args)
 		{
 			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ());
+		}
+
+		/// <summary>
+		/// Adds or replaces a table mapping in the collection. 
+		/// </summary>
+		/// <param name="tableMapping">The table mapping to add or replace.</param>
+		public void UseMapping (TableMapping tableMapping)
+		{
+			var connection = GetConnection ();
+			using (connection.Lock ()) {
+				connection.UseMapping(tableMapping);
+			}
 		}
 	}
 
