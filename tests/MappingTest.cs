@@ -139,6 +139,39 @@ namespace SQLite.Tests
 		}
 
 		#endregion
+
+		#region Issue #1007
+
+		[Test]
+		public void TableMapping_MapsValueTypes()
+		{
+			var mapping = new TableMapping(typeof( (int a, string b, double? c) ));
+
+			Assert.AreEqual(3, mapping.Columns.Length);
+			Assert.AreEqual("Item1", mapping.Columns[0].Name);
+			Assert.AreEqual("Item2", mapping.Columns[1].Name);
+			Assert.AreEqual("Item3", mapping.Columns[2].Name);
+		}
+
+		public struct TypeWithFields
+		{
+			public int a;
+			public string b;
+			public double? c;
+		}
+
+		[Test]
+		public void TableMapping_MapsFields()
+		{
+			var mapping = new TableMapping(typeof(TypeWithFields));
+
+			Assert.AreEqual(3, mapping.Columns.Length);
+			Assert.AreEqual("a", mapping.Columns[0].Name);
+			Assert.AreEqual("b", mapping.Columns[1].Name);
+			Assert.AreEqual("c", mapping.Columns[2].Name);
+		}
+
+		#endregion
 	}
 }
 
