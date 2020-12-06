@@ -339,7 +339,7 @@ namespace SQLite
 		/// by providing better concurrency and better disk IO performance than the normal
 		/// journal mode. You only need to call this function once in the lifetime of the database.
 		/// </summary>
-		public void EnableWriteAheadLogging()
+		public void EnableWriteAheadLogging ()
 		{
 			ExecuteScalar<string> ("PRAGMA journal_mode=WAL");
 		}
@@ -352,7 +352,8 @@ namespace SQLite
 		static string Quote (string unsafeString)
 		{
 			// TODO: Doesn't call sqlite3_mprintf("%Q", u) because we're waiting on https://github.com/ericsink/SQLitePCL.raw/issues/153
-			if (unsafeString == null) return "NULL";
+			if (unsafeString == null)
+				return "NULL";
 			var safe = unsafeString.Replace ("'", "''");
 			return "'" + safe + "'";
 		}
@@ -366,7 +367,8 @@ namespace SQLite
 		/// <param name="key">Ecryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
 		void SetKey (string key)
 		{
-			if (key == null) throw new ArgumentNullException (nameof (key));
+			if (key == null)
+				throw new ArgumentNullException (nameof (key));
 			var q = Quote (key);
 			Execute ("pragma key = " + q);
 		}
@@ -380,8 +382,10 @@ namespace SQLite
 		/// <param name="key">256-bit (32 byte) ecryption key data</param>
 		void SetKey (byte[] key)
 		{
-			if (key == null) throw new ArgumentNullException (nameof (key));
-			if (key.Length != 32) throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof (key));
+			if (key == null)
+				throw new ArgumentNullException (nameof (key));
+			if (key.Length != 32)
+				throw new ArgumentException ("Key must be 32 bytes (256-bit)", nameof (key));
 			var s = String.Join ("", key.Select (x => x.ToString ("X2")));
 			Execute ("pragma key = \"x'" + s + "'\"");
 		}
@@ -569,7 +573,7 @@ namespace SQLite
 				var decl = string.Join (",\n", decls.ToArray ());
 				query += decl;
 				query += ")";
-				if(map.WithoutRowId) {
+				if (map.WithoutRowId) {
 					query += " without rowid";
 				}
 
@@ -1782,7 +1786,7 @@ namespace SQLite
 			}
 
 			prepCmd = CreateInsertCommand (map, extra);
-			
+
 			lock (_insertCommandMap) {
 				if (_insertCommandMap.TryGetValue (key, out var existing)) {
 					prepCmd.Dispose ();
@@ -2441,11 +2445,15 @@ namespace SQLite
 			CreateFlags = createFlags;
 
 			var typeInfo = type.GetTypeInfo ();
+#if ENABLE_IL2CPP
+			var tableAttr = typeInfo.GetCustomAttribute<TableAttribute> ();
+#else
 			var tableAttr =
 				typeInfo.CustomAttributes
 						.Where (x => x.AttributeType == typeof (TableAttribute))
 						.Select (x => (TableAttribute)Orm.InflateAttribute (x))
 						.FirstOrDefault ();
+#endif
 
 			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
 			WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
@@ -2567,9 +2575,14 @@ namespace SQLite
 				var colAttr = prop.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (ColumnAttribute));
 
 				_prop = prop;
+#if ENABLE_IL2CPP
+                var ca = prop.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute;
+				Name = ca == null ? prop.Name : ca.Name;
+#else
 				Name = (colAttr != null && colAttr.ConstructorArguments.Count > 0) ?
 						colAttr.ConstructorArguments[0].Value?.ToString () :
 						prop.Name;
+#endif
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
 				ColumnType = Nullable.GetUnderlyingType (prop.PropertyType) ?? prop.PropertyType;
 				Collation = Orm.Collation (prop);
@@ -2749,6 +2762,9 @@ namespace SQLite
 
 		public static string Collation (MemberInfo p)
 		{
+#if ENABLE_IL2CPP
+			return (p.GetCustomAttribute<CollationAttribute> ()?.Value) ?? "";
+#else
 			return
 				(p.CustomAttributes
 				 .Where (x => typeof (CollationAttribute) == x.AttributeType)
@@ -2757,6 +2773,7 @@ namespace SQLite
 					 return args.Count > 0 ? ((args[0].Value as string) ?? "") : "";
 				 })
 				 .FirstOrDefault ()) ?? "";
+#endif
 		}
 
 		public static bool IsAutoInc (MemberInfo p)
@@ -2784,6 +2801,9 @@ namespace SQLite
 		{
 			var atype = x.AttributeType;
 			var typeInfo = atype.GetTypeInfo ();
+#if ENABLE_IL2CPP
+			var r = Activator.CreateInstance (x.AttributeType);
+#else
 			var args = x.ConstructorArguments.Select (a => a.Value).ToArray ();
 			var r = Activator.CreateInstance (x.AttributeType, args);
 			foreach (var arg in x.NamedArguments) {
@@ -2794,26 +2814,35 @@ namespace SQLite
 					GetProperty (typeInfo, arg.MemberName).SetValue (r, arg.TypedValue.Value);
 				}
 			}
+#endif
 			return r;
 		}
 
 		public static IEnumerable<IndexedAttribute> GetIndices (MemberInfo p)
 		{
+#if ENABLE_IL2CPP
+			return p.GetCustomAttributes<IndexedAttribute> ();
+#else
 			var indexedInfo = typeof (IndexedAttribute).GetTypeInfo ();
 			return
 				p.CustomAttributes
 				 .Where (x => indexedInfo.IsAssignableFrom (x.AttributeType.GetTypeInfo ()))
 				 .Select (x => (IndexedAttribute)InflateAttribute (x));
+#endif
 		}
 
 		public static int? MaxStringLength (PropertyInfo p)
 		{
+#if ENABLE_IL2CPP
+			return p.GetCustomAttribute<MaxLengthAttribute> ()?.Value;
+#else
 			var attr = p.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (MaxLengthAttribute));
 			if (attr != null) {
 				var attrv = (MaxLengthAttribute)InflateAttribute (attr);
 				return attrv.Value;
 			}
 			return null;
+#endif
 		}
 
 		public static bool IsMarkedNotNull (MemberInfo p)
@@ -3215,17 +3244,17 @@ namespace SQLite
 					var text = SQLite3.ColumnString (stmt, index);
 					return new Guid (text);
 				}
-				else if (clrType == typeof(Uri)) {
-					var text = SQLite3.ColumnString(stmt, index);
-					return new Uri(text);
+				else if (clrType == typeof (Uri)) {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new Uri (text);
 				}
 				else if (clrType == typeof (StringBuilder)) {
 					var text = SQLite3.ColumnString (stmt, index);
 					return new StringBuilder (text);
 				}
-				else if (clrType == typeof(UriBuilder)) {
-					var text = SQLite3.ColumnString(stmt, index);
-					return new UriBuilder(text);
+				else if (clrType == typeof (UriBuilder)) {
+					var text = SQLite3.ColumnString (stmt, index);
+					return new UriBuilder (text);
 				}
 				else {
 					throw new NotSupportedException ("Don't know how to read " + clrType);
@@ -3851,7 +3880,8 @@ namespace SQLite
 			Type nut = Nullable.GetUnderlyingType (t);
 
 			if (nut != null) {
-				if (obj == null) return null;
+				if (obj == null)
+					return null;
 				return Convert.ChangeType (obj, nut);
 			}
 			else {
@@ -4340,7 +4370,7 @@ namespace SQLite
 
 		public static string GetErrmsg (Sqlite3DatabaseHandle db)
 		{
-			return Sqlite3.sqlite3_errmsg (db).utf8_to_string();
+			return Sqlite3.sqlite3_errmsg (db).utf8_to_string ();
 		}
 
 		public static int BindParameterIndex (Sqlite3Statement stmt, string name)
