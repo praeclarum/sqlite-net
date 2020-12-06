@@ -49,7 +49,7 @@ namespace SQLite.Tests
 		{
 			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new TestDb (CustomDateTimeString (format));
-			TestDateTime (db, dateTime, dateTime.ToString (format));
+			TestDateTime (db, dateTime, dateTime.ToString (format, System.Globalization.CultureInfo.InvariantCulture));
 		}
 
 		[Test]
@@ -74,7 +74,7 @@ namespace SQLite.Tests
 		{
 			var dateTime = new DateTime (2012, 1, 14, 3, 2, 1, 234);
 			var db = new SQLiteAsyncConnection (CustomDateTimeString (format));
-			TestAsyncDateTime (db, dateTime, dateTime.ToString (format));
+			TestAsyncDateTime (db, dateTime, dateTime.ToString (format,System.Globalization.CultureInfo.InvariantCulture));
 		}
 
 		SQLiteConnectionString CustomDateTimeString (string dateTimeFormat) => new SQLiteConnectionString (TestPath.GetTempFileName (), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite, false, dateTimeStringFormat: dateTimeFormat);
