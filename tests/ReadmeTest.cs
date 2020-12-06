@@ -64,95 +64,124 @@ namespace SQLite.Tests
 		[Test]
 		public void Synchronous ()
 		{
-			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "MyData.db");
-			File.Delete (databasePath);
-
+			var databasePath = Path.Combine (Path.GetTempPath(), "SynchronousMyData"+ Guid.NewGuid() +".db");
+			File.Delete(databasePath);
 			var db = new SQLiteConnection (databasePath);
-			db.CreateTable<Stock> ();
-			db.CreateTable<Valuation> ();
+			try
+			{
+				db.CreateTable<Stock>();
+				db.CreateTable<Valuation>();
 
-			AddStock (db, "A1");
-			AddStock (db, "A2");
-			AddStock (db, "A3");
-			AddStock (db, "B1");
-			AddStock (db, "B2");
-			AddStock (db, "B3");
+				AddStock(db, "A1");
+				AddStock(db, "A2");
+				AddStock(db, "A3");
+				AddStock(db, "B1");
+				AddStock(db, "B2");
+				AddStock(db, "B3");
 
-			var query = db.Table<Stock> ().Where (v => v.Symbol.StartsWith ("A"));
+				var query = db.Table<Stock>().Where(v => v.Symbol.StartsWith("A"));
 
-			foreach (var stock in query)
-				Console.WriteLine ("Stock: " + stock.Symbol);
+				foreach (var stock in query)
+					Console.WriteLine("Stock: " + stock.Symbol);
 
-			Assert.AreEqual (3, query.ToList ().Count);
+				Assert.AreEqual(3, query.ToList().Count);
+			}
+			finally
+			{
+				db.Close();
+				File.Delete(databasePath);
+			}
+
 
 		}
 
 		[Test]
-		public async Task Asynchronous ()
+		public async Task Asynchronous()
 		{
-			await Task.Delay (1).ConfigureAwait (false);
-
 			// Get an absolute path to the database file
-			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "MyData.db");
-			File.Delete (databasePath);
+			var databasePath = Path.Combine(Path.GetTempPath(), "AsynchronousMyData" + Guid.NewGuid() + ".db");
+			File.Delete(databasePath);
+			var db = new SQLiteAsyncConnection(databasePath);
+			try
+			{
+				await db.CreateTableAsync<Stock>();
 
-			var db = new SQLiteAsyncConnection (databasePath);
+				Console.WriteLine("Table created!");
 
-			await db.CreateTableAsync<Stock> ();
+				var stock = new Stock()
+				{
+					Symbol = "AAPL"
+				};
 
-			Console.WriteLine ("Table created!");
+				await db.InsertAsync(stock);
 
-			var stock = new Stock () {
-				Symbol = "AAPL"
-			};
+				Console.WriteLine("New sti ID: {0}", stock.Id);
 
-			await db.InsertAsync (stock);
+				var query = db.Table<Stock>().Where(s => s.Symbol.StartsWith("A"));
 
-			Console.WriteLine ("New sti ID: {0}", stock.Id);
+				var result = await query.ToListAsync();
 
-			var query = db.Table<Stock> ().Where (s => s.Symbol.StartsWith ("A"));
+				foreach (var s in result)
+					Console.WriteLine("Stock: " + s.Symbol);
 
-			var result = await query.ToListAsync ();
+				Assert.AreEqual(1, result.Count);
 
-			foreach (var s in result)
-				Console.WriteLine ("Stock: " + s.Symbol);
+				var count = await db.ExecuteScalarAsync<int>("select count(*) from Stock");
 
-			Assert.AreEqual (1, result.Count);
+				Console.WriteLine(string.Format("Found '{0}' stock items.", count));
 
-			var count = await db.ExecuteScalarAsync<int> ("select count(*) from Stock");
-
-			Console.WriteLine (string.Format ("Found '{0}' stock items.", count));
-
-			Assert.AreEqual (1, count);
+				Assert.AreEqual(1, count);
+			}
+			finally
+			{
+				await db.CloseAsync();
+				File.Delete(databasePath);
+			}
 		}
 
 		[Test]
-		public void Cipher ()
+		public async Task Cipher()
 		{
-			var databasePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments), "MyData.db");
-			File.Delete (databasePath);
+			var databasePath = Path.Combine(Path.GetTempPath(), "CipherMyData" + Guid.NewGuid() + ".db");
+			File.Delete(databasePath);
 
-			var options = new SQLiteConnectionString (databasePath, true, key: "password");
-			var encryptedDb = new SQLiteAsyncConnection (options);
+			var options = new SQLiteConnectionString(databasePath, true, key: "password");
+			var encryptedDb = new SQLiteAsyncConnection(options);
 
-			var options2 = new SQLiteConnectionString (databasePath, true,
+			var options2 = new SQLiteConnectionString(databasePath, true,
 				key: "password",
 				preKeyAction: db => db.Execute("PRAGMA cipher_default_use_hmac = OFF;"),
-				postKeyAction: db => db.Execute ("PRAGMA kdf_iter = 128000;"));
-			var encryptedDb2 = new SQLiteAsyncConnection (options2);
+				postKeyAction: db => db.Execute("PRAGMA kdf_iter = 128000;"));
+			SQLiteAsyncConnection encryptedDb2 = null;
+			try
+			{
+				encryptedDb2 = new SQLiteAsyncConnection(options2);
+			}
+			finally
+			{
+				await encryptedDb2?.CloseAsync();
+				File.Delete(databasePath);
+			}
 		}
 
 		[Test]
 		public void Manual()
 		{
 			var db = new SQLiteConnection (":memory:");
+			try
+			{
 
-			db.Execute ("create table Stock(Symbol varchar(100) not null)");
-			db.Execute ("insert into Stock(Symbol) values (?)", "MSFT");
-			var stocks = db.Query<Stock> ("select * from Stock");
+				db.Execute("create table Stock(Symbol varchar(100) not null)");
+				db.Execute("insert into Stock(Symbol) values (?)", "MSFT");
+				var stocks = db.Query<Stock>("select * from Stock");
 
-			Assert.AreEqual (1, stocks.Count);
-			Assert.AreEqual ("MSFT", stocks[0].Symbol);
+				Assert.AreEqual(1, stocks.Count);
+				Assert.AreEqual("MSFT", stocks[0].Symbol);
+			}
+			finally
+			{
+				db.Close();
+			}
 		}
 	}
 }
