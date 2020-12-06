@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Security.Cryptography;
+using System.Net.Sockets;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -147,6 +150,74 @@ namespace SQLite.Tests
 				db.CreateTable<TestTable> ();
 				Assert.AreEqual ("wal", db.ExecuteScalar<string> ("PRAGMA journal_mode;"));
 			}
+		}
+
+		class TestData
+		{
+			[PrimaryKey, AutoIncrement]
+			public int Id { get; set; }
+
+			public string Stuff { get; set; } = "";
+		}
+
+		[Test]
+		public void CanOpenV3 ()
+		{
+			// Issue #655
+			// SQLCipher switched defaults from v3 to v4
+			// Cannot load v3 without some action:
+			// 1. Migrating the DB
+			// 2. Compatibility mode
+
+			var resName = "SQLite.Tests.EncryptedV3.sqlite";
+
+			// Encrypted DBs with v1.6 cannot be opened in v1.7
+			var tempPath = System.IO.Path.GetTempFileName ();
+			var res = GetType ().Assembly.GetManifestResourceNames ();
+			using (var ins = GetType ().Assembly.GetManifestResourceStream (resName))
+			using (var outs = new System.IO.FileStream (tempPath, FileMode.Create, FileAccess.Write)) {
+				ins.CopyTo (outs);
+			}
+
+			//var path = "/Users/fak/Projects/Repro655/MakeDB/Version1.6.sqlite";
+			var path = tempPath;
+
+			var key = "FRANK";
+			var cstring = new SQLiteConnectionString (
+				path,
+				storeDateTimeAsTicks: true,
+				key: key,
+				//preKeyAction: c => {
+				//	c.Execute ("PRAGMA cipher_compatibility = 3");
+				//}
+				postKeyAction: c => {
+					//var res = c.ExecuteScalar<int> ("PRAGMA cipher_migrate");
+					c.Execute ("PRAGMA cipher_compatibility = 3");
+				}
+				);
+			Console.WriteLine ("Copied to " + path);
+
+			using (var db = new SQLiteConnection (cstring)) {
+
+				//Console.ReadLine ();
+
+				db.CreateTable<TestData> ();
+
+				var results = db.Table<TestData> ().ToList ();
+
+				Assert.AreEqual ("Hello Chatroom!", results[0].Stuff);
+			}
+
+			//
+			// Assert the database has not changed
+			//
+			var md5 = MD5.Create ();
+			var origMD5 = new byte[0];
+			using (var ins = GetType ().Assembly.GetManifestResourceStream (resName)) {
+				origMD5 = md5.ComputeHash (ins);
+			}
+			var newMD5 = md5.ComputeHash (File.ReadAllBytes (tempPath));
+			Assert.True (origMD5.SequenceEqual (newMD5));
 		}
 	}
 }
