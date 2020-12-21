@@ -1,9 +1,9 @@
 <Project>
     <PropertyGroup>
-        <VersionPrefix>1.7</VersionPrefix>
+        <VersionPrefix>1.8</VersionPrefix>
         <VersionSuffix>beta</VersionSuffix>
 
-        <PackageIconUrl>https://raw.githubusercontent.com/praeclarum/sqlite-net/master/nuget/Logo-low.png</PackageIconUrl>
+        <PackageIconUrl>Logo-low.png</PackageIconUrl>
         <PackageProjectUrl>https://github.com/praeclarum/sqlite-net</PackageProjectUrl>
         <RepositoryUrl>https://github.com/praeclarum/sqlite-net.git</RepositoryUrl>
         <PackageTags>sqlite-net;sqlite;database;orm</PackageTags>
@@ -13,4 +13,7 @@
 
         <Deterministic>true</Deterministic>
     </PropertyGroup>
+	 <ItemGroup>
+		<None Include="..\Logo-low.png" Pack="true" PackagePath=""/>
+	 </ItemGroup>
 </Project>
