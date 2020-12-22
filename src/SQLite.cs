@@ -2509,15 +2509,10 @@ namespace SQLite
 					from p in ti.DeclaredProperties
 					where !memberNames.Contains(p.Name) &&
 						p.CanRead && p.CanWrite &&
-						(p.GetMethod != null) && (p.SetMethod != null) &&
-						(p.GetMethod.IsPublic && p.SetMethod.IsPublic) &&
-						(!p.GetMethod.IsStatic) && (!p.SetMethod.IsStatic)
+						p.GetMethod != null && p.SetMethod != null &&
+						p.GetMethod.IsPublic && p.SetMethod.IsPublic &&
+						!p.GetMethod.IsStatic && !p.SetMethod.IsStatic
 					select p);
-				
-				newMembers.AddRange(
-					from f in ti.DeclaredFields
-					where f.IsPublic && !f.IsStatic && !memberNames.Contains(f.Name)
-					select f);
 
 				members.AddRange(newMembers);
 				foreach(var m in newMembers)
@@ -2584,6 +2579,8 @@ namespace SQLite
 
 			public string Name { get; private set; }
 
+			public PropertyInfo PropertyInfo => _member as PropertyInfo;
+
 			public string PropertyName { get { return _member.Name; } }
 
 			public Type ColumnType { get; private set; }
@@ -2643,25 +2640,33 @@ namespace SQLite
 				StoreAsText = memberType.GetTypeInfo ().CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
 			}
 
+			public Column (PropertyInfo member, CreateFlags createFlags = CreateFlags.None)
+				=> this((MemberInfo)member, createFlags);
+
 			public void SetValue (object obj, object val)
 			{
-				var propy = _member as PropertyInfo;
-				var field = _member as FieldInfo;
-				if (val != null && ColumnType.GetTypeInfo ().IsEnum) {
-					propy?.SetValue (obj, Enum.ToObject (ColumnType, val));
-					field?.SetValue (obj, Enum.ToObject (ColumnType, val));
+				if(_member is PropertyInfo propy)
+				{
+					if (val != null && ColumnType.GetTypeInfo ().IsEnum)
+						propy.SetValue (obj, Enum.ToObject (ColumnType, val));
+					else
+						propy.SetValue (obj, val);
 				}
-				else {
-					propy?.SetValue (obj, val);
-					field?.SetValue (obj, val);
+				else if(_member is FieldInfo field)
+				{
+					if (val != null && ColumnType.GetTypeInfo ().IsEnum)
+						field.SetValue (obj, Enum.ToObject (ColumnType, val));
+					else
+						field.SetValue (obj, val);
 				}
 			}
 
 			public object GetValue (object obj)
 			{
-				var propy = _member as PropertyInfo;
-				var field = _member as FieldInfo;
-				return propy?.GetValue (obj) ?? field?.GetValue (obj);
+				if(_member is PropertyInfo propy)
+					return propy.GetValue(obj);
+				else if(_member is FieldInfo field)
+					return field.GetValue(obj);
 			}
 
 			private static Type GetMemberType(MemberInfo m)
@@ -2900,6 +2905,8 @@ namespace SQLite
 			return null;
 #endif
 		}
+
+		public static int? MaxStringLength (PropertyInfo p) => MaxStringLength((MemberInfo)p);
 
 		public static bool IsMarkedNotNull (MemberInfo p)
 		{
