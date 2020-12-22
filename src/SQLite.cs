@@ -3001,6 +3001,7 @@ namespace SQLite
 						cols[i] = map.FindColumn (name);
 						if (cols[i] != null)
 							fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T> (_conn, cols[i]);
+					}
 				}
 
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
