@@ -2641,7 +2641,7 @@ namespace SQLite
 			}
 
 			public Column (PropertyInfo member, CreateFlags createFlags = CreateFlags.None)
-				=> this((MemberInfo)member, createFlags);
+				=> new Column((MemberInfo)member, createFlags);
 
 			public void SetValue (object obj, object val)
 			{
@@ -2659,6 +2659,8 @@ namespace SQLite
 					else
 						field.SetValue (obj, val);
 				}
+				else
+					throw new InvalidProgramException("unreachable condition");
 			}
 
 			public object GetValue (object obj)
@@ -2667,6 +2669,8 @@ namespace SQLite
 					return propy.GetValue(obj);
 				else if(_member is FieldInfo field)
 					return field.GetValue(obj);
+				else
+					throw new InvalidProgramException("unreachable condition");
 			}
 
 			private static Type GetMemberType(MemberInfo m)
