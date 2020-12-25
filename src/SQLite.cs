@@ -2641,7 +2641,8 @@ namespace SQLite
 			}
 
 			public Column (PropertyInfo member, CreateFlags createFlags = CreateFlags.None)
-				=> new Column((MemberInfo)member, createFlags);
+				: this((MemberInfo)member, createFlags)
+			{ }
 
 			public void SetValue (object obj, object val)
 			{
