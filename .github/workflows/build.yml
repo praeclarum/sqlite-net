@@ -15,7 +15,7 @@ jobs:
       run: nuget restore SQLite.sln
 
     - name: Build and Test
-      run: make test
+      run: cd tests/SQLite.Tests && dotnet test /p:AltCover=true
       
     - name: Package
       run: |
