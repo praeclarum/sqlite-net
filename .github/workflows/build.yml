@@ -13,9 +13,16 @@ jobs:
     
     - name: Restore NuGets
       run: nuget restore SQLite.sln
+      
+    - name: Install reportgenerator
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
     - name: Build and Test
-      run: cd tests/SQLite.Tests && dotnet test /p:AltCover=true
+      run: |
+        set -e
+        cd tests/SQLite.Tests
+        dotnet test /p:AltCover=true /p:AltCoverForce=true
+        reportgenerator -reports:coverage.xml -targetdir:./CoverageReport
       
     - name: Package
       run: |
