@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage line-rate="0.7619329973317521" branch-rate="0.551994301994302" lines-covered="5140" lines-valid="6746" branches-covered="775" branches-valid="1404" complexity="1950" version="0" timestamp="1609701653">
+<coverage line-rate="0.7619329973317521" branch-rate="0.551994301994302" lines-covered="5140" lines-valid="6746" branches-covered="775" branches-valid="1404" complexity="1950" version="0" timestamp="1609702811">
   <sources />
   <packages>
     <package name="NUnit3.TestAdapter" line-rate="0.42032730404823426" branch-rate="0.28517110266159695" complexity="516">
