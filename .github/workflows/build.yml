@@ -44,6 +44,7 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: CoverageReport
         destination_dir: coverage
+        enable_jekyll: true
 
     - name: Package
       run: |
