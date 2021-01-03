@@ -39,6 +39,7 @@ jobs:
 
     - name: Deploy Code Coverage Report
       uses: peaceiris/actions-gh-pages@v3
+      if: github.event == 'push'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: CoverageReport
