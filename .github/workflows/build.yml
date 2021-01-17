@@ -18,7 +18,7 @@ jobs:
       run: |
         set -e
         cd tests/SQLite.Tests
-        dotnet test /p:AltCover=true /p:AltCoverForce=true
+        dotnet test /p:AltCover=true /p:AltCoverForce=true "/p:AltCoverTypeFilter=SQLite.Tests.*"
         
     - name: Generate Code Coverage Report        
       uses: danielpalme/ReportGenerator-GitHub-Action@4.8.4
