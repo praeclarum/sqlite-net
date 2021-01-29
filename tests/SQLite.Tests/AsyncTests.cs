@@ -6,8 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 
-using System.Net.Configuration;
-
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
@@ -133,6 +131,96 @@ namespace SQLite.Tests
 			{
 				connection.CloseAsync().Wait();
 				DeleteFile(path);
+			}
+		}
+
+		[Test, NUnit.Framework.Ignore ("Mac sqlite does not have this function")]
+		public async Task EnableLoadExtensionAsync ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var connection = env.Connection;
+
+				await connection.EnableLoadExtensionAsync (true);
+			}
+		}
+
+		[Test]
+		public async Task InsertAsyncWithType ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var connection = env.Connection;
+				await connection.CreateTableAsync<Customer> ();
+
+				var customer = new Customer {
+					FirstName = "Joe"
+				};
+				await connection.InsertAsync (customer, typeof(Customer));
+				var c = await connection.QueryAsync<Customer> ("select * from Customer");
+				Assert.AreEqual ("Joe", c[0].FirstName);
+			}
+		}
+
+		[Test]
+		public async Task InsertAsyncWithExtra ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var connection = env.Connection;
+				await connection.CreateTableAsync<Customer> ();
+
+				var customer = new Customer {
+					FirstName = "Joe"
+				};
+				await connection.InsertAsync (customer, "or replace");
+				var c = await connection.QueryAsync<Customer> ("select * from Customer");
+				Assert.AreEqual ("Joe", c[0].FirstName);
+			}
+		}
+
+		[Test]
+		public async Task InsertAsyncWithTypeAndExtra ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var connection = env.Connection;
+				await connection.CreateTableAsync<Customer> ();
+
+				var customer = new Customer {
+					FirstName = "Joe"
+				};
+				await connection.InsertAsync (customer, "or replace", typeof(Customer));
+				var c = await connection.QueryAsync<Customer> ("select * from Customer");
+				Assert.AreEqual ("Joe", c[0].FirstName);
+			}
+		}
+
+		[Test]
+		public async Task InsertOrReplaceAsync ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var connection = env.Connection;
+				await connection.CreateTableAsync<Customer> ();
+
+				var customer = new Customer {
+					FirstName = "Joe"
+				};
+				await connection.InsertOrReplaceAsync (customer);
+				var c = await connection.QueryAsync<Customer> ("select * from Customer");
+				Assert.AreEqual ("Joe", c[0].FirstName);
+			}
+		}
+
+		[Test]
+		public async Task InsertOrReplaceAsyncWithType ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var connection = env.Connection;
+				await connection.CreateTableAsync<Customer> ();
+
+				var customer = new Customer {
+					FirstName = "Joe"
+				};
+				await connection.InsertOrReplaceAsync (customer, typeof(Customer));
+				var c = await connection.QueryAsync<Customer> ("select * from Customer");
+				Assert.AreEqual ("Joe", c[0].FirstName);
 			}
 		}
 
@@ -280,15 +368,15 @@ namespace SQLite.Tests
 
 
 		[Test]
-		public void TestDropTableAsync ()
+		public async Task DropTableAsync ()
 		{
 			using (var env = new TestEnvironment())
 			{
 				var conn = env.Connection;
-				conn.CreateTableAsync<Customer>().Wait();
+				await conn.CreateTableAsync<Customer>();
 
 				// drop it...
-				conn.DropTableAsync<Customer>().Wait();
+				await conn.DropTableAsync<Customer>();
 
 				// check...
 				using (var check = new SQLiteConnection(env.ConnectionString))
@@ -300,10 +388,29 @@ namespace SQLite.Tests
 			}
 		}
 
-		private Customer CreateCustomer (string address = null, string country = null)
+		[Test]
+		public async Task DropTableAsyncNonGeneric ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+				await conn.CreateTableAsync<Customer> ();
+
+				// drop it...
+				await conn.DropTableAsync (await conn.GetMappingAsync(typeof(Customer)));
+
+				// check...
+				using (var check = new SQLiteConnection (env.ConnectionString)) {
+					// load it back and check - should be missing
+					var command = check.CreateCommand ("select name from sqlite_master where type='table' and name='customer'");
+					Assert.IsNull (command.ExecuteScalar<string> ());
+				}
+			}
+		}
+
+		private Customer CreateCustomer (string address = null, string country = null, string firstName = "")
 		{
 			Customer customer = new Customer () {
-				FirstName = "foo",
+				FirstName = string.IsNullOrEmpty(firstName) ? "foo" : firstName,
 				LastName = "bar",
 				Email = Guid.NewGuid ().ToString (),
 				Address = address,
@@ -341,7 +448,7 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void TestUpdateAsync ()
+		public void UpdateAsync ()
 		{
 			// create...
 			Customer customer = CreateCustomer ();
@@ -369,6 +476,65 @@ namespace SQLite.Tests
 					Customer loaded = check.Get<Customer>(customer.Id);
 					Assert.AreEqual(newEmail, loaded.Email);
 				}
+			}
+		}
+
+		[Test]
+		public async Task UpdateAsyncWithType ()
+		{
+			// create...
+			Customer customer = CreateCustomer ();
+
+			// connect...
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+				await conn.CreateTableAsync<Customer> ();
+
+				// run...
+				await conn.InsertAsync (customer);
+
+				// change it...
+				string newEmail = Guid.NewGuid ().ToString ();
+				customer.Email = newEmail;
+
+				// save it...
+				await conn.UpdateAsync (customer, typeof (Customer));
+
+				// check...
+				var loaded = await conn.GetAsync<Customer> (customer.Id);
+				Assert.AreEqual (newEmail, loaded.Email);
+			}
+		}
+
+		[Test]
+		public async Task UpdateAllAsync ()
+		{
+			// create...
+			var customer1 = CreateCustomer (firstName: "Frank");
+			var customer2 = CreateCustomer (country: "Mexico");
+			var customers = new[] { customer1, customer2 };
+
+			// connect...
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+				await conn.CreateTableAsync<Customer> ();
+
+				// run...
+				await conn.InsertAllAsync (customers);
+
+				// change it...
+				string newEmail1 = Guid.NewGuid ().ToString ();
+				string newEmail2 = Guid.NewGuid ().ToString ();
+				customer1.Email = newEmail1;
+				customer2.Email = newEmail2;
+
+				// save it...
+				await conn.UpdateAllAsync (customers);
+
+				// check...
+				var loaded = await conn.Table<Customer> ().ToListAsync();
+				Assert.AreEqual (1, loaded.Count(x => x.Email == newEmail1));
+				Assert.AreEqual (1, loaded.Count(x => x.Email == newEmail2));
 			}
 		}
 
@@ -1109,6 +1275,212 @@ namespace SQLite.Tests
 		}
 
 		[Test]
+		public void CreateTableNonGeneric ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = conn.CreateTableAsync (typeof(Customer)).Result;
+
+				Assert.AreEqual (CreateTableResult.Created, r0);
+
+				var r1 = conn.CreateTableAsync (typeof (Customer)).Result;
+
+				Assert.AreEqual (CreateTableResult.Migrated, r1);
+
+				var r2 = conn.CreateTableAsync (typeof (Customer)).Result;
+
+				Assert.AreEqual (CreateTableResult.Migrated, r2);
+
+				Assert.AreEqual (4 * 3 + 1, trace.Count);
+			}
+		}
+
+		[Test]
+		public void CreateTablesNonGeneric ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = conn.CreateTablesAsync(CreateFlags.None, typeof(Customer), typeof(Order)).Result;
+
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Customer)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Order)]);
+			}
+		}
+
+		[Test]
+		public void CreateTables2 ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = conn.CreateTablesAsync<Customer, Order> ().Result;
+
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof(Customer)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof(Order)]);
+			}
+		}
+
+		[Test]
+		public void CreateTables3 ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = conn.CreateTablesAsync<Customer, Order, OrderHistory> ().Result;
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Customer)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Order)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (OrderHistory)]);
+			}
+		}
+
+		[Test]
+		public void CreateTables4 ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = conn.CreateTablesAsync<Customer, Order, OrderHistory, Product> ().Result;
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Customer)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Order)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (OrderHistory)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Product)]);
+			}
+		}
+
+		[Test]
+		public void CreateTables5 ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = conn.CreateTablesAsync<Customer, Order, OrderHistory, Product, OrderLine> ().Result;
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Customer)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Order)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (OrderHistory)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (Product)]);
+				Assert.AreEqual (CreateTableResult.Created, r0.Results[typeof (OrderLine)]);
+			}
+		}
+
+		[Test]
+		public async Task CreateIndexAsync ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = await conn.CreateTableAsync<Customer> ();
+				Assert.AreEqual (CreateTableResult.Created, r0);
+
+				var ri = await conn.CreateIndexAsync<Customer>(x => x.FirstName);
+				Assert.AreEqual (0, ri);
+			}
+		}
+
+		[Test]
+		public async Task CreateIndexAsyncNonGeneric ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = await conn.CreateTableAsync<Customer> ();
+				Assert.AreEqual (CreateTableResult.Created, r0);
+
+				var ri = await conn.CreateIndexAsync (nameof (Customer), nameof (Customer.FirstName));
+				Assert.AreEqual (0, ri);
+			}
+		}
+
+		[Test]
+		public async Task CreateIndexAsyncWithName ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = await conn.CreateTableAsync<Customer> ();
+				Assert.AreEqual (CreateTableResult.Created, r0);
+
+				var ri = await conn.CreateIndexAsync ("Foofoo", nameof (Customer), nameof (Customer.FirstName));
+				Assert.AreEqual (0, ri);
+			}
+		}
+
+		[Test]
+		public async Task CreateIndexAsyncWithManyColumns ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = await conn.CreateTableAsync<Customer> ();
+				Assert.AreEqual (CreateTableResult.Created, r0);
+
+				var ri = await conn.CreateIndexAsync (nameof (Customer),
+					new[] { nameof (Customer.FirstName), nameof (Customer.LastName) });
+				Assert.AreEqual (0, ri);
+			}
+		}
+
+		[Test]
+		public async Task CreateIndexAsyncWithManyColumnsWithName ()
+		{
+			using (var env = new TestEnvironment ()) {
+				var conn = env.Connection;
+
+				var trace = new List<string> ();
+				conn.Tracer = trace.Add;
+				conn.Trace = true;
+
+				var r0 = await conn.CreateTableAsync<Customer> ();
+				Assert.AreEqual (CreateTableResult.Created, r0);
+
+				var ri = await conn.CreateIndexAsync ("Foofoo", nameof (Customer),
+					new[] { nameof (Customer.FirstName), nameof (Customer.LastName) });
+				Assert.AreEqual (0, ri);
+			}
+		}
+
+		[Test]
 		public void CloseAsync()
 		{
 			using (var env = new TestEnvironment())
@@ -1143,5 +1515,6 @@ namespace SQLite.Tests
 				await Task.WhenAll(t1, t2);
 			}
 		}
+
 	}
 }
