@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Tests", "tests\SQLite.Tests.csproj", "{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A0E59A10-7BD0-4554-B133-66FA850159BE}"
 	ProjectSection(SolutionItems) = preProject
 		sqlite-net-pcl.nuspec = sqlite-net-pcl.nuspec
@@ -25,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-base", "nuget\SQ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-sqlcipher", "nuget\SQLite-net-sqlcipher\SQLite-net-sqlcipher.csproj", "{59DB03EF-E28D-431E-9058-74AF316800EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Tests", "tests\SQLite.Tests\SQLite.Tests.csproj", "{80B66A43-B358-4438-BF06-6351B86B121A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,18 +35,6 @@ Global
 		Debug|iPhone = Debug|iPhone
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Release|iPhone.Build.0 = Release|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}.Debug|iPhone.Build.0 = Debug|Any CPU
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Debug|Any CPU.ActiveCfg = Debug|iPhoneSimulator
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Debug|Any CPU.Build.0 = Debug|iPhoneSimulator
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E}.Release|Any CPU.ActiveCfg = Release|iPhone
@@ -107,11 +95,23 @@ Global
 		{59DB03EF-E28D-431E-9058-74AF316800EE}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|iPhone.ActiveCfg = Debug|Any CPU
 		{59DB03EF-E28D-431E-9058-74AF316800EE}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Release|iPhone.Build.0 = Release|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{80B66A43-B358-4438-BF06-6351B86B121A}.Debug|iPhone.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
 		{81850129-71C3-40C7-A48B-AA5D2C2E365E} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
 		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
+		{80B66A43-B358-4438-BF06-6351B86B121A} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = tests\SQLite.Tests.csproj

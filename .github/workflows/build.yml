@@ -13,10 +13,39 @@ jobs:
     
     - name: Restore NuGets
       run: nuget restore SQLite.sln
-
-    - name: Build and Test
-      run: make test
       
+    - name: Build and Test
+      run: |
+        set -e
+        cd tests/SQLite.Tests
+        dotnet test /p:AltCover=true /p:AltCoverForce=true "/p:AltCoverTypeFilter=SQLite.Tests.*"
+        
+    - name: Generate Code Coverage Report        
+      uses: danielpalme/ReportGenerator-GitHub-Action@4.8.4
+      with:
+        reports: 'tests/SQLite.Tests/coverage.xml' # REQUIRED # The coverage reports that should be parsed (separated by semicolon). Globbing is supported.
+        targetdir: 'CoverageReport' # REQUIRED # The directory where the generated report should be saved.
+        reporttypes: 'HtmlInline;Cobertura' # The output formats and scope (separated by semicolon) Values: Badges, Clover, Cobertura, CsvSummary, Html, HtmlChart, HtmlInline, HtmlInline_AzurePipelines, HtmlInline_AzurePipelines_Dark, HtmlSummary, JsonSummary, Latex, LatexSummary, lcov, MHtml, PngChart, SonarQube, TeamCitySummary, TextSummary, Xml, XmlSummary
+        sourcedirs: '' # Optional directories which contain the corresponding source code (separated by semicolon). The source directories are used if coverage report contains classes without path information.
+        historydir: '' # Optional directory for storing persistent coverage information. Can be used in future reports to show coverage evolution.
+        plugins: '' # Optional plugin files for custom reports or custom history storage (separated by semicolon).
+        assemblyfilters: '+SQLite.Tests;-NUnit3.TestAdapter' # Optional list of assemblies that should be included or excluded in the report. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        classfilters: '+*;-SQLite.Tests.*' # Optional list of classes that should be included or excluded in the report. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        filefilters: '+*' # Optional list of files that should be included or excluded in the report. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        verbosity: 'Info' # The verbosity level of the log messages. Values: Verbose, Info, Warning, Error, Off
+        title: '' # Optional title.
+        tag: '${{ github.run_number }}_${{ github.run_id }}' # Optional tag or build version.
+        customSettings: '' # Optional custom settings (separated by semicolon). See: https://github.com/danielpalme/ReportGenerator/wiki/Settings.
+
+    - name: Deploy Code Coverage Report
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.event_name == 'push'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: CoverageReport
+        destination_dir: coverage
+        enable_jekyll: true
+
     - name: Package
       run: |
         make nuget
