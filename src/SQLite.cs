@@ -976,7 +976,7 @@ namespace SQLite
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<T> ();
 		}
-
+		
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -999,6 +999,49 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteDeferredQuery<T> ();
+		}
+
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result a dictionary
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query as dictionary
+		/// </returns>
+		public List<Dictionary<string, object>> Query(string query, params object[] args)
+		{
+			var cmd = CreateCommand(query, args);
+			return cmd.ExecuteDeferredQuery().ToList();
+		}
+
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result a dictionary
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query as dictionary
+		/// </returns>
+		public IEnumerable<Dictionary<string, object>> ExecuteDeferredQuery(string query, params object[] args)
+		{
+			var cmd = CreateCommand(query, args);
+			return cmd.ExecuteDeferredQuery();
+
 		}
 
 		/// <summary>
@@ -2896,6 +2939,61 @@ namespace SQLite
 			}
 			finally {
 				SQLite3.Finalize (stmt);
+			}
+		}
+
+		public IEnumerable<Dictionary<string, object>> ExecuteDeferredQuery()
+		{
+			if (_conn.Trace)
+			{
+				Debug.WriteLine("Executing Query: " + this);
+			}
+
+			var stmt = Prepare();
+			try
+			{
+				var cols = new string[SQLite3.ColumnCount(stmt)];
+
+				for (int i = 0; i < cols.Length; i++)
+				{
+					var name = SQLite3.ColumnName16(stmt, i);
+					cols[i] = name;
+				}
+
+				while (SQLite3.Step(stmt) == SQLite3.Result.Row)
+				{
+					var obj = new Dictionary<string, object>();
+					for (int i = 0; i < cols.Length; i++)
+					{
+						var colType = SQLite3.ColumnType(stmt, i);
+
+						Type targetType;
+						switch (colType)
+						{
+							case SQLite3.ColType.Text:
+								targetType = typeof(string);
+								break;
+							case SQLite3.ColType.Integer:
+								targetType = typeof(int);
+								break;
+							case SQLite3.ColType.Float:
+								targetType = typeof(double);
+								break;
+							default:
+								targetType = typeof(object);
+								break;
+						}
+
+						var val = ReadCol(stmt, i, colType, targetType);
+						obj.Add(cols[i], val);
+					}
+					OnInstanceCreated(obj);
+					yield return obj;
+				}
+			}
+			finally
+			{
+				SQLite3.Finalize(stmt);
 			}
 		}
 

@@ -10,6 +10,7 @@
       This version uses SQLitePCLRaw to provide platform independent versions of SQLite.
 
     </Description>
+    <Version>1.5.169-beta</Version>
 
   </PropertyGroup>
 
@@ -17,12 +18,12 @@
     <DebugSymbols>false</DebugSymbols>
     <DebugType></DebugType>
     <DefineConstants>USE_SQLITEPCL_RAW;RELEASE</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;DEBUG</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
