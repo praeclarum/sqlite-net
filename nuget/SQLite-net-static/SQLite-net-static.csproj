@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>SQLite-net</AssemblyName>
+    <PackageId>sqlite-net-static</PackageId>
+    <AssemblyTitle>SQLite-net .NET Standard P/Invoke Library</AssemblyTitle>
+    <Description>
+      SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
+      This version uses P/Invokes to the "sqlite3" native library provided by the operating system.
+      This works on Xamarin.iOS, Xamarin.Android, Meadow, and any other platform that has a "sqlite3" library in the path.
+    </Description>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType></DebugType>
+    <DefineConstants>RELEASE</DefineConstants>
+    <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>DEBUG</DefineConstants>
+    <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\SQLite.cs">
+      <Link>SQLite.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\SQLiteAsync.cs">
+      <Link>SQLiteAsync.cs</Link>
+    </Compile>
+    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>
