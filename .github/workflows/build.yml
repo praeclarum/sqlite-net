@@ -11,6 +11,12 @@ jobs:
 
     - uses: actions/checkout@v1
     
+    - name: Update Versions
+      env:
+        VERSION_BUILD: ${{github.run_number}}
+      run: |
+        sed -i bak "s:</VersionPrefix>:.$VERSION_BUILD</VersionPrefix>:g" Directory.Build.props
+    
     - name: Restore NuGets
       run: nuget restore SQLite.sln
       
