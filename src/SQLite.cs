@@ -1893,7 +1893,7 @@ namespace SQLite
 				ps = new List<object> (vals);
 			}
 			ps.Add (pk.GetValue (obj));
-			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
+			var q = string.Format ("update \"{0}\" set {1} where \"{2}\" = ? ", map.TableName, string.Join (",", (from c in cols
 																											  select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
 
 			try {
