@@ -3,32 +3,27 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>SQLite-net</AssemblyName>
-    <PackageId>sqlite-net-sqlcipher</PackageId>
-    <AssemblyTitle>SQLite-net SQLCipher .NET Standard Library</AssemblyTitle>
+    <PackageId>sqlite-net-static</PackageId>
+    <AssemblyTitle>SQLite-net .NET Standard P/Invoke Library</AssemblyTitle>
     <Description>
       SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
-      This version uses SQLitePCLRaw to provide platform independent versions of SQLite with the SQLCipher extension.
-      This enables secure access to the database with password (key) access.
+      This version uses P/Invokes to the "sqlite3" native library provided by the operating system.
+      This works on Xamarin.iOS, Xamarin.Mac, Wilderness Labs' Meadow, and any other platform that has a "sqlite3" library in the path.
     </Description>
-    <PackageTags>sqlite-net;sqlite;database;orm;encryption;sqlcipher</PackageTags>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
     <DebugType></DebugType>
-    <DefineConstants>USE_SQLITEPCL_RAW;RELEASE</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefineConstants>RELEASE</DefineConstants>
     <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>USE_SQLITEPCL_RAW;DEBUG</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefineConstants>DEBUG</DefineConstants>
     <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.0.4" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
