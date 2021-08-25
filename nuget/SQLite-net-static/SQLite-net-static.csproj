@@ -8,7 +8,7 @@
     <Description>
       SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
       This version uses P/Invokes to the "sqlite3" native library provided by the operating system.
-      This works on Xamarin.iOS, Xamarin.Android, Meadow, and any other platform that has a "sqlite3" library in the path.
+      This works on Xamarin.iOS, Xamarin.Mac, Wilderness Labs' Meadow, and any other platform that has a "sqlite3" library in the path.
     </Description>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Configurations>Release;Debug</Configurations>
