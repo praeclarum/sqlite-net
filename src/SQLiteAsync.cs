@@ -460,8 +460,8 @@ namespace SQLite
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+        /// Inserts the given object and (and updates its
+		/// auto incremented primary key if it has one).
 		/// </summary>
 		/// <param name="obj">
 		/// The object to insert.
