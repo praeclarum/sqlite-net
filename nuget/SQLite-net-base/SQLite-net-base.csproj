@@ -11,6 +11,7 @@
       Please use the package sqlite-net-pcl if you have no idea what any of this means.
     </Description>
 
+    <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
