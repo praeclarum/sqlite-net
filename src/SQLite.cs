@@ -3004,7 +3004,7 @@ namespace SQLite
 			var stmt = Prepare ();
 			try {
 				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
-				var fastColumnSetters = new Action<T, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
+				var fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
 
 				if (map.Method == TableMapping.MapMethod.ByPosition)
 				{
@@ -3012,12 +3012,15 @@ namespace SQLite
 				}
 				else if (map.Method == TableMapping.MapMethod.ByName)
 				{
-					for (int i = 0; i < cols.Length; i++)
-					{
+					for (int i = 0; i < cols.Length; i++) {
+						var getSetter = typeof(FastColumnSetter)
+							.GetMethod (nameof(FastColumnSetter.GetFastSetter),
+								BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+
 						var name = SQLite3.ColumnName16 (stmt, i);
 						cols[i] = map.FindColumn (name);
 						if (cols[i] != null)
-							fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T> (_conn, cols[i]);
+							fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke(null, new object[]{ _conn, cols[i]});
 					}
 				}
 
@@ -3028,7 +3031,7 @@ namespace SQLite
 							continue;
 
 						if (fastColumnSetters[i] != null) {
-							fastColumnSetters[i].Invoke ((T)obj, stmt, i);
+							fastColumnSetters[i].Invoke (obj, stmt, i);
 						}
 						else {
 							var colType = SQLite3.ColumnType (stmt, i);
@@ -3369,9 +3372,9 @@ namespace SQLite
 		///
 		/// If no fast setter is available for the requested column (enums in particular cause headache), then this function returns null.
 		/// </returns>
-		internal static Action<T, Sqlite3Statement, int> GetFastSetter<T> (SQLiteConnection conn, TableMapping.Column column)
+		internal static Action<object, Sqlite3Statement, int> GetFastSetter<T> (SQLiteConnection conn, TableMapping.Column column)
 		{
-			Action<T, Sqlite3Statement, int> fastSetter = null;
+			Action<object, Sqlite3Statement, int> fastSetter = null;
 
 			Type clrType = column.PropertyInfo.PropertyType;
 
@@ -3528,7 +3531,7 @@ namespace SQLite
 		/// <param name="column">The column mapping that identifies the target member of the destination object</param>
 		/// <param name="getColumnValue">A lambda that can be used to retrieve the column value at query-time</param>
 		/// <returns>A strongly-typed delegate</returns>
-		private static Action<ObjectType, Sqlite3Statement, int> CreateNullableTypedSetterDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column, Func<Sqlite3Statement, int, ColumnMemberType> getColumnValue) where ColumnMemberType : struct
+		private static Action<object, Sqlite3Statement, int> CreateNullableTypedSetterDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column, Func<Sqlite3Statement, int, ColumnMemberType> getColumnValue) where ColumnMemberType : struct
 		{
 			var clrTypeInfo = column.PropertyInfo.PropertyType.GetTypeInfo();
 			bool isNullable = false;
@@ -3545,7 +3548,7 @@ namespace SQLite
 				return (o, stmt, i) => {
 					var colType = SQLite3.ColumnType (stmt, i);
 					if (colType != SQLite3.ColType.Null)
-						setProperty.Invoke (o, getColumnValue.Invoke (stmt, i));
+						setProperty.Invoke ((ObjectType)o, getColumnValue.Invoke (stmt, i));
 				};
 			}
 
@@ -3560,7 +3563,7 @@ namespace SQLite
 		/// <param name="column">The column mapping that identifies the target member of the destination object</param>
 		/// <param name="getColumnValue">A lambda that can be used to retrieve the column value at query-time</param>
 		/// <returns>A strongly-typed delegate</returns>
-		private static Action<ObjectType, Sqlite3Statement, int> CreateTypedSetterDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column, Func<Sqlite3Statement, int, ColumnMemberType> getColumnValue)
+		private static Action<object, Sqlite3Statement, int> CreateTypedSetterDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column, Func<Sqlite3Statement, int, ColumnMemberType> getColumnValue)
 		{
 			var setProperty = (Action<ObjectType, ColumnMemberType>)Delegate.CreateDelegate (
 					typeof (Action<ObjectType, ColumnMemberType>), null,
@@ -3569,7 +3572,7 @@ namespace SQLite
 			return (o, stmt, i) => {
 				var colType = SQLite3.ColumnType (stmt, i);
 				if (colType != SQLite3.ColType.Null)
-					setProperty.Invoke (o, getColumnValue.Invoke (stmt, i));
+					setProperty.Invoke ((ObjectType)o, getColumnValue.Invoke (stmt, i));
 			};
 		}
 	}
