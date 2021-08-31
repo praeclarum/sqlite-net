@@ -3010,17 +3010,24 @@ namespace SQLite
 				{
 					Array.Copy(map.Columns, cols, Math.Min(cols.Length, map.Columns.Length));
 				}
-				else if (map.Method == TableMapping.MapMethod.ByName)
-				{
-					var getSetter = typeof(FastColumnSetter)
+				else if (map.Method == TableMapping.MapMethod.ByName) {
+					MethodInfo getSetter = null;
+					if (typeof(T) != map.MappedType) {
+						getSetter = typeof(FastColumnSetter)
 							.GetMethod (nameof(FastColumnSetter.GetFastSetter),
-							BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
-							
+								BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+					}
+
 					for (int i = 0; i < cols.Length; i++) {						
 						var name = SQLite3.ColumnName16 (stmt, i);
 						cols[i] = map.FindColumn (name);
 						if (cols[i] != null)
-							fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke(null, new object[]{ _conn, cols[i]});
+							if (getSetter != null) {
+								fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke(null, new object[]{ _conn, cols[i]});
+							}
+							else {
+								fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T>(_conn, cols[i]);
+							}
 					}
 				}
 
