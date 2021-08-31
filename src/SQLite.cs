@@ -3012,11 +3012,11 @@ namespace SQLite
 				}
 				else if (map.Method == TableMapping.MapMethod.ByName)
 				{
-					for (int i = 0; i < cols.Length; i++) {
-						var getSetter = typeof(FastColumnSetter)
+					var getSetter = typeof(FastColumnSetter)
 							.GetMethod (nameof(FastColumnSetter.GetFastSetter),
-								BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
-
+							BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+							
+					for (int i = 0; i < cols.Length; i++) {						
 						var name = SQLite3.ColumnName16 (stmt, i);
 						cols[i] = map.FindColumn (name);
 						if (cols[i] != null)
