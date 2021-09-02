@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage line-rate="0.7949336550060314" branch-rate="0.7043596730245232" lines-covered="1977" lines-valid="2487" branches-covered="517" branches-valid="734" complexity="839" version="0" timestamp="1630616281">
+<coverage line-rate="0.7949336550060314" branch-rate="0.7043596730245232" lines-covered="1977" lines-valid="2487" branches-covered="517" branches-valid="734" complexity="839" version="0" timestamp="1630616660">
   <sources />
   <packages>
     <package name="SQLite.Tests" line-rate="0.7949336550060314" branch-rate="0.7043596730245232" complexity="839">
@@ -1222,21 +1222,21 @@
             </method>
             <method name="Dispose" signature="(System.Boolean)" line-rate="1" branch-rate="1" complexity="NaN">
               <lines>
-                <line number="3659" hits="153" branch="false" />
-                <line number="3660" hits="153" branch="false" />
-                <line number="3661" hits="153" branch="false" />
-                <line number="3662" hits="153" branch="false" />
-                <line number="3663" hits="305" branch="true" condition-coverage="100% (2/2)" />
-                <line number="3664" hits="152" branch="false" />
-                <line number="3665" hits="151" branch="false" />
-                <line number="3666" hits="152" branch="false" />
+                <line number="3659" hits="155" branch="false" />
+                <line number="3660" hits="155" branch="false" />
+                <line number="3661" hits="155" branch="false" />
+                <line number="3662" hits="155" branch="false" />
+                <line number="3663" hits="309" branch="true" condition-coverage="100% (2/2)" />
+                <line number="3664" hits="154" branch="false" />
+                <line number="3665" hits="154" branch="false" />
+                <line number="3666" hits="155" branch="false" />
               </lines>
             </method>
             <method name="Finalize" signature="()" line-rate="1" branch-rate="1" complexity="1">
               <lines>
-                <line number="3669" hits="140" branch="false" />
-                <line number="3670" hits="70" branch="false" />
-                <line number="3671" hits="138" branch="false" />
+                <line number="3669" hits="144" branch="false" />
+                <line number="3670" hits="72" branch="false" />
+                <line number="3671" hits="144" branch="false" />
               </lines>
             </method>
           </methods>
@@ -1282,17 +1282,17 @@
             <line number="3654" hits="83" branch="false" />
             <line number="3655" hits="83" branch="false" />
             <line number="3656" hits="83" branch="false" />
-            <line number="3659" hits="153" branch="false" />
-            <line number="3660" hits="153" branch="false" />
-            <line number="3661" hits="153" branch="false" />
-            <line number="3662" hits="153" branch="false" />
-            <line number="3663" hits="305" branch="true" condition-coverage="100% (2/2)" />
-            <line number="3664" hits="152" branch="false" />
-            <line number="3665" hits="151" branch="false" />
-            <line number="3666" hits="152" branch="false" />
-            <line number="3669" hits="140" branch="false" />
-            <line number="3670" hits="70" branch="false" />
-            <line number="3671" hits="138" branch="false" />
+            <line number="3659" hits="155" branch="false" />
+            <line number="3660" hits="155" branch="false" />
+            <line number="3661" hits="155" branch="false" />
+            <line number="3662" hits="155" branch="false" />
+            <line number="3663" hits="309" branch="true" condition-coverage="100% (2/2)" />
+            <line number="3664" hits="154" branch="false" />
+            <line number="3665" hits="154" branch="false" />
+            <line number="3666" hits="155" branch="false" />
+            <line number="3669" hits="144" branch="false" />
+            <line number="3670" hits="72" branch="false" />
+            <line number="3671" hits="144" branch="false" />
           </lines>
         </class>
         <class name="SQLite.SQLite3" filename="/Users/runner/work/sqlite-net/sqlite-net/src/SQLite.cs" line-rate="1" branch-rate="1" complexity="NaN">
@@ -4490,9 +4490,9 @@
             </method>
             <method name="Finalize" signature="()" line-rate="1" branch-rate="1" complexity="1">
               <lines>
-                <line number="2088" hits="340" branch="false" />
-                <line number="2089" hits="170" branch="false" />
-                <line number="2090" hits="340" branch="false" />
+                <line number="2088" hits="344" branch="false" />
+                <line number="2089" hits="172" branch="false" />
+                <line number="2090" hits="342" branch="false" />
               </lines>
             </method>
             <method name="Dispose" signature="()" line-rate="1" branch-rate="1" complexity="1">
@@ -4512,11 +4512,11 @@
             </method>
             <method name="Dispose" signature="(System.Boolean)" line-rate="0.9230769230769231" branch-rate="0.875" complexity="NaN">
               <lines>
-                <line number="2104" hits="301" branch="false" />
-                <line number="2105" hits="301" branch="false" />
-                <line number="2107" hits="517" branch="true" condition-coverage="100% (2/2)" />
-                <line number="2108" hits="216" branch="false" />
-                <line number="2109" hits="347" branch="true" condition-coverage="100% (2/2)" />
+                <line number="2104" hits="303" branch="false" />
+                <line number="2105" hits="303" branch="false" />
+                <line number="2107" hits="521" branch="true" condition-coverage="100% (2/2)" />
+                <line number="2108" hits="218" branch="false" />
+                <line number="2109" hits="349" branch="true" condition-coverage="100% (2/2)" />
                 <line number="2110" hits="262" branch="false" />
                 <line number="2111" hits="639" branch="true" condition-coverage="100% (2/2)" />
                 <line number="2112" hits="82" branch="false" />
@@ -4528,16 +4528,16 @@
                 <line number="2119" hits="0" branch="false" />
                 <line number="2120" hits="0" branch="false" />
                 <line number="2122" hits="131" branch="false" />
-                <line number="2123" hits="85" branch="false" />
-                <line number="2124" hits="85" branch="false" />
-                <line number="2125" hits="85" branch="false" />
-                <line number="2126" hits="216" branch="false" />
-                <line number="2127" hits="216" branch="false" />
-                <line number="2128" hits="216" branch="false" />
-                <line number="2129" hits="216" branch="false" />
-                <line number="2130" hits="216" branch="false" />
-                <line number="2131" hits="216" branch="false" />
-                <line number="2132" hits="301" branch="false" />
+                <line number="2123" hits="87" branch="false" />
+                <line number="2124" hits="87" branch="false" />
+                <line number="2125" hits="86" branch="false" />
+                <line number="2126" hits="217" branch="false" />
+                <line number="2127" hits="217" branch="false" />
+                <line number="2128" hits="217" branch="false" />
+                <line number="2129" hits="217" branch="false" />
+                <line number="2130" hits="217" branch="false" />
+                <line number="2131" hits="217" branch="false" />
+                <line number="2132" hits="302" branch="false" />
               </lines>
             </method>
             <method name="OnTableChanged" signature="(SQLite.TableMapping,SQLite.NotifyTableChangedAction)" line-rate="1" branch-rate="1" complexity="NaN">
@@ -5277,9 +5277,9 @@
             <line number="2082" hits="1" branch="true" condition-coverage="50% (1/2)" />
             <line number="2083" hits="0" branch="false" />
             <line number="2085" hits="1" branch="false" />
-            <line number="2088" hits="340" branch="false" />
-            <line number="2089" hits="170" branch="false" />
-            <line number="2090" hits="340" branch="false" />
+            <line number="2088" hits="344" branch="false" />
+            <line number="2089" hits="172" branch="false" />
+            <line number="2090" hits="342" branch="false" />
             <line number="2093" hits="44" branch="false" />
             <line number="2094" hits="44" branch="false" />
             <line number="2095" hits="44" branch="false" />
@@ -5287,11 +5287,11 @@
             <line number="2099" hits="87" branch="false" />
             <line number="2100" hits="87" branch="false" />
             <line number="2101" hits="87" branch="false" />
-            <line number="2104" hits="301" branch="false" />
-            <line number="2105" hits="301" branch="false" />
-            <line number="2107" hits="517" branch="true" condition-coverage="100% (2/2)" />
-            <line number="2108" hits="216" branch="false" />
-            <line number="2109" hits="347" branch="true" condition-coverage="100% (2/2)" />
+            <line number="2104" hits="303" branch="false" />
+            <line number="2105" hits="303" branch="false" />
+            <line number="2107" hits="521" branch="true" condition-coverage="100% (2/2)" />
+            <line number="2108" hits="218" branch="false" />
+            <line number="2109" hits="349" branch="true" condition-coverage="100% (2/2)" />
             <line number="2110" hits="262" branch="false" />
             <line number="2111" hits="639" branch="true" condition-coverage="100% (2/2)" />
             <line number="2112" hits="82" branch="false" />
@@ -5303,16 +5303,16 @@
             <line number="2119" hits="0" branch="false" />
             <line number="2120" hits="0" branch="false" />
             <line number="2122" hits="131" branch="false" />
-            <line number="2123" hits="85" branch="false" />
-            <line number="2124" hits="85" branch="false" />
-            <line number="2125" hits="85" branch="false" />
-            <line number="2126" hits="216" branch="false" />
-            <line number="2127" hits="216" branch="false" />
-            <line number="2128" hits="216" branch="false" />
-            <line number="2129" hits="216" branch="false" />
-            <line number="2130" hits="216" branch="false" />
-            <line number="2131" hits="216" branch="false" />
-            <line number="2132" hits="301" branch="false" />
+            <line number="2123" hits="87" branch="false" />
+            <line number="2124" hits="87" branch="false" />
+            <line number="2125" hits="86" branch="false" />
+            <line number="2126" hits="217" branch="false" />
+            <line number="2127" hits="217" branch="false" />
+            <line number="2128" hits="217" branch="false" />
+            <line number="2129" hits="217" branch="false" />
+            <line number="2130" hits="217" branch="false" />
+            <line number="2131" hits="217" branch="false" />
+            <line number="2132" hits="302" branch="false" />
             <line number="2135" hits="12993" branch="false" />
             <line number="2136" hits="12993" branch="false" />
             <line number="2137" hits="12993" branch="true" condition-coverage="100% (2/2)" />
