@@ -2612,8 +2612,8 @@ namespace SQLite
 
 				var colAttr = member.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (ColumnAttribute));
 #if ENABLE_IL2CPP
-                var ca = prop.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute;
-				Name = ca == null ? prop.Name : ca.Name;
+                var ca = member.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute;
+				Name = ca == null ? member.Name : ca.Name;
 #else
 				Name = (colAttr != null && colAttr.ConstructorArguments.Count > 0) ?
 						colAttr.ConstructorArguments[0].Value?.ToString () :
