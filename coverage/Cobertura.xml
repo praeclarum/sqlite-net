@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage line-rate="0.7949336550060314" branch-rate="0.7043596730245232" lines-covered="1977" lines-valid="2487" branches-covered="517" branches-valid="734" complexity="839" version="0" timestamp="1630615911">
+<coverage line-rate="0.7949336550060314" branch-rate="0.7043596730245232" lines-covered="1977" lines-valid="2487" branches-covered="517" branches-valid="734" complexity="839" version="0" timestamp="1630616281">
   <sources />
   <packages>
     <package name="SQLite.Tests" line-rate="0.7949336550060314" branch-rate="0.7043596730245232" complexity="839">
