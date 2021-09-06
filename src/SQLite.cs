@@ -3054,7 +3054,7 @@ namespace SQLite
 #pragma warning disable CS0618 // Type or member is obsolete
 							catch (ExecutionEngineException) {
 #pragma warning restore CS0618 // Type or member is obsolete
-								// Column setter as AOT Problem so don't use it.
+								// Column setter has AOT Problem so don't use it.
 								fastColumnSetters[i] = null;
 								Trace.WriteLine($"FastMapper AOT Jit Exception on Type {map.MappedType.FullName} Column {cols[i].Name}");
 							}
