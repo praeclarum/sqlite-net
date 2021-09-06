@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 #if !USE_SQLITEPCL_RAW
 using System.Runtime.InteropServices;
@@ -35,6 +36,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
+using ExecutionEngineException = System.ExecutionEngineException;
 
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
@@ -2139,6 +2141,14 @@ namespace SQLite
 		}
 
 		public event EventHandler<NotifyTableChangedEventArgs> TableChanged;
+
+		public static void RegisterFastColumnSetter (
+			Type type, 
+			string name,
+			Action<object, Sqlite3Statement, int> setter)
+		{
+			FastColumnSetter.RegisterFastColumnSetter (type, name, setter);
+		}
 	}
 
 	public class NotifyTableChangedEventArgs : EventArgs
@@ -3038,7 +3048,16 @@ namespace SQLite
 							continue;
 
 						if (fastColumnSetters[i] != null) {
-							fastColumnSetters[i].Invoke (obj, stmt, i);
+							try {
+								fastColumnSetters[i].Invoke (obj, stmt, i);
+							}
+#pragma warning disable CS0618 // Type or member is obsolete
+							catch (ExecutionEngineException) {
+#pragma warning restore CS0618 // Type or member is obsolete
+								// Column setter as AOT Problem so don't use it.
+								fastColumnSetters[i] = null;
+								Trace.WriteLine($"FastMapper AOT Jit Exception on Type {map.MappedType.FullName} Column {cols[i].Name}");
+							}
 						}
 						else {
 							var colType = SQLite3.ColumnType (stmt, i);
@@ -3365,6 +3384,14 @@ namespace SQLite
 
 	internal class FastColumnSetter
 	{
+		private static ConcurrentDictionary<(Type, string), Action<object, Sqlite3Statement, int>> customSetter =
+			new ConcurrentDictionary<(Type, string), Action<object, Sqlite3Statement, int>> ();
+
+		public static void RegisterFastColumnSetter(Type type, string name, Action<object, Sqlite3Statement, int> setter)
+		{
+			customSetter[(type, name)] = setter;
+		}
+
 		/// <summary>
 		/// Creates a delegate that can be used to quickly set object members from query columns.
 		///
@@ -3381,7 +3408,9 @@ namespace SQLite
 		/// </returns>
 		internal static Action<object, Sqlite3Statement, int> GetFastSetter<T> (SQLiteConnection conn, TableMapping.Column column)
 		{
-			Action<object, Sqlite3Statement, int> fastSetter = null;
+			if (customSetter.TryGetValue ((typeof(T), column.Name), out var fastSetter)) {
+				return fastSetter;
+			}
 
 			Type clrType = column.PropertyInfo.PropertyType;
 
