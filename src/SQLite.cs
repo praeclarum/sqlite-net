@@ -3057,6 +3057,7 @@ namespace SQLite
 								// Column setter has AOT Problem so don't use it.
 								fastColumnSetters[i] = null;
 								Trace.WriteLine($"FastColumnSetter AOT Jit Exception on Type {map.MappedType.FullName} Column {cols[i].Name}");
+								i--; // go one back and read it with default implementation
 							}
 						}
 						else {
