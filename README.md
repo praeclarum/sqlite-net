@@ -62,6 +62,8 @@ public class Valuation
 	public int StockId { get; set; }
 	public DateTime Time { get; set; }
 	public decimal Price { get; set; }
+	[Ignore]
+	public string IgnoreField { get; set; }
 }
 ```
 
