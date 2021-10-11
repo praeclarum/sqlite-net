@@ -3,6 +3,7 @@ using System.Text;
 using SQLite;
 using System.Threading.Tasks;
 using System.IO;
+using System.Threading;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;

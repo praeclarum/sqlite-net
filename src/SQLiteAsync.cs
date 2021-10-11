@@ -1084,6 +1084,32 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// A list with one result for each row returned by the query.
+		/// </returns>
+		public Task<List<T>> QueryWithCancellationAsync<T> (string query, CancellationToken cancellationToken, params object[] args)
+			where T : new()
+		{
+			return ReadAsync (conn => conn.QueryWithCancellation<T> (query, cancellationToken, args));
+		}
+
+		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
 		/// It returns the first column of each row of the result.
@@ -1100,6 +1126,30 @@ namespace SQLite
 		public Task<List<T>> QueryScalarsAsync<T> (string query, params object[] args)
 		{
 			return ReadAsync (conn => conn.QueryScalars<T> (query, args));
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns the first column of each row of the result.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// A list with one result for the first column of each row returned by the query.
+		/// </returns>
+		public Task<List<T>> QueryScalarsWithCancellationAsync<T> (string query, CancellationToken cancellationToken, params object[] args)
+		{
+			return ReadAsync (conn => conn.QueryScalarsWithCancellation<T> (query, cancellationToken, args));
 		}
 
 		/// <summary>
@@ -1128,6 +1178,36 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// </returns>
+		public Task<List<object>> QueryWithCancellationAsync (TableMapping map, string query, CancellationToken cancellationToken, params object[] args)
+		{
+			return ReadAsync (conn => conn.QueryWithCancellation (map, query, cancellationToken, args));
+		}
+
+		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
 		/// It returns each row of the result using the mapping automatically generated for
@@ -1148,6 +1228,34 @@ namespace SQLite
 			where T : new()
 		{
 			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ());
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public Task<IEnumerable<T>> DeferredQueryWithCancellationAsync<T> (string query, CancellationToken cancellationToken, params object[] args)
+			where T : new()
+		{
+			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQueryWithCancellation<T> (query, cancellationToken, args).ToList ());
 		}
 
 		/// <summary>
@@ -1175,6 +1283,38 @@ namespace SQLite
 		public Task<IEnumerable<object>> DeferredQueryAsync (TableMapping map, string query, params object[] args)
 		{
 			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ());
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public Task<IEnumerable<object>> DeferredQueryWithCancellationAsync (TableMapping map, string query, CancellationToken cancellationToken, params object[] args)
+		{
+			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQueryWithCancellation (map, query, cancellationToken, args).ToList ());
 		}
 	}
 

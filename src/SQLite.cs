@@ -1008,6 +1008,32 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// </returns>
+		public List<T> QueryWithCancellation<T> (string query, CancellationToken cancellationToken, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteQueryWithCancellation<T> (cancellationToken);
+		}
+
+		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
 		/// It returns the first column of each row of the result.
@@ -1025,6 +1051,31 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQueryScalars<T> ().ToList ();
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns the first column of each row of the result.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for the first column of each row returned by the query.
+		/// </returns>
+		public List<T> QueryScalarsWithCancellation<T> (string query, CancellationToken cancellationToken, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteQueryScalarsWithCancellation<T> (cancellationToken).ToList ();
 		}
 
 		/// <summary>
@@ -1049,6 +1100,35 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteDeferredQuery<T> ();
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public IEnumerable<T> DeferredQueryWithCancellation<T> (string query, CancellationToken cancellationToken, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteDeferredQueryWithCancellation<T> (cancellationToken);
 		}
 
 		/// <summary>
@@ -1078,6 +1158,37 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// </returns>
+		public List<object> QueryWithCancellation (TableMapping map, string query, CancellationToken cancellationToken, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteQueryWithCancellation<object> (map, cancellationToken);
+		}
+
+		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
 		/// It returns each row of the result using the specified mapping. This function is
@@ -1104,6 +1215,40 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteDeferredQuery<object> (map);
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments that may be cancelled.
+		/// Place a '?' in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="cancellationToken">
+		/// A cancellation token that may be used to cancel the query.
+		/// <para/>
+		/// When <see cref="CancellationToken.IsCancellationRequested"/> is true, causes a <see cref="OperationCanceledException"/> to be thrown.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public IEnumerable<object> DeferredQueryWithCancellation (TableMapping map, string query, CancellationToken cancellationToken, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteDeferredQueryWithCancellation<object> (map, cancellationToken);
 		}
 
 		/// <summary>
@@ -2970,14 +3115,29 @@ namespace SQLite
 			return ExecuteDeferredQuery<T> (_conn.GetMapping (typeof (T)));
 		}
 
+		public IEnumerable<T> ExecuteDeferredQueryWithCancellation<T> (CancellationToken cancellationToken)
+		{
+			return ExecuteDeferredQueryWithCancellation<T> (_conn.GetMapping (typeof (T)), cancellationToken);
+		}
+
 		public List<T> ExecuteQuery<T> ()
 		{
 			return ExecuteDeferredQuery<T> (_conn.GetMapping (typeof (T))).ToList ();
 		}
 
+		public List<T> ExecuteQueryWithCancellation<T> (CancellationToken cancellationToken)
+		{
+			return ExecuteDeferredQueryWithCancellation<T> (_conn.GetMapping (typeof (T)), cancellationToken).ToList ();
+		}
+
 		public List<T> ExecuteQuery<T> (TableMapping map)
 		{
 			return ExecuteDeferredQuery<T> (map).ToList ();
+		}
+
+		public List<T> ExecuteQueryWithCancellation<T> (TableMapping map, CancellationToken cancellationToken)
+		{
+			return ExecuteDeferredQueryWithCancellation<T> (map, cancellationToken).ToList ();
 		}
 
 		/// <summary>
@@ -2996,6 +3156,11 @@ namespace SQLite
 		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
+		{
+			return ExecuteDeferredQueryWithCancellation<T> (map, CancellationToken.None);
+		}
+
+		public IEnumerable<T> ExecuteDeferredQueryWithCancellation<T> (TableMapping map, CancellationToken cancellationToken)
 		{
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
@@ -3032,6 +3197,7 @@ namespace SQLite
 				}
 
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					cancellationToken.ThrowIfCancellationRequested ();
 					var obj = Activator.CreateInstance (map.MappedType);
 					for (int i = 0; i < cols.Length; i++) {
 						if (cols[i] == null)
@@ -3089,6 +3255,11 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteQueryScalars<T> ()
 		{
+			return ExecuteQueryScalarsWithCancellation<T> (CancellationToken.None);
+		}
+
+		public IEnumerable<T> ExecuteQueryScalarsWithCancellation<T> (CancellationToken cancellationToken)
+		{
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
@@ -3098,6 +3269,7 @@ namespace SQLite
 					throw new InvalidOperationException ("QueryScalars should return at least one column");
 				}
 				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+					cancellationToken.ThrowIfCancellationRequested ();
 					var colType = SQLite3.ColumnType (stmt, 0);
 					var val = ReadCol (stmt, 0, colType, typeof (T));
 					if (val == null) {
