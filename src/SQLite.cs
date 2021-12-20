@@ -391,6 +391,32 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Change the encryption key for a SQLCipher database with "pragma rekey = ...".
+		/// </summary>
+		/// <param name="key">Encryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
+		public void SetReKey (string key)
+		{
+			if (key == null)
+				throw new ArgumentNullException(nameof(key));
+			var q = Quote(key);
+			ExecuteScalar<string>("pragma rekey = " + q);
+		}
+
+		/// <summary>
+		/// Change the encryption key for a SQLCipher database.
+		/// </summary>
+		/// <param name="key">256-bit (32 byte) or 384-bit (48 bytes) encryption key data</param>
+		public void SetReKey (byte[] key)
+		{
+			if (key == null)
+				throw new ArgumentNullException(nameof(key));
+			if (key.Length != 32 && key.Length != 48)
+				throw new ArgumentException ("Key must be 32 bytes (256-bit) or 48 bytes (384-bit)", nameof (key));
+			var s = String.Join("", key.Select(x => x.ToString("X2")));
+			ExecuteScalar<string>("pragma rekey = \"x'" + s + "'\"");
+		}
+
+		/// <summary>
 		/// Enable or disable extension loading.
 		/// </summary>
 		public void EnableLoadExtension (bool enabled)
