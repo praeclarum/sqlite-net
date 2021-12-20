@@ -166,8 +166,6 @@ namespace SQLite.Tests
 			}
 
 			using (var db = new TestDb (path, key: reKey)) {
-				path = db.DatabasePath;
-
 				var r = db.Table<TestTable> ().First ();
 
 				Assert.AreEqual ("Hello", r.Value);
@@ -194,8 +192,6 @@ namespace SQLite.Tests
 			}
 
 			using (var db = new TestDb (path, key: reKey)) {
-				path = db.DatabasePath;
-
 				var r = db.Table<TestTable> ().First ();
 
 				Assert.AreEqual ("Hello", r.Value);
