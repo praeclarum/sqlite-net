@@ -3319,6 +3319,9 @@ namespace SQLite
 				else if (clrType == typeof (Int64)) {
 					return SQLite3.ColumnInt64 (stmt, index);
 				}
+				else if (clrType == typeof (UInt64)) {
+					return (ulong)SQLite3.ColumnInt64 (stmt, index);
+				}
 				else if (clrType == typeof (UInt32)) {
 					return (uint)SQLite3.ColumnInt64 (stmt, index);
 				}
