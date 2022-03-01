@@ -4442,7 +4442,7 @@ namespace SQLite
 			Serialized = 3
 		}
 
-#if ENABLE_IL2CPP
+#if ENABLE_IL2CPP && !UNITY_EDITOR
 		const string LibraryPath = "__Internal";
 #else
 		const string LibraryPath = "sqlite3";
