@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
-        <VersionPrefix>1.9.0</VersionPrefix>
-        <VersionSuffix></VersionSuffix>
+        <VersionPrefix>1.9</VersionPrefix>
+        <VersionSuffix>beta</VersionSuffix>
 
         <PackageIcon>Logo-low.png</PackageIcon>
         <PackageProjectUrl>https://github.com/praeclarum/sqlite-net</PackageProjectUrl>
