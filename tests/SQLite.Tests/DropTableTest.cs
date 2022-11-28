@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SQLite;
+using System.Threading.Tasks;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -37,6 +38,14 @@ namespace SQLite.Tests
 			}
 		}
 		
+		public class TestDbAsync : SQLiteAsyncConnection
+		{
+			public TestDbAsync () : base(TestPath.GetTempFileName ())
+			{
+				Trace = true;
+			}
+		}
+		
 		[Test]
 		public void CreateInsertDrop ()
 		{
@@ -56,6 +65,32 @@ namespace SQLite.Tests
 			db.DropTable<Product> ();
 			
 			ExceptionAssert.Throws<SQLiteException>(() => db.Table<Product> ().Count ());
+		}
+		
+		[Test]
+		public async Task CreateInsertDropAsync ()
+		{
+			var db = new TestDbAsync ();
+			
+			await db.CreateTableAsync<Product> ();
+			
+			await db.InsertAsync (new Product {
+				Name = "Hello",
+				Price = 16,
+			});
+			
+			var n = await db.Table<Product> ().CountAsync ();
+			
+			Assert.AreEqual (1, n);
+			
+			await db.DropTableAsync<Product> ();
+			
+			try {
+				await db.Table<Product> ().CountAsync ();
+				Assert.Fail ("Should have thrown");
+			} catch (SQLiteException) {
+				// Expected
+			}
 		}
 	}
 }
