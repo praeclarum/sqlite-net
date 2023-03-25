@@ -2672,7 +2672,7 @@ namespace SQLite
 			if(Method != MapMethod.ByName)
 				throw new InvalidOperationException($"This {nameof(TableMapping)} is not mapped by name, but {Method}.");
 
-			var exact = Columns.FirstOrDefault (c => c.Name.ToLower () == columnName.ToLower ());
+			var exact = Columns.FirstOrDefault (c => c.Name.ToUpperInvariant () == columnName.ToUpperInvariant ());
 			return exact;
 		}
 
@@ -4192,7 +4192,7 @@ namespace SQLite
 					sqlCall = "(" + args[0].CommandText + " is null or" + args[0].CommandText + " ='' )";
 				}
 				else {
-					sqlCall = call.Method.Name.ToLower () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
+					sqlCall = call.Method.Name.ToUpperInvariant () + "(" + string.Join (",", args.Select (a => a.CommandText).ToArray ()) + ")";
 				}
 				return new CompileResult { CommandText = sqlCall };
 
