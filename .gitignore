@@ -265,3 +265,4 @@ paket-files/
 # CodeRush
 .cr/
 
+*.ncrunchsolution

@@ -49,6 +49,8 @@ using Sqlite3DatabaseHandle = SQLitePCL.sqlite3;
 using Sqlite3BackupHandle = SQLitePCL.sqlite3_backup;
 using Sqlite3Statement = SQLitePCL.sqlite3_stmt;
 using Sqlite3 = SQLitePCL.raw;
+using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3BackupHandle = System.IntPtr;
@@ -56,6 +58,10 @@ using Sqlite3Statement = System.IntPtr;
 #endif
 
 #pragma warning disable 1591 // XML Doc Comments
+#pragma warning disable IDE0034 // Simplify 'default' expression
+#pragma warning disable IDE0011 // Add braces
+#pragma warning disable IDE0032 // Use auto property
+#pragma warning disable IDE0075 // Simplify conditional expression
 
 namespace SQLite
 {
@@ -159,7 +165,7 @@ namespace SQLite
 		FullTextSearch4 = 0x200
 	}
 
-	public interface ISQLiteConnection
+	public interface ISQLiteConnection : IDisposable
 	{
 		Sqlite3DatabaseHandle Handle { get; }
 		string DatabasePath { get; }
@@ -209,13 +215,14 @@ namespace SQLite
 			where T5 : new();
 		CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types);
 		IEnumerable<T> DeferredQuery<T> (string query, params object[] args) where T : new();
+		IEnumerable<T> DeferredQuery<T> (CancellationToken tok, string query, params object[] args) where T : new();
 		IEnumerable<object> DeferredQuery (TableMapping map, string query, params object[] args);
+		IEnumerable<object> DeferredQuery (CancellationToken cancellationToken, TableMapping map, string query, params object[] args);
 		int Delete (object objectToDelete);
 		int Delete<T> (object primaryKey);
 		int Delete (object primaryKey, TableMapping map);
 		int DeleteAll<T> ();
 		int DeleteAll (TableMapping map);
-		void Dispose ();
 		int DropTable<T> ();
 		int DropTable (TableMapping map);
 		void EnableLoadExtension (bool enabled);
@@ -243,8 +250,11 @@ namespace SQLite
 		int InsertOrReplace (object obj);
 		int InsertOrReplace (object obj, Type objType);
 		List<T> Query<T> (string query, params object[] args) where T : new();
+		List<T> Query<T> (CancellationToken cancellationToken, string query, params object[] args) where T : new();
 		List<object> Query (TableMapping map, string query, params object[] args);
+		List<object> Query (CancellationToken cancellationToken, TableMapping map, string query, params object[] args);
 		List<T> QueryScalars<T> (string query, params object[] args);
+		List<T> QueryScalars<T> (CancellationToken cancellationToken, string query, params object[] args);
 		void Release (string savepoint);
 		void Rollback ();
 		void RollbackTo (string savepoint);
@@ -380,6 +390,7 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (SQLiteConnectionString connectionString)
 		{
+
 			if (connectionString == null)
 				throw new ArgumentNullException (nameof (connectionString));
 			if (connectionString.DatabasePath == null)
@@ -1105,6 +1116,12 @@ namespace SQLite
 			return cmd.ExecuteQuery<T> ();
 		}
 
+		public List<T> Query<T> (CancellationToken cancellationToken, string query, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteQuery<T> (cancellationToken);
+		}
+
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -1122,7 +1139,13 @@ namespace SQLite
 		public List<T> QueryScalars<T> (string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			return cmd.ExecuteQueryScalars<T> ().ToList ();
+			return cmd.ExecuteQueryScalars<T> (null).ToList ();
+		}
+
+		public List<T> QueryScalars<T> (CancellationToken cancellationToken, string query,  params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteQueryScalars<T> (cancellationToken).ToList ();
 		}
 
 		/// <summary>
@@ -1149,6 +1172,12 @@ namespace SQLite
 			return cmd.ExecuteDeferredQuery<T> ();
 		}
 
+		public IEnumerable<T> DeferredQuery<T> (CancellationToken tok, string query, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteDeferredQuery<T> (tok);
+		}
+
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -1173,6 +1202,11 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<object> (map);
+		}
+		public List<object> Query (CancellationToken cancellationToken, TableMapping map, string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteQuery<object> (map,cancellationToken);
 		}
 
 		/// <summary>
@@ -1202,6 +1236,11 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteDeferredQuery<object> (map);
+		}
+		public IEnumerable<object> DeferredQuery (CancellationToken cancellationToken, TableMapping map, string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteDeferredQuery<object> (cancellationToken,map);
 		}
 
 		/// <summary>
@@ -2563,6 +2602,7 @@ namespace SQLite
 			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
 			WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
 
+
 			var members = GetPublicMembers(type);
 			var cols = new List<Column>(members.Count);
 			foreach(var m in members)
@@ -3028,7 +3068,6 @@ namespace SQLite
 		private List<Binding> _bindings;
 
 		public string CommandText { get; set; }
-
 		public SQLiteCommand (SQLiteConnection conn)
 		{
 			_conn = conn;
@@ -3067,6 +3106,15 @@ namespace SQLite
 		{
 			return ExecuteDeferredQuery<T> (_conn.GetMapping (typeof (T)));
 		}
+		public IEnumerable<T> CancelableExecuteDeferredQuery<T> (CancellationToken cancellationToken)
+		{
+			return CancelableExecuteDeferredQuery<T> (cancellationToken, _conn.GetMapping (typeof (T)));
+		}
+
+		public List<T> CancelableExecuteQuery<T> (CancellationToken cancellationToken)
+		{
+			return CancelableExecuteDeferredQuery<T> (cancellationToken, _conn.GetMapping (typeof (T))).ToList ();
+		}
 
 		public List<T> ExecuteQuery<T> ()
 		{
@@ -3078,6 +3126,10 @@ namespace SQLite
 			return ExecuteDeferredQuery<T> (map).ToList ();
 		}
 
+		public List<T> CancelableExecuteQuery<T> (TableMapping map, CancellationToken cancellationToken)
+		{
+			return CancelableExecuteDeferredQuery<T> (cancellationToken, map).ToList ();
+		}
 		/// <summary>
 		/// Invoked every time an instance is loaded from the database.
 		/// </summary>
@@ -3095,12 +3147,21 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
+			return CancelableExecuteDeferredQuery<T> (null, map);
+		}
+
+		public IEnumerable<T> CancelableExecuteDeferredQuery<T> (CancellationToken? cancTok, TableMapping map)
+		{
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
 
 			var stmt = Prepare ();
 			try {
+				if (cancTok != null)
+					cancTok.Value.Register (() => {
+						SQLite3.Interrupt (_conn.Handle);
+					});
 				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
 				var fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
 
@@ -3129,7 +3190,17 @@ namespace SQLite
 					}
 				}
 
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+				while (true) {
+					var r = SQLite3.Step (stmt);
+					if (r == SQLite3.Result.Done)
+						break; 
+
+					if (cancTok != null)
+						cancTok.Value.ThrowIfCancellationRequested ();
+
+					if (r != SQLite3.Result.Row)
+						throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+
 					var obj = Activator.CreateInstance (map.MappedType);
 					for (int i = 0; i < cols.Length; i++) {
 						if (cols[i] == null)
@@ -3164,6 +3235,7 @@ namespace SQLite
 			var stmt = Prepare ();
 
 			try {
+
 				var r = SQLite3.Step (stmt);
 				if (r == SQLite3.Result.Row) {
 					var colType = SQLite3.ColumnType (stmt, 0);
@@ -3185,7 +3257,7 @@ namespace SQLite
 			return val;
 		}
 
-		public IEnumerable<T> ExecuteQueryScalars<T> ()
+		public IEnumerable<T> ExecuteQueryScalars<T> (CancellationToken? cancTok)
 		{
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
@@ -3195,7 +3267,21 @@ namespace SQLite
 				if (SQLite3.ColumnCount (stmt) < 1) {
 					throw new InvalidOperationException ("QueryScalars should return at least one column");
 				}
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
+
+				if (cancTok != null)
+					cancTok.Value.Register (() => {
+						SQLite3.Interrupt (_conn.Handle);
+						});
+				
+				while (true) {
+					var r = SQLite3.Step (stmt);
+					if (r == SQLite3.Result.Done)
+						break;
+					if (cancTok != null)
+						cancTok.Value.ThrowIfCancellationRequested ();
+				    if (r != SQLite3.Result.Row)
+						throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+
 					var colType = SQLite3.ColumnType (stmt, 0);
 					var val = ReadCol (stmt, 0, colType, typeof (T));
 					if (val == null) {
@@ -3812,6 +3898,7 @@ namespace SQLite
 		Expression _joinSelector;
 
 		Expression _selector;
+		CancellationToken? _cancelToken;
 
 		TableQuery (SQLiteConnection conn, TableMapping table)
 		{
@@ -3841,6 +3928,7 @@ namespace SQLite
 			q._joinOuterKeySelector = _joinOuterKeySelector;
 			q._joinSelector = _joinSelector;
 			q._selector = _selector;
+			q._cancelToken = _cancelToken;
 			return q;
 		}
 
@@ -3859,6 +3947,13 @@ namespace SQLite
 			else {
 				throw new NotSupportedException ("Must be a predicate");
 			}
+		}
+
+		public TableQuery<T> CancelToken(CancellationToken? tok)
+		{
+			var q = Clone<T> ();
+			q._cancelToken = tok;
+			return q;
 		}
 
 		/// <summary>
@@ -4383,10 +4478,18 @@ namespace SQLite
 
 		public IEnumerator<T> GetEnumerator ()
 		{
-			if (!_deferred)
-				return GenerateCommand ("*").ExecuteQuery<T> ().GetEnumerator ();
+			var cmd = GenerateCommand ("*");
+			if (_cancelToken != null) {
+				if (!_deferred)
+					return cmd.CancelableExecuteQuery<T> (_cancelToken.Value).GetEnumerator ();
 
-			return GenerateCommand ("*").ExecuteDeferredQuery<T> ().GetEnumerator ();
+				return cmd.CancelableExecuteDeferredQuery<T> (_cancelToken.Value).GetEnumerator ();
+			}
+
+			if (!_deferred)
+				return cmd.ExecuteQuery<T> ().GetEnumerator ();
+
+			return cmd.ExecuteDeferredQuery<T> ().GetEnumerator ();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
@@ -4399,7 +4502,11 @@ namespace SQLite
 		/// </summary>
 		public List<T> ToList ()
 		{
-			return GenerateCommand ("*").ExecuteQuery<T> ();
+			var cmd =GenerateCommand ("*");
+			if (_cancelToken != null)
+			  return cmd.CancelableExecuteQuery<T> (_cancelToken.Value);
+			else
+			  return cmd.ExecuteQuery<T>();
 		}
 
 		/// <summary>
@@ -4407,7 +4514,11 @@ namespace SQLite
 		/// </summary>
 		public T[] ToArray ()
 		{
-			return GenerateCommand ("*").ExecuteQuery<T> ().ToArray ();
+			var cmd = GenerateCommand ("*");
+			if (_cancelToken != null)
+			   return cmd.CancelableExecuteQuery<T> (_cancelToken.Value).ToArray ();
+			else
+			return cmd.ExecuteQuery<T> ().ToArray ();
 		}
 
 		/// <summary>
@@ -4608,7 +4719,10 @@ namespace SQLite
 			return stmt;
 		}
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_step", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_interrupt", CallingConvention = CallingConvention.Cdecl)]
+		public static extern void Interrupt(IntPtr db);
+
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_step", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Step (IntPtr stmt);
 
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_reset", CallingConvention=CallingConvention.Cdecl)]
@@ -4771,6 +4885,13 @@ namespace SQLite
 		{
 			return (Result)Sqlite3.sqlite3_step (stmt);
 		}
+
+		public static void Interrupt(Sqlite3DatabaseHandle db)
+		{
+			Sqlite3.sqlite3_interrupt(db);
+		}
+
+		
 
 		public static Result Reset (Sqlite3Statement stmt)
 		{
