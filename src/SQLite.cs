@@ -3155,72 +3155,70 @@ namespace SQLite
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
+			
+			cancTok?.ThrowIfCancellationRequested ();
+			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
+				var stmt = Prepare ();
+				try {
 
-			var stmt = Prepare ();
-			try {
-				if (cancTok != null)
-					cancTok.Value.Register (() => {
-						SQLite3.Interrupt (_conn.Handle);
-					});
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
-				var fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
+					var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+					var fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
 
-				if (map.Method == TableMapping.MapMethod.ByPosition)
-				{
-					Array.Copy(map.Columns, cols, Math.Min(cols.Length, map.Columns.Length));
-				}
-				else if (map.Method == TableMapping.MapMethod.ByName) {
-					MethodInfo getSetter = null;
-					if (typeof(T) != map.MappedType) {
-						getSetter = typeof(FastColumnSetter)
-							.GetMethod (nameof(FastColumnSetter.GetFastSetter),
-								BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+					if (map.Method == TableMapping.MapMethod.ByPosition) {
+						Array.Copy (map.Columns, cols, Math.Min (cols.Length, map.Columns.Length));
+					}
+					else if (map.Method == TableMapping.MapMethod.ByName) {
+						MethodInfo getSetter = null;
+						if (typeof (T) != map.MappedType) {
+							getSetter = typeof (FastColumnSetter)
+								.GetMethod (nameof (FastColumnSetter.GetFastSetter),
+									BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+						}
+
+						for (int i = 0; i < cols.Length; i++) {
+							var name = SQLite3.ColumnName16 (stmt, i);
+							cols[i] = map.FindColumn (name);
+							if (cols[i] != null)
+								if (getSetter != null) {
+									fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke (null, new object[] { _conn, cols[i] });
+								}
+								else {
+									fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T> (_conn, cols[i]);
+								}
+						}
 					}
 
-					for (int i = 0; i < cols.Length; i++) {						
-						var name = SQLite3.ColumnName16 (stmt, i);
-						cols[i] = map.FindColumn (name);
-						if (cols[i] != null)
-							if (getSetter != null) {
-								fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke(null, new object[]{ _conn, cols[i]});
+					while (true) {
+						var r = SQLite3.Step (stmt);
+						if (r == SQLite3.Result.Done)
+							break;
+
+						cancTok?.ThrowIfCancellationRequested ();
+
+						if (r != SQLite3.Result.Row)
+							throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+
+						var obj = Activator.CreateInstance (map.MappedType);
+						for (int i = 0; i < cols.Length; i++) {
+							if (cols[i] == null)
+								continue;
+
+							if (fastColumnSetters[i] != null) {
+								fastColumnSetters[i].Invoke (obj, stmt, i);
 							}
 							else {
-								fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T>(_conn, cols[i]);
+								var colType = SQLite3.ColumnType (stmt, i);
+								var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
+								cols[i].SetValue (obj, val);
 							}
+						}
+						OnInstanceCreated (obj);
+						yield return (T)obj;
 					}
 				}
-
-				while (true) {
-					var r = SQLite3.Step (stmt);
-					if (r == SQLite3.Result.Done)
-						break; 
-
-					if (cancTok != null)
-						cancTok.Value.ThrowIfCancellationRequested ();
-
-					if (r != SQLite3.Result.Row)
-						throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-
-					var obj = Activator.CreateInstance (map.MappedType);
-					for (int i = 0; i < cols.Length; i++) {
-						if (cols[i] == null)
-							continue;
-
-						if (fastColumnSetters[i] != null) {
-							fastColumnSetters[i].Invoke (obj, stmt, i);
-						}
-						else {
-							var colType = SQLite3.ColumnType (stmt, i);
-							var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
-							cols[i].SetValue (obj, val);
-						}
-					}
-					OnInstanceCreated (obj);
-					yield return (T)obj;
+				finally {
+					SQLite3.Finalize (stmt);
 				}
-			}
-			finally {
-				SQLite3.Finalize (stmt);
 			}
 		}
 
@@ -3262,38 +3260,36 @@ namespace SQLite
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
-			var stmt = Prepare ();
-			try {
-				if (SQLite3.ColumnCount (stmt) < 1) {
-					throw new InvalidOperationException ("QueryScalars should return at least one column");
-				}
+			cancTok?.ThrowIfCancellationRequested ();
 
-				if (cancTok != null)
-					cancTok.Value.Register (() => {
-						SQLite3.Interrupt (_conn.Handle);
-						});
-				
-				while (true) {
-					var r = SQLite3.Step (stmt);
-					if (r == SQLite3.Result.Done)
-						break;
-					if (cancTok != null)
-						cancTok.Value.ThrowIfCancellationRequested ();
-				    if (r != SQLite3.Result.Row)
-						throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-
-					var colType = SQLite3.ColumnType (stmt, 0);
-					var val = ReadCol (stmt, 0, colType, typeof (T));
-					if (val == null) {
-						yield return default (T);
+			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
+				var stmt = Prepare ();
+				try {
+					if (SQLite3.ColumnCount (stmt) < 1) {
+						throw new InvalidOperationException ("QueryScalars should return at least one column");
 					}
-					else {
-						yield return (T)val;
+
+					while (true) {
+						var r = SQLite3.Step (stmt);
+						if (r == SQLite3.Result.Done)
+							break;
+						cancTok?.ThrowIfCancellationRequested ();
+						if (r != SQLite3.Result.Row)
+							throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+
+						var colType = SQLite3.ColumnType (stmt, 0);
+						var val = ReadCol (stmt, 0, colType, typeof (T));
+						if (val == null) {
+							yield return default (T);
+						}
+						else {
+							yield return (T)val;
+						}
 					}
 				}
-			}
-			finally {
-				Finalize (stmt);
+				finally {
+					Finalize (stmt);
+				}
 			}
 		}
 

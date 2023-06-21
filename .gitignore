@@ -266,3 +266,4 @@ paket-files/
 .cr/
 
 *.ncrunchsolution
+*.ncrunchproject
