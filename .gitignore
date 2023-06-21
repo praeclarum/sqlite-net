@@ -265,3 +265,6 @@ paket-files/
 # CodeRush
 .cr/
 
+# NCrunch
+*.ncrunchsolution
+*.ncrunchproject
