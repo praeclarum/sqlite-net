@@ -73,9 +73,11 @@ namespace SQLite
 			where T5 : new();
 		Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, params Type[] types);
 		Task<IEnumerable<T>> DeferredQueryAsync<T> (string query, params object[] args) where T : new();
+		Task<IEnumerable<T>> DeferredQueryAsync<T> (CancellationToken tok, string query, params object[] args) where T : new();
 		Task<IEnumerable<object>> DeferredQueryAsync (TableMapping map, string query, params object[] args);
-		Task<int> DeleteAllAsync<T> ();
-		Task<int> DeleteAllAsync (TableMapping map);
+		Task<IEnumerable<object>> DeferredQueryAsync (CancellationToken tok, TableMapping map, string query, params object[] args);
+		Task<int> DeleteAllAsync<T> (CancellationToken? cancTok = null);
+		Task<int> DeleteAllAsync (TableMapping map, CancellationToken? cancTok = null);
 		Task<int> DeleteAsync (object objectToDelete);
 		Task<int> DeleteAsync<T> (object primaryKey);
 		Task<int> DeleteAsync (object primaryKey, TableMapping map);
@@ -84,15 +86,19 @@ namespace SQLite
 		Task EnableLoadExtensionAsync (bool enabled);
 		Task EnableWriteAheadLoggingAsync ();
 		Task<int> ExecuteAsync (string query, params object[] args);
+		Task<int> ExecuteAsync (CancellationToken cancTok, string query, params object[] args);
 		Task<T> ExecuteScalarAsync<T> (string query, params object[] args);
+		Task<T> ExecuteScalarAsync<T> (CancellationToken cancTok, string query, params object[] args);
 		Task<T> FindAsync<T> (object pk) where T : new();
 		Task<object> FindAsync (object pk, TableMapping map);
-		Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate) where T : new();
+		Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancTok = null) where T : new();
 		Task<T> FindWithQueryAsync<T> (string query, params object[] args) where T : new();
+		Task<T> FindWithQueryAsync<T> (CancellationToken cancTok, string query, params object[] args) where T : new();
 		Task<object> FindWithQueryAsync (TableMapping map, string query, params object[] args);
+		Task<object> FindWithQueryAsync (CancellationToken cancTok, TableMapping map, string query, params object[] args);
 		Task<T> GetAsync<T> (object pk) where T : new();
 		Task<object> GetAsync (object pk, TableMapping map);
-		Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate) where T : new();
+		Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancTok = null) where T : new();
 		TimeSpan GetBusyTimeout ();
 		SQLiteConnectionWithLock GetConnection ();
 		Task<TableMapping> GetMappingAsync (Type type, CreateFlags createFlags = CreateFlags.None);
@@ -108,8 +114,11 @@ namespace SQLite
 		Task<int> InsertOrReplaceAsync (object obj);
 		Task<int> InsertOrReplaceAsync (object obj, Type objType);
 		Task<List<T>> QueryAsync<T> (string query, params object[] args) where T : new();
+		Task<List<T>> QueryAsync<T> (CancellationToken cancellationToken, string query, params object[] args) where T : new();
 		Task<List<object>> QueryAsync (TableMapping map, string query, params object[] args);
+		Task<List<object>> QueryAsync (CancellationToken cancellationToken, TableMapping map, string query, params object[] args);
 		Task<List<T>> QueryScalarsAsync<T> (string query, params object[] args);
+		Task<List<T>> QueryScalarsAsync<T> (CancellationToken cancellationToken, string query, params object[] args);
 		Task RunInTransactionAsync (Action<SQLiteConnection> action);
 		Task SetBusyTimeoutAsync (TimeSpan value);
 		AsyncTableQuery<T> Table<T> () where T : new();
@@ -769,31 +778,37 @@ namespace SQLite
 		/// WARNING WARNING: Let me repeat. It deletes ALL the objects from the
 		/// specified table. Do you really want to do that?
 		/// </summary>
+		/// <param name="cancTok">
+		/// optional cancellation token to stop the execution of the deletion
+		/// </param>
 		/// <returns>
 		/// The number of objects deleted.
 		/// </returns>
 		/// <typeparam name='T'>
 		/// The type of objects to delete.
 		/// </typeparam>
-		public Task<int> DeleteAllAsync<T> ()
+		public Task<int> DeleteAllAsync<T> (CancellationToken? cancTok = null)
 		{
-			return WriteAsync (conn => conn.DeleteAll<T> ());
+			return WriteAsync (conn => conn.DeleteAll<T> (cancTok));
 		}
 
 		/// <summary>
 		/// Deletes all the objects from the specified table.
 		/// WARNING WARNING: Let me repeat. It deletes ALL the objects from the
-		/// specified table. Do you really want to do that?
+		/// specified table. Do you really want to do that§
 		/// </summary>
 		/// <param name="map">
 		/// The TableMapping used to identify the table.
 		/// </param>
+		/// <param name="cancTok">
+		/// optional cancellation token to stop the execution of the deletion
+		/// </param>
 		/// <returns>
 		/// The number of objects deleted.
 		/// </returns>
-		public Task<int> DeleteAllAsync (TableMapping map)
+		public Task<int> DeleteAllAsync (TableMapping map, CancellationToken? cancTok = null)
 		{
-			return WriteAsync (conn => conn.DeleteAll (map));
+			return WriteAsync (conn => conn.DeleteAll (map, cancTok));
 		}
 
 		/// <summary>
@@ -854,14 +869,17 @@ namespace SQLite
 		/// <param name="predicate">
 		/// A predicate for which object to find.
 		/// </param>
+		/// <param name="cancellationToken">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
 		/// <returns>
 		/// The object that matches the given predicate. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
+		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancellationToken = null)
 			where T : new()
 		{
-			return ReadAsync (conn => conn.Get<T> (predicate));
+			return ReadAsync (conn => conn.Get<T> (predicate, cancellationToken));
 		}
 
 		/// <summary>
@@ -909,14 +927,17 @@ namespace SQLite
 		/// <param name="predicate">
 		/// A predicate for which object to find.
 		/// </param>
+		/// <param name="cancTok">
+		/// an optional cancellation token to stop the execution of the query
+		/// </param>
 		/// <returns>
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate)
+		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancTok = null)
 			where T : new()
 		{
-			return ReadAsync (conn => conn.Find<T> (predicate));
+			return ReadAsync (conn => conn.Find<T> (predicate, cancTok));
 		}
 
 		/// <summary>
@@ -938,6 +959,29 @@ namespace SQLite
 		{
 			return ReadAsync (conn => conn.FindWithQuery<T> (query, args));
 		}
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type. 
+		/// </summary>
+		/// <param name="cancTok">
+		/// an optional cancellation token to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public Task<T> FindWithQueryAsync<T> (CancellationToken cancTok, string query, params object[] args)
+			where T : new()
+		{
+			return ReadAsync (conn => conn.FindWithQuery<T> (cancTok, query, args));
+		}
+
 
 		/// <summary>
 		/// Attempts to retrieve the first object that matches the query from the table
@@ -960,6 +1004,31 @@ namespace SQLite
 		{
 			return ReadAsync (conn => conn.FindWithQuery (map, query, args));
 		}
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type. 
+		/// </summary>
+		/// <param name="cancTok">
+		/// an optional cancellation token to stop the execution of the query 
+		/// </param>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public Task<object> FindWithQueryAsync (CancellationToken cancTok, TableMapping map, string query, params object[] args)
+		{
+			return ReadAsync (conn => conn.FindWithQuery (cancTok, map, query, args));
+		}
+
 
 		/// <summary>
 		/// Retrieves the mapping that is automatically generated for the given type.
@@ -1025,6 +1094,30 @@ namespace SQLite
 		public Task<int> ExecuteAsync (string query, params object[] args)
 		{
 			return WriteAsync (conn => conn.Execute (query, args));
+		}
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method instead of Query when you don't expect rows back. Such cases include
+		/// INSERTs, UPDATEs, and DELETEs.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token you can use to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified in the database as a result of this execution.
+		/// </returns>
+		public Task<int> ExecuteAsync (CancellationToken cancTok, string query, params object[] args)
+		{
+			return WriteAsync (conn => conn.Execute (cancTok, query, args));
 		}
 
 		/// <summary>
@@ -1147,7 +1240,34 @@ namespace SQLite
 		{
 			return WriteAsync (conn => {
 				var command = conn.CreateCommand (query, args);
-				return command.ExecuteScalar<T> ();
+				return command.ExecuteScalar<T> (null);
+			});
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method when return primitive values.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token you can use to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified in the database as a result of this execution.
+		/// </returns>
+		public Task<T> ExecuteScalarAsync<T> (CancellationToken cancTok, string query, params object[] args)
+		{
+			return WriteAsync (conn => {
+				var command = conn.CreateCommand (query, args);
+				return command.ExecuteScalar<T> (cancTok);
 			});
 		}
 
@@ -1175,6 +1295,30 @@ namespace SQLite
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token you can use to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// A list with one result for each row returned by the query.
+		/// </returns>
+		public Task<List<T>> QueryAsync<T> (CancellationToken cancTok, string query, params object[] args)
+			where T : new()
+		{
+			return ReadAsync (conn => conn.Query<T> (cancTok, query, args));
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
 		/// It returns the first column of each row of the result.
 		/// </summary>
 		/// <param name="query">
@@ -1189,6 +1333,27 @@ namespace SQLite
 		public Task<List<T>> QueryScalarsAsync<T> (string query, params object[] args)
 		{
 			return ReadAsync (conn => conn.QueryScalars<T> (query, args));
+		}
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns the first column of each row of the result.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token you can use to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// A list with one result for the first column of each row returned by the query.
+		/// </returns>
+		public Task<List<T>> QueryScalarsAsync<T> (CancellationToken cancTok, string query, params object[] args)
+		{
+			return ReadAsync (conn => conn.QueryScalars<T> (cancTok, query, args));
 		}
 
 		/// <summary>
@@ -1215,7 +1380,10 @@ namespace SQLite
 		{
 			return ReadAsync (conn => conn.Query (map, query, args));
 		}
-
+		public Task<List<object>> QueryAsync (CancellationToken cancellationToken, TableMapping map, string query, params object[] args)
+		{
+			return ReadAsync (conn => conn.Query (cancellationToken, map, query, args));
+		}
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -1237,6 +1405,31 @@ namespace SQLite
 			where T : new()
 		{
 			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ());
+		}
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token you can use to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public Task<IEnumerable<T>> DeferredQueryAsync<T> (CancellationToken cancTok, string query, params object[] args)
+			where T : new()
+		{
+			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (cancTok, query, args).ToList ());
 		}
 
 		/// <summary>
@@ -1265,6 +1458,38 @@ namespace SQLite
 		{
 			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ());
 		}
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token you can use to stop the execution of the query
+		/// </param>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public Task<IEnumerable<object>> DeferredQueryAsync (CancellationToken cancTok, TableMapping map, string query, params object[] args)
+		{
+			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQuery (cancTok, map, query, args).ToList ());
+		}
+
+
+
 	}
 
 	/// <summary>
@@ -1359,6 +1584,12 @@ namespace SQLite
 			return new AsyncTableQuery<T> (_innerQuery.ThenByDescending<U> (orderExpr));
 		}
 
+		public AsyncTableQuery<T> CancelToken (CancellationToken tok)
+		{
+			return new AsyncTableQuery<T> (_innerQuery.CancelToken (tok));
+		}
+
+
 		/// <summary>
 		/// Queries the database and returns the results as a List.
 		/// </summary>
@@ -1446,6 +1677,8 @@ namespace SQLite
 		{
 			return WriteAsync (conn => _innerQuery.Delete ());
 		}
+
+
 	}
 
 	class SQLiteConnectionPool
@@ -1574,7 +1807,7 @@ namespace SQLite
 		/// <returns>The lock.</returns>
 		public IDisposable Lock ()
 		{
-			return SkipLock ? (IDisposable)new FakeLockWrapper() : new LockWrapper (_lockPoint);
+			return SkipLock ? (IDisposable)new FakeLockWrapper () : new LockWrapper (_lockPoint);
 		}
 
 		class LockWrapper : IDisposable

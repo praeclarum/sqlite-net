@@ -49,6 +49,8 @@ using Sqlite3DatabaseHandle = SQLitePCL.sqlite3;
 using Sqlite3BackupHandle = SQLitePCL.sqlite3_backup;
 using Sqlite3Statement = SQLitePCL.sqlite3_stmt;
 using Sqlite3 = SQLitePCL.raw;
+using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3BackupHandle = System.IntPtr;
@@ -56,6 +58,10 @@ using Sqlite3Statement = System.IntPtr;
 #endif
 
 #pragma warning disable 1591 // XML Doc Comments
+#pragma warning disable IDE0034 // Simplify 'default' expression
+#pragma warning disable IDE0011 // Add braces
+#pragma warning disable IDE0032 // Use auto property
+#pragma warning disable IDE0075 // Simplify conditional expression
 
 namespace SQLite
 {
@@ -159,7 +165,7 @@ namespace SQLite
 		FullTextSearch4 = 0x200
 	}
 
-	public interface ISQLiteConnection
+	public interface ISQLiteConnection : IDisposable
 	{
 		Sqlite3DatabaseHandle Handle { get; }
 		string DatabasePath { get; }
@@ -209,27 +215,32 @@ namespace SQLite
 			where T5 : new();
 		CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types);
 		IEnumerable<T> DeferredQuery<T> (string query, params object[] args) where T : new();
+		IEnumerable<T> DeferredQuery<T> (CancellationToken tok, string query, params object[] args) where T : new();
 		IEnumerable<object> DeferredQuery (TableMapping map, string query, params object[] args);
+		IEnumerable<object> DeferredQuery (CancellationToken cancellationToken, TableMapping map, string query, params object[] args);
 		int Delete (object objectToDelete);
 		int Delete<T> (object primaryKey);
 		int Delete (object primaryKey, TableMapping map);
-		int DeleteAll<T> ();
-		int DeleteAll (TableMapping map);
-		void Dispose ();
+		int DeleteAll<T> (CancellationToken? cancTok = null);
+		int DeleteAll (TableMapping map, CancellationToken? cancTok = null);
 		int DropTable<T> ();
 		int DropTable (TableMapping map);
 		void EnableLoadExtension (bool enabled);
 		void EnableWriteAheadLogging ();
 		int Execute (string query, params object[] args);
+		int Execute (CancellationToken canTok, string query, params object[] args);
 		T ExecuteScalar<T> (string query, params object[] args);
+		T ExecuteScalar<T> (CancellationToken canTok, string query, params object[] args);
 		T Find<T> (object pk) where T : new();
 		object Find (object pk, TableMapping map);
-		T Find<T> (Expression<Func<T, bool>> predicate) where T : new();
+		T Find<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancTok = null) where T : new();
 		T FindWithQuery<T> (string query, params object[] args) where T : new();
+		T FindWithQuery<T> (CancellationToken cancTok, string query, params object[] args) where T : new();
 		object FindWithQuery (TableMapping map, string query, params object[] args);
+		object FindWithQuery (CancellationToken cancTok, TableMapping map, string query, params object[] args);
 		T Get<T> (object pk) where T : new();
 		object Get (object pk, TableMapping map);
-		T Get<T> (Expression<Func<T, bool>> predicate) where T : new();
+		T Get<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancTok = null) where T : new();
 		TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None);
 		TableMapping GetMapping<T> (CreateFlags createFlags = CreateFlags.None);
 		List<SQLiteConnection.ColumnInfo> GetTableInfo (string tableName);
@@ -243,8 +254,11 @@ namespace SQLite
 		int InsertOrReplace (object obj);
 		int InsertOrReplace (object obj, Type objType);
 		List<T> Query<T> (string query, params object[] args) where T : new();
+		List<T> Query<T> (CancellationToken cancellationToken, string query, params object[] args) where T : new();
 		List<object> Query (TableMapping map, string query, params object[] args);
+		List<object> Query (CancellationToken cancellationToken, TableMapping map, string query, params object[] args);
 		List<T> QueryScalars<T> (string query, params object[] args);
+		List<T> QueryScalars<T> (CancellationToken cancellationToken, string query, params object[] args);
 		void Release (string savepoint);
 		void Rollback ();
 		void RollbackTo (string savepoint);
@@ -380,6 +394,7 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (SQLiteConnectionString connectionString)
 		{
+
 			if (connectionString == null)
 				throw new ArgumentNullException (nameof (connectionString));
 			if (connectionString.DatabasePath == null)
@@ -504,8 +519,8 @@ namespace SQLite
 		static byte[] GetNullTerminatedUtf8 (string s)
 		{
 			var utf8Length = System.Text.Encoding.UTF8.GetByteCount (s);
-			var bytes = new byte [utf8Length + 1];
-			utf8Length = System.Text.Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
+			var bytes = new byte[utf8Length + 1];
+			utf8Length = System.Text.Encoding.UTF8.GetBytes (s, 0, s.Length, bytes, 0);
 			return bytes;
 		}
 #endif
@@ -1034,7 +1049,51 @@ namespace SQLite
 				_sw.Start ();
 			}
 
-			var r = cmd.ExecuteNonQuery ();
+			var r = cmd.ExecuteNonQuery (null);
+
+			if (TimeExecution) {
+				_sw.Stop ();
+				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
+				Tracer?.Invoke (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+			}
+
+			return r;
+		}
+
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method instead of Query when you don't expect rows back. Such cases include
+		/// INSERTs, UPDATEs, and DELETEs.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified in the database as a result of this execution.
+		/// </returns>
+		public int Execute (CancellationToken cancTok, string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+
+			if (TimeExecution) {
+				if (_sw == null) {
+					_sw = new Stopwatch ();
+				}
+				_sw.Reset ();
+				_sw.Start ();
+			}
+
+			var r = cmd.ExecuteNonQuery (cancTok);
 
 			if (TimeExecution) {
 				_sw.Stop ();
@@ -1073,7 +1132,7 @@ namespace SQLite
 				_sw.Start ();
 			}
 
-			var r = cmd.ExecuteScalar<T> ();
+			var r = cmd.ExecuteScalar<T> (null);
 
 			if (TimeExecution) {
 				_sw.Stop ();
@@ -1083,6 +1142,50 @@ namespace SQLite
 
 			return r;
 		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// Use this method when return primitive values.
+		/// You can set the Trace or TimeExecution properties of the connection
+		/// to profile execution.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified in the database as a result of this execution.
+		/// </returns>
+
+		public T ExecuteScalar<T> (CancellationToken cancTok, string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+
+			if (TimeExecution) {
+				if (_sw == null) {
+					_sw = new Stopwatch ();
+				}
+				_sw.Reset ();
+				_sw.Start ();
+			}
+
+			var r = cmd.ExecuteScalar<T> (cancTok);
+
+			if (TimeExecution) {
+				_sw.Stop ();
+				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
+				Tracer?.Invoke (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+			}
+
+			return r;
+		}
+
 
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
@@ -1105,6 +1208,12 @@ namespace SQLite
 			return cmd.ExecuteQuery<T> ();
 		}
 
+		public List<T> Query<T> (CancellationToken cancellationToken, string query, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteQuery<T> (cancellationToken);
+		}
+
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
@@ -1122,7 +1231,30 @@ namespace SQLite
 		public List<T> QueryScalars<T> (string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			return cmd.ExecuteQueryScalars<T> ().ToList ();
+			return cmd.ExecuteQueryScalars<T> (null).ToList ();
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns the first column of each row of the result.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for the first column of each row returned by the query.
+		/// </returns>
+		public List<T> QueryScalars<T> (CancellationToken cancTok, string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.ExecuteQueryScalars<T> (cancTok).ToList ();
 		}
 
 		/// <summary>
@@ -1152,6 +1284,33 @@ namespace SQLite
 		/// <summary>
 		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
 		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the mapping automatically generated for
+		/// the given type.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public IEnumerable<T> DeferredQuery<T> (CancellationToken cancTok, string query, params object[] args) where T : new()
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteDeferredQuery<T> (cancTok);
+		}
+
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
 		/// It returns each row of the result using the specified mapping. This function is
 		/// only used by libraries in order to query the database via introspection. It is
 		/// normally not used.
@@ -1173,6 +1332,35 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteQuery<object> (map);
+		}
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// </returns>
+
+		public List<object> Query (CancellationToken cancTok, TableMapping map, string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteQuery<object> (map, cancTok);
 		}
 
 		/// <summary>
@@ -1202,6 +1390,37 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			return cmd.ExecuteDeferredQuery<object> (map);
+		}
+		/// <summary>
+		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		/// in the command text for each of the arguments and then executes that command.
+		/// It returns each row of the result using the specified mapping. This function is
+		/// only used by libraries in order to query the database via introspection. It is
+		/// normally not used.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="map">
+		/// A <see cref="TableMapping"/> to use to convert the resulting rows
+		/// into objects.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// An enumerable with one result for each row returned by the query.
+		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
+		/// will call sqlite3_step on each call to MoveNext, so the database
+		/// connection must remain open for the lifetime of the enumerator.
+		/// </returns>
+		public IEnumerable<object> DeferredQuery (CancellationToken cancTok, TableMapping map, string query, params object[] args)
+		{
+			var cmd = CreateCommand (query, args);
+			return cmd.CancelableExecuteDeferredQuery<object> (cancTok, map);
 		}
 
 		/// <summary>
@@ -1261,13 +1480,19 @@ namespace SQLite
 		/// <param name="predicate">
 		/// A predicate for which object to find.
 		/// </param>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
 		/// <returns>
 		/// The object that matches the given predicate. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
+		public T Get<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancTok = null) where T : new()
 		{
-			return Table<T> ().Where (predicate).First ();
+			var qry = Table<T> ().Where (predicate);
+			if (cancTok != null)
+				qry = qry.CancelToken (cancTok.Value);
+			return qry.First ();
 		}
 
 		/// <summary>
@@ -1315,13 +1540,19 @@ namespace SQLite
 		/// <param name="predicate">
 		/// A predicate for which object to find.
 		/// </param>
+		/// <param name="cancTok">
+		/// an optional cancellation token to stop the execution of the query
+		/// </param>
 		/// <returns>
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public T Find<T> (Expression<Func<T, bool>> predicate) where T : new()
+		public T Find<T> (Expression<Func<T, bool>> predicate, CancellationToken? cancTok = null) where T : new()
 		{
-			return Table<T> ().Where (predicate).FirstOrDefault ();
+			var qry = Table<T> ().Where (predicate);
+			if (cancTok != null)
+				qry = qry.CancelToken (cancTok.Value);
+			return qry.FirstOrDefault ();
 		}
 
 		/// <summary>
@@ -1347,6 +1578,28 @@ namespace SQLite
 		/// Attempts to retrieve the first object that matches the query from the table
 		/// associated with the specified type.
 		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public T FindWithQuery<T> (CancellationToken cancTok, string query, params object[] args) where T : new()
+		{
+			return Query<T> (cancTok, query, args).FirstOrDefault ();
+		}
+
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type.
+		/// </summary>
 		/// <param name="map">
 		/// The TableMapping used to identify the table.
 		/// </param>
@@ -1363,6 +1616,30 @@ namespace SQLite
 		public object FindWithQuery (TableMapping map, string query, params object[] args)
 		{
 			return Query (map, query, args).FirstOrDefault ();
+		}
+		/// <summary>
+		/// Attempts to retrieve the first object that matches the query from the table
+		/// associated with the specified type.
+		/// </summary>
+		/// <param name="cancTok">
+		/// a cancellation token that can be used to stop the execution of the query
+		/// </param>
+		/// <param name="map">
+		/// The TableMapping used to identify the table.
+		/// </param>
+		/// <param name="query">
+		/// The fully escaped SQL.
+		/// </param>
+		/// <param name="args">
+		/// Arguments to substitute for the occurences of '?' in the query.
+		/// </param>
+		/// <returns>
+		/// The object that matches the given predicate or null
+		/// if the object is not found.
+		/// </returns>
+		public object FindWithQuery (CancellationToken cancTok, TableMapping map, string query, params object[] args)
+		{
+			return Query (cancTok, map, query, args).FirstOrDefault ();
 		}
 
 		/// <summary>
@@ -1550,7 +1827,7 @@ namespace SQLite
 #elif SILVERLIGHT
 						_transactionDepth = depth;
 #else
-                        Thread.VolatileWrite (ref _transactionDepth, depth);
+						Thread.VolatileWrite (ref _transactionDepth, depth);
 #endif
 						Execute (cmd + savepoint);
 						return;
@@ -2112,16 +2389,19 @@ namespace SQLite
 		/// WARNING WARNING: Let me repeat. It deletes ALL the objects from the
 		/// specified table. Do you really want to do that?
 		/// </summary>
+		/// <param name="cancTok">
+		/// an optional cancellation token to stop the execution of the query
+		/// </param>
 		/// <returns>
 		/// The number of objects deleted.
 		/// </returns>
 		/// <typeparam name='T'>
 		/// The type of objects to delete.
 		/// </typeparam>
-		public int DeleteAll<T> ()
+		public int DeleteAll<T> (CancellationToken? cancTok = null)
 		{
 			var map = GetMapping (typeof (T));
-			return DeleteAll (map);
+			return DeleteAll (map, cancTok);
 		}
 
 		/// <summary>
@@ -2132,13 +2412,21 @@ namespace SQLite
 		/// <param name="map">
 		/// The TableMapping used to identify the table.
 		/// </param>
+		/// <param name="cancTok">
+		/// an optional cancellation token to stop the execution of the query
+		/// </param>
 		/// <returns>
 		/// The number of objects deleted.
 		/// </returns>
-		public int DeleteAll (TableMapping map)
+		public int DeleteAll (TableMapping map, CancellationToken? cancTok = null)
 		{
 			var query = string.Format ("delete from \"{0}\"", map.TableName);
-			var count = Execute (query);
+			int count;
+			if (cancTok != null)
+				count = Execute (cancTok.Value, query);
+			else
+				count = Execute (query);
+
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Delete);
 			return count;
@@ -2563,13 +2851,13 @@ namespace SQLite
 			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
 			WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
 
-			var members = GetPublicMembers(type);
-			var cols = new List<Column>(members.Count);
-			foreach(var m in members)
-			{
-				var ignore = m.IsDefined(typeof(IgnoreAttribute), true);
-				if(!ignore)
-					cols.Add(new Column(m, createFlags));
+
+			var members = GetPublicMembers (type);
+			var cols = new List<Column> (members.Count);
+			foreach (var m in members) {
+				var ignore = m.IsDefined (typeof (IgnoreAttribute), true);
+				if (!ignore)
+					cols.Add (new Column (m, createFlags));
 			}
 			Columns = cols.ToArray ();
 			foreach (var c in Columns) {
@@ -2595,47 +2883,46 @@ namespace SQLite
 			_insertOrReplaceColumns = Columns.ToArray ();
 		}
 
-		private IReadOnlyCollection<MemberInfo> GetPublicMembers(Type type)
+		private IReadOnlyCollection<MemberInfo> GetPublicMembers (Type type)
 		{
-			if(type.Name.StartsWith("ValueTuple`"))
-				return GetFieldsFromValueTuple(type);
+			if (type.Name.StartsWith ("ValueTuple`"))
+				return GetFieldsFromValueTuple (type);
 
-			var members = new List<MemberInfo>();
-			var memberNames = new HashSet<string>();
-			var newMembers = new List<MemberInfo>();
-			do
-			{
-				var ti = type.GetTypeInfo();
-				newMembers.Clear();
+			var members = new List<MemberInfo> ();
+			var memberNames = new HashSet<string> ();
+			var newMembers = new List<MemberInfo> ();
+			do {
+				var ti = type.GetTypeInfo ();
+				newMembers.Clear ();
 
-				newMembers.AddRange(
+				newMembers.AddRange (
 					from p in ti.DeclaredProperties
-					where !memberNames.Contains(p.Name) &&
+					where !memberNames.Contains (p.Name) &&
 						p.CanRead && p.CanWrite &&
 						p.GetMethod != null && p.SetMethod != null &&
 						p.GetMethod.IsPublic && p.SetMethod.IsPublic &&
 						!p.GetMethod.IsStatic && !p.SetMethod.IsStatic
 					select p);
 
-				members.AddRange(newMembers);
-				foreach(var m in newMembers)
-					memberNames.Add(m.Name);
+				members.AddRange (newMembers);
+				foreach (var m in newMembers)
+					memberNames.Add (m.Name);
 
 				type = ti.BaseType;
 			}
-			while(type != typeof(object));
+			while (type != typeof (object));
 
 			return members;
 		}
 
-		private IReadOnlyCollection<MemberInfo> GetFieldsFromValueTuple(Type type)
+		private IReadOnlyCollection<MemberInfo> GetFieldsFromValueTuple (Type type)
 		{
 			Method = MapMethod.ByPosition;
-			var fields = type.GetFields();
+			var fields = type.GetFields ();
 
 			// https://docs.microsoft.com/en-us/dotnet/api/system.valuetuple-8.rest
-			if(fields.Length >= 8)
-				throw new NotSupportedException("ValueTuple with more than 7 members not supported due to nesting; see https://docs.microsoft.com/en-us/dotnet/api/system.valuetuple-8.rest");
+			if (fields.Length >= 8)
+				throw new NotSupportedException ("ValueTuple with more than 7 members not supported due to nesting; see https://docs.microsoft.com/en-us/dotnet/api/system.valuetuple-8.rest");
 
 			return fields;
 		}
@@ -2669,8 +2956,8 @@ namespace SQLite
 
 		public Column FindColumn (string columnName)
 		{
-			if(Method != MapMethod.ByName)
-				throw new InvalidOperationException($"This {nameof(TableMapping)} is not mapped by name, but {Method}.");
+			if (Method != MapMethod.ByName)
+				throw new InvalidOperationException ($"This {nameof (TableMapping)} is not mapped by name, but {Method}.");
 
 			var exact = Columns.FirstOrDefault (c => c.Name.ToLower () == columnName.ToLower ());
 			return exact;
@@ -2706,7 +2993,7 @@ namespace SQLite
 			public Column (MemberInfo member, CreateFlags createFlags = CreateFlags.None)
 			{
 				_member = member;
-				var memberType = GetMemberType(member);
+				var memberType = GetMemberType (member);
 
 				var colAttr = member.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (ColumnAttribute));
 #if ENABLE_IL2CPP
@@ -2744,46 +3031,46 @@ namespace SQLite
 			}
 
 			public Column (PropertyInfo member, CreateFlags createFlags = CreateFlags.None)
-				: this((MemberInfo)member, createFlags)
+				: this ((MemberInfo)member, createFlags)
 			{ }
 
 			public void SetValue (object obj, object val)
 			{
-				if(_member is PropertyInfo propy)
-				{
+				if (_member is PropertyInfo propy) {
 					if (val != null && ColumnType.GetTypeInfo ().IsEnum)
 						propy.SetValue (obj, Enum.ToObject (ColumnType, val));
 					else
 						propy.SetValue (obj, val);
 				}
-				else if(_member is FieldInfo field)
-				{
+				else if (_member is FieldInfo field) {
 					if (val != null && ColumnType.GetTypeInfo ().IsEnum)
 						field.SetValue (obj, Enum.ToObject (ColumnType, val));
 					else
 						field.SetValue (obj, val);
 				}
 				else
-					throw new InvalidProgramException("unreachable condition");
+					throw new InvalidProgramException ("unreachable condition");
 			}
 
 			public object GetValue (object obj)
 			{
-				if(_member is PropertyInfo propy)
-					return propy.GetValue(obj);
-				else if(_member is FieldInfo field)
-					return field.GetValue(obj);
+				if (_member is PropertyInfo propy)
+					return propy.GetValue (obj);
+				else if (_member is FieldInfo field)
+					return field.GetValue (obj);
 				else
-					throw new InvalidProgramException("unreachable condition");
+					throw new InvalidProgramException ("unreachable condition");
 			}
 
-			private static Type GetMemberType(MemberInfo m)
+			private static Type GetMemberType (MemberInfo m)
 			{
-				switch(m.MemberType)
-				{
-					case MemberTypes.Property: return ((PropertyInfo)m).PropertyType;
-					case MemberTypes.Field: return ((FieldInfo)m).FieldType;
-					default: throw new InvalidProgramException($"{nameof(TableMapping)} supports properties or fields only.");
+				switch (m.MemberType) {
+					case MemberTypes.Property:
+						return ((PropertyInfo)m).PropertyType;
+					case MemberTypes.Field:
+						return ((FieldInfo)m).FieldType;
+					default:
+						throw new InvalidProgramException ($"{nameof (TableMapping)} supports properties or fields only.");
 				}
 			}
 		}
@@ -3014,7 +3301,7 @@ namespace SQLite
 #endif
 		}
 
-		public static int? MaxStringLength (PropertyInfo p) => MaxStringLength((MemberInfo)p);
+		public static int? MaxStringLength (PropertyInfo p) => MaxStringLength ((MemberInfo)p);
 
 		public static bool IsMarkedNotNull (MemberInfo p)
 		{
@@ -3022,13 +3309,13 @@ namespace SQLite
 		}
 	}
 
+
 	public partial class SQLiteCommand
 	{
 		SQLiteConnection _conn;
 		private List<Binding> _bindings;
 
 		public string CommandText { get; set; }
-
 		public SQLiteCommand (SQLiteConnection conn)
 		{
 			_conn = conn;
@@ -3036,36 +3323,56 @@ namespace SQLite
 			CommandText = "";
 		}
 
-		public int ExecuteNonQuery ()
+		public int ExecuteNonQuery (CancellationToken? cancTok = null)
 		{
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing: " + this);
 			}
-
-			var r = SQLite3.Result.OK;
-			var stmt = Prepare ();
-			r = SQLite3.Step (stmt);
-			Finalize (stmt);
-			if (r == SQLite3.Result.Done) {
-				int rowsAffected = SQLite3.Changes (_conn.Handle);
-				return rowsAffected;
-			}
-			else if (r == SQLite3.Result.Error) {
-				string msg = SQLite3.GetErrmsg (_conn.Handle);
-				throw SQLiteException.New (r, msg);
-			}
-			else if (r == SQLite3.Result.Constraint) {
-				if (SQLite3.ExtendedErrCode (_conn.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-					throw NotNullConstraintViolationException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+			cancTok?.ThrowIfCancellationRequested ();
+			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
+				SQLite3.Result r = SQLite3.Result.OK;
+				try {
+					var stmt = Prepare ();
+					r = SQLite3.Step (stmt);
+					Finalize (stmt);
 				}
-			}
+				catch (SQLiteException ex) {
+					if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true) 
+						throw new OperationCanceledException (cancTok.Value);
+					throw;
+				}
+				if (r == SQLite3.Result.Done) {
+					int rowsAffected = SQLite3.Changes (_conn.Handle);
+					return rowsAffected;
+				}
+				cancTok?.ThrowIfCancellationRequested ();
 
-			throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+				if (r == SQLite3.Result.Error) {
+					string msg = SQLite3.GetErrmsg (_conn.Handle);
+					throw SQLiteException.New (r, msg);
+				}
+				else if (r == SQLite3.Result.Constraint) {
+					if (SQLite3.ExtendedErrCode (_conn.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+						throw NotNullConstraintViolationException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+					}
+				}
+
+				throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+			}
 		}
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> ()
 		{
 			return ExecuteDeferredQuery<T> (_conn.GetMapping (typeof (T)));
+		}
+		public IEnumerable<T> CancelableExecuteDeferredQuery<T> (CancellationToken cancellationToken)
+		{
+			return CancelableExecuteDeferredQuery<T> (cancellationToken, _conn.GetMapping (typeof (T)));
+		}
+
+		public List<T> CancelableExecuteQuery<T> (CancellationToken cancellationToken)
+		{
+			return CancelableExecuteDeferredQuery<T> (cancellationToken, _conn.GetMapping (typeof (T))).ToList ();
 		}
 
 		public List<T> ExecuteQuery<T> ()
@@ -3078,6 +3385,10 @@ namespace SQLite
 			return ExecuteDeferredQuery<T> (map).ToList ();
 		}
 
+		public List<T> CancelableExecuteQuery<T> (TableMapping map, CancellationToken cancellationToken)
+		{
+			return CancelableExecuteDeferredQuery<T> (cancellationToken, map).ToList ();
+		}
 		/// <summary>
 		/// Invoked every time an instance is loaded from the database.
 		/// </summary>
@@ -3095,119 +3406,191 @@ namespace SQLite
 
 		public IEnumerable<T> ExecuteDeferredQuery<T> (TableMapping map)
 		{
+			return CancelableExecuteDeferredQuery<T> (null, map);
+		}
+
+		public IEnumerable<T> CancelableExecuteDeferredQuery<T> (CancellationToken? cancTok, TableMapping map)
+		{
 			if (_conn.Trace) {
 				_conn.Tracer?.Invoke ("Executing Query: " + this);
 			}
 
-			var stmt = Prepare ();
-			try {
-				var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
-				var fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
+			cancTok?.ThrowIfCancellationRequested ();
+			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
+				Sqlite3Statement stmt = default;
+				TableMapping.Column[] cols = null;
+				Action<object, Sqlite3Statement, int>[] fastColumnSetters = null;
+ 				try {
+					try {
+						stmt = Prepare ();
+						cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+						fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
 
-				if (map.Method == TableMapping.MapMethod.ByPosition)
-				{
-					Array.Copy(map.Columns, cols, Math.Min(cols.Length, map.Columns.Length));
-				}
-				else if (map.Method == TableMapping.MapMethod.ByName) {
-					MethodInfo getSetter = null;
-					if (typeof(T) != map.MappedType) {
-						getSetter = typeof(FastColumnSetter)
-							.GetMethod (nameof(FastColumnSetter.GetFastSetter),
-								BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+						if (map.Method == TableMapping.MapMethod.ByPosition) {
+							Array.Copy (map.Columns, cols, Math.Min (cols.Length, map.Columns.Length));
+						}
+						else if (map.Method == TableMapping.MapMethod.ByName) {
+							MethodInfo getSetter = null;
+							if (typeof (T) != map.MappedType) {
+								getSetter = typeof (FastColumnSetter)
+									.GetMethod (nameof (FastColumnSetter.GetFastSetter),
+										BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+							}
+
+							for (int i = 0; i < cols.Length; i++) {
+								var name = SQLite3.ColumnName16 (stmt, i);
+								cols[i] = map.FindColumn (name);
+								if (cols[i] != null)
+									if (getSetter != null) {
+										fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke (null, new object[] { _conn, cols[i] });
+									}
+									else {
+										fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T> (_conn, cols[i]);
+									}
+							}
+						}
+					}
+					catch (SQLiteException ex) {
+						if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+							throw new OperationCanceledException (cancTok.Value);
+						throw;
 					}
 
-					for (int i = 0; i < cols.Length; i++) {						
-						var name = SQLite3.ColumnName16 (stmt, i);
-						cols[i] = map.FindColumn (name);
-						if (cols[i] != null)
-							if (getSetter != null) {
-								fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke(null, new object[]{ _conn, cols[i]});
+					while (true) {
+						object obj = null;
+						try {
+							var r = SQLite3.Step (stmt);
+							if (r == SQLite3.Result.Done)
+								break;
+
+							cancTok?.ThrowIfCancellationRequested ();
+
+							if (r != SQLite3.Result.Row)
+								throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+
+							obj = Activator.CreateInstance (map.MappedType);
+							for (int i = 0; i < cols.Length; i++) {
+								if (cols[i] == null)
+									continue;
+
+								if (fastColumnSetters[i] != null) {
+									fastColumnSetters[i].Invoke (obj, stmt, i);
+								}
+								else {
+									var colType = SQLite3.ColumnType (stmt, i);
+									var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
+									cols[i].SetValue (obj, val);
+								}
 							}
-							else {
-								fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T>(_conn, cols[i]);
-							}
+							OnInstanceCreated (obj);
+						}
+						catch (SQLiteException ex) {
+							if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+								throw new OperationCanceledException (cancTok.Value);
+							throw;
+						}
+
+						yield return (T)obj;
 					}
 				}
+				finally {
+					if (stmt != default)
+					  SQLite3.Finalize (stmt);
+				}
+			}
+		}
 
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var obj = Activator.CreateInstance (map.MappedType);
-					for (int i = 0; i < cols.Length; i++) {
-						if (cols[i] == null)
-							continue;
+		public T ExecuteScalar<T> (CancellationToken? cancTok = null)
+		{
+			if (_conn.Trace) {
+				_conn.Tracer?.Invoke ("Executing Query: " + this);
+			}
 
-						if (fastColumnSetters[i] != null) {
-							fastColumnSetters[i].Invoke (obj, stmt, i);
+			cancTok?.ThrowIfCancellationRequested ();
+			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
+				Sqlite3Statement stmt = default;
+				try {
+					stmt = Prepare ();
+					var r = SQLite3.Step (stmt);
+					if (r == SQLite3.Result.Done)
+						return default (T);
+
+					if (r == SQLite3.Result.Row) {
+						var colType = SQLite3.ColumnType (stmt, 0);
+						var colval = ReadCol (stmt, 0, colType, typeof (T));
+						if (colval != null)
+							return (T)colval;
+						else
+							return default (T);
+					}
+					cancTok?.ThrowIfCancellationRequested ();
+
+					throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+
+				}
+				catch (SQLiteException ex) {
+					if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+						throw new OperationCanceledException (cancTok.Value);
+					throw;
+				}
+				finally {
+					if (stmt != default)
+					  Finalize (stmt);
+				}
+			}
+		}
+
+		public IEnumerable<T> ExecuteQueryScalars<T> (CancellationToken? cancTok)
+		{
+			if (_conn.Trace) {
+				_conn.Tracer?.Invoke ("Executing Query: " + this);
+			}
+			cancTok?.ThrowIfCancellationRequested ();
+			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
+				Sqlite3Statement stmt = default;
+				try {
+					try {
+						stmt = Prepare ();
+						if (SQLite3.ColumnCount (stmt) < 1) {
+							throw new InvalidOperationException ("QueryScalars should return at least one column");
+						}
+					}
+					catch (SQLiteException ex) {
+						if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+							throw new OperationCanceledException (cancTok.Value);
+						throw;
+					}
+
+					while (true) {
+						object val = null;
+						try {
+							var r = SQLite3.Step (stmt);
+							if (r == SQLite3.Result.Done)
+								break;
+							cancTok?.ThrowIfCancellationRequested ();
+							if (r != SQLite3.Result.Row)
+								throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+
+							var colType = SQLite3.ColumnType (stmt, 0);
+							val = ReadCol (stmt, 0, colType, typeof (T));
+						}
+						catch (SQLiteException ex) {
+							if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+								throw new OperationCanceledException (cancTok.Value);
+							throw;
+						}
+						if (val == null) {
+							yield return default (T);
 						}
 						else {
-							var colType = SQLite3.ColumnType (stmt, i);
-							var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
-							cols[i].SetValue (obj, val);
+							yield return (T)val;
 						}
 					}
-					OnInstanceCreated (obj);
-					yield return (T)obj;
 				}
-			}
-			finally {
-				SQLite3.Finalize (stmt);
-			}
-		}
-
-		public T ExecuteScalar<T> ()
-		{
-			if (_conn.Trace) {
-				_conn.Tracer?.Invoke ("Executing Query: " + this);
-			}
-
-			T val = default (T);
-
-			var stmt = Prepare ();
-
-			try {
-				var r = SQLite3.Step (stmt);
-				if (r == SQLite3.Result.Row) {
-					var colType = SQLite3.ColumnType (stmt, 0);
-					var colval = ReadCol (stmt, 0, colType, typeof (T));
-					if (colval != null) {
-						val = (T)colval;
-					}
+				finally {
+					if (stmt != default)
+					  Finalize (stmt);
 				}
-				else if (r == SQLite3.Result.Done) {
-				}
-				else {
-					throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
-				}
-			}
-			finally {
-				Finalize (stmt);
-			}
-
-			return val;
-		}
-
-		public IEnumerable<T> ExecuteQueryScalars<T> ()
-		{
-			if (_conn.Trace) {
-				_conn.Tracer?.Invoke ("Executing Query: " + this);
-			}
-			var stmt = Prepare ();
-			try {
-				if (SQLite3.ColumnCount (stmt) < 1) {
-					throw new InvalidOperationException ("QueryScalars should return at least one column");
-				}
-				while (SQLite3.Step (stmt) == SQLite3.Result.Row) {
-					var colType = SQLite3.ColumnType (stmt, 0);
-					var val = ReadCol (stmt, 0, colType, typeof (T));
-					if (val == null) {
-						yield return default (T);
-					}
-					else {
-						yield return (T)val;
-					}
-				}
-			}
-			finally {
-				Finalize (stmt);
 			}
 		}
 
@@ -3495,7 +3878,7 @@ namespace SQLite
 				});
 			}
 			else if (clrType == typeof (Int32)) {
-				fastSetter = CreateNullableTypedSetterDelegate<T, int> (column, (stmt, index)=>{
+				fastSetter = CreateNullableTypedSetterDelegate<T, int> (column, (stmt, index) => {
 					return SQLite3.ColumnInt (stmt, index);
 				});
 			}
@@ -3511,7 +3894,7 @@ namespace SQLite
 			}
 			else if (clrType == typeof (float)) {
 				fastSetter = CreateNullableTypedSetterDelegate<T, float> (column, (stmt, index) => {
-					return (float) SQLite3.ColumnDouble (stmt, index);
+					return (float)SQLite3.ColumnDouble (stmt, index);
 				});
 			}
 			else if (clrType == typeof (TimeSpan)) {
@@ -3638,7 +4021,7 @@ namespace SQLite
 		/// <returns>A strongly-typed delegate</returns>
 		private static Action<object, Sqlite3Statement, int> CreateNullableTypedSetterDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column, Func<Sqlite3Statement, int, ColumnMemberType> getColumnValue) where ColumnMemberType : struct
 		{
-			var clrTypeInfo = column.PropertyInfo.PropertyType.GetTypeInfo();
+			var clrTypeInfo = column.PropertyInfo.PropertyType.GetTypeInfo ();
 			bool isNullable = false;
 
 			if (clrTypeInfo.IsGenericType && clrTypeInfo.GetGenericTypeDefinition () == typeof (Nullable<>)) {
@@ -3812,6 +4195,7 @@ namespace SQLite
 		Expression _joinSelector;
 
 		Expression _selector;
+		CancellationToken? _cancelToken;
 
 		TableQuery (SQLiteConnection conn, TableMapping table)
 		{
@@ -3841,6 +4225,7 @@ namespace SQLite
 			q._joinOuterKeySelector = _joinOuterKeySelector;
 			q._joinSelector = _joinSelector;
 			q._selector = _selector;
+			q._cancelToken = _cancelToken;
 			return q;
 		}
 
@@ -3859,6 +4244,13 @@ namespace SQLite
 			else {
 				throw new NotSupportedException ("Must be a predicate");
 			}
+		}
+
+		public TableQuery<T> CancelToken (CancellationToken? tok)
+		{
+			var q = Clone<T> ();
+			q._cancelToken = tok;
+			return q;
 		}
 
 		/// <summary>
@@ -3894,7 +4286,7 @@ namespace SQLite
 
 			var command = Connection.CreateCommand (cmdText, args.ToArray ());
 
-			int result = command.ExecuteNonQuery ();
+			int result = command.ExecuteNonQuery (_cancelToken);
 			return result;
 		}
 
@@ -4370,7 +4762,7 @@ namespace SQLite
 		/// </summary>
 		public int Count ()
 		{
-			return GenerateCommand ("count(*)").ExecuteScalar<int> ();
+			return GenerateCommand ("count(*)").ExecuteScalar<int> (_cancelToken);
 		}
 
 		/// <summary>
@@ -4383,10 +4775,18 @@ namespace SQLite
 
 		public IEnumerator<T> GetEnumerator ()
 		{
-			if (!_deferred)
-				return GenerateCommand ("*").ExecuteQuery<T> ().GetEnumerator ();
+			var cmd = GenerateCommand ("*");
+			if (_cancelToken != null) {
+				if (!_deferred)
+					return cmd.CancelableExecuteQuery<T> (_cancelToken.Value).GetEnumerator ();
 
-			return GenerateCommand ("*").ExecuteDeferredQuery<T> ().GetEnumerator ();
+				return cmd.CancelableExecuteDeferredQuery<T> (_cancelToken.Value).GetEnumerator ();
+			}
+
+			if (!_deferred)
+				return cmd.ExecuteQuery<T> ().GetEnumerator ();
+
+			return cmd.ExecuteDeferredQuery<T> ().GetEnumerator ();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
@@ -4399,7 +4799,11 @@ namespace SQLite
 		/// </summary>
 		public List<T> ToList ()
 		{
-			return GenerateCommand ("*").ExecuteQuery<T> ();
+			var cmd = GenerateCommand ("*");
+			if (_cancelToken != null)
+				return cmd.CancelableExecuteQuery<T> (_cancelToken.Value);
+			else
+				return cmd.ExecuteQuery<T> ();
 		}
 
 		/// <summary>
@@ -4407,7 +4811,11 @@ namespace SQLite
 		/// </summary>
 		public T[] ToArray ()
 		{
-			return GenerateCommand ("*").ExecuteQuery<T> ().ToArray ();
+			var cmd = GenerateCommand ("*");
+			if (_cancelToken != null)
+				return cmd.CancelableExecuteQuery<T> (_cancelToken.Value).ToArray ();
+			else
+				return cmd.ExecuteQuery<T> ().ToArray ();
 		}
 
 		/// <summary>
@@ -4543,50 +4951,50 @@ namespace SQLite
 		const string LibraryPath = "sqlite3";
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_threadsafe", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int Threadsafe ();
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_open", CallingConvention=CallingConvention.Cdecl)]
-		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_open", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Open ([MarshalAs (UnmanagedType.LPStr)] string filename, out IntPtr db);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention=CallingConvention.Cdecl)]
-		public static extern Result Open ([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db, int flags, [MarshalAs (UnmanagedType.LPStr)] string zvfs);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Open ([MarshalAs (UnmanagedType.LPStr)] string filename, out IntPtr db, int flags, [MarshalAs (UnmanagedType.LPStr)] string zvfs);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-		public static extern Result Open(byte[] filename, out IntPtr db, int flags, [MarshalAs (UnmanagedType.LPStr)] string zvfs);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Open (byte[] filename, out IntPtr db, int flags, [MarshalAs (UnmanagedType.LPStr)] string zvfs);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
-		public static extern Result Open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr db);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Open16 ([MarshalAs (UnmanagedType.LPWStr)] string filename, out IntPtr db);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_enable_load_extension", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_enable_load_extension", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result EnableLoadExtension (IntPtr db, int onoff);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_close_v2", CallingConvention = CallingConvention.Cdecl)]
-		public static extern Result Close2(IntPtr db);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_close_v2", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Close2 (IntPtr db);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_initialize", CallingConvention=CallingConvention.Cdecl)]
-		public static extern Result Initialize();
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_initialize", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Initialize ();
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_shutdown", CallingConvention=CallingConvention.Cdecl)]
-		public static extern Result Shutdown();
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_shutdown", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Shutdown ();
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_config", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_win32_set_directory", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_busy_timeout", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_busy_timeout", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_changes", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_changes", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int Changes (IntPtr db);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_prepare_v2", CallingConvention=CallingConvention.Cdecl)]
-		public static extern Result Prepare2 (IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result Prepare2 (IntPtr db, [MarshalAs (UnmanagedType.LPStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
 
 #if NETFX_CORE
 		[DllImport (LibraryPath, EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
@@ -4600,7 +5008,7 @@ namespace SQLite
             byte[] queryBytes = System.Text.UTF8Encoding.UTF8.GetBytes (query);
             var r = Prepare2 (db, queryBytes, queryBytes.Length, out stmt, IntPtr.Zero);
 #else
-            var r = Prepare2 (db, query, System.Text.UTF8Encoding.UTF8.GetByteCount (query), out stmt, IntPtr.Zero);
+			var r = Prepare2 (db, query, System.Text.UTF8Encoding.UTF8.GetByteCount (query), out stmt, IntPtr.Zero);
 #endif
 			if (r != Result.OK) {
 				throw SQLiteException.New (r, GetErrmsg (db));
@@ -4608,19 +5016,22 @@ namespace SQLite
 			return stmt;
 		}
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_step", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_interrupt", CallingConvention = CallingConvention.Cdecl)]
+		public static extern void Interrupt (IntPtr db);
+
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_step", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Step (IntPtr stmt);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_reset", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_reset", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Reset (IntPtr stmt);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_finalize", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_finalize", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Finalize (IntPtr stmt);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_last_insert_rowid", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_last_insert_rowid", CallingConvention = CallingConvention.Cdecl)]
 		public static extern long LastInsertRowid (IntPtr db);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_errmsg16", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_errmsg16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr Errmsg (IntPtr db);
 
 		public static string GetErrmsg (IntPtr db)
@@ -4628,62 +5039,62 @@ namespace SQLite
 			return Marshal.PtrToStringUni (Errmsg (db));
 		}
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_bind_parameter_index", CallingConvention=CallingConvention.Cdecl)]
-		public static extern int BindParameterIndex (IntPtr stmt, [MarshalAs(UnmanagedType.LPStr)] string name);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_bind_parameter_index", CallingConvention = CallingConvention.Cdecl)]
+		public static extern int BindParameterIndex (IntPtr stmt, [MarshalAs (UnmanagedType.LPStr)] string name);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_bind_null", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_bind_null", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindNull (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_bind_int", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_bind_int", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindInt (IntPtr stmt, int index, int val);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_bind_int64", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_bind_int64", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindInt64 (IntPtr stmt, int index, long val);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_bind_double", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_bind_double", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindDouble (IntPtr stmt, int index, double val);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_bind_text16", CallingConvention=CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-		public static extern int BindText (IntPtr stmt, int index, [MarshalAs(UnmanagedType.LPWStr)] string val, int n, IntPtr free);
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_bind_text16", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+		public static extern int BindText (IntPtr stmt, int index, [MarshalAs (UnmanagedType.LPWStr)] string val, int n, IntPtr free);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_bind_blob", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_bind_blob", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindBlob (IntPtr stmt, int index, byte[] val, int n, IntPtr free);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_count", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_count", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int ColumnCount (IntPtr stmt);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_name", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_name", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnName (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_name16", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_name16", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr ColumnName16Internal (IntPtr stmt, int index);
-		public static string ColumnName16(IntPtr stmt, int index)
+		public static string ColumnName16 (IntPtr stmt, int index)
 		{
-			return Marshal.PtrToStringUni(ColumnName16Internal(stmt, index));
+			return Marshal.PtrToStringUni (ColumnName16Internal (stmt, index));
 		}
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_type", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_type", CallingConvention = CallingConvention.Cdecl)]
 		public static extern ColType ColumnType (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_int", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_int", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int ColumnInt (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_int64", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_int64", CallingConvention = CallingConvention.Cdecl)]
 		public static extern long ColumnInt64 (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_double", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_double", CallingConvention = CallingConvention.Cdecl)]
 		public static extern double ColumnDouble (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_text", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_text", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnText (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_text16", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_text16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnText16 (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_blob", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_blob", CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr ColumnBlob (IntPtr stmt, int index);
 
-		[DllImport(LibraryPath, EntryPoint = "sqlite3_column_bytes", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_column_bytes", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int ColumnBytes (IntPtr stmt, int index);
 
 		public static string ColumnString (IntPtr stmt, int index)
@@ -4771,6 +5182,13 @@ namespace SQLite
 		{
 			return (Result)Sqlite3.sqlite3_step (stmt);
 		}
+
+		public static void Interrupt(Sqlite3DatabaseHandle db)
+		{
+			Sqlite3.sqlite3_interrupt(db);
+		}
+
+		
 
 		public static Result Reset (Sqlite3Statement stmt)
 		{
