@@ -3309,6 +3309,7 @@ namespace SQLite
 		}
 	}
 
+
 	public partial class SQLiteCommand
 	{
 		SQLiteConnection _conn;
@@ -3329,11 +3330,17 @@ namespace SQLite
 			}
 			cancTok?.ThrowIfCancellationRequested ();
 			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
-
-				var r = SQLite3.Result.OK;
-				var stmt = Prepare ();
-				r = SQLite3.Step (stmt);
-				Finalize (stmt);
+				SQLite3.Result r = SQLite3.Result.OK;
+				try {
+					var stmt = Prepare ();
+					r = SQLite3.Step (stmt);
+					Finalize (stmt);
+				}
+				catch (SQLiteException ex) {
+					if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true) 
+						throw new OperationCanceledException (cancTok.Value);
+					throw;
+				}
 				if (r == SQLite3.Result.Done) {
 					int rowsAffected = SQLite3.Changes (_conn.Handle);
 					return rowsAffected;
@@ -3410,66 +3417,85 @@ namespace SQLite
 
 			cancTok?.ThrowIfCancellationRequested ();
 			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
-				var stmt = Prepare ();
-				try {
+				Sqlite3Statement stmt = default;
+				TableMapping.Column[] cols = null;
+				Action<object, Sqlite3Statement, int>[] fastColumnSetters = null;
+ 				try {
+					try {
+						stmt = Prepare ();
+						cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
+						fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
 
-					var cols = new TableMapping.Column[SQLite3.ColumnCount (stmt)];
-					var fastColumnSetters = new Action<object, Sqlite3Statement, int>[SQLite3.ColumnCount (stmt)];
+						if (map.Method == TableMapping.MapMethod.ByPosition) {
+							Array.Copy (map.Columns, cols, Math.Min (cols.Length, map.Columns.Length));
+						}
+						else if (map.Method == TableMapping.MapMethod.ByName) {
+							MethodInfo getSetter = null;
+							if (typeof (T) != map.MappedType) {
+								getSetter = typeof (FastColumnSetter)
+									.GetMethod (nameof (FastColumnSetter.GetFastSetter),
+										BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+							}
 
-					if (map.Method == TableMapping.MapMethod.ByPosition) {
-						Array.Copy (map.Columns, cols, Math.Min (cols.Length, map.Columns.Length));
+							for (int i = 0; i < cols.Length; i++) {
+								var name = SQLite3.ColumnName16 (stmt, i);
+								cols[i] = map.FindColumn (name);
+								if (cols[i] != null)
+									if (getSetter != null) {
+										fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke (null, new object[] { _conn, cols[i] });
+									}
+									else {
+										fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T> (_conn, cols[i]);
+									}
+							}
+						}
 					}
-					else if (map.Method == TableMapping.MapMethod.ByName) {
-						MethodInfo getSetter = null;
-						if (typeof (T) != map.MappedType) {
-							getSetter = typeof (FastColumnSetter)
-								.GetMethod (nameof (FastColumnSetter.GetFastSetter),
-									BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
-						}
-
-						for (int i = 0; i < cols.Length; i++) {
-							var name = SQLite3.ColumnName16 (stmt, i);
-							cols[i] = map.FindColumn (name);
-							if (cols[i] != null)
-								if (getSetter != null) {
-									fastColumnSetters[i] = (Action<object, Sqlite3Statement, int>)getSetter.Invoke (null, new object[] { _conn, cols[i] });
-								}
-								else {
-									fastColumnSetters[i] = FastColumnSetter.GetFastSetter<T> (_conn, cols[i]);
-								}
-						}
+					catch (SQLiteException ex) {
+						if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+							throw new OperationCanceledException (cancTok.Value);
+						throw;
 					}
 
 					while (true) {
-						var r = SQLite3.Step (stmt);
-						if (r == SQLite3.Result.Done)
-							break;
+						object obj = null;
+						try {
+							var r = SQLite3.Step (stmt);
+							if (r == SQLite3.Result.Done)
+								break;
 
-						cancTok?.ThrowIfCancellationRequested ();
+							cancTok?.ThrowIfCancellationRequested ();
 
-						if (r != SQLite3.Result.Row)
-							throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+							if (r != SQLite3.Result.Row)
+								throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
 
-						var obj = Activator.CreateInstance (map.MappedType);
-						for (int i = 0; i < cols.Length; i++) {
-							if (cols[i] == null)
-								continue;
+							obj = Activator.CreateInstance (map.MappedType);
+							for (int i = 0; i < cols.Length; i++) {
+								if (cols[i] == null)
+									continue;
 
-							if (fastColumnSetters[i] != null) {
-								fastColumnSetters[i].Invoke (obj, stmt, i);
+								if (fastColumnSetters[i] != null) {
+									fastColumnSetters[i].Invoke (obj, stmt, i);
+								}
+								else {
+									var colType = SQLite3.ColumnType (stmt, i);
+									var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
+									cols[i].SetValue (obj, val);
+								}
 							}
-							else {
-								var colType = SQLite3.ColumnType (stmt, i);
-								var val = ReadCol (stmt, i, colType, cols[i].ColumnType);
-								cols[i].SetValue (obj, val);
-							}
+							OnInstanceCreated (obj);
 						}
-						OnInstanceCreated (obj);
+						catch (SQLiteException ex) {
+							if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+								throw new OperationCanceledException (cancTok.Value);
+							throw;
+						}
+
 						yield return (T)obj;
 					}
 				}
 				finally {
-					SQLite3.Finalize (stmt);
+					if (stmt != default)
+					  SQLite3.Finalize (stmt);
 				}
 			}
 		}
@@ -3482,10 +3508,9 @@ namespace SQLite
 
 			cancTok?.ThrowIfCancellationRequested ();
 			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
-
-				var stmt = Prepare ();
+				Sqlite3Statement stmt = default;
 				try {
-
+					stmt = Prepare ();
 					var r = SQLite3.Step (stmt);
 					if (r == SQLite3.Result.Done)
 						return default (T);
@@ -3503,8 +3528,14 @@ namespace SQLite
 					throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
 
 				}
+				catch (SQLiteException ex) {
+					if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+						throw new OperationCanceledException (cancTok.Value);
+					throw;
+				}
 				finally {
-					Finalize (stmt);
+					if (stmt != default)
+					  Finalize (stmt);
 				}
 			}
 		}
@@ -3516,22 +3547,38 @@ namespace SQLite
 			}
 			cancTok?.ThrowIfCancellationRequested ();
 			using (var interruptCallbackRegistration = cancTok?.Register (() => SQLite3.Interrupt (_conn.Handle))) {
-				var stmt = Prepare ();
+				Sqlite3Statement stmt = default;
 				try {
-					if (SQLite3.ColumnCount (stmt) < 1) {
-						throw new InvalidOperationException ("QueryScalars should return at least one column");
+					try {
+						stmt = Prepare ();
+						if (SQLite3.ColumnCount (stmt) < 1) {
+							throw new InvalidOperationException ("QueryScalars should return at least one column");
+						}
+					}
+					catch (SQLiteException ex) {
+						if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+							throw new OperationCanceledException (cancTok.Value);
+						throw;
 					}
 
 					while (true) {
-						var r = SQLite3.Step (stmt);
-						if (r == SQLite3.Result.Done)
-							break;
-						cancTok?.ThrowIfCancellationRequested ();
-						if (r != SQLite3.Result.Row)
-							throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
+						object val = null;
+						try {
+							var r = SQLite3.Step (stmt);
+							if (r == SQLite3.Result.Done)
+								break;
+							cancTok?.ThrowIfCancellationRequested ();
+							if (r != SQLite3.Result.Row)
+								throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
 
-						var colType = SQLite3.ColumnType (stmt, 0);
-						var val = ReadCol (stmt, 0, colType, typeof (T));
+							var colType = SQLite3.ColumnType (stmt, 0);
+							val = ReadCol (stmt, 0, colType, typeof (T));
+						}
+						catch (SQLiteException ex) {
+							if (ex.Result == SQLite3.Result.Interrupt && cancTok?.IsCancellationRequested == true)
+								throw new OperationCanceledException (cancTok.Value);
+							throw;
+						}
 						if (val == null) {
 							yield return default (T);
 						}
@@ -3541,7 +3588,8 @@ namespace SQLite
 					}
 				}
 				finally {
-					Finalize (stmt);
+					if (stmt != default)
+					  Finalize (stmt);
 				}
 			}
 		}
