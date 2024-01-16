@@ -4064,6 +4064,9 @@ namespace SQLite
 					}
 					cmdText += " offset " + _offset.Value;
 				}
+
+				//Remove all StringComparison arguments from args, otherwise the created command may unmatch with the real arguments.
+				args.RemoveAll (x => x is StringComparison);
 				return Connection.CreateCommand (cmdText, args.ToArray ());
 			}
 		}
@@ -4133,7 +4136,24 @@ namespace SQLite
 					sqlCall = "(" + args[0].CommandText + " like " + args[1].CommandText + ")";
 				}
 				else if (call.Method.Name == "Contains" && args.Length == 2) {
-					sqlCall = "(" + args[1].CommandText + " in " + args[0].CommandText + ")";
+					//Add Contains method with StringComparison parameter. 
+					if (call.Object != null && call.Object.Type == typeof (string) && args[1].Value is StringComparison comparison) {
+						switch (comparison) {
+							case StringComparison.Ordinal:
+							case StringComparison.CurrentCulture:
+							case StringComparison.InvariantCulture:
+								sqlCall = "(instr(" + obj.CommandText + "," + args[0].CommandText + ") > 0)";
+								break;
+							case StringComparison.OrdinalIgnoreCase:
+							case StringComparison.CurrentCultureIgnoreCase:
+							case StringComparison.InvariantCultureIgnoreCase:
+								sqlCall = "(" + obj.CommandText + " like ('%' ||" + args[0].CommandText + "|| '%'))";
+								break;
+						}
+					}
+					else {
+						sqlCall = "(" + args[1].CommandText + " in " + args[0].CommandText + ")";
+					}
 				}
 				else if (call.Method.Name == "Contains" && args.Length == 1) {
 					if (call.Object != null && call.Object.Type == typeof (string)) {
