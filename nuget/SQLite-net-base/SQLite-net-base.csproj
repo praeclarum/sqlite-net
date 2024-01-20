@@ -27,7 +27,7 @@
     <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.core" Version="2.0.4" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="2.1.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">

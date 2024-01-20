@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -36,6 +37,17 @@ namespace SQLite.Tests
 			return db;
 		}
 
+		async Task<SQLiteAsyncConnection> CreateDbAsync ()
+		{
+			var db = new SQLiteAsyncConnection (new SQLiteConnectionString (TestPath.GetTempFileName ()));
+			await db.CreateTableAsync<TestTable> ();
+			var items = from i in Enumerable.Range (0, Count)
+			            select new TestTable { Datum = 1000+i, Test = "Hello World" };
+			await db.InsertAllAsync (items);
+			Assert.AreEqual (Count, await db.Table<TestTable> ().CountAsync ());
+			return db;
+		}
+
 		[Test]
 		public void DeleteEntityOne ()
 		{
@@ -45,6 +57,17 @@ namespace SQLite.Tests
 
 			Assert.AreEqual (1, r);
 			Assert.AreEqual (Count - 1, db.Table<TestTable> ().Count ());
+		}
+
+		[Test]
+		public async Task DeleteEntityOneAsync ()
+		{
+			var db = await CreateDbAsync ();
+
+			var r = await db.DeleteAsync (await db.GetAsync<TestTable> (1));
+
+			Assert.AreEqual (1, r);
+			Assert.AreEqual (Count - 1, await db.Table<TestTable> ().CountAsync ());
 		}
 
 		[Test]
