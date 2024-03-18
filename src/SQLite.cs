@@ -900,7 +900,7 @@ namespace SQLite
 
 			public int notnull { get; set; }
 
-			//			public string dflt_value { get; set; }
+			public string dflt_value { get; set; }
 
 			//			public int pk { get; set; }
 
@@ -924,22 +924,34 @@ namespace SQLite
 		void MigrateTable (TableMapping map, List<ColumnInfo> existingCols)
 		{
 			var toBeAdded = new List<TableMapping.Column> ();
+			var toBeDefaulted = new List<TableMapping.Column> ();
 
 			foreach (var p in map.Columns) {
 				var found = false;
+				var defaulted = false;
 				foreach (var c in existingCols) {
 					found = (string.Compare (p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0);
-					if (found)
+					if (found) {
+						defaulted = c.dflt_value != null;
 						break;
+					}
 				}
 				if (!found) {
 					toBeAdded.Add (p);
+				}
+				else if (!defaulted && p.HasDefaultValue) {
+					toBeDefaulted.Add (p);
 				}
 			}
 
 			foreach (var p in toBeAdded) {
 				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p, StoreDateTimeAsTicks, StoreTimeSpanAsTicks);
 				Execute (addCol);
+			}
+
+			foreach (var p in toBeDefaulted) {
+				var updateCol = "update \"" + map.TableName + "\" set \"" + p.Name + "\" = \"" + p.DefaultValue?.ToString () + "\" where \"" + p.Name + "\" is null";
+				Execute (updateCol);
 			}
 		}
 
@@ -2431,9 +2443,17 @@ namespace SQLite
 	{
 		public string Name { get; set; }
 
+		public object DefaultValue { get; private set; }
+
 		public ColumnAttribute (string name)
 		{
 			Name = name;
+		}
+
+		public ColumnAttribute (string name, object defaultValue)
+		{
+			Name = name;
+			DefaultValue = defaultValue;
 		}
 	}
 
@@ -2703,6 +2723,9 @@ namespace SQLite
 
 			public bool StoreAsText { get; private set; }
 
+			public bool HasDefaultValue => DefaultValue != null;
+			public object DefaultValue { get; private set; }
+
 			public Column (MemberInfo member, CreateFlags createFlags = CreateFlags.None)
 			{
 				_member = member;
@@ -2717,6 +2740,9 @@ namespace SQLite
 						colAttr.ConstructorArguments[0].Value?.ToString () :
 						member.Name;
 #endif
+				DefaultValue = colAttr != null && colAttr.ConstructorArguments.Count > 1 ?
+						colAttr.ConstructorArguments[1].Value : null;
+
 				//If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
 				ColumnType = Nullable.GetUnderlyingType (memberType) ?? memberType;
 				Collation = Orm.Collation (member);
@@ -2876,6 +2902,9 @@ namespace SQLite
 			}
 			if (!string.IsNullOrEmpty (p.Collation)) {
 				decl += "collate " + p.Collation + " ";
+			}
+			if (p.HasDefaultValue) {
+				decl += "default \"" + p.DefaultValue?.ToString() + "\"";
 			}
 
 			return decl;
