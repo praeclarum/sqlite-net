@@ -244,6 +244,8 @@ namespace SQLite
 		List<T> Query<T> (string query, params object[] args) where T : new();
 		List<object> Query (TableMapping map, string query, params object[] args);
 		List<T> QueryScalars<T> (string query, params object[] args);
+		void ReKey (string key);
+		void ReKey (byte[] key);
 		void Release (string savepoint);
 		void Rollback ();
 		void RollbackTo (string savepoint);
@@ -259,8 +261,7 @@ namespace SQLite
 	/// An open connection to a SQLite database.
 	/// </summary>
 	[Preserve (AllMembers = true)]
-	public partial class SQLiteConnection : IDisposable
-		, ISQLiteConnection
+	public partial class SQLiteConnection : ISQLiteConnection
 	{
 		private bool _open;
 		private TimeSpan _busyTimeout;
