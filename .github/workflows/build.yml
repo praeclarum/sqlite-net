@@ -28,6 +28,9 @@ jobs:
       with:
         dotnet-version: '8.0.100'
         include-prerelease: true
+
+    - name: Install Code Coverarage Tool
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
     
     - name: Restore NuGets
       run: nuget restore SQLite.sln
