@@ -2447,7 +2447,7 @@ namespace SQLite
 	{
 	}
 
-	[AttributeUsage (AttributeTargets.Property)]
+	[AttributeUsage (AttributeTargets.Property, AllowMultiple = true)]
 	public class IndexedAttribute : Attribute
 	{
 		public string Name { get; set; }
