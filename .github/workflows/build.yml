@@ -26,8 +26,7 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.100'
-        include-prerelease: true
+        global-json-file: global.json
 
     - name: Install Code Coverarage Tool
       run: dotnet tool install --global dotnet-reportgenerator-globaltool
