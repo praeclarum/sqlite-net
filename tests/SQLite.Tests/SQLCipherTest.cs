@@ -158,7 +158,7 @@ namespace SQLite.Tests
 			var reKey = "SecretKey";
 
 			using (var db = new TestDb (key: key)) {
-				db.SetReKey (reKey);
+				db.ReKey (reKey);
 				path = db.DatabasePath;
 
 				db.CreateTable<TestTable> ();
@@ -184,7 +184,7 @@ namespace SQLite.Tests
 			rand.NextBytes (reKey);
 
 			using (var db = new TestDb (key: key)) {
-				db.SetReKey (reKey);
+				db.ReKey (reKey);
 				path = db.DatabasePath;
 
 				db.CreateTable<TestTable> ();
@@ -206,7 +206,7 @@ namespace SQLite.Tests
 			try
 			{
 				using (var db = new TestDb ()) {
-					db.SetReKey (key);
+					db.ReKey (key);
 				}
 
 				Assert.Fail ("Should have thrown");

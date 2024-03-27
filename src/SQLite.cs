@@ -491,7 +491,7 @@ namespace SQLite
 		/// Change the encryption key for a SQLCipher database with "pragma rekey = ...".
 		/// </summary>
 		/// <param name="key">Encryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
-		public void SetReKey (string key)
+		public void ReKey (string key)
 		{
 			if (key == null)
 				throw new ArgumentNullException(nameof(key));
@@ -503,7 +503,7 @@ namespace SQLite
 		/// Change the encryption key for a SQLCipher database.
 		/// </summary>
 		/// <param name="key">256-bit (32 byte) or 384-bit (48 bytes) encryption key data</param>
-		public void SetReKey (byte[] key)
+		public void ReKey (byte[] key)
 		{
 			if (key == null)
 				throw new ArgumentNullException(nameof(key));
