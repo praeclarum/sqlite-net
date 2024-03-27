@@ -8,24 +8,18 @@
     <Description>
       SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
       This version uses SQLitePCLRaw to provide platform independent versions of SQLite.
-
     </Description>
-
-    <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugSymbols>false</DebugSymbols>
-    <DebugType></DebugType>
     <DefineConstants>USE_SQLITEPCL_RAW;RELEASE</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;DEBUG</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.2" />
   </ItemGroup>

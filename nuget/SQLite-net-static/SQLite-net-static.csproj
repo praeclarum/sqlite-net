@@ -10,13 +10,9 @@
       This version uses P/Invokes to the "sqlite3" native library provided by the operating system.
       This works on Xamarin.iOS, Xamarin.Mac, Wilderness Labs' Meadow, and any other platform that has a "sqlite3" library in the path.
     </Description>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugSymbols>false</DebugSymbols>
-    <DebugType></DebugType>
     <DefineConstants>RELEASE</DefineConstants>
     <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
@@ -24,6 +20,7 @@
     <DefineConstants>DEBUG</DefineConstants>
     <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>

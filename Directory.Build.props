@@ -12,6 +12,8 @@
         <Company>Krueger Systems, Inc.</Company>
 
         <Deterministic>true</Deterministic>
+
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 	 <ItemGroup>
 		<None Include="..\Logo-low.png" Pack="true" PackagePath=""/>
