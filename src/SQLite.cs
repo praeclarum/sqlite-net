@@ -159,7 +159,7 @@ namespace SQLite
 		FullTextSearch4 = 0x200
 	}
 
-	public interface ISQLiteConnection
+	public interface ISQLiteConnection : IDisposable
 	{
 		Sqlite3DatabaseHandle Handle { get; }
 		string DatabasePath { get; }
@@ -215,7 +215,6 @@ namespace SQLite
 		int Delete (object primaryKey, TableMapping map);
 		int DeleteAll<T> ();
 		int DeleteAll (TableMapping map);
-		void Dispose ();
 		int DropTable<T> ();
 		int DropTable (TableMapping map);
 		void EnableLoadExtension (bool enabled);
