@@ -39,6 +39,11 @@ jobs:
         set -e
         cd tests/SQLite.Tests
         dotnet test /p:AltCover=true /p:AltCoverForce=true "/p:AltCoverTypeFilter=SQLite.Tests.*"
+
+    - name: Verify Async API Matches Sync API
+      run: |
+        set -e
+        dotnet run --project tests/ApiDiff/ApiDiff.csproj
         
     - name: Generate Code Coverage Report        
       uses: danielpalme/ReportGenerator-GitHub-Action@4.8.4
