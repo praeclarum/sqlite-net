@@ -46,7 +46,7 @@ jobs:
         dotnet run --project tests/ApiDiff/ApiDiff.csproj
         
     - name: Generate Code Coverage Report        
-      uses: danielpalme/ReportGenerator-GitHub-Action@4.8.4
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.4
       if: github.event_name == 'push'
       with:
         reports: 'tests/SQLite.Tests/coverage.xml' # REQUIRED # The coverage reports that should be parsed (separated by semicolon). Globbing is supported.
