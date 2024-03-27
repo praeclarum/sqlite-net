@@ -21,7 +21,7 @@ jobs:
       env:
         VERSION_BUILD: ${{github.run_number}}
       run: |
-        sed -i bak "s:</VersionPrefix>:.$VERSION_BUILD</VersionPrefix>:g" Directory.Build.props
+        sed -i.bak "s:</VersionPrefix>:.$VERSION_BUILD</VersionPrefix>:g" Directory.Build.props
 
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
