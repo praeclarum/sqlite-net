@@ -11,7 +11,7 @@ on:
 jobs:
   build:
 
-    runs-on: macOS-latest
+    runs-on: ubuntu-latest
     
     steps:
 
@@ -21,19 +21,33 @@ jobs:
       env:
         VERSION_BUILD: ${{github.run_number}}
       run: |
-        sed -i bak "s:</VersionPrefix>:.$VERSION_BUILD</VersionPrefix>:g" Directory.Build.props
+        sed -i.bak "s:</VersionPrefix>:.$VERSION_BUILD</VersionPrefix>:g" Directory.Build.props
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+
+    - name: Install Code Coverarage Tool
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
     
     - name: Restore NuGets
-      run: nuget restore SQLite.sln
+      run: dotnet restore SQLite.sln
       
     - name: Build and Test
       run: |
         set -e
         cd tests/SQLite.Tests
         dotnet test /p:AltCover=true /p:AltCoverForce=true "/p:AltCoverTypeFilter=SQLite.Tests.*"
+
+    - name: Verify Async API Matches Sync API
+      run: |
+        set -e
+        dotnet run --project tests/ApiDiff/ApiDiff.csproj
         
     - name: Generate Code Coverage Report        
       uses: danielpalme/ReportGenerator-GitHub-Action@4.8.4
+      if: github.event_name == 'push'
       with:
         reports: 'tests/SQLite.Tests/coverage.xml' # REQUIRED # The coverage reports that should be parsed (separated by semicolon). Globbing is supported.
         targetdir: 'CoverageReport' # REQUIRED # The directory where the generated report should be saved.
@@ -59,11 +73,12 @@ jobs:
         enable_jekyll: true
 
     - name: Package
+      if: github.event_name == 'push'
       run: |
         make nuget
 
     - uses: actions/upload-artifact@master
+      if: github.event_name == 'push'
       with:
         name: Packages
         path: PackagesOut
-
