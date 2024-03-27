@@ -462,7 +462,7 @@ namespace SQLite
 		/// if your database is encrypted.
 		/// This only has an effect if you are using the SQLCipher nuget package.
 		/// </summary>
-		/// <param name="key">Ecryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
+		/// <param name="key">Encryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
 		void SetKey (string key)
 		{
 			if (key == null)
@@ -477,7 +477,7 @@ namespace SQLite
 		/// if your database is encrypted.
 		/// This only has an effect if you are using the SQLCipher nuget package.
 		/// </summary>
-		/// <param name="key">256-bit (32 byte) ecryption key data</param>
+		/// <param name="key">256-bit (32 byte) encryption key data</param>
 		void SetKey (byte[] key)
 		{
 			if (key == null)
@@ -486,6 +486,32 @@ namespace SQLite
 				throw new ArgumentException ("Key must be 32 bytes (256-bit) or 48 bytes (384-bit)", nameof (key));
 			var s = String.Join ("", key.Select (x => x.ToString ("X2")));
 			ExecuteScalar<string> ("pragma key = \"x'" + s + "'\"");
+		}
+
+		/// <summary>
+		/// Change the encryption key for a SQLCipher database with "pragma rekey = ...".
+		/// </summary>
+		/// <param name="key">Encryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
+		public void SetReKey (string key)
+		{
+			if (key == null)
+				throw new ArgumentNullException(nameof(key));
+			var q = Quote(key);
+			ExecuteScalar<string>("pragma rekey = " + q);
+		}
+
+		/// <summary>
+		/// Change the encryption key for a SQLCipher database.
+		/// </summary>
+		/// <param name="key">256-bit (32 byte) or 384-bit (48 bytes) encryption key data</param>
+		public void SetReKey (byte[] key)
+		{
+			if (key == null)
+				throw new ArgumentNullException(nameof(key));
+			if (key.Length != 32 && key.Length != 48)
+				throw new ArgumentException ("Key must be 32 bytes (256-bit) or 48 bytes (384-bit)", nameof (key));
+			var s = String.Join("", key.Select(x => x.ToString("X2")));
+			ExecuteScalar<string>("pragma rekey = \"x'" + s + "'\"");
 		}
 
 		/// <summary>
