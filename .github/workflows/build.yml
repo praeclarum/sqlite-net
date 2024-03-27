@@ -32,7 +32,7 @@ jobs:
       run: dotnet tool install --global dotnet-reportgenerator-globaltool
     
     - name: Restore NuGets
-      run: nuget restore SQLite.sln
+      run: dotnet restore SQLite.sln
       
     - name: Build and Test
       run: |
