@@ -2884,7 +2884,7 @@ namespace SQLite
 		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks, bool storeTimeSpanAsTicks)
 		{
 			var clrType = p.ColumnType;
-			if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64)) {
+			if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64) || clrType == typeof (UInt64)) {
 				return "integer";
 			}
 			else if (clrType == typeof (Single) || clrType == typeof (Double) || clrType == typeof (Decimal)) {
@@ -3283,7 +3283,7 @@ namespace SQLite
 				else if (value is Boolean) {
 					SQLite3.BindInt (stmt, index, (bool)value ? 1 : 0);
 				}
-				else if (value is UInt32 || value is Int64) {
+				else if (value is UInt32 || value is Int64 || value is UInt64) {
 					SQLite3.BindInt64 (stmt, index, Convert.ToInt64 (value));
 				}
 				else if (value is Single || value is Double || value is Decimal) {
@@ -3416,6 +3416,9 @@ namespace SQLite
 				}
 				else if (clrType == typeof (Int64)) {
 					return SQLite3.ColumnInt64 (stmt, index);
+				}
+				else if (clrType == typeof (UInt64)) {
+					return (ulong)SQLite3.ColumnInt64 (stmt, index);
 				}
 				else if (clrType == typeof (UInt32)) {
 					return (uint)SQLite3.ColumnInt64 (stmt, index);
@@ -3559,6 +3562,12 @@ namespace SQLite
 			else if (clrType == typeof (Int64)) {
 				fastSetter = CreateNullableTypedSetterDelegate<T, Int64> (column, (stmt, index) => {
 					return SQLite3.ColumnInt64 (stmt, index);
+				});
+			}
+			else if (clrType == typeof(UInt64))
+			{
+				fastSetter = CreateNullableTypedSetterDelegate<T, UInt64>(column, (stmt, index) => {
+					return (ulong)SQLite3.ColumnInt64(stmt, index);
 				});
 			}
 			else if (clrType == typeof (UInt32)) {
