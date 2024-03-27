@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -293,7 +294,7 @@ namespace SQLite
 			return SQLiteConnectionPool.Shared.GetConnection (_connectionString);
 		}
 
-		SQLiteConnectionWithLock GetConnectionAndTransactionLock (out object transactionLock)
+		SQLiteConnectionWithLock GetConnectionAndTransactionLock (out SemaphoreSlim transactionLock)
 		{
 			return SQLiteConnectionPool.Shared.GetConnectionAndTransactionLock (_connectionString, out transactionLock);
 		}
@@ -310,34 +311,38 @@ namespace SQLite
 
 		Task<T> ReadAsync<T> (Func<SQLiteConnectionWithLock, T> read)
 		{
-			return Task.Factory.StartNew (() => {
+			return Task.Run<T> (async () => {
 				var conn = GetConnection ();
-				using (conn.Lock ()) {
+				using (await conn.LockAsync ().ConfigureAwait (false)) {
 					return read (conn);
 				}
-			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			});
 		}
 
 		Task<T> WriteAsync<T> (Func<SQLiteConnectionWithLock, T> write)
 		{
-			return Task.Factory.StartNew (() => {
+			return Task.Run<T> (async () => {
 				var conn = GetConnection ();
-				using (conn.Lock ()) {
+				using (await conn.LockAsync ().ConfigureAwait (false)) {
 					return write (conn);
 				}
-			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			});
 		}
 
 		Task<T> TransactAsync<T> (Func<SQLiteConnectionWithLock, T> transact)
 		{
-			return Task.Factory.StartNew (() => {
+			return Task.Run<T> (async () => {
 				var conn = GetConnectionAndTransactionLock (out var transactionLock);
-				lock (transactionLock) {
-					using (conn.Lock ()) {
+				await transactionLock.WaitAsync ().ConfigureAwait (false);
+				try {
+					using (await conn.LockAsync ().ConfigureAwait (false)) {
 						return transact (conn);
 					}
 				}
-			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+				finally {
+					transactionLock.Release ();
+				}
+			});
 		}
 
 		/// <summary>
@@ -1310,22 +1315,22 @@ namespace SQLite
 
 		Task<U> ReadAsync<U> (Func<SQLiteConnectionWithLock, U> read)
 		{
-			return Task.Factory.StartNew (() => {
+			return Task.Run<U> (async () => {
 				var conn = (SQLiteConnectionWithLock)_innerQuery.Connection;
-				using (conn.Lock ()) {
+				using (await conn.LockAsync ().ConfigureAwait (false)) {
 					return read (conn);
 				}
-			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			});
 		}
 
 		Task<U> WriteAsync<U> (Func<SQLiteConnectionWithLock, U> write)
 		{
-			return Task.Factory.StartNew (() => {
+			return Task.Run<U> (async () => {
 				var conn = (SQLiteConnectionWithLock)_innerQuery.Connection;
-				using (conn.Lock ()) {
+				using (await conn.LockAsync ().ConfigureAwait (false)) {
 					return write (conn);
 				}
-			}, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			});
 		}
 
 		/// <summary>
@@ -1481,7 +1486,7 @@ namespace SQLite
 
 			public SQLiteConnectionString ConnectionString { get; }
 
-			public object TransactionLock { get; } = new object ();
+			public SemaphoreSlim TransactionLock { get; } = new SemaphoreSlim (1);
 
 			public Entry (SQLiteConnectionString connectionString)
 			{
@@ -1505,7 +1510,7 @@ namespace SQLite
 		}
 
 		readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry> ();
-		readonly object _entriesLock = new object ();
+		readonly object _entriesLock = new object();
 
 		static readonly SQLiteConnectionPool _shared = new SQLiteConnectionPool ();
 
@@ -1523,11 +1528,11 @@ namespace SQLite
 			return GetConnectionAndTransactionLock (connectionString, out var _);
 		}
 
-		public SQLiteConnectionWithLock GetConnectionAndTransactionLock (SQLiteConnectionString connectionString, out object transactionLock)
+		public SQLiteConnectionWithLock GetConnectionAndTransactionLock (SQLiteConnectionString connectionString, out SemaphoreSlim transactionLock)
 		{
-			var key = connectionString.UniqueKey;
-			Entry entry;
 			lock (_entriesLock) {
+				var key = connectionString.UniqueKey;
+				Entry entry;
 				if (!_entries.TryGetValue (key, out entry)) {
 					// The opens the database while we're locked
 					// This is to ensure another thread doesn't get an unopened database
@@ -1575,7 +1580,8 @@ namespace SQLite
 	/// </summary>
 	public class SQLiteConnectionWithLock : SQLiteConnection
 	{
-		readonly object _lockPoint = new object ();
+		readonly SemaphoreSlim _asyncLock =
+			new SemaphoreSlim (1);
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:SQLite.SQLiteConnectionWithLock"/> class.
@@ -1597,24 +1603,43 @@ namespace SQLite
 		/// on the returned object.
 		/// </summary>
 		/// <returns>The lock.</returns>
+		[Obsolete("Please use LockAsync to prevent threadpool starvation")]
 		public IDisposable Lock ()
 		{
-			return SkipLock ? (IDisposable)new FakeLockWrapper() : new LockWrapper (_lockPoint);
+			return LockAsync ().Result;
+		}
+
+		/// <summary>
+		/// Asynchronously lock the database to serialize access to it.
+		/// To unlock it, call Dispose on the returned object.
+		/// </summary>
+		/// <returns>The lock.</returns>
+		public Task<IDisposable> LockAsync ()
+		{
+			return SkipLock ?
+				Task.FromResult ((IDisposable)new FakeLockWrapper ()) :
+				LockWrapper.CreateAsync (_asyncLock);
 		}
 
 		class LockWrapper : IDisposable
 		{
-			object _lockPoint;
+			SemaphoreSlim asyncLock;
 
-			public LockWrapper (object lockPoint)
+			LockWrapper (SemaphoreSlim asyncLock)
 			{
-				_lockPoint = lockPoint;
-				Monitor.Enter (_lockPoint);
+				this.asyncLock = asyncLock;
+			}
+
+			public static async Task<IDisposable> CreateAsync (SemaphoreSlim asyncLock)
+			{
+				var wrapper = new LockWrapper (asyncLock);
+				await asyncLock.WaitAsync ().ConfigureAwait (false);
+				return wrapper;
 			}
 
 			public void Dispose ()
 			{
-				Monitor.Exit (_lockPoint);
+				asyncLock.Release ();
 			}
 		}
 		class FakeLockWrapper : IDisposable
