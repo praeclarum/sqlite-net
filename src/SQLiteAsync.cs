@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012-2021 Krueger Systems, Inc.
+// Copyright (c) 2012-2024 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -110,6 +110,8 @@ namespace SQLite
 		Task<List<T>> QueryAsync<T> (string query, params object[] args) where T : new();
 		Task<List<object>> QueryAsync (TableMapping map, string query, params object[] args);
 		Task<List<T>> QueryScalarsAsync<T> (string query, params object[] args);
+		Task ReKeyAsync (string key);
+		Task ReKeyAsync (byte[] key);
 		Task RunInTransactionAsync (Action<SQLiteConnection> action);
 		Task SetBusyTimeoutAsync (TimeSpan value);
 		AsyncTableQuery<T> Table<T> () where T : new();
@@ -121,8 +123,7 @@ namespace SQLite
 	/// <summary>
 	/// A pooled asynchronous connection to a SQLite database.
 	/// </summary>
-	public partial class SQLiteAsyncConnection
-		: ISQLiteAsyncConnection
+	public partial class SQLiteAsyncConnection : ISQLiteAsyncConnection
 	{
 		readonly SQLiteConnectionString _connectionString;
 
@@ -1264,6 +1265,30 @@ namespace SQLite
 		public Task<IEnumerable<object>> DeferredQueryAsync (TableMapping map, string query, params object[] args)
 		{
 			return ReadAsync (conn => (IEnumerable<object>)conn.DeferredQuery (map, query, args).ToList ());
+		}
+
+		/// <summary>
+		/// Change the encryption key for a SQLCipher database with "pragma rekey = ...".
+		/// </summary>
+		/// <param name="key">Encryption key plain text that is converted to the real encryption key using PBKDF2 key derivation</param>
+		public Task ReKeyAsync (string key)
+		{
+			return WriteAsync<object> (conn => {
+				conn.ReKey (key);
+				return null;
+			});
+		}
+
+		/// <summary>
+		/// Change the encryption key for a SQLCipher database.
+		/// </summary>
+		/// <param name="key">256-bit (32 byte) or 384-bit (48 bytes) encryption key data</param>
+		public Task ReKeyAsync (byte[] key)
+		{
+			return WriteAsync<object> (conn => {
+				conn.ReKey (key);
+				return null;
+			});			
 		}
 	}
 

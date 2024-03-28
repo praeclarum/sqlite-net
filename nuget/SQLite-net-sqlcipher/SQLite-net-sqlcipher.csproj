@@ -11,21 +11,17 @@
       This enables secure access to the database with password (key) access.
     </Description>
     <PackageTags>sqlite-net;sqlite;database;orm;encryption;sqlcipher</PackageTags>
-    <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugSymbols>false</DebugSymbols>
-    <DebugType></DebugType>
     <DefineConstants>USE_SQLITEPCL_RAW;RELEASE</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;DEBUG</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.2" />
   </ItemGroup>

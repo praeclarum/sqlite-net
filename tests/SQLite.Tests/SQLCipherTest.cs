@@ -148,5 +148,71 @@ namespace SQLite.Tests
 				Assert.AreEqual ("wal", db.ExecuteScalar<string> ("PRAGMA journal_mode;"));
 			}
 		}
+
+		[Test]
+		public void ResetStringKey ()
+		{
+			string path;
+
+			var key = "SecretPassword";
+			var reKey = "SecretKey";
+
+			using (var db = new TestDb (key: key)) {
+				db.ReKey (reKey);
+				path = db.DatabasePath;
+
+				db.CreateTable<TestTable> ();
+				db.Insert (new TestTable { Value = "Hello" });
+			}
+
+			using (var db = new TestDb (path, key: reKey)) {
+				var r = db.Table<TestTable> ().First ();
+
+				Assert.AreEqual ("Hello", r.Value);
+			}
+		}
+
+		[Test]
+		public void ResetByteKey ()
+		{
+			string path;
+
+			var rand = new Random ();
+			var key = new byte[32];
+			rand.NextBytes (key);
+			var reKey = new byte[32];
+			rand.NextBytes (reKey);
+
+			using (var db = new TestDb (key: key)) {
+				db.ReKey (reKey);
+				path = db.DatabasePath;
+
+				db.CreateTable<TestTable> ();
+				db.Insert (new TestTable { Value = "Hello" });
+			}
+
+			using (var db = new TestDb (path, key: reKey)) {
+				var r = db.Table<TestTable> ().First ();
+
+				Assert.AreEqual ("Hello", r.Value);
+			}
+		}
+
+		[Test]
+		public void ResetBadKey ()
+		{
+			var key = new byte[] { 42 };
+
+			try
+			{
+				using (var db = new TestDb ()) {
+					db.ReKey (key);
+				}
+
+				Assert.Fail ("Should have thrown");
+			}
+			catch (ArgumentException) {
+			}
+		}
 	}
 }

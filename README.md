@@ -10,7 +10,7 @@ Use one of these packages:
 | [![NuGet Package](https://img.shields.io/nuget/v/sqlite-net-pcl.svg)](https://www.nuget.org/packages/sqlite-net-pcl) | [sqlite-net-pcl](https://www.nuget.org/packages/sqlite-net-pcl) | .NET Standard Library |
 | [![NuGet Package with Encryption](https://img.shields.io/nuget/v/sqlite-net-sqlcipher.svg)](https://www.nuget.org/packages/sqlite-net-sqlcipher) | [sqlite-net-sqlcipher](https://www.nuget.org/packages/sqlite-net-sqlcipher) | With Encryption Support |
 | [![NuGet Package using P/Invoke](https://img.shields.io/nuget/v/sqlite-net-static.svg)](https://www.nuget.org/packages/sqlite-net-static) | [sqlite-net-static](https://www.nuget.org/packages/sqlite-net-static) | Special version that uses P/Invokes to platform-provided sqlite3 |
-| [![NuGet Package without a SQLitePCLRaw bundle](https://img.shields.io/nuget/v/sqlite-net-base.svg)](https://www.nuget.org/packages/sqlite-net-base) | [sqlite-net-base](https://www.nuget.org/packages/sqlite-net-base) | wothout a SQLitePCLRaw bundle so you can choose your own provider |
+| [![NuGet Package without a SQLitePCLRaw bundle](https://img.shields.io/nuget/v/sqlite-net-base.svg)](https://www.nuget.org/packages/sqlite-net-base) | [sqlite-net-base](https://www.nuget.org/packages/sqlite-net-base) | without a SQLitePCLRaw bundle so you can choose your own provider |
 
 SQLite-net is an open source, minimal library to allow .NET, .NET Core, and Mono applications to store data in
 [SQLite 3 databases](http://www.sqlite.org). It was first designed to work with [Xamarin.iOS](http://xamarin.com),
@@ -63,6 +63,8 @@ public class Valuation
 	public int StockId { get; set; }
 	public DateTime Time { get; set; }
 	public decimal Price { get; set; }
+	[Ignore]
+	public string IgnoreField { get; set; }
 }
 ```
 
