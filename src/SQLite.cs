@@ -3553,11 +3553,18 @@ namespace SQLite
 					MethodInfo getSetter = null;
 					if (typeof(T) != map.MappedType) {
 #if NET8_0_OR_GREATER
+						// The runtime feature switch must be on a separate 'if' branch on its own,
+						// or the analyzer might not be able to correctly follow the program flow.
 						if (!RuntimeFeature.IsDynamicCodeSupported) {
 							if (map.MappedType.IsValueType) {
-								throw new NotSupportedException (
-									$"Executing a query with a value type mapped type is not supported in AOT environments (The mapped type is '{map.MappedType}').");
+								getSetter = null;
 							}
+							else {
+								getSetter = FastColumnSetter.GetFastSetterMethodInfoUnsafe (map.MappedType);
+							}
+						}
+						else {
+							getSetter = FastColumnSetter.GetFastSetterMethodInfoUnsafe (map.MappedType);
 						}
 #endif
 						getSetter = FastColumnSetter.GetFastSetterMethodInfoUnsafe (map.MappedType);
