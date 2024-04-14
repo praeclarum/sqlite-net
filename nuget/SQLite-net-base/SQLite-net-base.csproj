@@ -15,11 +15,11 @@
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;RELEASE</DefineConstants>
-    <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\$(TargetFramework)\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;NO_SQLITEPCL_RAW_BATTERIES;DEBUG</DefineConstants>
-    <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\$(TargetFramework)\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
