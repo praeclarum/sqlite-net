@@ -2915,7 +2915,10 @@ namespace SQLite
 
     public class TableMapping
     {
-        public Type MappedType { get; private set; }
+#if NET8_0_OR_GREATER
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+#endif
+		public Type MappedType { get; private set; }
 
         public string TableName { get; private set; }
 
