@@ -289,14 +289,21 @@ namespace SQLite
 #endif
 			T> (string query, params object[] args) where T : new();
         IEnumerable<object> DeferredQuery (TableMapping map, string query, params object[] args);
-        int Delete (object objectToDelete);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'objectToDelete'.")]
+#endif
+		int Delete (object objectToDelete);
         int Delete<
 #if NET8_0_OR_GREATER
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
 			T> (object primaryKey);
         int Delete (object primaryKey, TableMapping map);
-        int DeleteAll<T> ();
+        int DeleteAll<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ();
         int DeleteAll (TableMapping map);
         int DropTable<
 #if NET8_0_OR_GREATER
@@ -347,14 +354,20 @@ namespace SQLite
 #endif
 			T> (CreateFlags createFlags = CreateFlags.None);
         List<SQLiteConnection.ColumnInfo> GetTableInfo (string tableName);
-        int Insert (object obj);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		int Insert (object obj);
         int Insert (
 			object obj,
 #if NET8_0_OR_GREATER
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
 			Type objType);
-        int Insert (object obj, string extra);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		int Insert (object obj, string extra);
         int Insert (
 			object obj,
 			string extra,
@@ -362,8 +375,14 @@ namespace SQLite
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
 			Type objType);
-        int InsertAll (IEnumerable objects, bool runInTransaction = true);
-        int InsertAll (IEnumerable objects, string extra, bool runInTransaction = true);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
+		int InsertAll (IEnumerable objects, bool runInTransaction = true);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
+		int InsertAll (IEnumerable objects, string extra, bool runInTransaction = true);
         int InsertAll (
 			IEnumerable objects,
 #if NET8_0_OR_GREATER
@@ -371,7 +390,10 @@ namespace SQLite
 #endif
 			Type objType,
 			bool runInTransaction = true);
-        int InsertOrReplace (object obj);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		int InsertOrReplace (object obj);
         int InsertOrReplace (
 			object obj,
 #if NET8_0_OR_GREATER
@@ -397,14 +419,20 @@ namespace SQLite
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
 			T> () where T : new();
-        int Update (object obj);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		int Update (object obj);
         int Update (
 			object obj,
 #if NET8_0_OR_GREATER
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
 			Type objType);
-        int UpdateAll (IEnumerable objects, bool runInTransaction = true);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
+		int UpdateAll (IEnumerable objects, bool runInTransaction = true);
     }
 
     /// <summary>
@@ -1913,18 +1941,21 @@ namespace SQLite
             }
         }
 
-        /// <summary>
-        /// Inserts all specified objects.
-        /// </summary>
-        /// <param name="objects">
-        /// An <see cref="IEnumerable"/> of the objects to insert.
-        /// <param name="runInTransaction"/>
-        /// A boolean indicating if the inserts should be wrapped in a transaction.
-        /// </param>
-        /// <returns>
-        /// The number of rows added to the table.
-        /// </returns>
-        public int InsertAll (System.Collections.IEnumerable objects, bool runInTransaction = true)
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// <param name="runInTransaction"/>
+		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
+		public int InsertAll (System.Collections.IEnumerable objects, bool runInTransaction = true)
         {
             var c = 0;
             if (runInTransaction) {
@@ -1942,22 +1973,25 @@ namespace SQLite
             return c;
         }
 
-        /// <summary>
-        /// Inserts all specified objects.
-        /// </summary>
-        /// <param name="objects">
-        /// An <see cref="IEnumerable"/> of the objects to insert.
-        /// </param>
-        /// <param name="extra">
-        /// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
-        /// </param>
-        /// <param name="runInTransaction">
-        /// A boolean indicating if the inserts should be wrapped in a transaction.
-        /// </param>
-        /// <returns>
-        /// The number of rows added to the table.
-        /// </returns>
-        public int InsertAll (System.Collections.IEnumerable objects, string extra, bool runInTransaction = true)
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <param name="extra">
+		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		/// </param>
+		/// <param name="runInTransaction">
+		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
+		public int InsertAll (System.Collections.IEnumerable objects, string extra, bool runInTransaction = true)
         {
             var c = 0;
             if (runInTransaction) {
@@ -2014,18 +2048,21 @@ namespace SQLite
             return c;
         }
 
-        /// <summary>
-        /// Inserts the given object (and updates its
-        /// auto incremented primary key if it has one).
-        /// The return value is the number of rows added to the table.
-        /// </summary>
-        /// <param name="obj">
-        /// The object to insert.
-        /// </param>
-        /// <returns>
-        /// The number of rows added to the table.
-        /// </returns>
-        public int Insert (object obj)
+		/// <summary>
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		public int Insert (object obj)
         {
             if (obj == null) {
                 return 0;
@@ -2033,21 +2070,24 @@ namespace SQLite
             return Insert (obj, "", Orm.GetType (obj));
         }
 
-        /// <summary>
-        /// Inserts the given object (and updates its
-        /// auto incremented primary key if it has one).
-        /// The return value is the number of rows added to the table.
-        /// If a UNIQUE constraint violation occurs with
-        /// some pre-existing object, this function deletes
-        /// the old object.
-        /// </summary>
-        /// <param name="obj">
-        /// The object to insert.
-        /// </param>
-        /// <returns>
-        /// The number of rows modified.
-        /// </returns>
-        public int InsertOrReplace (object obj)
+		/// <summary>
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
+		/// If a UNIQUE constraint violation occurs with
+		/// some pre-existing object, this function deletes
+		/// the old object.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <returns>
+		/// The number of rows modified.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		public int InsertOrReplace (object obj)
         {
             if (obj == null) {
                 return 0;
@@ -2106,21 +2146,24 @@ namespace SQLite
             return Insert (obj, "OR REPLACE", objType);
         }
 
-        /// <summary>
-        /// Inserts the given object (and updates its
-        /// auto incremented primary key if it has one).
-        /// The return value is the number of rows added to the table.
-        /// </summary>
-        /// <param name="obj">
-        /// The object to insert.
-        /// </param>
-        /// <param name="extra">
-        /// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
-        /// </param>
-        /// <returns>
-        /// The number of rows added to the table.
-        /// </returns>
-        public int Insert (object obj, string extra)
+		/// <summary>
+		/// Inserts the given object (and updates its
+		/// auto incremented primary key if it has one).
+		/// The return value is the number of rows added to the table.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to insert.
+		/// </param>
+		/// <param name="extra">
+		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		public int Insert (object obj, string extra)
         {
             if (obj == null) {
                 return 0;
@@ -2254,18 +2297,21 @@ namespace SQLite
             return insertCommand;
         }
 
-        /// <summary>
-        /// Updates all of the columns of a table using the specified object
-        /// except for its primary key.
-        /// The object is required to have a primary key.
-        /// </summary>
-        /// <param name="obj">
-        /// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
-        /// </param>
-        /// <returns>
-        /// The number of rows updated.
-        /// </returns>
-        public int Update (object obj)
+		/// <summary>
+		/// Updates all of the columns of a table using the specified object
+		/// except for its primary key.
+		/// The object is required to have a primary key.
+		/// </summary>
+		/// <param name="obj">
+		/// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
+		/// </param>
+		/// <returns>
+		/// The number of rows updated.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
+		public int Update (object obj)
         {
             if (obj == null) {
                 return 0;
@@ -2343,19 +2389,22 @@ namespace SQLite
             return rowsAffected;
         }
 
-        /// <summary>
-        /// Updates all specified objects.
-        /// </summary>
-        /// <param name="objects">
-        /// An <see cref="IEnumerable"/> of the objects to insert.
-        /// </param>
-        /// <param name="runInTransaction">
-        /// A boolean indicating if the inserts should be wrapped in a transaction
-        /// </param>
-        /// <returns>
-        /// The number of rows modified.
-        /// </returns>
-        public int UpdateAll (System.Collections.IEnumerable objects, bool runInTransaction = true)
+		/// <summary>
+		/// Updates all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <param name="runInTransaction">
+		/// A boolean indicating if the inserts should be wrapped in a transaction
+		/// </param>
+		/// <returns>
+		/// The number of rows modified.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
+		public int UpdateAll (System.Collections.IEnumerable objects, bool runInTransaction = true)
         {
             var c = 0;
             if (runInTransaction) {
@@ -2373,16 +2422,19 @@ namespace SQLite
             return c;
         }
 
-        /// <summary>
-        /// Deletes the given object from the database using its primary key.
-        /// </summary>
-        /// <param name="objectToDelete">
-        /// The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
-        /// </param>
-        /// <returns>
-        /// The number of rows deleted.
-        /// </returns>
-        public int Delete (object objectToDelete)
+		/// <summary>
+		/// Deletes the given object from the database using its primary key.
+		/// </summary>
+		/// <param name="objectToDelete">
+		/// The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
+		/// </param>
+		/// <returns>
+		/// The number of rows deleted.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'objectToDelete'.")]
+#endif
+		public int Delete (object objectToDelete)
         {
             var map = GetMapping (Orm.GetType (objectToDelete));
             var pk = map.PK;
@@ -2453,7 +2505,11 @@ namespace SQLite
         /// <typeparam name='T'>
         /// The type of objects to delete.
         /// </typeparam>
-        public int DeleteAll<T> ()
+        public int DeleteAll<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ()
         {
             var map = GetMapping (typeof (T));
             return DeleteAll (map);
