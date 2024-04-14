@@ -2883,23 +2883,27 @@ namespace SQLite
 #if NET8_0_OR_GREATER
 			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
-			Type type, CreateFlags createFlags = CreateFlags.None)
+			Type type,
+			CreateFlags createFlags = CreateFlags.None)
         {
             MappedType = type;
             CreateFlags = createFlags;
 
-            var typeInfo = type.GetTypeInfo ();
 #if ENABLE_IL2CPP
+			var typeInfo = type.GetTypeInfo ();
             var tableAttr = typeInfo.GetCustomAttribute<TableAttribute> ();
+#elif NET8_0_OR_GREATER
+			var tableAttr = type.GetCustomAttributes<TableAttribute> ().FirstOrDefault ();
 #else
-            var tableAttr =
+			var typeInfo = type.GetTypeInfo ();
+			var tableAttr =
                 typeInfo.CustomAttributes
                         .Where (x => x.AttributeType == typeof (TableAttribute))
                         .Select (x => (TableAttribute)Orm.InflateAttribute (x))
                         .FirstOrDefault ();
 #endif
 
-            TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
+			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
             WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
 
             var members = GetPublicMembers(type);
@@ -3329,7 +3333,8 @@ namespace SQLite
             return GetProperty (t.BaseType.GetTypeInfo (), name);
         }
 
-        public static object InflateAttribute (CustomAttributeData x)
+#if !NET8_0_OR_GREATER
+		public static object InflateAttribute (CustomAttributeData x)
         {
             var atype = x.AttributeType;
             var typeInfo = atype.GetTypeInfo ();
@@ -3349,13 +3354,14 @@ namespace SQLite
 #endif
             return r;
         }
+#endif
 
         public static IEnumerable<IndexedAttribute> GetIndices (MemberInfo p)
         {
-#if ENABLE_IL2CPP
-            return p.GetCustomAttributes<IndexedAttribute> ();
+#if ENABLE_IL2CPP || NET8_0_OR_GREATER
+			return p.GetCustomAttributes<IndexedAttribute> ();
 #else
-            var indexedInfo = typeof (IndexedAttribute).GetTypeInfo ();
+			var indexedInfo = typeof (IndexedAttribute).GetTypeInfo ();
             return
                 p.CustomAttributes
                  .Where (x => indexedInfo.IsAssignableFrom (x.AttributeType.GetTypeInfo ()))
@@ -3367,15 +3373,17 @@ namespace SQLite
         {
 #if ENABLE_IL2CPP
             return p.GetCustomAttribute<MaxLengthAttribute> ()?.Value;
+#elif NET8_0_OR_GREATER
+			return p.GetCustomAttributes<MaxLengthAttribute> ().FirstOrDefault ()?.Value;
 #else
-            var attr = p.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (MaxLengthAttribute));
+			var attr = p.CustomAttributes.FirstOrDefault (x => x.AttributeType == typeof (MaxLengthAttribute));
             if (attr != null) {
                 var attrv = (MaxLengthAttribute)InflateAttribute (attr);
                 return attrv.Value;
             }
             return null;
 #endif
-        }
+		}
 
         public static int? MaxStringLength (PropertyInfo p) => MaxStringLength((MemberInfo)p);
 
