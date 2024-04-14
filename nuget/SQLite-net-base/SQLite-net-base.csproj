@@ -10,6 +10,7 @@
       It is meant to give you all the power of SQLite-net but with the freedom to choose your own provider.
       Please use the package sqlite-net-pcl if you have no idea what any of this means.
     </Description>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">

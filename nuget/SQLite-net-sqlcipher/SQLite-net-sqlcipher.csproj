@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <AssemblyName>SQLite-net</AssemblyName>
     <PackageId>sqlite-net-sqlcipher</PackageId>
     <AssemblyTitle>SQLite-net SQLCipher .NET Standard Library</AssemblyTitle>
@@ -11,6 +11,7 @@
       This enables secure access to the database with password (key) access.
     </Description>
     <PackageTags>sqlite-net;sqlite;database;orm;encryption;sqlcipher</PackageTags>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
