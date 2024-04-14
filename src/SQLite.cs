@@ -26,6 +26,9 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 #if !USE_SQLITEPCL_RAW
 using System.Runtime.InteropServices;
 #endif
@@ -187,62 +190,199 @@ namespace SQLite
         int CreateIndex (string indexName, string tableName, string columnName, bool unique = false);
         int CreateIndex (string tableName, string columnName, bool unique = false);
         int CreateIndex (string tableName, string[] columnNames, bool unique = false);
-        int CreateIndex<T> (Expression<Func<T, object>> property, bool unique = false);
-        CreateTableResult CreateTable<T> (CreateFlags createFlags = CreateFlags.None);
-        CreateTableResult CreateTable (Type ty, CreateFlags createFlags = CreateFlags.None);
-        CreateTablesResult CreateTables<T, T2> (CreateFlags createFlags = CreateFlags.None)
+        int CreateIndex<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, object>> property, bool unique = false);
+        CreateTableResult CreateTable<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None);
+        CreateTableResult CreateTable (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type ty, CreateFlags createFlags = CreateFlags.None);
+        CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2> (CreateFlags createFlags = CreateFlags.None)
             where T : new()
             where T2 : new();
-        CreateTablesResult CreateTables<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
+        CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3> (CreateFlags createFlags = CreateFlags.None)
             where T : new()
             where T2 : new()
             where T3 : new();
-        CreateTablesResult CreateTables<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
+        CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T4> (CreateFlags createFlags = CreateFlags.None)
             where T : new()
             where T2 : new()
             where T3 : new()
             where T4 : new();
-        CreateTablesResult CreateTables<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
+        CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T4,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T5> (CreateFlags createFlags = CreateFlags.None)
             where T : new()
             where T2 : new()
             where T3 : new()
             where T4 : new()
             where T5 : new();
-        CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types);
-        IEnumerable<T> DeferredQuery<T> (string query, params object[] args) where T : new();
+#if NET
+		[RequiresUnreferencedCode ("This method requires 'DynamicallyAccessedMemberTypes.All' on each input 'Type' instance.")]
+#endif
+		CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types);
+        IEnumerable<T> DeferredQuery<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new();
         IEnumerable<object> DeferredQuery (TableMapping map, string query, params object[] args);
         int Delete (object objectToDelete);
-        int Delete<T> (object primaryKey);
+        int Delete<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object primaryKey);
         int Delete (object primaryKey, TableMapping map);
         int DeleteAll<T> ();
         int DeleteAll (TableMapping map);
-        int DropTable<T> ();
+        int DropTable<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ();
         int DropTable (TableMapping map);
         void EnableLoadExtension (bool enabled);
         void EnableWriteAheadLogging ();
         int Execute (string query, params object[] args);
         T ExecuteScalar<T> (string query, params object[] args);
-        T Find<T> (object pk) where T : new();
+        T Find<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk) where T : new();
         object Find (object pk, TableMapping map);
-        T Find<T> (Expression<Func<T, bool>> predicate) where T : new();
-        T FindWithQuery<T> (string query, params object[] args) where T : new();
+        T Find<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, bool>> predicate) where T : new();
+        T FindWithQuery<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new();
         object FindWithQuery (TableMapping map, string query, params object[] args);
-        T Get<T> (object pk) where T : new();
+        T Get<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk) where T : new();
         object Get (object pk, TableMapping map);
-        T Get<T> (Expression<Func<T, bool>> predicate) where T : new();
-        TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None);
-        TableMapping GetMapping<T> (CreateFlags createFlags = CreateFlags.None);
+        T Get<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, bool>> predicate) where T : new();
+        TableMapping GetMapping (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type type, CreateFlags createFlags = CreateFlags.None);
+        TableMapping GetMapping<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None);
         List<SQLiteConnection.ColumnInfo> GetTableInfo (string tableName);
         int Insert (object obj);
-        int Insert (object obj, Type objType);
+        int Insert (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
         int Insert (object obj, string extra);
-        int Insert (object obj, string extra, Type objType);
+        int Insert (
+			object obj,
+			string extra,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
         int InsertAll (IEnumerable objects, bool runInTransaction = true);
         int InsertAll (IEnumerable objects, string extra, bool runInTransaction = true);
-        int InsertAll (IEnumerable objects, Type objType, bool runInTransaction = true);
+        int InsertAll (
+			IEnumerable objects,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType,
+			bool runInTransaction = true);
         int InsertOrReplace (object obj);
-        int InsertOrReplace (object obj, Type objType);
-        List<T> Query<T> (string query, params object[] args) where T : new();
+        int InsertOrReplace (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
+        List<T> Query<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new();
         List<object> Query (TableMapping map, string query, params object[] args);
         List<T> QueryScalars<T> (string query, params object[] args);
         void ReKey (string key);
@@ -252,9 +392,18 @@ namespace SQLite
         void RollbackTo (string savepoint);
         void RunInTransaction (Action action);
         string SaveTransactionPoint ();
-        TableQuery<T> Table<T> () where T : new();
+        TableQuery<T> Table<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> () where T : new();
         int Update (object obj);
-        int Update (object obj, Type objType);
+        int Update (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
         int UpdateAll (IEnumerable objects, bool runInTransaction = true);
     }
 
@@ -576,7 +725,12 @@ namespace SQLite
         /// The mapping represents the schema of the columns of the database and contains
         /// methods to set and get properties of objects.
         /// </returns>
-        public TableMapping GetMapping (Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping GetMapping (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type type,
+			CreateFlags createFlags = CreateFlags.None)
         {
             TableMapping map;
             var key = type.FullName;
@@ -605,7 +759,11 @@ namespace SQLite
         /// The mapping represents the schema of the columns of the database and contains
         /// methods to set and get properties of objects.
         /// </returns>
-        public TableMapping GetMapping<T> (CreateFlags createFlags = CreateFlags.None)
+        public TableMapping GetMapping<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None)
         {
             return GetMapping (typeof (T), createFlags);
         }
@@ -627,7 +785,11 @@ namespace SQLite
         /// <summary>
         /// Executes a "drop table" on the database.  This is non-recoverable.
         /// </summary>
-        public int DropTable<T> ()
+        public int DropTable<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ()
         {
             return DropTable (GetMapping (typeof (T)));
         }
@@ -653,7 +815,11 @@ namespace SQLite
         /// <returns>
         /// Whether the table was created or migrated.
         /// </returns>
-        public CreateTableResult CreateTable<T> (CreateFlags createFlags = CreateFlags.None)
+        public CreateTableResult CreateTable<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None)
         {
             return CreateTable (typeof (T), createFlags);
         }
@@ -669,7 +835,11 @@ namespace SQLite
         /// <returns>
         /// Whether the table was created or migrated.
         /// </returns>
-        public CreateTableResult CreateTable (Type ty, CreateFlags createFlags = CreateFlags.None)
+        public CreateTableResult CreateTable (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type ty, CreateFlags createFlags = CreateFlags.None)
         {
             var map = GetMapping (ty, createFlags);
 
@@ -743,50 +913,95 @@ namespace SQLite
             return result;
         }
 
-        /// <summary>
-        /// Executes a "create table if not exists" on the database for each type. It also
-        /// creates any specified indexes on the columns of the table. It uses
-        /// a schema automatically generated from the specified type. You can
-        /// later access this schema by calling GetMapping.
-        /// </summary>
-        /// <returns>
-        /// Whether the table was created or migrated for each type.
-        /// </returns>
-        public CreateTablesResult CreateTables<T, T2> (CreateFlags createFlags = CreateFlags.None)
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// Whether the table was created or migrated for each type.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+#endif
+		public CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2> (CreateFlags createFlags = CreateFlags.None)
             where T : new()
             where T2 : new()
         {
             return CreateTables (createFlags, typeof (T), typeof (T2));
         }
 
-        /// <summary>
-        /// Executes a "create table if not exists" on the database for each type. It also
-        /// creates any specified indexes on the columns of the table. It uses
-        /// a schema automatically generated from the specified type. You can
-        /// later access this schema by calling GetMapping.
-        /// </summary>
-        /// <returns>
-        /// Whether the table was created or migrated for each type.
-        /// </returns>
-        public CreateTablesResult CreateTables<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
-            where T : new()
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// Whether the table was created or migrated for each type.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+#endif
+		public CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
             where T2 : new()
             where T3 : new()
         {
             return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3));
         }
 
-        /// <summary>
-        /// Executes a "create table if not exists" on the database for each type. It also
-        /// creates any specified indexes on the columns of the table. It uses
-        /// a schema automatically generated from the specified type. You can
-        /// later access this schema by calling GetMapping.
-        /// </summary>
-        /// <returns>
-        /// Whether the table was created or migrated for each type.
-        /// </returns>
-        public CreateTablesResult CreateTables<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
-            where T : new()
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// Whether the table was created or migrated for each type.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+#endif
+		public CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T4> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
             where T2 : new()
             where T3 : new()
             where T4 : new()
@@ -794,17 +1009,40 @@ namespace SQLite
             return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4));
         }
 
-        /// <summary>
-        /// Executes a "create table if not exists" on the database for each type. It also
-        /// creates any specified indexes on the columns of the table. It uses
-        /// a schema automatically generated from the specified type. You can
-        /// later access this schema by calling GetMapping.
-        /// </summary>
-        /// <returns>
-        /// Whether the table was created or migrated for each type.
-        /// </returns>
-        public CreateTablesResult CreateTables<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
-            where T : new()
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// Whether the table was created or migrated for each type.
+		/// </returns>
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+#endif
+		public CreateTablesResult CreateTables<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T4,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T5> (CreateFlags createFlags = CreateFlags.None)
+			where T : new()
             where T2 : new()
             where T3 : new()
             where T4 : new()
@@ -813,16 +1051,19 @@ namespace SQLite
             return CreateTables (createFlags, typeof (T), typeof (T2), typeof (T3), typeof (T4), typeof (T5));
         }
 
-        /// <summary>
-        /// Executes a "create table if not exists" on the database for each type. It also
-        /// creates any specified indexes on the columns of the table. It uses
-        /// a schema automatically generated from the specified type. You can
-        /// later access this schema by calling GetMapping.
-        /// </summary>
-        /// <returns>
-        /// Whether the table was created or migrated for each type.
-        /// </returns>
-        public CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types)
+		/// <summary>
+		/// Executes a "create table if not exists" on the database for each type. It also
+		/// creates any specified indexes on the columns of the table. It uses
+		/// a schema automatically generated from the specified type. You can
+		/// later access this schema by calling GetMapping.
+		/// </summary>
+		/// <returns>
+		/// Whether the table was created or migrated for each type.
+		/// </returns>
+#if NET
+		[RequiresUnreferencedCode("This method requires 'DynamicallyAccessedMemberTypes.All' on each input 'Type' instance.")]
+#endif
+		public CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types)
         {
             var result = new CreateTablesResult ();
             foreach (Type type in types) {
@@ -892,7 +1133,11 @@ namespace SQLite
         /// <param name="property">Property to index</param>
         /// <param name="unique">Whether the index should be unique</param>
         /// <returns>Zero on success.</returns>
-        public int CreateIndex<T> (Expression<Func<T, object>> property, bool unique = false)
+        public int CreateIndex<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, object>> property, bool unique = false)
         {
             MemberExpression mx;
             if (property.Body.NodeType == ExpressionType.Convert) {
@@ -1126,7 +1371,11 @@ namespace SQLite
         /// <returns>
         /// An enumerable with one result for each row returned by the query.
         /// </returns>
-        public List<T> Query<T> (string query, params object[] args) where T : new()
+        public List<T> Query<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new()
         {
             var cmd = CreateCommand (query, args);
             return cmd.ExecuteQuery<T> ();
@@ -1170,7 +1419,11 @@ namespace SQLite
         /// will call sqlite3_step on each call to MoveNext, so the database
         /// connection must remain open for the lifetime of the enumerator.
         /// </returns>
-        public IEnumerable<T> DeferredQuery<T> (string query, params object[] args) where T : new()
+        public IEnumerable<T> DeferredQuery<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new()
         {
             var cmd = CreateCommand (query, args);
             return cmd.ExecuteDeferredQuery<T> ();
@@ -1238,7 +1491,11 @@ namespace SQLite
         /// A queryable object that is able to translate Where, OrderBy, and Take
         /// queries into native SQL.
         /// </returns>
-        public TableQuery<T> Table<T> () where T : new()
+        public TableQuery<T> Table<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> () where T : new()
         {
             return new TableQuery<T> (this);
         }
@@ -1255,7 +1512,11 @@ namespace SQLite
         /// The object with the given primary key. Throws a not found exception
         /// if the object is not found.
         /// </returns>
-        public T Get<T> (object pk) where T : new()
+        public T Get<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk) where T : new()
         {
             var map = GetMapping (typeof (T));
             return Query<T> (map.GetByPrimaryKeySql, pk).First ();
@@ -1292,7 +1553,11 @@ namespace SQLite
         /// The object that matches the given predicate. Throws a not found exception
         /// if the object is not found.
         /// </returns>
-        public T Get<T> (Expression<Func<T, bool>> predicate) where T : new()
+        public T Get<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, bool>> predicate) where T : new()
         {
             return Table<T> ().Where (predicate).First ();
         }
@@ -1309,7 +1574,11 @@ namespace SQLite
         /// The object with the given primary key or null
         /// if the object is not found.
         /// </returns>
-        public T Find<T> (object pk) where T : new()
+        public T Find<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk) where T : new()
         {
             var map = GetMapping (typeof (T));
             return Query<T> (map.GetByPrimaryKeySql, pk).FirstOrDefault ();
@@ -1346,7 +1615,11 @@ namespace SQLite
         /// The object that matches the given predicate or null
         /// if the object is not found.
         /// </returns>
-        public T Find<T> (Expression<Func<T, bool>> predicate) where T : new()
+        public T Find<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, bool>> predicate) where T : new()
         {
             return Table<T> ().Where (predicate).FirstOrDefault ();
         }
@@ -1365,7 +1638,11 @@ namespace SQLite
         /// The object that matches the given predicate or null
         /// if the object is not found.
         /// </returns>
-        public T FindWithQuery<T> (string query, params object[] args) where T : new()
+        public T FindWithQuery<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new()
         {
             return Query<T> (query, args).FirstOrDefault ();
         }
@@ -1713,7 +1990,13 @@ namespace SQLite
         /// <returns>
         /// The number of rows added to the table.
         /// </returns>
-        public int InsertAll (System.Collections.IEnumerable objects, Type objType, bool runInTransaction = true)
+        public int InsertAll (
+			System.Collections.IEnumerable objects,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType,
+			bool runInTransaction = true)
         {
             var c = 0;
             if (runInTransaction) {
@@ -1786,7 +2069,12 @@ namespace SQLite
         /// <returns>
         /// The number of rows added to the table.
         /// </returns>
-        public int Insert (object obj, Type objType)
+        public int Insert (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
         {
             return Insert (obj, "", objType);
         }
@@ -1808,7 +2096,12 @@ namespace SQLite
         /// <returns>
         /// The number of rows modified.
         /// </returns>
-        public int InsertOrReplace (object obj, Type objType)
+        public int InsertOrReplace (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
         {
             return Insert (obj, "OR REPLACE", objType);
         }
@@ -1852,7 +2145,13 @@ namespace SQLite
         /// <returns>
         /// The number of rows added to the table.
         /// </returns>
-        public int Insert (object obj, string extra, Type objType)
+        public int Insert (
+			object obj,
+			string extra,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
         {
             if (obj == null || objType == null) {
                 return 0;
@@ -1988,7 +2287,12 @@ namespace SQLite
         /// <returns>
         /// The number of rows updated.
         /// </returns>
-        public int Update (object obj, Type objType)
+        public int Update (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
         {
             int rowsAffected = 0;
             if (obj == null || objType == null) {
@@ -2104,7 +2408,11 @@ namespace SQLite
         /// <typeparam name='T'>
         /// The type of object.
         /// </typeparam>
-        public int Delete<T> (object primaryKey)
+        public int Delete<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object primaryKey)
         {
             return Delete (primaryKey, GetMapping (typeof (T)));
         }
@@ -2571,7 +2879,11 @@ namespace SQLite
         readonly Column[] _insertColumns;
         readonly Column[] _insertOrReplaceColumns;
 
-        public TableMapping (Type type, CreateFlags createFlags = CreateFlags.None)
+        public TableMapping (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type type, CreateFlags createFlags = CreateFlags.None)
         {
             MappedType = type;
             CreateFlags = createFlags;
@@ -2622,7 +2934,11 @@ namespace SQLite
             _insertOrReplaceColumns = Columns.ToArray ();
         }
 
-        private IReadOnlyCollection<MemberInfo> GetPublicMembers(Type type)
+        private IReadOnlyCollection<MemberInfo> GetPublicMembers(
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type type)
         {
             if(type.Name.StartsWith("ValueTuple`"))
                 return GetFieldsFromValueTuple(type);
@@ -2655,7 +2971,11 @@ namespace SQLite
             return members;
         }
 
-        private IReadOnlyCollection<MemberInfo> GetFieldsFromValueTuple(Type type)
+        private IReadOnlyCollection<MemberInfo> GetFieldsFromValueTuple(
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
+#endif
+			Type type)
         {
             Method = MapMethod.ByPosition;
             var fields = type.GetFields();
@@ -2983,15 +3303,25 @@ namespace SQLite
             return p.CustomAttributes.Any (x => x.AttributeType == typeof (AutoIncrementAttribute));
         }
 
-        public static FieldInfo GetField (TypeInfo t, string name)
+        public static FieldInfo GetField (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			TypeInfo t,
+			string name)
         {
-            var f = t.GetDeclaredField (name);
+			var f = t.GetDeclaredField (name);
             if (f != null)
                 return f;
             return GetField (t.BaseType.GetTypeInfo (), name);
         }
 
-        public static PropertyInfo GetProperty (TypeInfo t, string name)
+        public static PropertyInfo GetProperty (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			TypeInfo t,
+			string name)
         {
             var f = t.GetDeclaredProperty (name);
             if (f != null)
@@ -3096,12 +3426,20 @@ namespace SQLite
             throw SQLiteException.New (r, SQLite3.GetErrmsg (_conn.Handle));
         }
 
-        public IEnumerable<T> ExecuteDeferredQuery<T> ()
+        public IEnumerable<T> ExecuteDeferredQuery<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ()
         {
             return ExecuteDeferredQuery<T> (_conn.GetMapping (typeof (T)));
         }
 
-        public List<T> ExecuteQuery<T> ()
+        public List<T> ExecuteQuery<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ()
         {
             return ExecuteDeferredQuery<T> (_conn.GetMapping (typeof (T))).ToList ();
         }
@@ -3836,7 +4174,11 @@ namespace SQLite
         }
     }
 
-    public class TableQuery<T> : BaseTableQuery, IEnumerable<T>
+    public class TableQuery<
+#if NET8_0_OR_GREATER
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+		T> : BaseTableQuery, IEnumerable<T>
     {
         public SQLiteConnection Connection { get; private set; }
 
@@ -3867,7 +4209,11 @@ namespace SQLite
             Table = Connection.GetMapping (typeof (T));
         }
 
-        public TableQuery<U> Clone<U> ()
+        public TableQuery<U> Clone<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			U> ()
         {
             var q = new TableQuery<U> (Connection, Table);
             q._where = _where;
