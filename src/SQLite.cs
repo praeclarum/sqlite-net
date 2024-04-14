@@ -25,17 +25,20 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 #if NET8_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 #endif
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+#if NET8_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 #if !USE_SQLITEPCL_RAW
 using System.Runtime.InteropServices;
 #endif
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 
@@ -3549,9 +3552,15 @@ namespace SQLite
                 else if (map.Method == TableMapping.MapMethod.ByName) {
                     MethodInfo getSetter = null;
                     if (typeof(T) != map.MappedType) {
-                        getSetter = typeof(FastColumnSetter)
-                            .GetMethod (nameof(FastColumnSetter.GetFastSetter),
-                                BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (map.MappedType);
+#if NET8_0_OR_GREATER
+						if (!RuntimeFeature.IsDynamicCodeSupported) {
+							if (map.MappedType.IsValueType) {
+								throw new NotSupportedException (
+									$"Executing a query with a value type mapped type is not supported in AOT environments (The mapped type is '{map.MappedType}').");
+							}
+						}
+#endif
+						getSetter = FastColumnSetter.GetFastSetterMethodInfoUnsafe (map.MappedType);
                     }
 
                     for (int i = 0; i < cols.Length; i++) {						
@@ -3904,21 +3913,37 @@ namespace SQLite
 
     internal class FastColumnSetter
     {
-        /// <summary>
-        /// Creates a delegate that can be used to quickly set object members from query columns.
-        ///
-        /// Note that this frontloads the slow reflection-based type checking for columns to only happen once at the beginning of a query,
-        /// and then afterwards each row of the query can invoke the delegate returned by this function to get much better performance (up to 10x speed boost, depending on query size and platform).
-        /// </summary>
-        /// <typeparam name="T">The type of the destination object that the query will read into</typeparam>
-        /// <param name="conn">The active connection.  Note that this is primarily needed in order to read preferences regarding how certain data types (such as TimeSpan / DateTime) should be encoded in the database.</param>
-        /// <param name="column">The table mapping used to map the statement column to a member of the destination object type</param>
-        /// <returns>
-        /// A delegate for fast-setting of object members from statement columns.
-        ///
-        /// If no fast setter is available for the requested column (enums in particular cause headache), then this function returns null.
-        /// </returns>
-        internal static Action<object, Sqlite3Statement, int> GetFastSetter<T> (SQLiteConnection conn, TableMapping.Column column)
+		/// <summary>
+		/// Gets a <see cref="MethodInfo"/> for a generic <see cref="GetFastSetterMethodInfoUnsafe"/> method, suppressing AOT warnings.
+		/// </summary>
+		/// <param name="mappedType">The type of the destination object that the query will read into.</param>
+		/// <returns>The generic <see cref="MethodInfo"/> instance.</returns>
+		/// <remarks>This should only be called when <paramref name="mappedType"/> is a reference type.</remarks>
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("AOT", "IL3050", Justification = "This method is only ever called when 'mappedType' is a reference type.")]
+#endif
+		internal static MethodInfo GetFastSetterMethodInfoUnsafe (Type mappedType)
+		{
+			return typeof (FastColumnSetter)
+				.GetMethod (nameof (GetFastSetter),
+					BindingFlags.NonPublic | BindingFlags.Static).MakeGenericMethod (mappedType);
+		}
+
+		/// <summary>
+		/// Creates a delegate that can be used to quickly set object members from query columns.
+		///
+		/// Note that this frontloads the slow reflection-based type checking for columns to only happen once at the beginning of a query,
+		/// and then afterwards each row of the query can invoke the delegate returned by this function to get much better performance (up to 10x speed boost, depending on query size and platform).
+		/// </summary>
+		/// <typeparam name="T">The type of the destination object that the query will read into</typeparam>
+		/// <param name="conn">The active connection.  Note that this is primarily needed in order to read preferences regarding how certain data types (such as TimeSpan / DateTime) should be encoded in the database.</param>
+		/// <param name="column">The table mapping used to map the statement column to a member of the destination object type</param>
+		/// <returns>
+		/// A delegate for fast-setting of object members from statement columns.
+		///
+		/// If no fast setter is available for the requested column (enums in particular cause headache), then this function returns null.
+		/// </returns>
+		internal static Action<object, Sqlite3Statement, int> GetFastSetter<T> (SQLiteConnection conn, TableMapping.Column column)
         {
             Action<object, Sqlite3Statement, int> fastSetter = null;
 
