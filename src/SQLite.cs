@@ -282,7 +282,7 @@ namespace SQLite
 			where T3 : new()
 			where T4 : new()
 			where T5 : new();
-#if NET
+#if NET8_0_OR_GREATER
 		[RequiresUnreferencedCode ("This method requires 'DynamicallyAccessedMemberTypes.All' on each input 'Type' instance.")]
 #endif
 		CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types);
@@ -1091,7 +1091,7 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
-#if NET
+#if NET8_0_OR_GREATER
 		[RequiresUnreferencedCode("This method requires 'DynamicallyAccessedMemberTypes.All' on each input 'Type' instance.")]
 #endif
 		public CreateTablesResult CreateTables (CreateFlags createFlags = CreateFlags.None, params Type[] types)
