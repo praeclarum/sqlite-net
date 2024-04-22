@@ -3566,8 +3566,9 @@ namespace SQLite
 						else {
 							getSetter = FastColumnSetter.GetFastSetterMethodInfoUnsafe (map.MappedType);
 						}
-#endif
+#else
 						getSetter = FastColumnSetter.GetFastSetterMethodInfoUnsafe (map.MappedType);
+#endif
 					}
 
 					for (int i = 0; i < cols.Length; i++) {						
