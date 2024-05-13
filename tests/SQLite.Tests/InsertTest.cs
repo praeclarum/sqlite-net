@@ -279,5 +279,51 @@ namespace SQLite.Tests
 			Assert.AreEqual (20, r.Count);
 			Assert.AreEqual ("Foo", r[4].Text);
 		}
+		
+		[Test]
+		public void InsertOrReplaceAllSuccessOutsideTransaction()
+		{
+			var testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj { Id = i }).ToList();
+
+			_db.InsertOrReplaceAll(testObjects);
+
+			Assert.AreEqual(testObjects.Count, _db.Table<UniqueObj>().Count());
+		}
+
+		[Test]
+		public void InsertOrReplaceAllFailureOutsideTransaction()
+		{
+			var testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj { Id = i }).ToList();
+			testObjects[^1].Id = 1; // causes the insert to fail because of duplicate key
+
+			ExceptionAssert.Throws<SQLiteException>(() => _db.InsertAll(testObjects));
+
+			Assert.AreEqual(0, _db.Table<UniqueObj>().Count());
+		}
+
+		[Test]
+		public void InsertOrReplaceAllSuccessInsideTransaction()
+		{
+			var testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj { Id = i }).ToList();
+
+			_db.RunInTransaction(() => {
+				_db.InsertOrReplaceAll(testObjects);
+			});
+
+			Assert.AreEqual(testObjects.Count, _db.Table<UniqueObj>().Count());
+		}
+
+		[Test]
+		public void InsertOrReplaceAllFailureInsideTransaction()
+		{
+			var testObjects = Enumerable.Range(1, 20).Select(i => new UniqueObj { Id = i }).ToList();
+			testObjects[^1].Id = 1; // causes the insert to fail because of duplicate key
+
+			ExceptionAssert.Throws<SQLiteException>(() => _db.RunInTransaction(() => {
+				_db.InsertOrReplaceAll(testObjects);
+			}));
+
+			Assert.AreEqual(0, _db.Table<UniqueObj>().Count());
+		}
     }
 }
