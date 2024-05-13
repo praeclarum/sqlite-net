@@ -242,6 +242,8 @@ namespace SQLite
 		int InsertAll (IEnumerable objects, Type objType, bool runInTransaction = true);
 		int InsertOrReplace (object obj);
 		int InsertOrReplace (object obj, Type objType);
+		int InsertOrReplaceAll (IEnumerable objects, bool runInTransaction = true);
+		int InsertOrReplaceAll (IEnumerable objects, Type objType, bool runInTransaction = true);
 		List<T> Query<T> (string query, params object[] args) where T : new();
 		List<object> Query (TableMapping map, string query, params object[] args);
 		List<T> QueryScalars<T> (string query, params object[] args);
@@ -1727,6 +1729,57 @@ namespace SQLite
 				foreach (var r in objects) {
 					c += Insert (r, objType);
 				}
+			}
+			return c;
+		}
+
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// <param name="runInTransaction"/>
+		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <param name="runInTransaction"></param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+		public int InsertOrReplaceAll (IEnumerable objects, bool runInTransaction = true)
+		{
+			var c = 0;
+			if (runInTransaction) {
+				RunInTransaction (() => { c += objects.Cast<object> ().Sum (InsertOrReplace); });
+			}
+			else {
+				c += objects.Cast<object> ().Sum (InsertOrReplace);
+			}
+			return c;
+		}
+
+		/// <summary>
+		/// Inserts all specified objects.
+		/// </summary>
+		/// <param name="objects">
+		/// An <see cref="IEnumerable"/> of the objects to insert.
+		/// </param>
+		/// <param name="objType">
+		/// The type of object to insert.
+		/// </param>
+		/// <param name="runInTransaction">
+		/// A boolean indicating if the inserts should be wrapped in a transaction.
+		/// </param>
+		/// <returns>
+		/// The number of rows added to the table.
+		/// </returns>
+		public int InsertOrReplaceAll (IEnumerable objects, Type objType, bool runInTransaction = true)
+		{
+			var c = 0;
+			if (runInTransaction) {
+				RunInTransaction (() => { c += objects.Cast<object> ().Sum (r => InsertOrReplace (r, objType)); });
+			}
+			else {
+				c += objects.Cast<object> ().Sum (r => InsertOrReplace (r, objType));
 			}
 			return c;
 		}
