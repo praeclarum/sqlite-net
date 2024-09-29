@@ -242,8 +242,8 @@ namespace SQLite
 		int InsertAll (IEnumerable objects, Type objType, bool runInTransaction = true);
 		int InsertOrReplace (object obj);
 		int InsertOrReplace (object obj, Type objType);
-		int InsertOrReplaceAll (IEnumerable objects, bool runInTransaction = true);
-		int InsertOrReplaceAll (IEnumerable objects, Type objType, bool runInTransaction = true);
+		int InsertOrReplaceAll(IEnumerable objects, bool runInTransaction = true);
+		int InsertOrReplaceAll(IEnumerable objects, Type objType, bool runInTransaction = true);
 		List<T> Query<T> (string query, params object[] args) where T : new();
 		List<object> Query (TableMapping map, string query, params object[] args);
 		List<T> QueryScalars<T> (string query, params object[] args);
@@ -1745,14 +1745,14 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertOrReplaceAll (IEnumerable objects, bool runInTransaction = true)
+		public int InsertOrReplaceAll(IEnumerable objects, bool runInTransaction = true)
 		{
 			var c = 0;
 			if (runInTransaction) {
-				RunInTransaction (() => { c += objects.Cast<object> ().Sum (InsertOrReplace); });
+				RunInTransaction(() => { c += objects.Cast<object>().Sum(InsertOrReplace); });
 			}
 			else {
-				c += objects.Cast<object> ().Sum (InsertOrReplace);
+				c += objects.Cast<object>().Sum(InsertOrReplace);
 			}
 			return c;
 		}
@@ -1772,14 +1772,14 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public int InsertOrReplaceAll (IEnumerable objects, Type objType, bool runInTransaction = true)
+		public int InsertOrReplaceAll(IEnumerable objects, Type objType, bool runInTransaction = true)
 		{
 			var c = 0;
 			if (runInTransaction) {
-				RunInTransaction (() => { c += objects.Cast<object> ().Sum (r => InsertOrReplace (r, objType)); });
+				RunInTransaction(() => { c += objects.Cast<object>().Sum(r => InsertOrReplace(r, objType)); });
 			}
 			else {
-				c += objects.Cast<object> ().Sum (r => InsertOrReplace (r, objType));
+				c += objects.Cast<object>().Sum(r => InsertOrReplace(r, objType));
 			}
 			return c;
 		}
