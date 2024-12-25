@@ -1880,7 +1880,7 @@ namespace SQLite
 				if (Int32.TryParse (savepoint.Substring (firstLen + 1), out depth)) {
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
 					if (0 <= depth && depth < _transactionDepth) {
-#if NETFX_CORE || USE_SQLITEPCL_RAW || NETCORE
+#if NETFX_CORE || USE_SQLITEPCL_RAW || NETCORE || NET8_0_OR_GREATER
 						Volatile.Write (ref _transactionDepth, depth);
 #elif SILVERLIGHT
 						_transactionDepth = depth;
