@@ -575,7 +575,7 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 #if NET8_0_OR_GREATER
-		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
 #endif
 		public Task<CreateTablesResult> CreateTablesAsync<
 #if NET8_0_OR_GREATER
@@ -602,7 +602,7 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 #if NET8_0_OR_GREATER
-		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
 #endif
 		public Task<CreateTablesResult> CreateTablesAsync<
 #if NET8_0_OR_GREATER
@@ -634,7 +634,7 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 #if NET8_0_OR_GREATER
-		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
 #endif
 		public Task<CreateTablesResult> CreateTablesAsync<
 #if NET8_0_OR_GREATER
@@ -671,7 +671,7 @@ namespace SQLite
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
 #if NET8_0_OR_GREATER
-		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metata for all type arguments.")]
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
 #endif
 		public Task<CreateTablesResult> CreateTablesAsync<
 #if NET8_0_OR_GREATER
