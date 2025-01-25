@@ -3039,7 +3039,7 @@ namespace SQLite
 
 		private IReadOnlyCollection<MemberInfo> GetFieldsFromValueTuple(
 #if NET8_0_OR_GREATER
-			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)]
 #endif
 			Type type)
 		{
