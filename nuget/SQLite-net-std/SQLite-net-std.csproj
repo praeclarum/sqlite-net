@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <AssemblyName>SQLite-net</AssemblyName>
     <PackageId>sqlite-net-pcl</PackageId>
     <AssemblyTitle>SQLite-net Official .NET Standard Library</AssemblyTitle>
@@ -9,15 +9,16 @@
       SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
       This version uses SQLitePCLRaw to provide platform independent versions of SQLite.
     </Description>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;RELEASE</DefineConstants>
-    <DocumentationFile>bin\Release\netstandard2.0\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\$(TargetFramework)\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>USE_SQLITEPCL_RAW;DEBUG</DefineConstants>
-    <DocumentationFile>bin\Debug\netstandard2.0\SQLite-net.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\$(TargetFramework)\SQLite-net.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

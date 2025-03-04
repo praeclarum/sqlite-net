@@ -23,6 +23,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -50,74 +51,247 @@ namespace SQLite
 		Task<int> CreateIndexAsync (string indexName, string tableName, string columnName, bool unique = false);
 		Task<int> CreateIndexAsync (string tableName, string[] columnNames, bool unique = false);
 		Task<int> CreateIndexAsync (string indexName, string tableName, string[] columnNames, bool unique = false);
-		Task<int> CreateIndexAsync<T> (Expression<Func<T, object>> property, bool unique = false);
-		Task<CreateTableResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None) where T : new();
-		Task<CreateTableResult> CreateTableAsync (Type ty, CreateFlags createFlags = CreateFlags.None);
-		Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
+		Task<int> CreateIndexAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, object>> property, bool unique = false);
+		Task<CreateTableResult> CreateTableAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None) where T : new();
+		Task<CreateTableResult> CreateTableAsync (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type ty,
+			CreateFlags createFlags = CreateFlags.None);
+		Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new();
-		Task<CreateTablesResult> CreateTablesAsync<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
+		Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new()
 			where T3 : new();
-		Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
+		Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T4> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new()
 			where T3 : new()
 			where T4 : new();
-		Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
+		Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T4,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T5> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new()
 			where T3 : new()
 			where T4 : new()
 			where T5 : new();
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires 'DynamicallyAccessedMemberTypes.All' on each input 'Type' instance.")]
+#endif
 		Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, params Type[] types);
-		Task<IEnumerable<T>> DeferredQueryAsync<T> (string query, params object[] args) where T : new();
+		Task<IEnumerable<T>> DeferredQueryAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new();
 		Task<IEnumerable<object>> DeferredQueryAsync (TableMapping map, string query, params object[] args);
-		Task<int> DeleteAllAsync<T> ();
+		Task<int> DeleteAllAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ();
 		Task<int> DeleteAllAsync (TableMapping map);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'objectToDelete'.")]
+#endif
 		Task<int> DeleteAsync (object objectToDelete);
-		Task<int> DeleteAsync<T> (object primaryKey);
+		Task<int> DeleteAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object primaryKey);
 		Task<int> DeleteAsync (object primaryKey, TableMapping map);
-		Task<int> DropTableAsync<T> () where T : new();
+		Task<int> DropTableAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> () where T : new();
 		Task<int> DropTableAsync (TableMapping map);
 		Task EnableLoadExtensionAsync (bool enabled);
 		Task EnableWriteAheadLoggingAsync ();
 		Task<int> ExecuteAsync (string query, params object[] args);
 		Task<T> ExecuteScalarAsync<T> (string query, params object[] args);
-		Task<T> FindAsync<T> (object pk) where T : new();
+		Task<T> FindAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk) where T : new();
 		Task<object> FindAsync (object pk, TableMapping map);
-		Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate) where T : new();
-		Task<T> FindWithQueryAsync<T> (string query, params object[] args) where T : new();
+		Task<T> FindAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, bool>> predicate) where T : new();
+		Task<T> FindWithQueryAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new();
 		Task<object> FindWithQueryAsync (TableMapping map, string query, params object[] args);
-		Task<T> GetAsync<T> (object pk) where T : new();
+		Task<T> GetAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk) where T : new();
 		Task<object> GetAsync (object pk, TableMapping map);
-		Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate) where T : new();
+		Task<T> GetAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, bool>> predicate) where T : new();
 		TimeSpan GetBusyTimeout ();
 		SQLiteConnectionWithLock GetConnection ();
-		Task<TableMapping> GetMappingAsync (Type type, CreateFlags createFlags = CreateFlags.None);
-		Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None) where T : new();
+		Task<TableMapping> GetMappingAsync (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type type,
+			CreateFlags createFlags = CreateFlags.None);
+		Task<TableMapping> GetMappingAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None) where T : new();
 		Task<List<SQLiteConnection.ColumnInfo>> GetTableInfoAsync (string tableName);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		Task<int> InsertAllAsync (IEnumerable objects, bool runInTransaction = true);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		Task<int> InsertAllAsync (IEnumerable objects, string extra, bool runInTransaction = true);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		Task<int> InsertAllAsync (IEnumerable objects, Type objType, bool runInTransaction = true);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		Task<int> InsertAsync (object obj);
-		Task<int> InsertAsync (object obj, Type objType);
+		Task<int> InsertAsync (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		Task<int> InsertAsync (object obj, string extra);
-		Task<int> InsertAsync (object obj, string extra, Type objType);
+		Task<int> InsertAsync (
+			object obj,
+			string extra,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		Task<int> InsertOrReplaceAsync (object obj);
-		Task<int> InsertOrReplaceAsync (object obj, Type objType);
-		Task<List<T>> QueryAsync<T> (string query, params object[] args) where T : new();
+		Task<int> InsertOrReplaceAsync (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
+		Task<List<T>> QueryAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args) where T : new();
 		Task<List<object>> QueryAsync (TableMapping map, string query, params object[] args);
 		Task<List<T>> QueryScalarsAsync<T> (string query, params object[] args);
 		Task ReKeyAsync (string key);
 		Task ReKeyAsync (byte[] key);
 		Task RunInTransactionAsync (Action<SQLiteConnection> action);
 		Task SetBusyTimeoutAsync (TimeSpan value);
-		AsyncTableQuery<T> Table<T> () where T : new();
+		AsyncTableQuery<T> Table<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> () where T : new();
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		Task<int> UpdateAllAsync (IEnumerable objects, bool runInTransaction = true);
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		Task<int> UpdateAsync (object obj);
-		Task<int> UpdateAsync (object obj, Type objType);
+		Task<int> UpdateAsync (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType);
 	}
 
 	/// <summary>
@@ -360,7 +534,11 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated.
 		/// </returns>
-		public Task<CreateTableResult> CreateTableAsync<T> (CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTableResult> CreateTableAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 		{
 			return WriteAsync (conn => conn.CreateTable<T> (createFlags));
@@ -377,7 +555,12 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated.
 		/// </returns>
-		public Task<CreateTableResult> CreateTableAsync (Type ty, CreateFlags createFlags = CreateFlags.None)
+		public Task<CreateTableResult> CreateTableAsync (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type ty,
+			CreateFlags createFlags = CreateFlags.None)
 		{
 			return WriteAsync (conn => conn.CreateTable (ty, createFlags));
 		}
@@ -391,7 +574,18 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2> (CreateFlags createFlags = CreateFlags.None)
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
+#endif
+		public Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new()
 		{
@@ -407,7 +601,22 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3> (CreateFlags createFlags = CreateFlags.None)
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
+#endif
+		public Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new()
 			where T3 : new()
@@ -424,7 +633,26 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4> (CreateFlags createFlags = CreateFlags.None)
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
+#endif
+		public Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T4> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new()
 			where T3 : new()
@@ -442,7 +670,30 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
-		public Task<CreateTablesResult> CreateTablesAsync<T, T2, T3, T4, T5> (CreateFlags createFlags = CreateFlags.None)
+#if NET8_0_OR_GREATER
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "This method preserves metadata for all type arguments.")]
+#endif
+		public Task<CreateTablesResult> CreateTablesAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T2,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T3,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T4,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T5> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 			where T2 : new()
 			where T3 : new()
@@ -461,6 +712,9 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated for each type.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires 'DynamicallyAccessedMemberTypes.All' on each input 'Type' instance.")]
+#endif
 		public Task<CreateTablesResult> CreateTablesAsync (CreateFlags createFlags = CreateFlags.None, params Type[] types)
 		{
 			return WriteAsync (conn => conn.CreateTables (createFlags, types));
@@ -469,7 +723,11 @@ namespace SQLite
 		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
-		public Task<int> DropTableAsync<T> ()
+		public Task<int> DropTableAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ()
 			where T : new()
 		{
 			return WriteAsync (conn => conn.DropTable<T> ());
@@ -544,7 +802,11 @@ namespace SQLite
 		/// <param name="property">Property to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
 		/// <returns>Zero on success.</returns>
-		public Task<int> CreateIndexAsync<T> (Expression<Func<T, object>> property, bool unique = false)
+		public Task<int> CreateIndexAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, object>> property, bool unique = false)
 		{
 			return WriteAsync (conn => conn.CreateIndex (property, unique));
 		}
@@ -559,6 +821,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		public Task<int> InsertAsync (object obj)
 		{
 			return WriteAsync (conn => conn.Insert (obj));
@@ -578,7 +843,12 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public Task<int> InsertAsync (object obj, Type objType)
+		public Task<int> InsertAsync (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
 		{
 			return WriteAsync (conn => conn.Insert (obj, objType));
 		}
@@ -597,6 +867,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		public Task<int> InsertAsync (object obj, string extra)
 		{
 			return WriteAsync (conn => conn.Insert (obj, extra));
@@ -619,7 +892,13 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
-		public Task<int> InsertAsync (object obj, string extra, Type objType)
+		public Task<int> InsertAsync (
+			object obj,
+			string extra,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
 		{
 			return WriteAsync (conn => conn.Insert (obj, extra, objType));
 		}
@@ -638,6 +917,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows modified.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		public Task<int> InsertOrReplaceAsync (object obj)
 		{
 			return WriteAsync (conn => conn.InsertOrReplace (obj));
@@ -660,7 +942,12 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows modified.
 		/// </returns>
-		public Task<int> InsertOrReplaceAsync (object obj, Type objType)
+		public Task<int> InsertOrReplaceAsync (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
 		{
 			return WriteAsync (conn => conn.InsertOrReplace (obj, objType));
 		}
@@ -676,6 +963,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows updated.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
+#endif
 		public Task<int> UpdateAsync (object obj)
 		{
 			return WriteAsync (conn => conn.Update (obj));
@@ -695,7 +985,12 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows updated.
 		/// </returns>
-		public Task<int> UpdateAsync (object obj, Type objType)
+		public Task<int> UpdateAsync (
+			object obj,
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type objType)
 		{
 			return WriteAsync (conn => conn.Update (obj, objType));
 		}
@@ -712,6 +1007,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows modified.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		public Task<int> UpdateAllAsync (IEnumerable objects, bool runInTransaction = true)
 		{
 			return WriteAsync (conn => conn.UpdateAll (objects, runInTransaction));
@@ -726,6 +1024,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows deleted.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'objectToDelete'.")]
+#endif
 		public Task<int> DeleteAsync (object objectToDelete)
 		{
 			return WriteAsync (conn => conn.Delete (objectToDelete));
@@ -743,7 +1044,11 @@ namespace SQLite
 		/// <typeparam name='T'>
 		/// The type of object.
 		/// </typeparam>
-		public Task<int> DeleteAsync<T> (object primaryKey)
+		public Task<int> DeleteAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object primaryKey)
 		{
 			return WriteAsync (conn => conn.Delete<T> (primaryKey));
 		}
@@ -776,7 +1081,11 @@ namespace SQLite
 		/// <typeparam name='T'>
 		/// The type of objects to delete.
 		/// </typeparam>
-		public Task<int> DeleteAllAsync<T> ()
+		public Task<int> DeleteAllAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ()
 		{
 			return WriteAsync (conn => conn.DeleteAll<T> ());
 		}
@@ -822,7 +1131,11 @@ namespace SQLite
 		/// The object with the given primary key. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public Task<T> GetAsync<T> (object pk)
+		public Task<T> GetAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.Get<T> (pk));
@@ -859,7 +1172,11 @@ namespace SQLite
 		/// The object that matches the given predicate. Throws a not found exception
 		/// if the object is not found.
 		/// </returns>
-		public Task<T> GetAsync<T> (Expression<Func<T, bool>> predicate)
+		public Task<T> GetAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+# endif
+			T> (Expression<Func<T, bool>> predicate)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.Get<T> (predicate));
@@ -877,7 +1194,11 @@ namespace SQLite
 		/// The object with the given primary key or null
 		/// if the object is not found.
 		/// </returns>
-		public Task<T> FindAsync<T> (object pk)
+		public Task<T> FindAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (object pk)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.Find<T> (pk));
@@ -914,7 +1235,11 @@ namespace SQLite
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public Task<T> FindAsync<T> (Expression<Func<T, bool>> predicate)
+		public Task<T> FindAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (Expression<Func<T, bool>> predicate)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.Find<T> (predicate));
@@ -934,7 +1259,11 @@ namespace SQLite
 		/// The object that matches the given predicate or null
 		/// if the object is not found.
 		/// </returns>
-		public Task<T> FindWithQueryAsync<T> (string query, params object[] args)
+		public Task<T> FindWithQueryAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.FindWithQuery<T> (query, args));
@@ -975,7 +1304,12 @@ namespace SQLite
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public Task<TableMapping> GetMappingAsync (Type type, CreateFlags createFlags = CreateFlags.None)
+		public Task<TableMapping> GetMappingAsync (
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			Type type,
+			CreateFlags createFlags = CreateFlags.None)
 		{
 			return ReadAsync (conn => conn.GetMapping (type, createFlags));
 		}
@@ -990,7 +1324,11 @@ namespace SQLite
 		/// The mapping represents the schema of the columns of the database and contains 
 		/// methods to set and get properties of objects.
 		/// </returns>
-		public Task<TableMapping> GetMappingAsync<T> (CreateFlags createFlags = CreateFlags.None)
+		public Task<TableMapping> GetMappingAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (CreateFlags createFlags = CreateFlags.None)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.GetMapping<T> (createFlags));
@@ -1039,6 +1377,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		public Task<int> InsertAllAsync (IEnumerable objects, bool runInTransaction = true)
 		{
 			return WriteAsync (conn => conn.InsertAll (objects, runInTransaction));
@@ -1059,6 +1400,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		public Task<int> InsertAllAsync (IEnumerable objects, string extra, bool runInTransaction = true)
 		{
 			return WriteAsync (conn => conn.InsertAll (objects, extra, runInTransaction));
@@ -1079,6 +1423,9 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
+#if NET8_0_OR_GREATER
+		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+#endif
 		public Task<int> InsertAllAsync (IEnumerable objects, Type objType, bool runInTransaction = true)
 		{
 			return WriteAsync (conn => conn.InsertAll (objects, objType, runInTransaction));
@@ -1117,7 +1464,11 @@ namespace SQLite
 		/// A queryable object that is able to translate Where, OrderBy, and Take
 		/// queries into native SQL.
 		/// </returns>
-		public AsyncTableQuery<T> Table<T> ()
+		public AsyncTableQuery<T> Table<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> ()
 			where T : new()
 		{
 			//
@@ -1167,7 +1518,11 @@ namespace SQLite
 		/// <returns>
 		/// A list with one result for each row returned by the query.
 		/// </returns>
-		public Task<List<T>> QueryAsync<T> (string query, params object[] args)
+		public Task<List<T>> QueryAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args)
 			where T : new()
 		{
 			return ReadAsync (conn => conn.Query<T> (query, args));
@@ -1234,7 +1589,11 @@ namespace SQLite
 		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
 		/// connection must remain open for the lifetime of the enumerator.
 		/// </returns>
-		public Task<IEnumerable<T>> DeferredQueryAsync<T> (string query, params object[] args)
+		public Task<IEnumerable<T>> DeferredQueryAsync<
+#if NET8_0_OR_GREATER
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+			T> (string query, params object[] args)
 			where T : new()
 		{
 			return ReadAsync (conn => (IEnumerable<T>)conn.DeferredQuery<T> (query, args).ToList ());
@@ -1295,7 +1654,11 @@ namespace SQLite
 	/// <summary>
 	/// Query to an asynchronous database connection.
 	/// </summary>
-	public class AsyncTableQuery<T>
+	public class AsyncTableQuery<
+#if NET8_0_OR_GREATER
+		[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
+#endif
+	T>
 		where T : new()
 	{
 		TableQuery<T> _innerQuery;
