@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 #if NET8_0_OR_GREATER
@@ -41,6 +42,7 @@ using System.Runtime.InteropServices;
 #endif
 using System.Text;
 using System.Threading;
+using ExecutionEngineException = System.ExecutionEngineException;
 
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
@@ -2632,6 +2634,14 @@ namespace SQLite
 		}
 
 		public event EventHandler<NotifyTableChangedEventArgs> TableChanged;
+
+		public static void RegisterFastColumnSetter (
+			Type type, 
+			string name,
+			Action<object, Sqlite3Statement, int> setter)
+		{
+			FastColumnSetter.RegisterFastColumnSetter (type, name, setter);
+		}
 	}
 
 	public class NotifyTableChangedEventArgs : EventArgs
@@ -3592,7 +3602,17 @@ namespace SQLite
 							continue;
 
 						if (fastColumnSetters[i] != null) {
-							fastColumnSetters[i].Invoke (obj, stmt, i);
+							try {
+								fastColumnSetters[i].Invoke (obj, stmt, i);
+							}
+#pragma warning disable CS0618 // Type or member is obsolete
+							catch (ExecutionEngineException) {
+#pragma warning restore CS0618 // Type or member is obsolete
+								// Column setter has AOT Problem so don't use it.
+								fastColumnSetters[i] = null;
+								Trace.WriteLine($"FastColumnSetter AOT Jit Exception on Type {map.MappedType.FullName} Column {cols[i].Name}");
+								i--; // go one back and read it with default implementation
+							}
 						}
 						else {
 							var colType = SQLite3.ColumnType (stmt, i);
@@ -3922,6 +3942,14 @@ namespace SQLite
 
 	internal class FastColumnSetter
 	{
+		private static ConcurrentDictionary<(Type, string), Action<object, Sqlite3Statement, int>> customSetter =
+			new ConcurrentDictionary<(Type, string), Action<object, Sqlite3Statement, int>> ();
+
+		public static void RegisterFastColumnSetter(Type type, string name, Action<object, Sqlite3Statement, int> setter)
+		{
+			customSetter[(type, name)] = setter;
+		}
+
 		/// <summary>
 		/// Gets a <see cref="MethodInfo"/> for a generic <see cref="GetFastSetterMethodInfoUnsafe"/> method, suppressing AOT warnings.
 		/// </summary>
@@ -3954,7 +3982,9 @@ namespace SQLite
 		/// </returns>
 		internal static Action<object, Sqlite3Statement, int> GetFastSetter<T> (SQLiteConnection conn, TableMapping.Column column)
 		{
-			Action<object, Sqlite3Statement, int> fastSetter = null;
+			if (customSetter.TryGetValue ((typeof(T), column.Name), out var fastSetter)) {
+				return fastSetter;
+			}
 
 			Type clrType = column.PropertyInfo.PropertyType;
 
