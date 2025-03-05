@@ -12,7 +12,7 @@ using NUnit.Framework;
 namespace SQLite.Tests
 {
 	[TestFixture]
-	class FastColumnSetterTest
+	public class FastColumnSetterTest
 	{
 		public class TestSetter
 		{
@@ -112,5 +112,4 @@ namespace SQLite.Tests
 			Assert.IsTrue(callCount > 0);
 		}
 	}
-}
 }
