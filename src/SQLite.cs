@@ -706,6 +706,28 @@ namespace SQLite
 				throw SQLiteException.New (r, msg);
 			}
 		}
+		
+		/// <summary>
+		/// Load extension.
+		/// </summary>
+		public void LoadExtension (string filename)
+		{
+			SQLite3.Result r = SQLite3.LoadExtension (Handle, filename, null, out var msg);
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, msg);
+			}
+		}
+
+		/// <summary>
+		/// Load extension.
+		/// </summary>
+		public void LoadExtension (string filename, string customInitFunctionName)
+		{
+			SQLite3.Result r = SQLite3.LoadExtension (Handle, filename, customInitFunctionName, out var msg);
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, msg);
+			}
+		}
 
 #if !USE_SQLITEPCL_RAW
 		static byte[] GetNullTerminatedUtf8 (string s)
@@ -5050,6 +5072,9 @@ namespace SQLite
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_enable_load_extension", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result EnableLoadExtension (IntPtr db, int onoff);
 
+		[DllImport (LibraryPath, EntryPoint = "sqlite3_load_extension", CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result LoadExtension (IntPtr db, [MarshalAs (UnmanagedType.LPStr)] string filename, [MarshalAs (UnmanagedType.LPStr)] string initFunctionName, [MarshalAs(UnmanagedType.LPStr)] out string errorMsg);
+
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
 
@@ -5400,6 +5425,16 @@ namespace SQLite
 		public static Result EnableLoadExtension (Sqlite3DatabaseHandle db, int onoff)
 		{
 			return (Result)Sqlite3.sqlite3_enable_load_extension (db, onoff);
+		}
+		
+		public static Result LoadExtension (Sqlite3DatabaseHandle db, string fileName, string initFunctionName, out string errorMessage)
+		{
+			var result = (Result)Sqlite3.sqlite3_load_extension (db, SQLitePCL.utf8z.FromString (fileName),
+				SQLitePCL.utf8z.FromString (initFunctionName), out SQLitePCL.utf8z pzErrMsg);
+
+			errorMessage = pzErrMsg.utf8_to_string ();
+
+			return result;
 		}
 
 		public static int LibVersionNumber ()
