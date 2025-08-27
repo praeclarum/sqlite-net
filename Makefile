@@ -5,15 +5,12 @@ PACKAGES_OUT=$(abspath PackagesOut)
 
 all: nuget
 
-nuget: pclnuget basenuget sqlciphernuget staticnuget
+nuget: pclnuget basenuget staticnuget
 
 pclnuget: nuget/SQLite-net-std/SQLite-net-std.csproj $(SRC)
 	dotnet pack -c Release -o $(PACKAGES_OUT) $<
 
 basenuget: nuget/SQLite-net-base/SQLite-net-base.csproj $(SRC)
-	dotnet pack -c Release -o $(PACKAGES_OUT) $<
-
-sqlciphernuget: nuget/SQLite-net-sqlcipher/SQLite-net-sqlcipher.csproj $(SRC)
 	dotnet pack -c Release -o $(PACKAGES_OUT) $<
 
 staticnuget: nuget/SQLite-net-static/SQLite-net-static.csproj $(SRC)

@@ -8,7 +8,6 @@ Use one of these packages:
 | Version | Package | Description |
 | ------- | ------- | ----------- |
 | [![NuGet Package](https://img.shields.io/nuget/v/sqlite-net-pcl.svg)](https://www.nuget.org/packages/sqlite-net-pcl) | [sqlite-net-pcl](https://www.nuget.org/packages/sqlite-net-pcl) | .NET Standard Library |
-| [![NuGet Package with Encryption](https://img.shields.io/nuget/v/sqlite-net-sqlcipher.svg)](https://www.nuget.org/packages/sqlite-net-sqlcipher) | [sqlite-net-sqlcipher](https://www.nuget.org/packages/sqlite-net-sqlcipher) | With Encryption Support |
 | [![NuGet Package using P/Invoke](https://img.shields.io/nuget/v/sqlite-net-static.svg)](https://www.nuget.org/packages/sqlite-net-static) | [sqlite-net-static](https://www.nuget.org/packages/sqlite-net-static) | Special version that uses P/Invokes to platform-provided sqlite3 |
 | [![NuGet Package without a SQLitePCLRaw bundle](https://img.shields.io/nuget/v/sqlite-net-base.svg)](https://www.nuget.org/packages/sqlite-net-base) | [sqlite-net-base](https://www.nuget.org/packages/sqlite-net-base) | without a SQLitePCLRaw bundle so you can choose your own provider |
 
@@ -204,9 +203,9 @@ db.Execute ("insert into Stock(Symbol) values (?)", "MSFT");
 var stocks = db.Query<Stock> ("select * from Stock");
 ```
 
-## Using SQLCipher
+## Using encryption
 
-You can use an encrypted database by using the [sqlite-net-sqlcipher NuGet package](https://www.nuget.org/packages/sqlite-net-sqlcipher).
+If you are using a native SQLite instance which supports encryption:
 
 The database key is set in the `SqliteConnectionString` passed to the connection constructor:
 

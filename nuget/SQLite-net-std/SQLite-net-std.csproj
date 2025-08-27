@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net8.0-ios</TargetFrameworks>
     <AssemblyName>SQLite-net</AssemblyName>
     <PackageId>sqlite-net-pcl</PackageId>
     <AssemblyTitle>SQLite-net Official .NET Standard Library</AssemblyTitle>
@@ -10,6 +10,7 @@
       This version uses SQLitePCLRaw to provide platform independent versions of SQLite.
     </Description>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
+    <IsIOS>$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0-ios'))</IsIOS>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -22,8 +23,35 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.2" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="$(SQLitePCLRawVersion)" />
   </ItemGroup>
+
+  <!--
+      The following items use the IsIOS property to configure things such that we
+      use the system-provided SQLite library on iOS, and
+      use e_sqlite3 everywhere else.
+
+      Previously, this was implemented by depending on SQLitePCLRaw.bundle_green,
+      but that bundle package was deprecated in SQLitePCLRaw 3.0.
+  -->
+
+  <ItemGroup Condition="$(IsIOS)">
+    <PackageReference Include="SQLitePCLRaw.provider.sqlite3" Version="$(SQLitePCLRawVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!$(IsIOS)">
+    <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" Version="$(SQLitePCLRawVersion)" />
+    <PackageReference Include="SourceGear.sqlite3" Version="3.50.3" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="$(IsIOS)">
+	<DefineConstants>$(DefineConstants);PROVIDER_sqlite3</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="!$(IsIOS)">
+	<DefineConstants>$(DefineConstants);PROVIDER_e_sqlite3</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
