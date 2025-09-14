@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 [Generator]
 public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 {
-	private static HashSet<string> SQLitePropertyAttributes = new() {
+	private static List<string> SQLitePropertyAttributes = new() {
 		"Column",
 		"Indexed",
 		"Ignore",
@@ -54,56 +54,68 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
         // Check if class has TableAttribute
         if (classDecl.AttributeLists.Any(attrList => 
-            attrList.Attributes.Any(attr => {
-	            var s = attr.Name.ToString ();
-	            return s == "Table";
-            })))
+            attrList.Attributes.Any(attr => attr.Name.ToString ().Contains("Table"))))
         {
             return true;
         }
 
         // Check if any property has SQLite Property Attribute
         return classDecl.Members
-            .OfType<PropertyDeclarationSyntax>()
-            .Any(prop => prop.AttributeLists.Any(attrList =>
-                attrList.Attributes.Any(attr =>
-	                SQLitePropertyAttributes.Contains(attr.Name.ToString()))));
+	        .OfType<PropertyDeclarationSyntax> ()
+	        .Any (prop => prop.AttributeLists.Any (attrList =>
+		        attrList.Attributes.Any (attr => {
+			        var attributeName = attr.Name.ToString ();
+			        return SQLitePropertyAttributes.Any (f => attributeName.Contains (f));
+		        })));
     }
 
     static ClassInfo? GetClassInfo(GeneratorSyntaxContext context)
     {
-        var classDecl = (ClassDeclarationSyntax)context.Node;
-        var semanticModel = context.SemanticModel;
+	    var classDecl = (ClassDeclarationSyntax)context.Node;
+	    var semanticModel = context.SemanticModel;
 
-        var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
-        if (classSymbol is null)
-            return null;
+	    var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
+	    if (classSymbol is null)
+		    return null;
 
-        var hasTableAttribute = classSymbol.GetAttributes()
-            .Any(attr => attr.AttributeClass?.Name == "TableAttribute");
+	    var hasTableAttribute = classSymbol.GetAttributes()
+		    .Any(attr => attr.AttributeClass?.Name == "TableAttribute");
 
-        var properties = new List<PropertyInfo>();
+	    var properties = new List<PropertyInfo>();
 
-        foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
-        {
-            var hasColumnAttribute = member.GetAttributes()
-                .Any(attr => attr.AttributeClass?.Name == "ColumnAttribute");
+	    foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
+	    {
+		    var hasColumnAttribute = member.GetAttributes()
+			    .Any(attr => attr.AttributeClass?.Name == "ColumnAttribute");
 
-            // Include property if class has TableAttribute or property has ColumnAttribute
-            if (hasTableAttribute || hasColumnAttribute)
-            {
-                var columnName = GetColumnName(member);
-                properties.Add(new PropertyInfo(member.Name, member.Type.ToDisplayString(), columnName));
-            }
-        }
+		    // Include property if class has TableAttribute or property has ColumnAttribute
+		    if (hasTableAttribute || hasColumnAttribute)
+		    {
+			    var columnName = GetColumnName(member);
+			    properties.Add(new PropertyInfo(member.Name, member.Type.ToDisplayString(), columnName));
+		    }
+	    }
 
-        if (properties.Count == 0)
-            return null;
+	    if (properties.Count == 0)
+		    return null;
 
-        return new ClassInfo(
-            classSymbol.Name,
-            classSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty,
-            properties);
+	    // Handle nested classes by building the full containing type path
+	    var containingTypes = new List<string>();
+	    var currentContaining = classSymbol.ContainingType;
+	    while (currentContaining != null)
+	    {
+		    containingTypes.Insert(0, currentContaining.Name);
+		    currentContaining = currentContaining.ContainingType;
+	    }
+
+	    var fullClassName = containingTypes.Count > 0 
+		    ? $"{string.Join(".", containingTypes)}.{classSymbol.Name}"
+		    : classSymbol.Name;
+
+	    return new ClassInfo(
+		    fullClassName,
+		    classSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty,
+		    properties);
     }
 
     static string GetColumnName(IPropertySymbol property)
