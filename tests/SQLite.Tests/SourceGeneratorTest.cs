@@ -26,6 +26,9 @@ namespace SQLite.Tests
 
 		[Ignore]
 		public string Ignore { get; set; }
+
+		[Column("A")]
+		public string Z { get; set; }
 	}
 
 	public class OuterTestDb : SQLiteConnection
@@ -115,6 +118,20 @@ namespace SQLite.Tests
 			SQLiteInitializer.Init ();
 
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (InnerTestSetter), nameof (InnerTestSetter.Id)), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
+			}
+		}
+
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_ZRenamedA()
+		{
+			SQLiteInitializer.Init ();
+
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), "A"), out var setter)) {
 				Assert.IsTrue (true, "Should be registered");
 			}
 			else {
@@ -219,6 +236,27 @@ namespace SQLite.Tests
 			var results = db.Table<OuterTestSetter> ().Where (o => o.Data.Equals ("10"));
 			Assert.AreEqual (results.Count (), 1);
 			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
+		}
+
+		[Test]
+		public void SqliteInitializer_Outer_AndReadData_ZRenamedA()
+		{
+			SQLiteInitializer.Init ();
+
+			var n = 20;
+			var cq = from i in Enumerable.Range (1, n)
+				select new OuterTestSetter () {
+					Data = Convert.ToString (i),
+					Date = new DateTime (2013, 1, i),
+					Z = Convert.ToString(i),
+				};
+
+			var db = new OuterTestDb (TestPath.GetTempFileName ());
+			db.InsertAll (cq);
+
+			var results = db.Table<OuterTestSetter> ().Where (o => o.Z.Equals ("10"));
+			Assert.AreEqual (results.Count (), 1);
+			Assert.AreEqual (results.FirstOrDefault ().Z, "10");
 		}
 
 		[Test]
