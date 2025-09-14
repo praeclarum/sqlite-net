@@ -98,7 +98,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 			return null;
 		
 		var hasTableAttribute = classSymbol.GetAttributes()
-			.Any(attr => attr.AttributeClass?.Name == "TableAttribute");
+			.Any(attr => attr.AttributeClass?.ContainingNamespace.Name == "SQLite" && attr.AttributeClass?.Name == "TableAttribute");
 
 	    var properties = new List<PropertyInfo>();
 
@@ -111,6 +111,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 				    var hasSqliteAttributes = member.GetAttributes ()
 					    .Any (attr =>
 						    attr.AttributeClass?.Name != null &&
+						    attr.AttributeClass.ContainingNamespace.Name == "SQLite" &&
 							attr.AttributeClass.Name != "IgnoreAttribute" &&
 						    SQLitePropertyFullAttributes.Contains (attr.AttributeClass?.Name!));
 
@@ -157,7 +158,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
     {
         // Check for ColumnAttribute with name parameter
         var columnAttr = property.GetAttributes()
-            .FirstOrDefault(attr => attr.AttributeClass?.Name == "ColumnAttribute");
+            .FirstOrDefault(attr => attr.AttributeClass?.ContainingNamespace.Name == "SQLite" && attr.AttributeClass?.Name == "ColumnAttribute");
 
         if (columnAttr?.ConstructorArguments.Length > 0)
         {
