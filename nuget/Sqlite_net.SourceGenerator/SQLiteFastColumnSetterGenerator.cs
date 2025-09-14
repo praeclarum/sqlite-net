@@ -128,7 +128,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"namespace {rootNamespace}");
         sb.AppendLine("{");
-        sb.AppendLine("    internal static class SQLite");
+        sb.AppendLine("    internal static class SQLiteInitializer");
         sb.AppendLine("    {");
         sb.AppendLine("        public static void Init()");
         sb.AppendLine("        {");
