@@ -69,7 +69,7 @@ namespace SQLite.Tests
 		{
 			SQLiteInitializer.Init ();
 
-			if (!SQLite.FastColumnSetter.customSetter.TryGetValue(typeof(PrivateInnerTestSetter, nameof(PrivateInnerTestSetter.Id), out var setter))
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue((typeof(PrivateInnerTestSetter), nameof(PrivateInnerTestSetter.Id)), out var setter))
 			{
 				Assert.IsTrue(true, "Should not be registered");
 			}
