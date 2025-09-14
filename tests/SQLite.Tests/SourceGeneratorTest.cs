@@ -12,10 +12,29 @@ using NUnit.Framework;
 
 namespace SQLite.Tests
 {
+	public class OuterTestSetter
+	{
+		[AutoIncrement, PrimaryKey]
+		public int Id { get; set; }
+
+		public string Data { get; set; }
+
+		public DateTime Date { get; set; }
+	}
+
+	public class OuterTestDb : SQLiteConnection
+	{
+		public OuterTestDb (String path)
+			: base (path)
+		{
+			CreateTable<OuterTestSetter> ();
+		}
+	}
+
 	[TestFixture]
 	public class SourceGeneratorTest
 	{
-		public class TestSetter
+		public class InnerTestSetter
 		{
 			[AutoIncrement, PrimaryKey]
 			public int Id { get; set; }
@@ -25,37 +44,37 @@ namespace SQLite.Tests
 			public DateTime Date { get; set; }
 		}
 
-		public class TestDb : SQLiteConnection
+		public class InnerTestDb : SQLiteConnection
 		{
-			public TestDb (String path)
+			public InnerTestDb (String path)
 				: base (path)
 			{
-				CreateTable<TestSetter> ();
+				CreateTable<InnerTestSetter> ();
 			}
 		}
 
 		[Test]
-		public void SqliteInitializer_AndReadData()
+		public void SqliteInitializer_Inner_AndReadData()
 		{
 			SQLiteInitializer.Init();
 
 			var n = 20;
 			var cq = from i in Enumerable.Range (1, n)
-					 select new TestSetter {
+					 select new InnerTestSetter {
 						 Data = Convert.ToString (i),
 						 Date = new DateTime (2013, 1, i)
 					 };
 
-			var db = new TestDb (TestPath.GetTempFileName ());
+			var db = new InnerTestDb (TestPath.GetTempFileName ());
 			db.InsertAll (cq);
 
-			var results = db.Table<TestSetter> ().Where (o => o.Data.Equals ("10"));
+			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
 			Assert.AreEqual (results.Count (), 1);
 			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
 		}
 
 		[Test]
-		public void SetFastColumnSetters_AndReadData_IsCalled()
+		public void SetFastColumnSetters_Inner_AndReadData_IsCalled()
 		{
 			SQLiteInitializer.Init ();
 
@@ -63,19 +82,63 @@ namespace SQLite.Tests
 
 			var n = 20;
 			var cq = from i in Enumerable.Range (1, n)
-				select new TestSetter {
+				select new InnerTestSetter {
 					Data = Convert.ToString (i),
 					Date = new DateTime (2013, 1, i)
 				};
 
-			var db = new TestDb (TestPath.GetTempFileName ());
+			var db = new InnerTestDb (TestPath.GetTempFileName ());
 			db.InsertAll (cq);
 
-			var results = db.Table<TestSetter> ().Where (o => o.Data.Equals ("10"));
+			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
 			Assert.AreEqual (results.Count (), 1);
 			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
 
 			Assert.IsTrue(callCount > 0);
+		}
+
+		[Test]
+		public void SqliteInitializer_Outer_AndReadData ()
+		{
+			SQLiteInitializer.Init ();
+
+			var n = 20;
+			var cq = from i in Enumerable.Range (1, n)
+				select new OuterTestSetter() {
+					Data = Convert.ToString (i),
+					Date = new DateTime (2013, 1, i)
+				};
+
+			var db = new InnerTestDb (TestPath.GetTempFileName ());
+			db.InsertAll (cq);
+
+			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
+			Assert.AreEqual (results.Count (), 1);
+			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
+		}
+
+		[Test]
+		public void SetFastColumnSetters_Outer_AndReadData_IsCalled ()
+		{
+			SQLiteInitializer.Init ();
+
+			int callCount = 0;
+
+			var n = 20;
+			var cq = from i in Enumerable.Range (1, n)
+				select new OuterTestSetter {
+					Data = Convert.ToString (i),
+					Date = new DateTime (2013, 1, i)
+				};
+
+			var db = new InnerTestDb (TestPath.GetTempFileName ());
+			db.InsertAll (cq);
+
+			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
+			Assert.AreEqual (results.Count (), 1);
+			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
+
+			Assert.IsTrue (callCount > 0);
 		}
 	}
 }
