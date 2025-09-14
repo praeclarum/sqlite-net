@@ -95,23 +95,36 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
 		if (classSymbol.IsGenericType)
 			return null;
-
-	    var hasTableAttribute = classSymbol.GetAttributes()
-		    .Any(attr => attr.AttributeClass?.Name == "TableAttribute");
+		
+		var hasTableAttribute = classSymbol.GetAttributes()
+			.Any(attr => attr.AttributeClass?.Name == "TableAttribute");
 
 	    var properties = new List<PropertyInfo>();
 
-	    foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
+	    // Iterate through the class hierarchy to get all properties
+	    var currentType = classSymbol;
+	    while (currentType != null) 
 	    {
-		    var hasSqliteAttributes = member.GetAttributes()
-			    .Any(attr => attr.AttributeClass?.Name != null && SQLitePropertyFullAttributes.Contains(attr.AttributeClass?.Name!));
+		    foreach (var member in classSymbol.GetMembers ().OfType<IPropertySymbol> ()) {
+			    var hasSqliteAttributes = member.GetAttributes ()
+				    .Any (attr =>
+					    attr.AttributeClass?.Name != null &&
+					    SQLitePropertyFullAttributes.Contains (attr.AttributeClass?.Name!));
 
-		    // Include property if class has TableAttribute or property has ColumnAttribute
-		    if (hasTableAttribute || hasSqliteAttributes)
-		    {
-			    var columnName = GetColumnName(member);
-			    properties.Add(new PropertyInfo(member.Name, member.Type.ToDisplayString(), columnName));
+			    // Include property if class has TableAttribute or property has ColumnAttribute
+			    if (hasTableAttribute || hasSqliteAttributes) {
+				    var columnName = GetColumnName (member);
+				    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName));
+			    }
 		    }
+		    
+		    // Move to base type
+		    currentType = currentType.BaseType;
+		    
+		    // Stop at System.Object or if we hit a null base type
+		    if (currentType?.SpecialType == SpecialType.System_Object)
+			    break;
+
 	    }
 
 	    if (properties.Count == 0)
