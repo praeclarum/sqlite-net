@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Newtonsoft;
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -34,6 +35,16 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class SourceGeneratorTest
 	{
+		public class StringTest : BaseTest<string>
+		{
+		}
+
+		public class BaseTest<T>
+		{
+			[PrimaryKey]
+			public T Id { get; set; }
+		}
+
 		public class InnerTestSetter
 		{
 			[AutoIncrement, PrimaryKey]
@@ -76,6 +87,19 @@ namespace SQLite.Tests
 			else
 			{
 				Assert.Fail("Should not be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_StringTestSetter ()
+		{
+			SQLiteInitializer.Init ();
+
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (StringTest), nameof (StringTest.Id)), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
 			}
 		}
 
