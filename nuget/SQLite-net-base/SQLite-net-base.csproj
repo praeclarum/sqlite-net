@@ -34,4 +34,10 @@
     </Compile>
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
+
+  <!-- Include Source Generator DLL in the NuGet package -->
+  <ItemGroup>
+    <None Include="..\Sqlite_net.SourceGenerator\bin\$(Configuration)\netstandard2.0\Sqlite_net.SourceGenerator.dll" Pack="true" PackagePath="analyzers\dotnet\cs\Sqlite_net.SourceGenerator.dll" />
+  </ItemGroup>
+
 </Project>
