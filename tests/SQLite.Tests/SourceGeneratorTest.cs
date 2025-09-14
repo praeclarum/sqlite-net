@@ -135,7 +135,7 @@ namespace SQLite.Tests
 					Date = new DateTime (2013, 1, i)
 				};
 
-			var db = new InnerTestDb (TestPath.GetTempFileName ());
+			var db = new OuterTestDb(TestPath.GetTempFileName ());
 			db.InsertAll (cq);
 
 			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
@@ -157,7 +157,7 @@ namespace SQLite.Tests
 					Date = new DateTime (2013, 1, i)
 				};
 
-			var db = new InnerTestDb (TestPath.GetTempFileName ());
+			var db = new OuterTestDb (TestPath.GetTempFileName ());
 			db.InsertAll (cq);
 
 			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
