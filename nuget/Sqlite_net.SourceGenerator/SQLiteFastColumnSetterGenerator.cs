@@ -93,6 +93,9 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 	    if (classSymbol.DeclaredAccessibility == Accessibility.Private)
 		    return null;
 
+		if (classSymbol.IsGenericType)
+			return null;
+
 	    var hasTableAttribute = classSymbol.GetAttributes()
 		    .Any(attr => attr.AttributeClass?.Name == "TableAttribute");
 
