@@ -276,7 +276,13 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 sb.AppendLine($"                        typedObj.{property.PropertyName} = SQLite3.ColumnDouble(stmt, index);");
                 break;
 
-            case "float":
+            case "decimal":
+            case "Decimal":
+            case "System.Decimal":
+	            sb.AppendLine ($"                        typedObj.{property.PropertyName} = SQLite3.ColumnDouble(stmt, index);");
+	            break;
+
+			case "float":
             case "Single":
             case "System.Single":
                 sb.AppendLine($"                        typedObj.{property.PropertyName} = (float)SQLite3.ColumnDouble(stmt, index);");
