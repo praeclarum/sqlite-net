@@ -64,7 +64,35 @@ namespace SQLite.Tests
 			public DateTime Date { get; set; }
 		}
 
-		// Shouldn't generate Setter because it is not accessible
+        public class AllBasicTypesSetter
+        {
+            [PrimaryKey] 
+            public int Id { get; set; }
+
+            public string String { get; set; }
+
+            public byte Byte { get; set; }
+
+            public short Short { get; set; }
+
+            public int Int { get; set; }
+
+            public long Long { get; set; }
+
+            public float Float { get; set; }
+
+            public double Double { get; set; }
+
+            public decimal Decimal { get; set; }
+
+            public TimeSpan TimeSpam { get; set; }
+
+            public DateTime DateTime { get; set; }
+
+            public Guid Guid { get; set; }
+        }
+
+        // Shouldn't generate Setter because it is not accessible
 		private class PrivateInnerTestSetter
 		{
 			[AutoIncrement, PrimaryKey]
@@ -74,6 +102,15 @@ namespace SQLite.Tests
 
 			public DateTime Date { get; set; }
 		}
+
+        public class AllBasicTypesTestDb : SQLiteConnection
+        {
+            public AllBasicTypesTestDb (String path)
+                : base (path)
+            {
+                CreateTable<AllBasicTypesSetter> ();
+            }
+        }
 
 		public class InnerTestDb : SQLiteConnection
 		{
@@ -288,5 +325,49 @@ namespace SQLite.Tests
 			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
             Assert.AreEqual (mapperCount, FastColumnSetter.customSetter.Count);
 		}
+
+        [Test]
+        public void SetFastColumnSetters_AllBasicTypes_Works ()
+        {
+            SQLiteInitializer.Init ();
+            var mapperCount = FastColumnSetter.customSetter.Count;
+
+            var n = 20;
+            var cq = from i in Enumerable.Range (1, n)
+                select new AllBasicTypesSetter() {
+                    Id = i,
+					String = Convert.ToString(i),
+					Byte = (byte)i,
+					Short = (short)i,
+					Int = i,
+					Long = i,
+					Float = i,
+					Double = i,
+					Decimal = i,
+					DateTime = new DateTime(2000, 1, i),
+					TimeSpam = new TimeSpan(i, 0, 0),
+					Guid = new Guid (i, 0, 0, new byte[8]),
+                };
+
+            var db = new AllBasicTypesTestDb(TestPath.GetTempFileName ());
+            db.InsertAll (cq);
+
+            var results = db.Table<AllBasicTypesSetter> ().Where (o => o.Id.Equals (10));
+            Assert.AreEqual (results.Count (), 1);
+            var data = results.FirstOrDefault ();
+            Assert.AreEqual (data.String, "10");
+            Assert.AreEqual (data.Byte, (byte)10);
+            Assert.AreEqual (data.Short, (short)10);
+            Assert.AreEqual (data.Int, (int)10);
+            Assert.AreEqual (data.Long, (long)10);
+            Assert.AreEqual (data.Float, (float)10);
+            Assert.AreEqual (data.Double, (double)10);
+            Assert.AreEqual (data.Decimal, (decimal)10);
+            Assert.AreEqual (data.TimeSpam, new TimeSpan(10, 0, 0));
+            Assert.AreEqual (data.DateTime, new DateTime(2000, 1, 10));
+            Assert.AreEqual (data.Guid, new Guid (10, 0, 0, new byte[8]));
+
+			Assert.AreEqual (mapperCount, FastColumnSetter.customSetter.Count);
+        }
 	}
 }

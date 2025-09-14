@@ -262,7 +262,20 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 sb.AppendLine($"                        typedObj.{property.PropertyName} = SQLite3.ColumnString(stmt, index);");
                 break;
 
-            case "int":
+            case "byte":
+            case "Byte":
+            case "System.Byte":
+                sb.AppendLine ($"                        typedObj.{property.PropertyName} = (byte)SQLite3.ColumnInt(stmt, index);");
+                break;
+
+			case "short":
+            case "Int16":
+            case "System.Int16":
+                sb.AppendLine ($"                        typedObj.{property.PropertyName} = (short)SQLite3.ColumnInt(stmt, index);");
+                break;
+
+
+			case "int":
             case "Int32":
             case "System.Int32":
                 sb.AppendLine($"                        typedObj.{property.PropertyName} = SQLite3.ColumnInt(stmt, index);");
