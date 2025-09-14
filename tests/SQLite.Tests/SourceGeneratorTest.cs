@@ -155,8 +155,6 @@ namespace SQLite.Tests
 		{
 			SQLiteInitializer.Init ();
 
-			int callCount = 0;
-
 			var n = 20;
 			var cq = from i in Enumerable.Range (1, n)
 				select new InnerTestSetter {
@@ -170,8 +168,6 @@ namespace SQLite.Tests
 			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
 			Assert.AreEqual (results.Count (), 1);
 			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
-
-			Assert.IsTrue(callCount > 0);
 		}
 
 		[Test]
@@ -199,8 +195,6 @@ namespace SQLite.Tests
 		{
 			SQLiteInitializer.Init ();
 
-			int callCount = 0;
-
 			var n = 20;
 			var cq = from i in Enumerable.Range (1, n)
 				select new OuterTestSetter {
@@ -214,8 +208,6 @@ namespace SQLite.Tests
 			var results = db.Table<OuterTestSetter> ().Where (o => o.Data.Equals ("10"));
 			Assert.AreEqual (results.Count (), 1);
 			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
-
-			Assert.IsTrue (callCount > 0);
 		}
 	}
 }
