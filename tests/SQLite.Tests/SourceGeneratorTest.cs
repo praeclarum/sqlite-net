@@ -21,6 +21,8 @@ namespace SQLite.Tests
 		public string Data { get; set; }
 
 		public DateTime Date { get; set; }
+
+		public string NotWritable { get; }
 	}
 
 	public class OuterTestDb : SQLiteConnection
@@ -118,7 +120,7 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void SqliteInitializer_OuterTestSetter ()
+		public void SqliteInitializer_OuterTestSetter_NotWritable_NotRegistered()
 		{
 			SQLiteInitializer.Init ();
 
@@ -127,6 +129,19 @@ namespace SQLite.Tests
 			}
 			else {
 				Assert.Fail ("Should be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter ()
+		{
+			SQLiteInitializer.Init ();
+
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.NotWritable)), out var setter)) {
+				Assert.IsTrue(true, "Should not be registered (not writable)");
+			}
+			else {
+				Assert.Fail ("Should not be registered (not writable)");
 			}
 		}
 

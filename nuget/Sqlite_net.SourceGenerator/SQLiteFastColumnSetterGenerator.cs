@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -106,15 +107,17 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 	    while (currentType != null) 
 	    {
 		    foreach (var member in currentType.GetMembers ().OfType<IPropertySymbol> ()) {
-			    var hasSqliteAttributes = member.GetAttributes ()
-				    .Any (attr =>
-					    attr.AttributeClass?.Name != null &&
-					    SQLitePropertyFullAttributes.Contains (attr.AttributeClass?.Name!));
+			    if (!member.IsReadOnly) {
+				    var hasSqliteAttributes = member.GetAttributes ()
+					    .Any (attr =>
+						    attr.AttributeClass?.Name != null &&
+						    SQLitePropertyFullAttributes.Contains (attr.AttributeClass?.Name!));
 
-			    // Include property if class has TableAttribute or property has ColumnAttribute
-			    if (hasTableAttribute || hasSqliteAttributes) {
-				    var columnName = GetColumnName (member);
-				    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName));
+				    // Include property if class has TableAttribute or property has ColumnAttribute
+				    if (hasTableAttribute || hasSqliteAttributes) {
+					    var columnName = GetColumnName (member);
+					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName));
+				    }
 			    }
 		    }
 		    
