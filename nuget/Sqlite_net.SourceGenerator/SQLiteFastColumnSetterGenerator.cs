@@ -12,23 +12,23 @@ using System.Text;
 public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 {
 	private static HashSet<string> SQLitePropertyAttributes = new() {
-		"ColumnAttribute",
-		"IndexedAttribute",
-		"IgnoreAttribute",
-		"UniqueAttribute",
-		"MaxLengthAttribute",
-		"CollationAttribute",
-		"NotNullAttribute",
-		"StoreAsTextAttribute",
+		"Column",
+		"Indexed",
+		"Ignore",
+		"Unique",
+		"MaxLength",
+		"Collation",
+		"NotNull",
+		"StoreAsText",
 	};
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
 		// Stop Debugger for Debugging the Analyzer
-		System.Diagnostics.Debugger.Break();
+		System.Diagnostics.Debugger.Launch();
 
-        // Find all classes with TableAttribute or properties with ColumnAttribute
-        var classDeclarations = context.SyntaxProvider
+		// Find all classes with TableAttribute or properties with ColumnAttribute
+		var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsCandidateClass(s),
                 transform: static (ctx, _) => GetClassInfo(ctx))
@@ -48,8 +48,10 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
         // Check if class has TableAttribute
         if (classDecl.AttributeLists.Any(attrList => 
-            attrList.Attributes.Any(attr => 
-                attr.Name.ToString() == "TableAttribute")))
+            attrList.Attributes.Any(attr => {
+	            var s = attr.Name.ToString ();
+	            return s == "Table";
+            })))
         {
             return true;
         }

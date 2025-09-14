@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Newtonsoft;
 #if NETFX_CORE
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
@@ -36,7 +37,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_AndReadData()
 		{
-			//SQLiteInitializer.Init();
+			SQLiteInitializer.Init();
 
 			var n = 20;
 			var cq = from i in Enumerable.Range (1, n)
@@ -56,7 +57,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SetFastColumnSetters_AndReadData_IsCalled()
 		{
-			//SQLiteInitializer.Init ();
+			SQLiteInitializer.Init ();
 
 			int callCount = 0;
 

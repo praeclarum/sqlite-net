@@ -3,12 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
-
-    <!-- Avoid ID conflicts with the package project. -->
-    <PackageId>*$(MSBuildProjectFile)*</PackageId>
     <LangVersion>9</LangVersion>
     <Nullable>enable</Nullable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
   </PropertyGroup>
 
   <ItemGroup>
