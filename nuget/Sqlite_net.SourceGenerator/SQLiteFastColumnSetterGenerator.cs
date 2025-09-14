@@ -85,6 +85,10 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 	    var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
 	    if (classSymbol is null)
 		    return null;
+	    
+	    // Return null if the class is private
+	    if (classSymbol.DeclaredAccessibility == Accessibility.Private)
+		    return null;
 
 	    var hasTableAttribute = classSymbol.GetAttributes()
 		    .Any(attr => attr.AttributeClass?.Name == "TableAttribute");
