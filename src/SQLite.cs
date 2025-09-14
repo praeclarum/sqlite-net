@@ -3942,8 +3942,7 @@ namespace SQLite
 
 	internal class FastColumnSetter
 	{
-		private static ConcurrentDictionary<(Type, string), Action<object, Sqlite3Statement, int>> customSetter =
-			new ConcurrentDictionary<(Type, string), Action<object, Sqlite3Statement, int>> ();
+		internal static ConcurrentDictionary<(Type, string), Action<object, Sqlite3Statement, int>> customSetter = new();
 
 		public static void RegisterFastColumnSetter(Type type, string name, Action<object, Sqlite3Statement, int> setter)
 		{

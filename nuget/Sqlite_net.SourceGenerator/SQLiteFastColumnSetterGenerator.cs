@@ -12,16 +12,24 @@ using Microsoft.CodeAnalysis.Diagnostics;
 [Generator]
 public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 {
-	private static List<string> SQLitePropertyAttributes = new() {
-		"Column",
-		"Indexed",
-		"Ignore",
-		"Unique",
-		"MaxLength",
-		"Collation",
-		"NotNull",
-		"StoreAsText",
-	};
+	private static List<string> SQLitePropertyAttributes = default!;
+	private static ImmutableHashSet<string> SQLitePropertyFullAttributes = default!;
+
+	static SQLiteFastColumnSetterGenerator ()
+	{
+		SQLitePropertyAttributes = new() {
+			"Column",
+			"Indexed",
+			"Ignore",
+			"Unique",
+			"MaxLength",
+			"Collation",
+			"NotNull",
+			"StoreAsText"
+		};
+
+		SQLitePropertyFullAttributes = SQLitePropertyAttributes.Select (f => f + "Attribute").ToImmutableHashSet();
+	}
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -85,11 +93,11 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
 	    foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
 	    {
-		    var hasColumnAttribute = member.GetAttributes()
-			    .Any(attr => attr.AttributeClass?.Name == "ColumnAttribute");
+		    var hasSqliteAttributes = member.GetAttributes()
+			    .Any(attr => attr.AttributeClass?.Name != null && SQLitePropertyFullAttributes.Contains(attr.AttributeClass?.Name!));
 
 		    // Include property if class has TableAttribute or property has ColumnAttribute
-		    if (hasTableAttribute || hasColumnAttribute)
+		    if (hasTableAttribute || hasSqliteAttributes)
 		    {
 			    var columnName = GetColumnName(member);
 			    properties.Add(new PropertyInfo(member.Name, member.Type.ToDisplayString(), columnName));

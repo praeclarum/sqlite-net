@@ -44,12 +44,38 @@ namespace SQLite.Tests
 			public DateTime Date { get; set; }
 		}
 
+		// Shouldn't generate Setter because it is not accessible
+		private class PrivateInnerTestSetter
+		{
+			[AutoIncrement, PrimaryKey]
+			public int Id { get; set; }
+
+			public string Data { get; set; }
+
+			public DateTime Date { get; set; }
+		}
+
 		public class InnerTestDb : SQLiteConnection
 		{
 			public InnerTestDb (String path)
 				: base (path)
 			{
 				CreateTable<InnerTestSetter> ();
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_PrivateInnerTestSetter ()
+		{
+			SQLiteInitializer.Init ();
+
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue(typeof(PrivateInnerTestSetter, nameof(PrivateInnerTestSetter.Id), out var setter))
+			{
+				Assert.IsTrue(true, "Should not be registered");
+			}
+			else
+			{
+				Assert.Fail("Should not be registered");
 			}
 		}
 
