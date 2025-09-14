@@ -242,6 +242,7 @@ namespace SQLite.Tests
 		public void SqliteInitializer_Outer_AndReadData_ZRenamedA()
 		{
 			SQLiteInitializer.Init ();
+            var mapperCount = FastColumnSetter.customSetter.Count;
 
 			var n = 20;
 			var cq = from i in Enumerable.Range (1, n)
@@ -257,6 +258,8 @@ namespace SQLite.Tests
 			var results = db.Table<OuterTestSetter> ().Where (o => o.Z.Equals ("10"));
 			Assert.AreEqual (results.Count (), 1);
 			Assert.AreEqual (results.FirstOrDefault ().Z, "10");
+
+			Assert.AreEqual(mapperCount, FastColumnSetter.customSetter.Count);
 		}
 
 		[Test]
