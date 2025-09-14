@@ -25,7 +25,10 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 			"MaxLength",
 			"Collation",
 			"NotNull",
-			"StoreAsText"
+			"StoreAsText",
+			"AutoIncrement",
+			"PrimaryKey",
+			"NotNull"
 		};
 
 		SQLitePropertyFullAttributes = SQLitePropertyAttributes.Select (f => f + "Attribute").ToImmutableHashSet();
@@ -34,7 +37,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
 		// Launch Debugger for Debugging the Analyzer
-		// System.Diagnostics.Debugger.Launch();
+		System.Diagnostics.Debugger.Launch();
 
 		// Find all classes with TableAttribute or properties with ColumnAttribute
 		var classDeclarations = context.SyntaxProvider
