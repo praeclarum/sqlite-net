@@ -24,6 +24,9 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+		// Stop Debugger for Debugging the Analyzer
+		System.Diagnostics.Debugger.Break();
+
         // Find all classes with TableAttribute or properties with ColumnAttribute
         var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
