@@ -241,6 +241,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_Outer_AndReadData_ZRenamedA()
 		{
+            SQLitePCL.Batteries_V2.Init ();
 			SQLiteInitializer.Init ();
             var mapperCount = FastColumnSetter.customSetter.Count;
 
