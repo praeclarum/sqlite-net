@@ -23,6 +23,9 @@ namespace SQLite.Tests
 		public DateTime Date { get; set; }
 
 		public string NotWritable { get; }
+
+		[Ignore]
+		public string Ignore { get; set; }
 	}
 
 	public class OuterTestDb : SQLiteConnection
@@ -124,11 +127,24 @@ namespace SQLite.Tests
 		{
 			SQLiteInitializer.Init ();
 
-			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.Id)), out var setter)) {
-				Assert.IsTrue (true, "Should be registered");
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.NotWritable)), out var setter)) {
+				Assert.IsTrue (true, "Should not be registered (not writable)");
 			}
 			else {
-				Assert.Fail ("Should be registered");
+				Assert.Fail ("Should not be registered (not writable)");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_Ignore_NotRegistered ()
+		{
+			SQLiteInitializer.Init ();
+
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.Ignore)), out var setter)) {
+				Assert.IsTrue (true, "Should not be registered (Ignore)");
+			}
+			else {
+				Assert.Fail ("Should not be registered (Ignore)");
 			}
 		}
 
@@ -137,11 +153,11 @@ namespace SQLite.Tests
 		{
 			SQLiteInitializer.Init ();
 
-			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.NotWritable)), out var setter)) {
-				Assert.IsTrue(true, "Should not be registered (not writable)");
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.Id)), out var setter)) {
+				Assert.IsTrue(true, "Should not be registered");
 			}
 			else {
-				Assert.Fail ("Should not be registered (not writable)");
+				Assert.Fail ("Should not be registered");
 			}
 		}
 

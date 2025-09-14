@@ -111,6 +111,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 				    var hasSqliteAttributes = member.GetAttributes ()
 					    .Any (attr =>
 						    attr.AttributeClass?.Name != null &&
+							attr.AttributeClass.Name != "IgnoreAttribute" &&
 						    SQLitePropertyFullAttributes.Contains (attr.AttributeClass?.Name!));
 
 				    // Include property if class has TableAttribute or property has ColumnAttribute
