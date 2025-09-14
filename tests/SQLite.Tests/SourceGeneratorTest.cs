@@ -35,6 +35,7 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class SourceGeneratorTest
 	{
+		[Table("Test")]
 		public class StringTest : BaseTest<string>
 		{
 		}

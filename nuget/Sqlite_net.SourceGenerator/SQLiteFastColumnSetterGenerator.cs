@@ -105,7 +105,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 	    var currentType = classSymbol;
 	    while (currentType != null) 
 	    {
-		    foreach (var member in classSymbol.GetMembers ().OfType<IPropertySymbol> ()) {
+		    foreach (var member in currentType.GetMembers ().OfType<IPropertySymbol> ()) {
 			    var hasSqliteAttributes = member.GetAttributes ()
 				    .Any (attr =>
 					    attr.AttributeClass?.Name != null &&
