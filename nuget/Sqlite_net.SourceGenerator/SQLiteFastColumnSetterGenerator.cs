@@ -11,6 +11,17 @@ using System.Text;
 [Generator]
 public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 {
+	private static HashSet<string> SQLitePropertyAttributes = new() {
+		"ColumnAttribute",
+		"IndexedAttribute",
+		"IgnoreAttribute",
+		"UniqueAttribute",
+		"MaxLengthAttribute",
+		"CollationAttribute",
+		"NotNullAttribute",
+		"StoreAsTextAttribute",
+	};
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Find all classes with TableAttribute or properties with ColumnAttribute
@@ -35,17 +46,17 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
         // Check if class has TableAttribute
         if (classDecl.AttributeLists.Any(attrList => 
             attrList.Attributes.Any(attr => 
-                attr.Name.ToString().Contains("Table"))))
+                attr.Name.ToString() == "TableAttribute")))
         {
             return true;
         }
 
-        // Check if any property has ColumnAttribute
+        // Check if any property has SQLite Property Attribute
         return classDecl.Members
             .OfType<PropertyDeclarationSyntax>()
             .Any(prop => prop.AttributeLists.Any(attrList =>
                 attrList.Attributes.Any(attr =>
-                    attr.Name.ToString().Contains("Column"))));
+	                SQLitePropertyAttributes.Contains(attr.Name.ToString()))));
     }
 
     static ClassInfo? GetClassInfo(GeneratorSyntaxContext context)
