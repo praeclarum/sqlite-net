@@ -80,6 +80,32 @@ namespace SQLite.Tests
 		}
 
 		[Test]
+		public void SqliteInitializer_InnerTestSetter ()
+		{
+			SQLiteInitializer.Init ();
+
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (PrivateInnerTestSetter), nameof (PrivateInnerTestSetter.Id)), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter ()
+		{
+			SQLiteInitializer.Init ();
+
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (PrivateInnerTestSetter), nameof (PrivateInnerTestSetter.Id)), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
+			}
+		}
+
+		[Test]
 		public void SqliteInitializer_Inner_AndReadData()
 		{
 			SQLiteInitializer.Init();
