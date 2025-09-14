@@ -189,7 +189,7 @@ namespace SQLite.Tests
 			var db = new OuterTestDb(TestPath.GetTempFileName ());
 			db.InsertAll (cq);
 
-			var results = db.Table<InnerTestSetter> ().Where (o => o.Data.Equals ("10"));
+			var results = db.Table<OuterTestSetter> ().Where (o => o.Data.Equals ("10"));
 			Assert.AreEqual (results.Count (), 1);
 			Assert.AreEqual (results.FirstOrDefault ().Data, "10");
 		}
