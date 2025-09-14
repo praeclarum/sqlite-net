@@ -299,7 +299,12 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 sb.AppendLine($"                        typedObj.{property.PropertyName} = new DateTime(SQLite3.ColumnInt64(stmt, index));");
                 break;
 
-            case "Guid":
+            case "TimeSpan":
+            case "System.TimeSpan":
+	            sb.AppendLine ($"                        typedObj.{property.PropertyName} = new TimeSpan(SQLite3.ColumnInt64(stmt, index));");
+	            break;
+
+			case "Guid":
             case "System.Guid":
                 sb.AppendLine($"                        var text = SQLite3.ColumnString(stmt, index);");
                 sb.AppendLine($"                        typedObj.{property.PropertyName} = new Guid(text);");
