@@ -191,9 +191,13 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"namespace {rootNamespace}");
         sb.AppendLine("{");
-        sb.AppendLine("    public static class SQLiteInitializer");
+        sb.AppendLine("    [SQLite.Preserve(AllMembers = true)]");
+		sb.AppendLine("    public static class SQLiteInitializer");
         sb.AppendLine("    {");
         sb.AppendLine("        private static bool initialized;");
+        sb.AppendLine("#if NET5_0_OR_GREATER");
+		sb.AppendLine("        [System.Runtime.CompilerServices.ModuleInitializer]");
+		sb.AppendLine("#endif");
 		sb.AppendLine("        public static void Init()");
         sb.AppendLine("        {");
         sb.AppendLine ("           if (initialized)");

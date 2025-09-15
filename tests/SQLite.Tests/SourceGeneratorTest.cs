@@ -48,6 +48,8 @@ namespace SQLite.Tests
 		{
 		}
 
+#if NET5_0_OR_GREATER
+#endif
 		public class BaseTest<T>
 		{
 			[PrimaryKey]
@@ -124,8 +126,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_PrivateInnerTestSetter ()
 		{
-			SQLiteInitializer.Init ();
-
 			if (!SQLite.FastColumnSetter.customSetter.TryGetValue((typeof(PrivateInnerTestSetter), nameof(PrivateInnerTestSetter.Id)), out var setter))
 			{
 				Assert.IsTrue(true, "Should not be registered");
@@ -139,8 +139,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_StringTestSetter ()
 		{
-			SQLiteInitializer.Init ();
-
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (StringTest), nameof (StringTest.Id)), out var setter)) {
 				Assert.IsTrue (true, "Should be registered");
 			}
@@ -152,8 +150,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_InnerTestSetter ()
 		{
-			SQLiteInitializer.Init ();
-
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (InnerTestSetter), nameof (InnerTestSetter.Id)), out var setter)) {
 				Assert.IsTrue (true, "Should be registered");
 			}
@@ -166,8 +162,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_OuterTestSetter_ZRenamedA()
 		{
-			SQLiteInitializer.Init ();
-
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), "A"), out var setter)) {
 				Assert.IsTrue (true, "Should be registered");
 			}
@@ -179,8 +173,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_OuterTestSetter_NotWritable_NotRegistered()
 		{
-			SQLiteInitializer.Init ();
-
 			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.NotWritable)), out var setter)) {
 				Assert.IsTrue (true, "Should not be registered (not writable)");
 			}
@@ -192,8 +184,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_OuterTestSetter_Ignore_NotRegistered ()
 		{
-			SQLiteInitializer.Init ();
-
 			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.Ignore)), out var setter)) {
 				Assert.IsTrue (true, "Should not be registered (Ignore)");
 			}
@@ -205,8 +195,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_OuterTestSetter ()
 		{
-			SQLiteInitializer.Init ();
-
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.Id)), out var setter)) {
 				Assert.IsTrue(true, "Should not be registered");
 			}
@@ -218,7 +206,6 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_Inner_AndReadData()
 		{
-			SQLiteInitializer.Init();
             var mapperCount = FastColumnSetter.customSetter.Count;
 
 			var n = 20;
@@ -240,7 +227,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SetFastColumnSetters_Inner_AndReadData_IsCalled()
 		{
-			SQLiteInitializer.Init ();
+			
             var mapperCount = FastColumnSetter.customSetter.Count;
 
 			var n = 20;
@@ -262,7 +249,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_Outer_AndReadData ()
 		{
-			SQLiteInitializer.Init ();
+			
             var mapperCount = FastColumnSetter.customSetter.Count;
 
 			var n = 20;
@@ -284,7 +271,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SqliteInitializer_Outer_AndReadData_ZRenamedA()
 		{
-			SQLiteInitializer.Init ();
+			
             var mapperCount = FastColumnSetter.customSetter.Count;
 
 			var n = 20;
@@ -307,7 +294,7 @@ namespace SQLite.Tests
 		[Test]
 		public void SetFastColumnSetters_Outer_AndReadData_IsCalled ()
 		{
-			SQLiteInitializer.Init ();
+			
             var mapperCount = FastColumnSetter.customSetter.Count;
 
 			var n = 20;
@@ -329,7 +316,7 @@ namespace SQLite.Tests
         [Test]
         public void SetFastColumnSetters_AllBasicTypes_Works ()
         {
-            SQLiteInitializer.Init ();
+            
             var mapperCount = FastColumnSetter.customSetter.Count;
 
             var n = 20;
