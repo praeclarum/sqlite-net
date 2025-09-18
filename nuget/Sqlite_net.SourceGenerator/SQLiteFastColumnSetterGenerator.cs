@@ -15,8 +15,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 [Generator]
 public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 {
-	private static ConcurrentDictionary<INamedTypeSymbol, bool> cachedHasSqliteAttribute = new ();
-	private static ConcurrentDictionary<INamedTypeSymbol, bool> cachedHasTableAttribute = new ();
+	private static ConcurrentDictionary<IEquatable<ISymbol?>, bool> cachedHasSqliteAttribute = new ();
+	private static ConcurrentDictionary<IEquatable<ISymbol?>, bool> cachedHasTableAttribute = new ();
 	private static List<string> SQLitePropertyAttributes = default!;
 	private static ImmutableHashSet<string> SQLitePropertyFullAttributes = default!;
 
