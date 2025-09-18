@@ -13,6 +13,11 @@ using NUnit.Framework;
 
 namespace SQLite.Tests
 {
+	[AttributeUsage (AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+	class DerivedIgnoreAttribute : IgnoreAttribute
+	{
+	}
+
 	public class OuterTestSetter
 	{
 		[AutoIncrement, PrimaryKey]
@@ -26,6 +31,9 @@ namespace SQLite.Tests
 
 		[Ignore]
 		public string Ignore { get; set; }
+
+		[DerivedIgnore]
+		public string DerivedIgnore { get; set; }
 
 		[Column("A")]
 		public string Z { get; set; }
@@ -48,8 +56,10 @@ namespace SQLite.Tests
 		{
 		}
 
-#if NET5_0_OR_GREATER
-#endif
+		public class IntTest : BaseTest<int>
+		{
+		}
+
 		public class BaseTest<T>
 		{
 			[PrimaryKey]
@@ -148,6 +158,17 @@ namespace SQLite.Tests
 		}
 
 		[Test]
+		public void SqliteInitializer_IntTestSetter ()
+		{
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (IntTest), nameof (IntTest.Id)), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
+			}
+		}
+
+		[Test]
 		public void SqliteInitializer_InnerTestSetter ()
 		{
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (InnerTestSetter), nameof (InnerTestSetter.Id)), out var setter)) {
@@ -185,6 +206,17 @@ namespace SQLite.Tests
 		public void SqliteInitializer_OuterTestSetter_Ignore_NotRegistered ()
 		{
 			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.Ignore)), out var setter)) {
+				Assert.IsTrue (true, "Should not be registered (Ignore)");
+			}
+			else {
+				Assert.Fail ("Should not be registered (Ignore)");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_DeriveIgnore_NotRegistered ()
+		{
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.DerivedIgnore)), out var setter)) {
 				Assert.IsTrue (true, "Should not be registered (Ignore)");
 			}
 			else {

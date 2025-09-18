@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -71,6 +72,11 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
             return true;
         }
 
+		// I need to analyse the base class in the semantic model
+        if (HasBaseClass (classDecl)) {
+	        return true;
+        }
+
         // Check if any property has SQLite Property Attribute
         return classDecl.Members
 	        .OfType<PropertyDeclarationSyntax> ()
@@ -81,77 +87,174 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		        })));
     }
 
-    static ClassInfo? GetClassInfo(GeneratorSyntaxContext context)
+    static bool HasBaseClass (ClassDeclarationSyntax classDecl)
     {
-	    var classDecl = (ClassDeclarationSyntax)context.Node;
-	    var semanticModel = context.SemanticModel;
+	    var baseList = classDecl.BaseList;
+	    if (baseList == null)
+		    return false;
 
-	    var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
+	    return baseList.Types.Count > 0;
+    }
+
+    static ClassInfo? GetClassInfo (INamedTypeSymbol? classSymbol)
+    {
 	    if (classSymbol is null)
 		    return null;
-	    
+
 	    // Return null if the class is private
 	    if (classSymbol.DeclaredAccessibility == Accessibility.Private)
 		    return null;
 
-		if (classSymbol.IsGenericType)
-			return null;
-		
-		var hasTableAttribute = classSymbol.GetAttributes()
-			.Any(attr => attr.AttributeClass?.ContainingNamespace.Name == "SQLite" && attr.AttributeClass?.Name == "TableAttribute");
+	    if (classSymbol.IsGenericType)
+		    return null;
 
-	    var properties = new List<PropertyInfo>();
+	    var hasSqliteAttributes = HasTableAttribute (classSymbol);
+	    if (!hasSqliteAttributes) {
+		    hasSqliteAttributes = HasSQLiteAttribute (classSymbol);
+		}
+
+	    if (!hasSqliteAttributes) {
+			return null;
+	    }
+
+	    var properties = new List<PropertyInfo> ();
 
 	    // Iterate through the class hierarchy to get all properties
 	    var currentType = classSymbol;
-	    while (currentType != null) 
-	    {
+	    while (currentType != null) {
 		    foreach (var member in currentType.GetMembers ().OfType<IPropertySymbol> ()) {
 			    if (!member.IsReadOnly) {
-				    var hasSqliteAttributes = member.GetAttributes ()
-					    .Any (attr =>
-						    attr.AttributeClass?.Name != null &&
-						    attr.AttributeClass.ContainingNamespace.Name == "SQLite" &&
-							attr.AttributeClass.Name != "IgnoreAttribute" &&
-						    SQLitePropertyFullAttributes.Contains (attr.AttributeClass?.Name!));
+				    var ignore = member.GetAttributes ()
+					    .Any (attr => IsIgnoreAttribute (attr.AttributeClass));
 
-				    // Include property if class has TableAttribute or property has ColumnAttribute
-				    if (hasTableAttribute || hasSqliteAttributes) {
+				    // Include property if not ignored
+				    if (!ignore) {
 					    var columnName = GetColumnName (member);
 					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName));
 				    }
 			    }
 		    }
-		    
+
 		    // Move to base type
 		    currentType = currentType.BaseType;
-		    
+
 		    // Stop at System.Object or if we hit a null base type
 		    if (currentType?.SpecialType == SpecialType.System_Object)
 			    break;
-
 	    }
 
 	    if (properties.Count == 0)
 		    return null;
 
 	    // Handle nested classes by building the full containing type path
-	    var containingTypes = new List<string>();
+	    var containingTypes = new List<string> ();
 	    var currentContaining = classSymbol.ContainingType;
-	    while (currentContaining != null)
-	    {
-		    containingTypes.Insert(0, currentContaining.Name);
+	    while (currentContaining != null) {
+		    containingTypes.Insert (0, currentContaining.Name);
 		    currentContaining = currentContaining.ContainingType;
 	    }
 
-	    var fullClassName = containingTypes.Count > 0 
-		    ? $"{string.Join(".", containingTypes)}.{classSymbol.Name}"
+	    var fullClassName = containingTypes.Count > 0
+		    ? $"{string.Join (".", containingTypes)}.{classSymbol.Name}"
 		    : classSymbol.Name;
 
-	    return new ClassInfo(
+	    return new ClassInfo (
 		    fullClassName,
-		    classSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty,
+		    classSymbol.ContainingNamespace?.ToDisplayString () ?? string.Empty,
 		    properties);
+	}
+
+    private static bool HasSQLiteAttribute (INamedTypeSymbol? classSymbol)
+    {
+	    while (true) {
+		    if (classSymbol == null || classSymbol.SpecialType == SpecialType.System_Object) {
+			    return false;
+		    }
+
+		    var members = classSymbol.GetMembers();
+		    foreach (var member in members) {
+				if (member.GetAttributes().Any(attr => IsSQLiteAttribute (attr.AttributeClass)))
+				{
+					return true;
+				}
+		    }
+			    
+		    classSymbol = classSymbol.BaseType;
+	    }
+    }
+
+    private static bool HasTableAttribute (INamedTypeSymbol? classSymbol)
+    {
+	    while (true) {
+		    if (classSymbol == null || classSymbol.SpecialType == SpecialType.System_Object) {
+			    return false;
+		    }
+
+		    var hasTableAttribute = classSymbol.GetAttributes ()
+			    .Any (attr => IsTableAttribute (attr.AttributeClass));
+		    if (hasTableAttribute) return true;
+
+		    classSymbol = classSymbol.BaseType;
+	    }
+    }
+
+    static ClassInfo? GetClassInfo(GeneratorSyntaxContext context)
+    {
+	    var classDecl = (ClassDeclarationSyntax)context.Node;
+	    var semanticModel = context.SemanticModel;
+
+	    var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
+	    return GetClassInfo (classSymbol);
+    }
+
+    private static bool IsTableAttribute (INamedTypeSymbol? attributeClass)
+    {
+	    while (true) {
+		    if (attributeClass == null) {
+			    return false;
+		    }
+
+		    if (IsSQLiteNamespace (attributeClass) && attributeClass.Name == "TableAttribute") {
+			    return true;
+		    }
+
+		    attributeClass = attributeClass.BaseType;
+	    }
+    }
+
+    private static bool IsIgnoreAttribute (INamedTypeSymbol? attributeClass)
+    {
+	    while (true) {
+		    if (attributeClass == null) {
+			    return false;
+		    }
+
+		    if (IsSQLiteNamespace (attributeClass) && attributeClass.Name == "IgnoreAttribute") {
+			    return true;
+		    }
+
+		    attributeClass = attributeClass.BaseType;
+	    }
+    }
+
+    private static bool IsSQLiteAttribute (INamedTypeSymbol? attributeClass)
+    {
+	    while (true) {
+		    if (attributeClass == null) {
+			    return false;
+		    }
+
+		    if (IsSQLiteNamespace (attributeClass) && SQLitePropertyFullAttributes.Contains (attributeClass.Name)) {
+			    return true;
+		    }
+
+		    attributeClass = attributeClass.BaseType;
+	    }
+    }
+
+    private static bool IsSQLiteNamespace (INamedTypeSymbol attributeClass)
+    {
+	    return attributeClass.ContainingNamespace.Name == "SQLite";
     }
 
     static string GetColumnName(IPropertySymbol property)
@@ -300,7 +403,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
             case "decimal":
             case "Decimal":
             case "System.Decimal":
-	            sb.AppendLine ($"                        typedObj.{property.PropertyName} = SQLite3.ColumnDouble(stmt, index);");
+	            sb.AppendLine ($"                        typedObj.{property.PropertyName} = System.Convert.ToDecimal(SQLite3.ColumnDouble(stmt, index));");
 	            break;
 
 			case "float":
