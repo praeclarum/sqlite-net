@@ -133,7 +133,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 				    // Include property if not ignored
 				    if (!ignore) {
 					    var columnName = GetColumnName (member);
-					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName, IsEnum(member)));
+					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName, GetEnumInfo(member)));
 				    }
 			    }
 		    }
@@ -167,9 +167,8 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		    properties);
 	}
 
-    private static bool IsEnum (IPropertySymbol member)
+    private static EnumInfo? GetEnumInfo (IPropertySymbol member)
 	{
-
 		var type = member.Type;
 		if (type is INamedTypeSymbol named &&
 		    named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) {
@@ -177,10 +176,12 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		}
 
 		if (type.TypeKind == TypeKind.Enum) {
-			return true;
+			var storeAsText = type.GetAttributes ()
+				.Any (attr => IsStoreAsTextAttribute(attr.AttributeClass));
+			return new EnumInfo (storeAsText);
 		}
 
-		return false;
+		return null;
 	}
 
     private static bool HasSQLiteAttribute (INamedTypeSymbol? classSymbol)
@@ -210,7 +211,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 	    }
     }
 
-    private static bool HasTableAttribute (INamedTypeSymbol? classSymbol)
+	private static bool HasTableAttribute (INamedTypeSymbol? classSymbol)
     {
 	    if (classSymbol != null && cachedHasTableAttribute.TryGetValue (classSymbol, out var result)) {
 		    return result;
@@ -252,6 +253,21 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		    }
 
 		    if (IsSQLiteNamespace (attributeClass) && attributeClass.Name == "TableAttribute") {
+			    return true;
+		    }
+
+		    attributeClass = attributeClass.BaseType;
+	    }
+    }
+
+    private static bool IsStoreAsTextAttribute (INamedTypeSymbol? attributeClass)
+    {
+	    while (true) {
+		    if (attributeClass == null) {
+			    return false;
+		    }
+
+		    if (IsSQLiteNamespace (attributeClass) && attributeClass.Name == "StoreAsTextAttribute") {
 			    return true;
 		    }
 
@@ -476,12 +492,21 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 break;
 
             default:
-	            if (property.IsEnum) {
+	            if (property.Enum != null) {
 		            // For other types, try to use a generic approach
 		            sb.AppendLine ($"                        // Enum setter for {propertyType}");
-		            sb.AppendLine ($"                        var value = SQLite3.ColumnInt(stmt, index);");
-		            sb.AppendLine ($"                        typedObj.{ property.PropertyName} = ({ propertyType})value;");
-}
+		            if (property.Enum.StoreAsText) {
+			            sb.AppendLine ($"                        var value = SQLite3.ColumnString(stmt, index);");
+						sb.AppendLine ($"                        if (value != null)");
+						sb.AppendLine ($"                        {{");
+						sb.AppendLine ($"                            typedObj.{property.PropertyName} = ({propertyType})Enum.Parse(typeof({propertyType}), value, ignoreCase: true);");
+						sb.AppendLine ($"                        }}");
+					}
+		            else {
+			            sb.AppendLine ($"                        var value = SQLite3.ColumnInt(stmt, index);");
+			            sb.AppendLine ($"                        typedObj.{property.PropertyName} = ({propertyType})value;");
+		            }
+	            }
 	            else {
 		            // For other types, try to use a generic approach
 		            sb.AppendLine ($"                        // Generic setter for {propertyType}");
@@ -497,5 +522,6 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
     }
 
     record ClassInfo(string ClassName, string Namespace, List<PropertyInfo> Properties);
-    record PropertyInfo(string PropertyName, string TypeName, string ColumnName, bool IsEnum);
+    record PropertyInfo(string PropertyName, string TypeName, string ColumnName, EnumInfo? Enum);
+    record EnumInfo (bool StoreAsText);
 }
