@@ -133,7 +133,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 				    // Include property if not ignored
 				    if (!ignore) {
 					    var columnName = GetColumnName (member);
-					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName));
+					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName, member.Type.TypeKind == TypeKind.Enum));
 				    }
 			    }
 		    }
@@ -460,17 +460,26 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 break;
 
             default:
-                // For other types, try to use a generic approach
-                sb.AppendLine($"                        // Generic setter for {propertyType}");
-                sb.AppendLine($"                        var value = SQLite3.ColumnString(stmt, index);");
-                sb.AppendLine($"                        if (value != null)");
-                sb.AppendLine($"                        {{");
-                sb.AppendLine($"                            typedObj.{property.PropertyName} = ({propertyType})Convert.ChangeType(value, typeof({propertyType}));");
-                sb.AppendLine($"                        }}");
-                break;
+	            if (property.IsEnum) {
+		            // For other types, try to use a generic approach
+		            sb.AppendLine ($"                        // Enum setter for {propertyType}");
+		            sb.AppendLine ($"                        var value = SQLite3.ColumnInt(stmt, index);");
+		            sb.AppendLine ($"                        typedObj.{ property.PropertyName} = ({ propertyType})value;");
+}
+	            else {
+		            // For other types, try to use a generic approach
+		            sb.AppendLine ($"                        // Generic setter for {propertyType}");
+		            sb.AppendLine ($"                        var value = SQLite3.ColumnString(stmt, index);");
+		            sb.AppendLine ($"                        if (value != null)");
+		            sb.AppendLine ($"                        {{");
+		            sb.AppendLine ($"                            typedObj.{property.PropertyName} = ({propertyType})Convert.ChangeType(value, typeof({propertyType}));");
+		            sb.AppendLine ($"                        }}");
+	            }
+
+	            break;
         }
     }
 
     record ClassInfo(string ClassName, string Namespace, List<PropertyInfo> Properties);
-    record PropertyInfo(string PropertyName, string TypeName, string ColumnName);
+    record PropertyInfo(string PropertyName, string TypeName, string ColumnName, bool IsEnum);
 }
