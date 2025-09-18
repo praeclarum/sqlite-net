@@ -133,7 +133,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 				    // Include property if not ignored
 				    if (!ignore) {
 					    var columnName = GetColumnName (member);
-					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName, member.Type.TypeKind == TypeKind.Enum));
+					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName, IsEnum(member)));
 				    }
 			    }
 		    }
@@ -165,6 +165,22 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		    fullClassName,
 		    classSymbol.ContainingNamespace?.ToDisplayString () ?? string.Empty,
 		    properties);
+	}
+
+    private static bool IsEnum (IPropertySymbol member)
+	{
+
+		var type = member.Type;
+		if (type is INamedTypeSymbol named &&
+		    named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) {
+			type = named.TypeArguments[0];
+		}
+
+		if (type.TypeKind == TypeKind.Enum) {
+			return true;
+		}
+
+		return false;
 	}
 
     private static bool HasSQLiteAttribute (INamedTypeSymbol? classSymbol)
