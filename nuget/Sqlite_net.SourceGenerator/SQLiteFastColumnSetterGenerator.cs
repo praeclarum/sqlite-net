@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,6 +15,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 [Generator]
 public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 {
+	private static ConcurrentDictionary<INamedTypeSymbol, bool> cachedHasSqliteAttribute = new ();
+	private static ConcurrentDictionary<INamedTypeSymbol, bool> cachedHasTableAttribute = new ();
 	private static List<string> SQLitePropertyAttributes = default!;
 	private static ImmutableHashSet<string> SQLitePropertyFullAttributes = default!;
 
@@ -166,8 +169,15 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
     private static bool HasSQLiteAttribute (INamedTypeSymbol? classSymbol)
     {
+	    if (classSymbol != null && cachedHasSqliteAttribute.TryGetValue(classSymbol, out var result)) {
+		    return result;
+	    }
+
 	    while (true) {
 		    if (classSymbol == null || classSymbol.SpecialType == SpecialType.System_Object) {
+			    if (classSymbol != null) {
+				    cachedHasSqliteAttribute[classSymbol] = false;
+			    }
 			    return false;
 		    }
 
@@ -175,6 +185,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		    foreach (var member in members) {
 				if (member.GetAttributes().Any(attr => IsSQLiteAttribute (attr.AttributeClass)))
 				{
+					cachedHasSqliteAttribute[classSymbol] = true;
 					return true;
 				}
 		    }
@@ -185,14 +196,24 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
     private static bool HasTableAttribute (INamedTypeSymbol? classSymbol)
     {
-	    while (true) {
+	    if (classSymbol != null && cachedHasTableAttribute.TryGetValue (classSymbol, out var result)) {
+		    return result;
+	    }
+
+		while (true) {
 		    if (classSymbol == null || classSymbol.SpecialType == SpecialType.System_Object) {
+			    if (classSymbol != null) {
+					cachedHasTableAttribute[classSymbol] = false;
+			    }
 			    return false;
 		    }
 
 		    var hasTableAttribute = classSymbol.GetAttributes ()
 			    .Any (attr => IsTableAttribute (attr.AttributeClass));
-		    if (hasTableAttribute) return true;
+		    if (hasTableAttribute) {
+			    cachedHasTableAttribute[classSymbol] = true;
+				return true;
+		    }
 
 		    classSymbol = classSymbol.BaseType;
 	    }
