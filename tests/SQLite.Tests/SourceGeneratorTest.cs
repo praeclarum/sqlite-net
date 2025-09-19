@@ -11,6 +11,9 @@ using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAtt
 using NUnit.Framework;
 #endif
 
+#pragma warning disable CS0618 // Disable obsolete Warnings
+#pragma warning disable CS0612 // Disable obsolete Warnings
+
 namespace SQLite.Tests
 {
 	[AttributeUsage (AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
@@ -40,6 +43,9 @@ namespace SQLite.Tests
 
 		private string Private { get; set; }
 		public static string StaticProperty {get; set; }
+
+		[Obsolete]
+		public string Obsolete { get; set; }
 	}
 
 	public class OuterTestDb : SQLiteConnection
@@ -187,6 +193,17 @@ namespace SQLite.Tests
 		public void SqliteInitializer_OuterTestSetter_ZRenamedA()
 		{
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), "A"), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_Obsolete_Property()
+		{
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof(OuterTestSetter.Obsolete)), out var setter)) {
 				Assert.IsTrue (true, "Should be registered");
 			}
 			else {
