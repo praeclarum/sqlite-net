@@ -37,6 +37,9 @@ namespace SQLite.Tests
 
 		[Column("A")]
 		public string Z { get; set; }
+
+		private string Private { get; set; }
+		public static string StaticProperty {get; set; }
 	}
 
 	public class OuterTestDb : SQLiteConnection
@@ -221,6 +224,28 @@ namespace SQLite.Tests
 			}
 			else {
 				Assert.Fail ("Should not be registered (Ignore)");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_Private_NotRegistered ()
+		{
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), "Private"), out var setter)) {
+				Assert.IsTrue (true, "Private properties Should not be registered");
+			}
+			else {
+				Assert.Fail ("Private properties Should not be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_StaticProperty_NotRegistered ()
+		{
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof(OuterTestSetter.StaticProperty)), out var setter)) {
+				Assert.IsTrue (true, "Static properties Should not be registered");
+			}
+			else {
+				Assert.Fail ("Static properties Should not be registered");
 			}
 		}
 
