@@ -343,6 +343,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
         sb.AppendLine("using System;");
         sb.AppendLine("using SQLite;");
         sb.AppendLine("#pragma warning disable CS0618 // Disable obsolete Warnings");
+        sb.AppendLine("#pragma warning disable CS0612 // Disable obsolete Warnings");
 		sb.AppendLine();
         sb.AppendLine($"namespace {rootNamespace}");
         sb.AppendLine("{");
