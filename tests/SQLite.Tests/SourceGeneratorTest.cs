@@ -46,6 +46,10 @@ namespace SQLite.Tests
 
 		[Obsolete]
 		public string Obsolete { get; set; }
+
+		public string PrivateSet { get; private set; }
+
+		public string Init { get; init; }
 	}
 
 	public class OuterTestDb : SQLiteConnection
@@ -263,6 +267,28 @@ namespace SQLite.Tests
 			}
 			else {
 				Assert.Fail ("Static properties Should not be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_PrivateSet_NotRegistered ()
+		{
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.PrivateSet)), out var setter)) {
+				Assert.IsTrue (true, "Private Set properties Should not be registered");
+			}
+			else {
+				Assert.Fail ("Private Set properties Should not be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_OuterTestSetter_Init_NotRegistered ()
+		{
+			if (!SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (OuterTestSetter), nameof (OuterTestSetter.Init)), out var setter)) {
+				Assert.IsTrue (true, "Init properties Should not be registered");
+			}
+			else {
+				Assert.Fail ("Init properties Should not be registered");
 			}
 		}
 

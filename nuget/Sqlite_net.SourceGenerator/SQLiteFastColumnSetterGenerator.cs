@@ -124,7 +124,9 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 	    var currentType = classSymbol;
 	    while (currentType != null) {
 		    foreach (var member in currentType.GetMembers ().OfType<IPropertySymbol> ()) {
-			    if (!member.IsReadOnly && !member.IsStatic && !member.IsIndexer && (member.DeclaredAccessibility != Accessibility.Private && member.DeclaredAccessibility != Accessibility.Protected) ) {
+			    if (!member.IsReadOnly && !member.IsStatic && !member.IsIndexer &&
+			        (member.DeclaredAccessibility != Accessibility.Private && member.DeclaredAccessibility != Accessibility.Protected) &&
+			        (member.SetMethod?.DeclaredAccessibility != Accessibility.Private && member.SetMethod?.DeclaredAccessibility != Accessibility.Protected && member.SetMethod?.IsInitOnly != true)) {
 				    var ignore = member.GetAttributes ()
 					    .Any (attr => IsIgnoreAttribute (attr.AttributeClass));
 
