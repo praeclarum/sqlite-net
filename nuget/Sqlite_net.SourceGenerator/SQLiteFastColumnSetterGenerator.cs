@@ -335,7 +335,9 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
     {
         if (classes.IsDefaultOrEmpty)
             return;
-        
+
+        classes = RemoveDuplicates(classes);
+
         // Get the assembly name/namespace from the compilation
         var assemblyName = compilation.AssemblyName ?? "Generated";
         var rootNamespace = GetRootNamespace(configOptionsProvider, compilation) ?? assemblyName;
@@ -391,6 +393,25 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
         sb.AppendLine("}");
 
         context.AddSource("SQLiteInitializer.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    private static ImmutableArray<ClassInfo> RemoveDuplicates (ImmutableArray<ClassInfo> classes)
+    {
+	    Dictionary<string, ClassInfo> existing = new();
+
+	    foreach (var it in classes) {
+		    var fullTypeName = FullTypeName (it);
+		    if (existing.TryGetValue (fullTypeName, out var current)) {
+			    if (it.Properties.Count > current.Properties.Count) {
+				    existing[fullTypeName] = it;
+			    }
+		    }
+		    else {
+			    existing[fullTypeName] = it;
+		    }
+	    }
+
+	    return existing.Values.ToImmutableArray();
     }
 
     static string FullTypeName (ClassInfo classInfo)
