@@ -377,7 +377,8 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		foreach (var classInfo in classes) {
 			var fullTypeName = FullTypeName (classInfo);
 			var initName = "Init" + fullTypeName.Replace (".", "_");
-			sb.AppendLine($"        public static void {initName}()");
+			sb.AppendLine($"        /// <summary> Init SQLite Fast Column Setters for {fullTypeName}</summary>");
+			sb.AppendLine($"        private static void {initName}()");
 			sb.AppendLine("        {");
 			foreach (var property in classInfo.Properties) {
                 sb.AppendLine($"            SQLiteConnection.RegisterFastColumnSetter(");
