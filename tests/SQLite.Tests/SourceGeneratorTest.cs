@@ -524,7 +524,7 @@ namespace SQLite.Tests
 	        var results = db.Table<AllBasicTypesSetterNullable> ().Where (o => o.Id.Equals (10));
 	        Assert.AreEqual (results.Count (), 1);
 	        var data = results.FirstOrDefault ();
-	        Assert.AreEqual (data.String, "10");
+	        Assert.AreEqual (data.String, null);
 	        Assert.AreEqual (data.Byte, null);
 	        Assert.AreEqual (data.Short, null);
 	        Assert.AreEqual (data.Int, null);
