@@ -73,6 +73,19 @@ namespace SQLite.Tests
 		{
 		}
 
+
+		public partial class PartialTest
+		{
+			[PrimaryKey]
+			public string Id { get; set; }
+		}
+
+		public partial class PartialTest
+		{
+			[Column ("Test")]
+			public string Test { get; set; }
+		}
+
 		public class BaseTest<T>
 		{
 			[PrimaryKey]
@@ -201,6 +214,28 @@ namespace SQLite.Tests
 		public void SqliteInitializer_StringTestSetter ()
 		{
 			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (StringTest), nameof (StringTest.Id)), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_PartialTestSetter ()
+		{
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (PartialTest), nameof (PartialTest.Id)), out var setter)) {
+				Assert.IsTrue (true, "Should be registered");
+			}
+			else {
+				Assert.Fail ("Should be registered");
+			}
+		}
+
+		[Test]
+		public void SqliteInitializer_PartialTestSetter_Test()
+		{
+			if (SQLite.FastColumnSetter.customSetter.TryGetValue ((typeof (PartialTest), nameof (PartialTest.Test)), out var setter)) {
 				Assert.IsTrue (true, "Should be registered");
 			}
 			else {
