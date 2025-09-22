@@ -133,7 +133,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 				    // Include property if not ignored
 				    if (!ignore) {
 					    var columnName = GetColumnName (member);
-					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName, GetEnumInfo(member)));
+					    properties.Add (new PropertyInfo (member.Name, member.Type.ToDisplayString (), columnName,  GetEnumInfo(member)));
 				    }
 			    }
 		    }
@@ -377,16 +377,9 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 sb.AppendLine($"                \"{property.ColumnName}\",");
                 sb.AppendLine($"                (obj, stmt, index) => ");
                 sb.AppendLine($"                {{");
-                sb.AppendLine($"                    if (SQLite3.ColumnType(stmt, index) != SQLite3.ColType.Null)");
-                sb.AppendLine($"                    {{");
-                
-                // Generate appropriate setter based on property type
-                GeneratePropertySetter($"(({fullTypeName})obj)",sb, property);
-                
-                sb.AppendLine($"                    }}");
-                sb.AppendLine($"                }});");
-                sb.AppendLine();
-            }
+	            GeneratePropertySetter ($"(({fullTypeName})obj)", sb, property);
+	            sb.AppendLine($"                }});");
+			}
         }
 
         sb.AppendLine("        }");
@@ -415,6 +408,11 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
         var isNullable = propertyType.Contains("?");
         if (isNullable)
             propertyType = propertyType.Replace("?", "");
+
+        if (isNullable) {
+	        sb.AppendLine($"                    if (SQLite3.ColumnType(stmt, index) != SQLite3.ColType.Null)");
+	        sb.AppendLine($"                    {{");
+        }
 
         switch (propertyType)
         {
@@ -510,6 +508,10 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 	            }
 
 	            break;
+        }
+
+        if (isNullable) {
+	        sb.AppendLine($"                    }}");
         }
     }
 
