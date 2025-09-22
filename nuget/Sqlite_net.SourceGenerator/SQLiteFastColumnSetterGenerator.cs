@@ -497,24 +497,16 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		            // For other types, try to use a generic approach
 		            sb.AppendLine ($"                        // Enum setter for {propertyType}");
 		            if (property.Enum.StoreAsText) {
-			            sb.AppendLine ($"                        var value = SQLite3.ColumnString(stmt, index);");
-						sb.AppendLine ($"                        if (value != null)");
-						sb.AppendLine ($"                        {{");
-						sb.AppendLine ($"                            {typedObject}.{property.PropertyName} = ({propertyType})Enum.Parse(typeof({propertyType}), value, ignoreCase: true);");
-						sb.AppendLine ($"                        }}");
+						sb.AppendLine($"                        {typedObject}.{property.PropertyName} = ({propertyType})Enum.Parse(typeof({propertyType}), SQLite3.ColumnString(stmt, index), ignoreCase: true);");
 					}
 		            else {
-			            sb.AppendLine ($"                        {typedObject}.{property.PropertyName} = ({propertyType})SQLite3.ColumnInt(stmt, index);");
+			            sb.AppendLine($"                        {typedObject}.{property.PropertyName} = ({propertyType})SQLite3.ColumnInt(stmt, index);");
 		            }
 	            }
 	            else {
 		            // For other types, try to use a generic approach
-		            sb.AppendLine ($"                        // Generic setter for {propertyType}");
-		            sb.AppendLine ($"                        var value = SQLite3.ColumnString(stmt, index);");
-		            sb.AppendLine ($"                        if (value != null)");
-		            sb.AppendLine ($"                        {{");
-		            sb.AppendLine ($"                            {typedObject}.{property.PropertyName} = ({propertyType})Convert.ChangeType(value, typeof({propertyType}));");
-		            sb.AppendLine ($"                        }}");
+		            sb.AppendLine($"                        // Generic setter for {propertyType}");
+		            sb.AppendLine($"                        {typedObject}.{property.PropertyName} = ({propertyType})Convert.ChangeType(SQLite3.ColumnString(stmt, index), typeof({propertyType}));");
 	            }
 
 	            break;
