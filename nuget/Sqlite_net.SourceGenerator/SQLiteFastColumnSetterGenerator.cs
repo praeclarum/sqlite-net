@@ -329,14 +329,14 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
     static void Execute(
 	    Compilation compilation,
-	    ImmutableArray<ClassInfo> classes, 
+	    ImmutableArray<ClassInfo> classesDuplicates, 
 	    AnalyzerConfigOptionsProvider configOptionsProvider,
 	    SourceProductionContext context)
     {
-        if (classes.IsDefaultOrEmpty)
+        if (classesDuplicates.IsDefaultOrEmpty)
             return;
 
-        classes = RemoveDuplicates(classes);
+        var classes = RemoveDuplicates(classesDuplicates);
 
         // Get the assembly name/namespace from the compilation
         var assemblyName = compilation.AssemblyName ?? "Generated";
