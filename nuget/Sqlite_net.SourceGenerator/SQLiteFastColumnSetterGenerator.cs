@@ -377,8 +377,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 sb.AppendLine($"                \"{property.ColumnName}\",");
                 sb.AppendLine($"                (obj, stmt, index) => ");
                 sb.AppendLine($"                {{");
-                sb.AppendLine($"                    var colType = SQLite3.ColumnType(stmt, index);");
-                sb.AppendLine($"                    if (colType != SQLite3.ColType.Null)");
+                sb.AppendLine($"                    if (SQLite3.ColumnType(stmt, index) != SQLite3.ColType.Null)");
                 sb.AppendLine($"                    {{");
                 
                 // Generate appropriate setter based on property type
@@ -486,8 +485,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 
 			case "Guid":
             case "System.Guid":
-                sb.AppendLine($"                        var text = SQLite3.ColumnString(stmt, index);");
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = new Guid(text);");
+                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = new Guid(SQLite3.ColumnString(stmt, index));");
                 break;
 
             case "byte[]":
@@ -506,8 +504,7 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 						sb.AppendLine ($"                        }}");
 					}
 		            else {
-			            sb.AppendLine ($"                        var value = SQLite3.ColumnInt(stmt, index);");
-			            sb.AppendLine ($"                        {typedObject}.{property.PropertyName} = ({propertyType})value;");
+			            sb.AppendLine ($"                        {typedObject}.{property.PropertyName} = ({propertyType})SQLite3.ColumnInt(stmt, index);");
 		            }
 	            }
 	            else {
