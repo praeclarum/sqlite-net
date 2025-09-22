@@ -409,6 +409,14 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
         if (isNullable)
             propertyType = propertyType.Replace("?", "");
 
+        switch (propertyType) {
+	        case "byte[]":
+	        case "Byte[]":
+	        case "System.Byte[]":
+				isNullable = true; // need to handle nullable for byte arrays
+				break;
+		}
+
         if (isNullable) {
 	        sb.AppendLine($"                    if (SQLite3.ColumnType(stmt, index) != SQLite3.ColType.Null)");
 	        sb.AppendLine($"                    {{");
@@ -487,7 +495,9 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 break;
 
             case "byte[]":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnByteArray(stmt, index);");
+            case "Byte[]":
+            case "System.Byte[]":
+				sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnByteArray(stmt, index);");
                 break;
 
             default:
