@@ -360,32 +360,45 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		sb.AppendLine("#endif");
 		sb.AppendLine("        public static void Init()");
         sb.AppendLine("        {");
-        sb.AppendLine ("           if (initialized)");
-        sb.AppendLine ("               return;");
-        sb.AppendLine ("           initialized = true;");
+        sb.AppendLine("           if (initialized)");
+        sb.AppendLine("               return;");
+        sb.AppendLine("           initialized = true;");
 
-		foreach (var classInfo in classes)
-        {
-            foreach (var property in classInfo.Properties)
-            {
-                var fullTypeName = string.IsNullOrEmpty(classInfo.Namespace) 
-                    ? classInfo.ClassName 
-                    : $"{classInfo.Namespace}.{classInfo.ClassName}";
+        foreach (var classInfo in classes) {
+			var fullTypeName = FullTypeName (classInfo);
+			var initName = "Init" + fullTypeName.Replace (".", "_");
+			sb.AppendLine($"           {initName}();");
+		}
 
+        sb.AppendLine ("        }");
+
+		foreach (var classInfo in classes) {
+			var fullTypeName = FullTypeName (classInfo);
+			var initName = "Init" + fullTypeName.Replace (".", "_");
+			sb.AppendLine($"        public static void {initName}()");
+			sb.AppendLine("        {");
+			foreach (var property in classInfo.Properties) {
                 sb.AppendLine($"            SQLiteConnection.RegisterFastColumnSetter(");
                 sb.AppendLine($"                typeof({fullTypeName}),");
                 sb.AppendLine($"                \"{property.ColumnName}\",");
                 sb.Append($"                (obj, stmt, index) => ");
 	            GeneratePropertySetter ($"(({fullTypeName})obj)", sb, property);
 			}
-        }
+			sb.AppendLine ("        }");
+		}
 
-        sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
         context.AddSource("SQLiteInitializer.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
+
+    static string FullTypeName (ClassInfo classInfo)
+    {
+	    return string.IsNullOrEmpty (classInfo.Namespace)
+		    ? classInfo.ClassName
+		    : $"{classInfo.Namespace}.{classInfo.ClassName}";
+}
     
     static string? GetRootNamespace(AnalyzerConfigOptionsProvider configOptionsProvider, Compilation compilation)
     {
