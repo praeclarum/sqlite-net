@@ -375,10 +375,8 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
                 sb.AppendLine($"            SQLiteConnection.RegisterFastColumnSetter(");
                 sb.AppendLine($"                typeof({fullTypeName}),");
                 sb.AppendLine($"                \"{property.ColumnName}\",");
-                sb.AppendLine($"                (obj, stmt, index) => ");
-                sb.AppendLine($"                {{");
+                sb.Append($"                (obj, stmt, index) => ");
 	            GeneratePropertySetter ($"(({fullTypeName})obj)", sb, property);
-	            sb.AppendLine($"                }});");
 			}
         }
 
@@ -418,111 +416,117 @@ public class SQLiteFastColumnSetterGenerator : IIncrementalGenerator
 		}
 
         if (isNullable) {
-	        sb.AppendLine($"                    if (SQLite3.ColumnType(stmt, index) != SQLite3.ColType.Null)");
+	        sb.AppendLine("");
+			sb.AppendLine($"                {{");
+			sb.AppendLine($"                    if (SQLite3.ColumnType(stmt, index) != SQLite3.ColType.Null)");
 	        sb.AppendLine($"                    {{");
-        }
+	        sb.Append($"                        ");
+}
 
         switch (propertyType)
         {
             case "string":
             case "String":
             case "System.String":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnString(stmt, index);");
+                sb.Append($"{typedObject}.{property.PropertyName} = SQLite3.ColumnString(stmt, index)");
                 break;
 
             case "byte":
             case "Byte":
             case "System.Byte":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = (byte)SQLite3.ColumnInt(stmt, index);");
+                sb.Append($"{typedObject}.{property.PropertyName} = (byte)SQLite3.ColumnInt(stmt, index)");
                 break;
 
 			case "short":
             case "Int16":
             case "System.Int16":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = (short)SQLite3.ColumnInt(stmt, index);");
+                sb.Append($"{typedObject}.{property.PropertyName} = (short)SQLite3.ColumnInt(stmt, index)");
                 break;
 
 
 			case "int":
             case "Int32":
             case "System.Int32":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnInt(stmt, index);");
+                sb.Append($"{typedObject}.{property.PropertyName} = SQLite3.ColumnInt(stmt, index)");
                 break;
 
             case "long":
             case "Int64":
             case "System.Int64":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnInt64(stmt, index);");
+                sb.Append($"{typedObject}.{property.PropertyName} = SQLite3.ColumnInt64(stmt, index)");
                 break;
 
             case "double":
             case "Double":
             case "System.Double":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnDouble(stmt, index);");
+                sb.Append($"{typedObject}.{property.PropertyName} = SQLite3.ColumnDouble(stmt, index)");
                 break;
 
             case "decimal":
             case "Decimal":
             case "System.Decimal":
-	            sb.AppendLine($"                        {typedObject}.{property.PropertyName} = System.Convert.ToDecimal(SQLite3.ColumnDouble(stmt, index));");
+	            sb.Append($"{typedObject}.{property.PropertyName} = System.Convert.ToDecimal(SQLite3.ColumnDouble(stmt, index))");
 	            break;
 
 			case "float":
             case "Single":
             case "System.Single":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = (float)SQLite3.ColumnDouble(stmt, index);");
+                sb.Append($"{typedObject}.{property.PropertyName} = (float)SQLite3.ColumnDouble(stmt, index)");
                 break;
 
             case "bool":
             case "Boolean":
             case "System.Boolean":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnInt(stmt, index) == 1;");
+                sb.Append($"{typedObject}.{property.PropertyName} = SQLite3.ColumnInt(stmt, index) == 1");
                 break;
 
             case "DateTime":
             case "System.DateTime":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = new DateTime(SQLite3.ColumnInt64(stmt, index));");
+                sb.Append($"{typedObject}.{property.PropertyName} = new DateTime(SQLite3.ColumnInt64(stmt, index))");
                 break;
 
             case "TimeSpan":
             case "System.TimeSpan":
-	            sb.AppendLine($"                        {typedObject}.{property.PropertyName} = new TimeSpan(SQLite3.ColumnInt64(stmt, index));");
+	            sb.Append($"{typedObject}.{property.PropertyName} = new TimeSpan(SQLite3.ColumnInt64(stmt, index))");
 	            break;
 
 			case "Guid":
             case "System.Guid":
-                sb.AppendLine($"                        {typedObject}.{property.PropertyName} = new Guid(SQLite3.ColumnString(stmt, index));");
+                sb.Append($"{typedObject}.{property.PropertyName} = new Guid(SQLite3.ColumnString(stmt, index))");
                 break;
 
             case "byte[]":
             case "Byte[]":
             case "System.Byte[]":
-				sb.AppendLine($"                        {typedObject}.{property.PropertyName} = SQLite3.ColumnByteArray(stmt, index);");
+				sb.Append($"{typedObject}.{property.PropertyName} = SQLite3.ColumnByteArray(stmt, index)");
                 break;
 
             default:
 	            if (property.Enum != null) {
 		            // For other types, try to use a generic approach
-		            sb.AppendLine ($"                        // Enum setter for {propertyType}");
 		            if (property.Enum.StoreAsText) {
-						sb.AppendLine($"                        {typedObject}.{property.PropertyName} = ({propertyType})Enum.Parse(typeof({propertyType}), SQLite3.ColumnString(stmt, index), ignoreCase: true);");
-					}
+			            sb.Append($"{typedObject}.{property.PropertyName} = ({propertyType})Enum.Parse(typeof({propertyType}), SQLite3.ColumnString(stmt, index), ignoreCase: true)");
+		            }
 		            else {
-			            sb.AppendLine($"                        {typedObject}.{property.PropertyName} = ({propertyType})SQLite3.ColumnInt(stmt, index);");
+			            sb.Append($"{typedObject}.{property.PropertyName} = ({propertyType})SQLite3.ColumnInt(stmt, index)");
 		            }
 	            }
 	            else {
 		            // For other types, try to use a generic approach
-		            sb.AppendLine($"                        // Generic setter for {propertyType}");
-		            sb.AppendLine($"                        {typedObject}.{property.PropertyName} = ({propertyType})Convert.ChangeType(SQLite3.ColumnString(stmt, index), typeof({propertyType}));");
+		            sb.Append($"{typedObject}.{property.PropertyName} = ({propertyType})Convert.ChangeType(SQLite3.ColumnString(stmt, index), typeof({propertyType}))");
 	            }
 
-	            break;
-        }
+				break;
+		}
 
         if (isNullable) {
-	        sb.AppendLine($"                    }}");
+	        sb.AppendLine($";");
+			sb.AppendLine($"                    }}");
+	        sb.AppendLine($"                }});");
         }
+        else {
+	        sb.AppendLine(");");
+		}
     }
 
     record ClassInfo(string ClassName, string Namespace, List<PropertyInfo> Properties);
