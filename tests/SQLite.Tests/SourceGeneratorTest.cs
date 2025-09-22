@@ -117,7 +117,36 @@ namespace SQLite.Tests
             public Guid Guid { get; set; }
         }
 
-        // Shouldn't generate Setter because it is not accessible
+
+        public class AllBasicTypesSetterNullable
+        {
+	        [PrimaryKey]
+	        public int Id { get; set; }
+
+	        public string String { get; set; }
+
+	        public byte? Byte { get; set; }
+
+	        public short? Short { get; set; }
+
+	        public int? Int { get; set; }
+
+	        public long? Long { get; set; }
+
+	        public float? Float { get; set; }
+
+	        public double? Double { get; set; }
+
+	        public decimal? Decimal { get; set; }
+
+	        public TimeSpan? TimeSpam { get; set; }
+
+	        public DateTime? DateTime { get; set; }
+
+	        public Guid? Guid { get; set; }
+        }
+
+// Shouldn't generate Setter because it is not accessible
 		private class PrivateInnerTestSetter
 		{
 			[AutoIncrement, PrimaryKey]
@@ -135,6 +164,15 @@ namespace SQLite.Tests
             {
                 CreateTable<AllBasicTypesSetter> ();
             }
+        }
+
+        public class AllBasicTypesNullableTestDb : SQLiteConnection
+        {
+	        public AllBasicTypesNullableTestDb (String path)
+		        : base (path)
+	        {
+		        CreateTable<AllBasicTypesSetterNullable> ();
+	        }
         }
 
 		public class InnerTestDb : SQLiteConnection
@@ -455,6 +493,50 @@ namespace SQLite.Tests
             Assert.AreEqual (data.Guid, new Guid (10, 0, 0, new byte[8]));
 
 			Assert.AreEqual (mapperCount, FastColumnSetter.customSetter.Count);
+        }
+
+        [Test]
+        public void SetFastColumnSetters_AllBasicTypesNullable_Works ()
+        {
+
+	        var mapperCount = FastColumnSetter.customSetter.Count;
+
+	        var n = 20;
+	        var cq = from i in Enumerable.Range (1, n)
+		        select new AllBasicTypesSetterNullable() {
+			        Id = i,
+			        String = null,
+			        Byte = null,
+			        Short = null,
+			        Int = null,
+			        Long = null,
+			        Float = null,
+			        Double = null,
+			        Decimal = null,
+			        DateTime = null,
+			        TimeSpam = null,
+			        Guid = null,
+		        };
+
+	        var db = new AllBasicTypesNullableTestDb (TestPath.GetTempFileName ());
+	        db.InsertAll (cq);
+
+	        var results = db.Table<AllBasicTypesSetterNullable> ().Where (o => o.Id.Equals (10));
+	        Assert.AreEqual (results.Count (), 1);
+	        var data = results.FirstOrDefault ();
+	        Assert.AreEqual (data.String, "10");
+	        Assert.AreEqual (data.Byte, null);
+	        Assert.AreEqual (data.Short, null);
+	        Assert.AreEqual (data.Int, null);
+	        Assert.AreEqual (data.Long, null);
+	        Assert.AreEqual (data.Float, null);
+	        Assert.AreEqual (data.Double, null);
+	        Assert.AreEqual (data.Decimal, null);
+	        Assert.AreEqual (data.TimeSpam, null);
+	        Assert.AreEqual (data.DateTime, null);
+	        Assert.AreEqual (data.Guid, null);
+
+	        Assert.AreEqual (mapperCount, FastColumnSetter.customSetter.Count);
         }
 	}
 }
