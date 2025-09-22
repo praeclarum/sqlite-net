@@ -24,9 +24,11 @@
   <!-- SourceGenerator Debugging -->
   <PropertyGroup>
     <!-- Enable viewing source generated files -->
-    
+
+    <!--
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+    -->
     
   </PropertyGroup>
   
