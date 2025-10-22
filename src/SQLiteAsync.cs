@@ -227,10 +227,13 @@ namespace SQLite
 		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
 #endif
 		Task<int> InsertAllAsync (IEnumerable objects, string extra, bool runInTransaction = true);
+
+		Task<int> InsertAllAsync (IEnumerable objects,
 #if NET8_0_OR_GREATER
-		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
-		Task<int> InsertAllAsync (IEnumerable objects, Type objType, bool runInTransaction = true);
+			Type objType,
+			bool runInTransaction = true);
 #if NET8_0_OR_GREATER
 		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of 'obj'.")]
 #endif
@@ -1424,10 +1427,13 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows added to the table.
 		/// </returns>
+		public Task<int> InsertAllAsync (
+			IEnumerable objects,
 #if NET8_0_OR_GREATER
-		[RequiresUnreferencedCode ("This method requires ''DynamicallyAccessedMemberTypes.All' on the runtime type of all objects in 'objects'.")]
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 #endif
-		public Task<int> InsertAllAsync (IEnumerable objects, Type objType, bool runInTransaction = true)
+			Type objType,
+			bool runInTransaction = true)
 		{
 			return WriteAsync (conn => conn.InsertAll (objects, objType, runInTransaction));
 		}
