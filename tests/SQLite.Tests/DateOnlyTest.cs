@@ -1,14 +1,7 @@
+#if NET6_0_OR_GREATER
 using System;
 using System.Threading.Tasks;
-
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using SetUp = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestPlatform.UnitTestFramework.TestMethodAttribute;
-#else
 using NUnit.Framework;
-#endif
 
 namespace SQLite.Tests
 {
@@ -124,4 +117,4 @@ namespace SQLite.Tests
 		}
 	}
 }
-
+#endif
