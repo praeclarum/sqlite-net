@@ -502,11 +502,13 @@ namespace SQLite
 		/// <value>The date time string format.</value>
 		public string DateTimeStringFormat { get; private set; }
 
+#if NET6_0_OR_GREATER
 		/// <summary>
 		/// The format to use when storing Date properties as strings.
 		/// </summary>
 		/// <value>The date string format.</value>
 		public string DateStringFormat { get; private set; }
+#endif
 
 		/// <summary>
 		/// The DateTimeStyles value to use when parsing a DateTime property string.
