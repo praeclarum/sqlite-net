@@ -511,7 +511,6 @@ namespace SQLite
 		/// </summary>
 		/// <value>The date time style.</value>
 		internal System.Globalization.DateTimeStyles DateTimeStyle { get; private set; }
-		//internal System.Globalization.DateTimeStyles DateStyle { get; private set; }
 
 #if USE_SQLITEPCL_RAW && !NO_SQLITEPCL_RAW_BATTERIES
 		static SQLiteConnection ()
