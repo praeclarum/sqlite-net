@@ -836,10 +836,6 @@ namespace SQLite
 			var count = 0;
 
 			if (map.FullTextTableName != null && map.FullTextColumns.Length > 0) {
-				// Drop full text index before content table
-				var queryFullText = string.Format ("DROP TABLE IF EXISTS \"{0}\"", map.FullTextTableName);
-				count += Execute (queryFullText);
-
 				// Drop full text index triggers
 				var queryFullTextTriggerBeforeUpdate = string.Format ("DROP TRIGGER IF EXISTS \"{0}_t_bu\"", map.FullTextTableName);
 				count += Execute (queryFullTextTriggerBeforeUpdate);
@@ -852,6 +848,10 @@ namespace SQLite
 
 				var queryFullTextTriggerAfterInsert = string.Format ("DROP TRIGGER IF EXISTS \"{0}_t_ai\"", map.FullTextTableName);
 				count += Execute (queryFullTextTriggerAfterInsert);
+
+				// Drop full text index before content table
+				var queryFullText = string.Format("DROP TABLE IF EXISTS \"{0}\"", map.FullTextTableName);
+				count += Execute(queryFullText);
 			}
 
 			var query = string.Format ("drop table if exists \"{0}\"", map.TableName);
@@ -970,7 +970,42 @@ namespace SQLite
 					throw new Exception ("Must have at least one full text index column to specify a full text index for the table");
 				}
 
+				// Check if the columns have changed since it was created
 				var fullTextColsNames = map.FullTextColumns.Select (c => c.Name);
+				var existingFtsColumns = GetTableInfo (map.FullTextTableName);
+				
+				bool needsRecreate = false;
+				if (existingFtsColumns.Count > 0) {
+					// FTS4 table exists - check if columns match
+					// Note: FTS4 tables have hidden columns (docid, plus internal columns), so we filter those out
+					var actualColumns = existingFtsColumns
+						.Where (c => !c.Name.StartsWith ("c") || c.Name.Length > 2) // Filter out internal FTS columns like c0, c1, etc.
+						.Where (c => c.Name != "docid") // Filter out docid
+						.Select (c => c.Name)
+						.OrderBy (n => n)
+						.ToList ();
+					
+					var expectedColumns = fullTextColsNames.OrderBy (n => n).ToList ();
+					
+					// Check if column lists match
+					if (actualColumns.Count != expectedColumns.Count || 
+					    !actualColumns.SequenceEqual (expectedColumns)) {
+						needsRecreate = true;
+					}
+				}
+				
+				if (needsRecreate) {
+					// Drop triggers
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_bu\"");
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_bd\"");
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_au\"");
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_ai\"");
+
+					// Drop and recreate the FTS table and triggers since columns changed
+					var dropFullText = "DROP TABLE IF EXISTS \"" + map.FullTextTableName + "\"";
+					Execute (dropFullText);					
+				}
+
 				// Only support FTS4 because content= options to link an FTS table to external tables is not supported in FTS3
 				var queryFullText = "CREATE VIRTUAL TABLE IF NOT EXISTS \"" + map.FullTextTableName + "\" USING fts4(content=\"" + map.TableName + "\", ";
 				queryFullText += string.Join (",\n", fullTextColsNames.ToArray ());
@@ -978,6 +1013,13 @@ namespace SQLite
 				queryFullText += ")";
 
 				Execute (queryFullText);
+
+				if (needsRecreate)
+				{
+					// Now actually rebuild the full text index data
+					var queryRebuild = "INSERT INTO \"" + map.FullTextTableName + "\"(\"" + map.FullTextTableName + "\") VALUES('rebuild');";
+					Execute(queryRebuild);
+				}
 
 				// Create triggers to keep full text index in sync with content table
 				var deleteOldSql = "DELETE FROM \"" + map.FullTextTableName + "\" WHERE docid=old." + map.PK.Name + ";";
