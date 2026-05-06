@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.2" />
+    <PackageReference Include="SQLitePCLRaw.config.e_sqlite3" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">

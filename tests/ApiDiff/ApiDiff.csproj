@@ -12,6 +12,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ListDiff" Version="1.2.10" />
+    <PackageReference Include="ListDiff" />
   </ItemGroup>
 </Project>
