@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net8.0-ios</TargetFrameworks>
     <AssemblyName>SQLite-net</AssemblyName>
     <PackageId>sqlite-net-e</PackageId>
     <AssemblyTitle>SQLite-net Official .NET Standard Library</AssemblyTitle>
@@ -9,8 +9,8 @@
       SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
       This version uses SQLitePCLRaw to provide platform independent versions of SQLite.
     </Description>
-    <PackageTags>sqlite-net;sqlite;database;orm;encryption;sqlcipher</PackageTags>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
+    <IsIOS>$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0-ios'))</IsIOS>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
