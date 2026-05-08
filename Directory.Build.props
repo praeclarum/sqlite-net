@@ -14,7 +14,6 @@
         <Deterministic>true</Deterministic>
 
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <SQLitePCLRawVersion>3.0.2</SQLitePCLRawVersion>
     </PropertyGroup>
 	 <ItemGroup>
 		<None Include="..\Logo-low.png" Pack="true" PackagePath=""/>

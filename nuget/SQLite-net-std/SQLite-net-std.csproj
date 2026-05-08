@@ -36,12 +36,12 @@
   -->
 
   <ItemGroup Condition="$(IsIOS)">
-    <PackageReference Include="SQLitePCLRaw.provider.sqlite3" Version="$(SQLitePCLRawVersion)" />
+    <PackageReference Include="SQLitePCLRaw.provider.sqlite3" />
   </ItemGroup>
 
   <ItemGroup Condition="!$(IsIOS)">
-    <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" Version="$(SQLitePCLRawVersion)" />
-    <PackageReference Include="SourceGear.sqlite3" Version="3.50.3" />
+    <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" />
+    <PackageReference Include="SourceGear.sqlite3" />
   </ItemGroup>
 
   <PropertyGroup Condition="$(IsIOS)">
