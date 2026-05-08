@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.core" Version="$(SQLitePCLRawVersion)" />
+    <PackageReference Include="SQLitePCLRaw.core" />
   </ItemGroup>
 
   <!--

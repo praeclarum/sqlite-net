@@ -23,9 +23,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.config.e_sqlite3" Version="$(SQLitePCLRawVersion)" />
+    <PackageReference Include="SQLitePCLRaw.config.e_sqlite3" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
