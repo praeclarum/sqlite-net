@@ -3,12 +3,11 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <AssemblyName>SQLite-net</AssemblyName>
-    <PackageId>sqlite-net-sqlcipher</PackageId>
-    <AssemblyTitle>SQLite-net SQLCipher .NET Standard Library</AssemblyTitle>
+    <PackageId>sqlite-net-e</PackageId>
+    <AssemblyTitle>SQLite-net Official .NET Standard Library</AssemblyTitle>
     <Description>
       SQLite-net is an open source and light weight library providing easy SQLite database storage for .NET, Mono, and Xamarin applications.
-      This version uses SQLitePCLRaw to provide platform independent versions of SQLite with the SQLCipher extension.
-      This enables secure access to the database with password (key) access.
+      This version uses SQLitePCLRaw to provide platform independent versions of SQLite.
     </Description>
     <PackageTags>sqlite-net;sqlite;database;orm;encryption;sqlcipher</PackageTags>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
@@ -24,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" />
+    <PackageReference Include="SQLitePCLRaw.config.e_sqlite3" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
