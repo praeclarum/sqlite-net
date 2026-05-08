@@ -28,6 +28,9 @@ jobs:
       with:
         global-json-file: global.json
 
+    - name: Restore Workloads
+      run: dotnet workload restore SQLite.sln
+
     - name: Install Code Coverarage Tool
       run: dotnet tool install --global dotnet-reportgenerator-globaltool
     
