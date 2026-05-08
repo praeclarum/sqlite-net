@@ -18,8 +18,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite.Tests", "tests\SQLit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-static", "nuget\SQLite-net-static\SQLite-net-static.csproj", "{7CD60DAE-D505-4C2E-80B3-296556CE711E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{2A18E756-48A1-E247-9A68-57B5E8CBE245}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLite-net-e", "nuget\SQLite-net-e\SQLite-net-e.csproj", "{1D6F50F2-A89C-42D8-B40A-DF1294878EB0}"
 EndProject
 Global
@@ -163,26 +161,5 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{1DEF735C-B973-4ED9-8446-7FFA6D0B410B} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
 		{80B66A43-B358-4438-BF06-6351B86B121A} = {FECC0E44-E626-49CB-BD8B-0CFBD93FBEFF}
-		{1D6F50F2-A89C-42D8-B40A-DF1294878EB0} = {2A18E756-48A1-E247-9A68-57B5E8CBE245}
-	EndGlobalSection
-	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = tests\SQLite.Tests.csproj
-		Policies = $0
-		$0.TextStylePolicy = $1
-		$1.FileWidth = 128
-		$1.NoTabsAfterNonTabs = True
-		$1.EolMarker = Unix
-		$1.scope = text/x-csharp
-		$0.CSharpFormattingPolicy = $2
-		$2.NewLinesForBracesInProperties = False
-		$2.NewLinesForBracesInAccessors = False
-		$2.NewLinesForBracesInAnonymousMethods = False
-		$2.NewLinesForBracesInControlBlocks = False
-		$2.NewLinesForBracesInAnonymousTypes = False
-		$2.NewLinesForBracesInObjectCollectionArrayInitializers = False
-		$2.NewLinesForBracesInLambdaExpressionBody = False
-		$2.scope = text/x-csharp
-		$2.SpacingAfterMethodDeclarationName = True
-		$2.SpaceAfterMethodCallName = True
 	EndGlobalSection
 EndGlobal
