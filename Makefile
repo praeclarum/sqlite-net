@@ -5,7 +5,10 @@ PACKAGES_OUT=$(abspath PackagesOut)
 
 all: nuget
 
-nuget: enuget pclnuget basenuget staticnuget
+nuget: sourcegenerator enuget pclnuget basenuget staticnuget
+
+sourcegenerator: nuget\Sqlite_net.SourceGenerator\Sqlite_net.SourceGenerator.csproj $(SRC)
+	dotnet build -c Release $<
 
 enuget: nuget/SQLite-net-e/SQLite-net-e.csproj $(SRC)
 	dotnet pack -c Release -o $(PACKAGES_OUT) $<

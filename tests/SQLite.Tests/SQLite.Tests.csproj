@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
-    
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +14,24 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
   </ItemGroup>
 
+  <!-- SourceGenerator -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\nuget\Sqlite_net.SourceGenerator\Sqlite_net.SourceGenerator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!-- SourceGenerator Debugging -->
+  <PropertyGroup>
+    <!-- Enable viewing source generated files -->
+
+    <!--
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+    -->
+    
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
