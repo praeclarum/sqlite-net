@@ -14,6 +14,8 @@
         <Deterministic>true</Deterministic>
 
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+        <NoWarn>$(NoWarn);NETSDK1202</NoWarn>
     </PropertyGroup>
 	 <ItemGroup>
 		<None Include="..\Logo-low.png" Pack="true" PackagePath=""/>
