@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <VersionPrefix>1.10</VersionPrefix>
+        <VersionPrefix>1.11</VersionPrefix>
         <VersionSuffix>beta</VersionSuffix>
 
         <PackageIcon>Logo-low.png</PackageIcon>
