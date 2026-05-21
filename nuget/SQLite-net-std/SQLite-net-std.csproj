@@ -11,7 +11,7 @@
     </Description>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <IsIOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">true</IsIOS>
-    <IsIOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'ios'">true</IsIOS>
+    <IsIOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'ios'">false</IsIOS>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
