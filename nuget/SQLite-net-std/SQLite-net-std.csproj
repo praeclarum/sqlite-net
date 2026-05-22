@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net8.0-ios</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net9.0-ios</TargetFrameworks>
     <AssemblyName>SQLite-net</AssemblyName>
     <PackageId>sqlite-net-pcl</PackageId>
     <AssemblyTitle>SQLite-net Official .NET Standard Library</AssemblyTitle>
@@ -56,10 +56,17 @@
   <ItemGroup>
     <Compile Include="..\..\src\SQLite.cs">
       <Link>SQLite.cs</Link>
+      <DependentUpon>Logo-low.png</DependentUpon>
     </Compile>
     <Compile Include="..\..\src\SQLiteAsync.cs">
       <Link>SQLiteAsync.cs</Link>
     </Compile>
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
+
+  <!-- Include Source Generator DLL in the NuGet package -->
+  <ItemGroup>
+    <None Include="..\Sqlite_net.SourceGenerator\bin\$(Configuration)\netstandard2.0\Sqlite_net.SourceGenerator.dll" Pack="true" PackagePath="analyzers\dotnet\cs\Sqlite_net.SourceGenerator.dll" />
+  </ItemGroup>
+
 </Project>
