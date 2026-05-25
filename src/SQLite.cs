@@ -2973,7 +2973,7 @@ namespace SQLite
 			var cols = new List<Column>(members.Count);
 			foreach(var m in members)
 			{
-				var ignore = m.IsDefined(typeof(IgnoreAttribute), true);
+				var ignore = IsIgnored(type, m);
 				if(!ignore)
 					cols.Add(new Column(m, createFlags));
 			}
@@ -3000,6 +3000,29 @@ namespace SQLite
 			_insertColumns = Columns.Where (c => !c.IsAutoInc).ToArray ();
 			_insertOrReplaceColumns = Columns.ToArray ();
 		}
+		
+		private bool IsIgnored(Type declaringType, MemberInfo m)
+        {
+			var attributes = m.GetCustomAttributes(typeof(IgnoreAttribute), true);
+			if (attributes.Any(x => x is IgnoreAttribute))
+				return true;
+
+			if (declaringType.BaseType == null)
+				return false;
+
+			var newDeclaringType = declaringType;
+			var newMember = m;
+			do
+			{
+				newDeclaringType = newDeclaringType.BaseType;
+				if (newDeclaringType == null)
+					return false;
+				newMember = newDeclaringType.GetMember(m.Name).FirstOrDefault();
+				
+			} while (newMember == null);
+
+			return IsIgnored(newDeclaringType, newMember);
+        }		
 
 		private IReadOnlyCollection<MemberInfo> GetPublicMembers(
 #if NET8_0_OR_GREATER
