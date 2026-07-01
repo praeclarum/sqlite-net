@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net8.0-ios</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0;net9.0-ios;net10.0-ios</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::VersionLessThan('$(NETCoreSdkVersion)', '10.0.100'))">$(TargetFrameworks);net8.0-ios</TargetFrameworks>
     <AssemblyName>SQLite-net</AssemblyName>
     <PackageId>sqlite-net-pcl</PackageId>
     <AssemblyTitle>SQLite-net Official .NET Standard Library</AssemblyTitle>
@@ -36,20 +37,20 @@
       but that bundle package was deprecated in SQLitePCLRaw 3.0.
   -->
 
-  <ItemGroup Condition="$(IsIOS)">
+  <ItemGroup Condition="'$(IsIOS)' == 'true'">
     <PackageReference Include="SQLitePCLRaw.provider.sqlite3" />
   </ItemGroup>
 
-  <ItemGroup Condition="!$(IsIOS)">
+  <ItemGroup Condition="'$(IsIOS)' != 'true'">
     <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" />
     <PackageReference Include="SourceGear.sqlite3" />
   </ItemGroup>
 
-  <PropertyGroup Condition="$(IsIOS)">
+  <PropertyGroup Condition="'$(IsIOS)' == 'true'">
 	<DefineConstants>$(DefineConstants);PROVIDER_sqlite3</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="!$(IsIOS)">
+  <PropertyGroup Condition="'$(IsIOS)' != 'true'">
 	<DefineConstants>$(DefineConstants);PROVIDER_e_sqlite3</DefineConstants>
   </PropertyGroup>
 
