@@ -8,7 +8,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageVersion Include="NUnit" Version="3.12.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="3.16.1" />
-    <PackageVersion Include="SourceGear.sqlite3" Version="3.50.4.5" />
+    <PackageVersion Include="SourceGear.sqlite3" Version="3.53.3" />
     <PackageVersion Include="SQLitePCLRaw.config.e_sqlite3" Version="3.0.3" />
     <PackageVersion Include="SQLitePCLRaw.core" Version="3.0.3" />
     <PackageVersion Include="SQLitePCLRaw.provider.sqlite3" Version="3.0.3" />
