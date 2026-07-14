@@ -446,7 +446,7 @@ namespace SQLite
 	{
 		private bool _open;
 		private TimeSpan _busyTimeout;
-		readonly static Dictionary<string, TableMapping> _mappings = new Dictionary<string, TableMapping> ();
+		readonly Dictionary<string, TableMapping> _mappings = new Dictionary<string, TableMapping> ();
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
 
