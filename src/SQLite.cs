@@ -3572,7 +3572,7 @@ namespace SQLite
 #endif
 					}
 
-					for (int i = 0; i < cols.Length; i++) {						
+					for (int i = 0; i < cols.Length; i++) {
 						var name = SQLite3.ColumnName16 (stmt, i);
 						cols[i] = map.FindColumn (name);
 						if (cols[i] != null)
@@ -5029,7 +5029,11 @@ namespace SQLite
 			Serialized = 3
 		}
 
+#if ENABLE_IL2CPP && !UNITY_EDITOR
+		const string LibraryPath = "__Internal";
+#else
 		const string LibraryPath = "sqlite3";
+#endif
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
@@ -5065,8 +5069,10 @@ namespace SQLite
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
 
+#if NETFX_CORE
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);
+#endif
 
 		[DllImport(LibraryPath, EntryPoint = "sqlite3_busy_timeout", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
