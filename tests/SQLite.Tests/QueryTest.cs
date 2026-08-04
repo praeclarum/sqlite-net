@@ -50,6 +50,24 @@ namespace SQLite.Tests
 			Assert.AreEqual (_records[0].Walue, r[0].Walue);
 		}
 
+
+		[Test]
+		public void QueryGenericObjectAsDictionary ()
+		{
+			var path = Path.GetTempFileName ();
+			var db = new SQLiteConnection (path, true);
+
+			db.Execute ("create table G(Value integer not null)");
+			db.Execute ("insert into G(Value) values (?)", 42);
+			db.Execute ("insert into G(Value) values (?)", 43);
+			db.Execute ("insert into G(Value) values (?)", 44);
+			var r = db.Query ("select * from G where value > ?", 42);
+
+			Assert.AreEqual (2, r.Count);
+			Assert.AreEqual (43, r[0]["Value"]);
+			Assert.AreEqual (44, r[1]["Value"]);
+		}
+
 		#region Issue #1007
 
 		[Test]
