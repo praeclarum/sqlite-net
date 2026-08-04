@@ -833,8 +833,31 @@ namespace SQLite
 		/// </param>
 		public int DropTable (TableMapping map)
 		{
+			var count = 0;
+
+			if (map.FullTextTableName != null && map.FullTextColumns.Length > 0) {
+				// Drop full text index triggers
+				var queryFullTextTriggerBeforeUpdate = string.Format ("DROP TRIGGER IF EXISTS \"{0}_t_bu\"", map.FullTextTableName);
+				count += Execute (queryFullTextTriggerBeforeUpdate);
+
+				var queryFullTextTriggerBeforeDelete = string.Format ("DROP TRIGGER IF EXISTS \"{0}_t_bd\"", map.FullTextTableName);
+				count += Execute (queryFullTextTriggerBeforeDelete);
+
+				var queryFullTextTriggerAfterUpdate = string.Format ("DROP TRIGGER IF EXISTS \"{0}_t_au\"", map.FullTextTableName);
+				count += Execute (queryFullTextTriggerAfterUpdate);
+
+				var queryFullTextTriggerAfterInsert = string.Format ("DROP TRIGGER IF EXISTS \"{0}_t_ai\"", map.FullTextTableName);
+				count += Execute (queryFullTextTriggerAfterInsert);
+
+				// Drop full text index before content table
+				var queryFullText = string.Format("DROP TABLE IF EXISTS \"{0}\"", map.FullTextTableName);
+				count += Execute(queryFullText);
+			}
+
 			var query = string.Format ("drop table if exists \"{0}\"", map.TableName);
-			return Execute (query);
+			count += Execute (query);
+
+			return count;
 		}
 
 		/// <summary>
@@ -939,6 +962,81 @@ namespace SQLite
 				var index = indexes[indexName];
 				var columns = index.Columns.OrderBy (i => i.Order).Select (i => i.ColumnName).ToArray ();
 				CreateIndex (indexName, index.TableName, columns, index.Unique);
+			}
+
+			// Create full text indexes
+			if (map.FullTextTableName != null) {
+				if (map.FullTextColumns.Length == 0) {
+					throw new Exception ("Must have at least one full text index column to specify a full text index for the table");
+				}
+
+				// Check if the columns have changed since it was created
+				var fullTextColsNames = map.FullTextColumns.Select (c => c.Name);
+				var existingFtsColumns = GetTableInfo (map.FullTextTableName);
+				
+				bool needsRecreate = false;
+				if (existingFtsColumns.Count > 0) {
+					// FTS4 table exists - check if columns match
+					// Note: FTS4 tables have hidden columns (docid, plus internal columns), so we filter those out
+					var actualColumns = existingFtsColumns
+						.Where (c => !c.Name.StartsWith ("c") || c.Name.Length > 2) // Filter out internal FTS columns like c0, c1, etc.
+						.Where (c => c.Name != "docid") // Filter out docid
+						.Select (c => c.Name)
+						.OrderBy (n => n)
+						.ToList ();
+					
+					var expectedColumns = fullTextColsNames.OrderBy (n => n).ToList ();
+					
+					// Check if column lists match
+					if (actualColumns.Count != expectedColumns.Count || 
+					    !actualColumns.SequenceEqual (expectedColumns)) {
+						needsRecreate = true;
+					}
+				}
+				
+				if (needsRecreate) {
+					// Drop triggers
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_bu\"");
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_bd\"");
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_au\"");
+					Execute ("DROP TRIGGER IF EXISTS \"" + map.FullTextTableName + "_t_ai\"");
+
+					// Drop and recreate the FTS table and triggers since columns changed
+					var dropFullText = "DROP TABLE IF EXISTS \"" + map.FullTextTableName + "\"";
+					Execute (dropFullText);					
+				}
+
+				// Only support FTS4 because content= options to link an FTS table to external tables is not supported in FTS3
+				var queryFullText = "CREATE VIRTUAL TABLE IF NOT EXISTS \"" + map.FullTextTableName + "\" USING fts4(content=\"" + map.TableName + "\", ";
+				queryFullText += string.Join (",\n", fullTextColsNames.ToArray ());
+				queryFullText += ", tokenize=" + map.FullTextTableTokenizer;
+				queryFullText += ")";
+
+				Execute (queryFullText);
+
+				if (needsRecreate)
+				{
+					// Now actually rebuild the full text index data
+					var queryRebuild = "INSERT INTO \"" + map.FullTextTableName + "\"(\"" + map.FullTextTableName + "\") VALUES('rebuild');";
+					Execute(queryRebuild);
+				}
+
+				// Create triggers to keep full text index in sync with content table
+				var deleteOldSql = "DELETE FROM \"" + map.FullTextTableName + "\" WHERE docid=old." + map.PK.Name + ";";
+				var insertNewSql = "INSERT INTO \"" + map.FullTextTableName + "\"(docid, " + string.Join (", ", fullTextColsNames);
+				insertNewSql += ") VALUES (new." + map.PK.Name + ", new." + string.Join (", new.", fullTextColsNames) + ");";
+
+				var beforeUpdateSql = "CREATE TRIGGER IF NOT EXISTS \"" + map.FullTextTableName + "_t_bu\" BEFORE UPDATE ON \"" + map.TableName + "\" BEGIN\n" + deleteOldSql + "\nEND;";
+				Execute (beforeUpdateSql);
+
+				var beforeDeleteSql = "CREATE TRIGGER IF NOT EXISTS \"" + map.FullTextTableName + "_t_bd\" BEFORE DELETE ON \"" + map.TableName + "\" BEGIN\n" + deleteOldSql + "\nEND;";
+				Execute (beforeDeleteSql);
+
+				var afterUpdateSql = "CREATE TRIGGER IF NOT EXISTS \"" + map.FullTextTableName + "_t_au\" AFTER UPDATE ON \"" + map.TableName + "\" BEGIN\n" + insertNewSql + "\nEND;";
+				Execute (afterUpdateSql);
+
+				var afterInsertSql = "CREATE TRIGGER IF NOT EXISTS \"" + map.FullTextTableName + "_t_ai\" AFTER INSERT ON \"" + map.TableName + "\" BEGIN\n" + insertNewSql + "\nEND;";
+				Execute (afterInsertSql);
 			}
 
 			return result;
@@ -2917,6 +3015,45 @@ namespace SQLite
 	{
 	}
 
+	public enum FullTextSearchModule
+	{
+		FullTextSearch3 = 0,
+		FullTextSearch4 = 1
+	}
+
+	/// <summary>
+	/// Attribute to specify a full-text search table created from a subset of the 
+	/// table columns. Name is the name of the FTS table, and Tokenizer is the tokenizer
+	/// to use, which can be one of the built-in tokenizers: "simple", "porter", "unicode61", or (possibly) "icu".
+	/// </summary>
+	[AttributeUsage (AttributeTargets.Class)]
+	public class FullTextTableAttribute : Attribute
+	{
+		public string Name { get; set; }
+		public string Tokenizer { get; set; }
+		public FullTextSearchModule Module { get; set; } = FullTextSearchModule.FullTextSearch4;
+
+		public FullTextTableAttribute ()
+		{
+		}
+
+		public FullTextTableAttribute (string name)
+		{
+			Name = name;
+		}
+
+		public FullTextTableAttribute (string name, string tokenizer)
+		{
+			Name = name;
+			Tokenizer = tokenizer;
+		}
+	}
+
+	[AttributeUsage (AttributeTargets.Property)]
+	public class FullTextIndexedAttribute : Attribute
+	{
+	}
+
 	public class TableMapping
 	{
 #if NET8_0_OR_GREATER
@@ -2934,6 +3071,10 @@ namespace SQLite
 
 		public string GetByPrimaryKeySql { get; private set; }
 
+		public string FullTextTableName { get; private set; }
+
+		public string FullTextTableTokenizer { get; private set; }
+
 		public CreateFlags CreateFlags { get; private set; }
 
 		internal MapMethod Method { get; private set; } = MapMethod.ByName;
@@ -2941,6 +3082,7 @@ namespace SQLite
 		readonly Column _autoPk;
 		readonly Column[] _insertColumns;
 		readonly Column[] _insertOrReplaceColumns;
+		Column[] _fullTextColumns;
 
 		public TableMapping (
 #if NET8_0_OR_GREATER
@@ -2968,6 +3110,23 @@ namespace SQLite
 
 			TableName = (tableAttr != null && !string.IsNullOrEmpty (tableAttr.Name)) ? tableAttr.Name : MappedType.Name;
 			WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
+
+#if ENABLE_IL2CPP
+			var fullTextTableAttr = typeInfo.GetCustomAttribute<FullTextTableAttribute> ();
+#elif NET8_0_OR_GREATER
+			var fullTextTableAttr = type.GetCustomAttributes<FullTextTableAttribute> ().FirstOrDefault ();
+#else
+			var fullTextTableAttr =
+				typeInfo.CustomAttributes
+						.Where (x => x.AttributeType == typeof (FullTextTableAttribute))
+						.Select (x => (FullTextTableAttribute)Orm.InflateAttribute (x))
+						.FirstOrDefault ();
+#endif
+
+			if (fullTextTableAttr != null) {
+				FullTextTableName = fullTextTableAttr.Name != null ? fullTextTableAttr.Name : MappedType.Name + "_FT";
+				FullTextTableTokenizer = fullTextTableAttr.Tokenizer != null ? fullTextTableAttr.Tokenizer : "unicode61"; // The default "simple" tokenizer only supports ASCII so default to "unicode61" instead
+			}
 
 			var members = GetPublicMembers(type);
 			var cols = new List<Column>(members.Count);
@@ -3075,6 +3234,15 @@ namespace SQLite
 			}
 		}
 
+		public Column[] FullTextColumns {
+			get {
+				if (_fullTextColumns == null) {
+					_fullTextColumns = Columns.Where (c => c.IsInFullTextIndex).ToArray ();
+				}
+				return _fullTextColumns;
+			}
+		}
+
 		public Column FindColumnWithPropertyName (string propertyName)
 		{
 			var exact = Columns.FirstOrDefault (c => c.PropertyName == propertyName);
@@ -3110,6 +3278,8 @@ namespace SQLite
 			public bool IsPK { get; private set; }
 
 			public IEnumerable<IndexedAttribute> Indices { get; set; }
+
+			public bool IsInFullTextIndex { get; private set; }
 
 			public bool IsNullable { get; private set; }
 
@@ -3151,6 +3321,7 @@ namespace SQLite
 					) {
 					Indices = new IndexedAttribute[] { new IndexedAttribute () };
 				}
+				IsInFullTextIndex = Orm.IsInFullTextIndex (member);
 				IsNullable = !(IsPK || Orm.IsMarkedNotNull (member));
 				MaxStringLength = Orm.MaxStringLength (member);
 
@@ -3453,6 +3624,11 @@ namespace SQLite
 		public static bool IsMarkedNotNull (MemberInfo p)
 		{
 			return p.CustomAttributes.Any (x => x.AttributeType == typeof (NotNullAttribute));
+		}
+
+		public static bool IsInFullTextIndex (MemberInfo p)
+		{
+			return p.CustomAttributes.Any (x => x.AttributeType == typeof (FullTextIndexedAttribute));
 		}
 	}
 
