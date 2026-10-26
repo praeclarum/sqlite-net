@@ -1516,5 +1516,68 @@ namespace SQLite.Tests
 			}
 		}
 
+		[Test]
+		public async Task ConcurrentInsertAllAsync()
+		{
+			using (var env = new TestEnvironment())
+			{
+				// The default constructor opens the connection with FullMutex
+				var conn = env.Connection;
+				await conn.CreateTableAsync<Customer>();
+
+				var errors = new List<string>();
+				for (var burst = 0; burst < 100; burst++)
+				{
+					var tasks = new List<Task>();
+					for (var i = 0; i < 20; i++)
+					{
+						var ii = i;
+						var bb = burst;
+
+						tasks.Add(Task.Run(async () =>
+						{
+							try
+							{
+								var customers = new List<Customer>();
+								for (var j = 0; j < 25; j++)
+								{
+									customers.Add(new Customer
+									{
+										FirstName = bb.ToString(),
+										LastName = ii.ToString(),
+										Email = Guid.NewGuid().ToString(),
+									});
+								}
+								await conn.InsertAllAsync(customers).ConfigureAwait(false);
+							}
+							catch (Exception ex)
+							{
+								lock (errors)
+								{
+									errors.Add($"[{bb}/{ii}] {ex.Message}");
+								}
+							}
+						}));
+					}
+
+					await Task.WhenAll(tasks.ToArray());
+
+					// A write made after all InsertAllAsync calls have completed must be committed,
+					// so a second connection must see it
+					var marker = new Customer { FirstName = "marker" + burst };
+					await conn.InsertAsync(marker);
+					using (var check = new SQLiteConnection(env.ConnectionString))
+					{
+						var committed = check.Table<Customer>().Where(c => c.FirstName == marker.FirstName).Count();
+						Assert.AreEqual(1, committed, $"Burst {burst}: write not committed. Errors: " + string.Join(", ", errors));
+					}
+				}
+
+				Assert.AreEqual(0, errors.Count, string.Join(", ", errors));
+			}
+		}
+
+		
+
 	}
 }
