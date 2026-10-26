@@ -3117,6 +3117,11 @@ namespace SQLite
 
 			public bool StoreAsText { get; private set; }
 
+			/// <summary>
+			/// The open-instance delegate for the property setter, cached by <see cref="FastColumnSetter"/>.
+			/// </summary>
+			internal Delegate SetPropertyDelegate { get; set; }
+
 			public Column (MemberInfo member, CreateFlags createFlags = CreateFlags.None)
 			{
 				_member = member;
@@ -4127,9 +4132,7 @@ namespace SQLite
 			}
 
 			if (isNullable) {
-				var setProperty = (Action<ObjectType, ColumnMemberType?>)Delegate.CreateDelegate (
-						typeof (Action<ObjectType, ColumnMemberType?>), null,
-						column.PropertyInfo.GetSetMethod ());
+				var setProperty = GetSetPropertyDelegate<ObjectType, ColumnMemberType?> (column);
 
 				return (o, stmt, i) => {
 					var colType = SQLite3.ColumnType (stmt, i);
@@ -4151,15 +4154,36 @@ namespace SQLite
 		/// <returns>A strongly-typed delegate</returns>
 		private static Action<object, Sqlite3Statement, int> CreateTypedSetterDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column, Func<Sqlite3Statement, int, ColumnMemberType> getColumnValue)
 		{
-			var setProperty = (Action<ObjectType, ColumnMemberType>)Delegate.CreateDelegate (
-					typeof (Action<ObjectType, ColumnMemberType>), null,
-					column.PropertyInfo.GetSetMethod ());
+			var setProperty = GetSetPropertyDelegate<ObjectType, ColumnMemberType> (column);
 
 			return (o, stmt, i) => {
 				var colType = SQLite3.ColumnType (stmt, i);
 				if (colType != SQLite3.ColType.Null)
 					setProperty.Invoke ((ObjectType)o, getColumnValue.Invoke (stmt, i));
 			};
+		}
+
+		/// <summary>
+		/// Gets an open-instance delegate for the column's property setter, creating it only once per column.
+		///
+		/// Note that only this delegate is cached, and not the full setter, because the full setter depends on connection settings (such as how DateTime is stored).
+		/// Besides saving the reflection cost on every query, this avoids a native memory leak on Mono, where the first invoke of every new
+		/// open-instance delegate over a virtual setter leaks memory (https://github.com/praeclarum/sqlite-net/issues/1312).
+		/// </summary>
+		/// <typeparam name="ObjectType">The type of the object whose member column is being set</typeparam>
+		/// <typeparam name="ColumnMemberType">The CLR type of the member in the object which corresponds to the given SQLite column</typeparam>
+		/// <param name="column">The column mapping that identifies the target member of the destination object</param>
+		/// <returns>A strongly-typed delegate that sets the property</returns>
+		private static Action<ObjectType, ColumnMemberType> GetSetPropertyDelegate<ObjectType, ColumnMemberType> (TableMapping.Column column)
+		{
+			if (column.SetPropertyDelegate is Action<ObjectType, ColumnMemberType> cached)
+				return cached;
+
+			var setProperty = (Action<ObjectType, ColumnMemberType>)Delegate.CreateDelegate (
+					typeof (Action<ObjectType, ColumnMemberType>), null,
+					column.PropertyInfo.GetSetMethod ());
+			column.SetPropertyDelegate = setProperty;
+			return setProperty;
 		}
 	}
 
