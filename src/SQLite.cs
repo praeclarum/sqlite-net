@@ -3458,6 +3458,24 @@ namespace SQLite
 
 	public partial class SQLiteCommand
 	{
+		const int DoubleSignificantDigits = 15;
+		const int MaxDecimalScale = 28;
+		const decimal TrailingZerosRemover = 1.0000000000000000000000000000m;
+
+		// Since .NET 11 (decimal)double is exact; round to the 15 significant digits a double can hold, as earlier runtimes did.
+		internal static decimal DecimalFromDouble (double value)
+		{
+			var converted = (decimal)value;
+			if (converted == 0m) {
+				return converted;
+			}
+			var scale = DoubleSignificantDigits - 1 - (int)Math.Floor (Math.Log10 (Math.Abs (value)));
+			if (scale < 0) {
+				return converted;
+			}
+			return decimal.Round (converted, Math.Min (scale, MaxDecimalScale), MidpointRounding.AwayFromZero) / TrailingZerosRemover;
+		}
+
 		SQLiteConnection _conn;
 		private List<Binding> _bindings;
 
@@ -3880,7 +3898,7 @@ namespace SQLite
 					return (uint)SQLite3.ColumnInt64 (stmt, index);
 				}
 				else if (clrType == typeof (decimal)) {
-					return (decimal)SQLite3.ColumnDouble (stmt, index);
+					return SQLiteCommand.DecimalFromDouble (SQLite3.ColumnDouble (stmt, index));
 				}
 				else if (clrType == typeof (Byte)) {
 					return (byte)SQLite3.ColumnInt (stmt, index);
@@ -4049,7 +4067,7 @@ namespace SQLite
 			}
 			else if (clrType == typeof (decimal)) {
 				fastSetter = CreateNullableTypedSetterDelegate<T, decimal> (column, (stmt, index) => {
-					return (decimal)SQLite3.ColumnDouble (stmt, index);
+					return SQLiteCommand.DecimalFromDouble (SQLite3.ColumnDouble (stmt, index));
 				});
 			}
 			else if (clrType == typeof (Byte)) {
